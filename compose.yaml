@@ -1,0 +1,10 @@
+name: biketr
+
+services:
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "127.0.0.1:${WEB_PORT:-5050}:80"
+    volumes:
+      - ./:/usr/share/nginx/html:ro
+      - ./docker/nginx:/etc/nginx/templates:ro
