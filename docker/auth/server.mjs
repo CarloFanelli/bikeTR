@@ -78,8 +78,15 @@ function stravaErrorText({ status, body }) {
 // rinnovo, e due rinnovi in parallelo ne lascerebbero salvato uno già scaduto.
 let renewing = null;
 
-// Ritorna i token nuovi, oppure null se Strava rifiuta il rinnovo (accesso revocato).
-async function renew(tokens) {
+const isFresh = (t) => t.expires_at - MIN_VALIDITY_S > Date.now() / 1000;
+
+// Ritorna token validi, rinnovati se serve, oppure null se non ci sono o se Strava
+// rifiuta il rinnovo (accesso revocato). Rilegge il file: una richiesta che lo aveva
+// letto prima della fine del rinnovo precedente trova qui i token già rinnovati.
+async function renew() {
+  const tokens = await readTokens();
+  if (!tokens) return null;
+  if (isFresh(tokens)) return tokens;
   const r = await stravaToken({ grant_type: 'refresh_token', refresh_token: tokens.refresh_token });
   if (r.status === 400 || r.status === 401) {
     log(`rinnovo rifiutato da Strava (HTTP ${r.status}): token cancellati, serve un nuovo collegamento`);
@@ -174,12 +181,10 @@ async function callback(req, res, url) {
 async function token(req, res) {
   const tokens = MISSING.length ? null : await readTokens();
   if (!tokens) return json(res, 401, { error: 'not_connected' });
-  if (tokens.expires_at - MIN_VALIDITY_S > Date.now() / 1000) {
-    return json(res, 200, { access_token: tokens.access_token });
-  }
+  if (isFresh(tokens)) return json(res, 200, { access_token: tokens.access_token });
   let fresh;
   try {
-    renewing ??= renew(tokens).finally(() => { renewing = null; });
+    renewing ??= renew().finally(() => { renewing = null; });
     fresh = await renewing;
   } catch (e) {
     log(`rinnovo non riuscito, token conservati (${e.message})`);
