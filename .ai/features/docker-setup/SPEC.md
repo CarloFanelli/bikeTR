@@ -2,7 +2,7 @@
 feature: docker-setup
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: a66211fde5c837ca5688381afe1a25b76e493e04
 ---
 
