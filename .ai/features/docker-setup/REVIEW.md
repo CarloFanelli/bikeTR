@@ -1,14 +1,14 @@
 ---
 feature: docker-setup
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-05
-head: 74731b5be02f9c320518d91c3695fb3b7739d23b
+head: c4954436f9cbcca4edb3998f37f287b3f68028e2
 ---
 
 # Review — docker-setup
 
-**Scope**: 16 files (primary — diff since base `a66211fd`; 14 workflow artifacts under `.ai/` excluded)
-**Findings**: 1 must-fix · 0 should-fix · 0 nit
+**Scope**: 1 file (delta since review head `74731b5b`; 1 workflow artifact under `.ai/` excluded)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
