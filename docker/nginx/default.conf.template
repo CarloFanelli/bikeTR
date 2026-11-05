@@ -44,6 +44,13 @@ server {
         proxy_read_timeout 300s;
     }
 
+    # Login Strava e token di accesso: il server di autenticazione tiene i segreti,
+    # il browser riceve solo token di accesso a breve durata.
+    location /auth/ {
+        set $auth_upstream http://auth:8080;
+        proxy_pass $auth_upstream;
+    }
+
     location / {
         try_files $uri $uri/ =404;
     }

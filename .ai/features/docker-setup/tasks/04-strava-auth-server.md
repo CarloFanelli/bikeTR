@@ -62,3 +62,7 @@ Today the browser stores the client secret and refresh token and talks to Strava
 - Strava credentials added to `.env` while everything is running → take effect after running the start command again; the message says so (REQ-26)
 - Activity detail page opened from a bookmark while not connected → redirects to the main page showing Connect to Strava (REQ-27)
 - Strava rate limit reached → existing error messages unchanged (REQ-27)
+
+## Notes from implementation
+
+- **Known limitation**: the "Connect to Strava, approve, land back connected" round trip (AC 1) was verified against a simulated Strava (auth server with a fake token endpoint, browser up to the real Strava authorization address with the right Client ID, redirect address and random `state`), not with a real Strava app; no Strava credentials exist on the development machine. The real round trip needs one manual check with the user's own Strava app. /dev, 2026-11-05.

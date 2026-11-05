@@ -6,7 +6,7 @@
 //
 // Rate limit Strava: 100 req / 15 min, 1000/giorno. Throttle automatico a ~6.5 req/min.
 import {
-  api, ensureAccessToken, loadState, loadSettings,
+  api, getAccessToken, loadSettings,
   loadStreamsCache, saveStreamsCache, computeStreamsMetrics,
   fmtKm, fmtTime,
 } from './strava.js';
@@ -362,9 +362,7 @@ function ensureDialog() {
 
 export async function openExportDialog({ athlete, stats }) {
   const dlg = ensureDialog();
-  const state = loadState();
   const settings = loadSettings();
-  if (!state.refreshToken) { alert('Non connesso a Strava.'); return; }
 
   const $ = (id) => document.getElementById(id);
   $('export-progress').textContent = '';
@@ -380,7 +378,7 @@ export async function openExportDialog({ athlete, stats }) {
   // Step 1: conta le attività (paginazione full).
   let allActivities = [];
   try {
-    const token = await ensureAccessToken(state);
+    const token = await getAccessToken();
     $('export-stats').textContent = 'Conto le attività…';
     allActivities = await fetchAllActivities(token, (done, page) => {
       $('export-stats').textContent = `Caricate ${done} attività (pagina ${page})…`;
@@ -432,9 +430,8 @@ export async function openExportDialog({ athlete, stats }) {
     $('export-cancel').textContent = 'Chiudi (continua in background)';
     $('export-progress-bar').style.display = 'block';
 
-    const token = await ensureAccessToken(state);
-
-    // Step 2: arricchimento per attività
+    // Step 2: arricchimento per attività. Il token si chiede a ogni richiesta:
+    // un export lungo dura più di un token di accesso.
     const detailCache = {};       // id → detailExtra
     const streamsCache = loadStreamsCache(); // mantiene anche metriche
     const streamsRaw = {};        // id → streamsExtract (solo modalità max)
@@ -443,7 +440,7 @@ export async function openExportDialog({ athlete, stats }) {
       const needDetail = acts.filter(a => !detailCache[a.id]);
       $('export-progress').textContent = `Scarico dettagli (${needDetail.length})…`;
       await throttledQueue(needDetail, async (a) => {
-        const d = await fetchActivityDetail(a.id, token);
+        const d = await fetchActivityDetail(a.id, await getAccessToken());
         detailCache[a.id] = detailExtra(d);
         return d;
       }, (done, total, msg) => {
@@ -461,7 +458,7 @@ export async function openExportDialog({ athlete, stats }) {
       const needStreams = acts.filter(a => !streamsRaw[a.id]);
       $('export-progress').textContent = `Scarico streams (${needStreams.length})…`;
       await throttledQueue(needStreams, async (a) => {
-        const s = await fetchActivityStreamsFull(a.id, token);
+        const s = await fetchActivityStreamsFull(a.id, await getAccessToken());
         streamsRaw[a.id] = streamsExtract(s);
         // Aggiorna anche cache metriche derivate
         try {
