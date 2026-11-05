@@ -1,5 +1,5 @@
-# Any host name other than localhost / 127.0.0.1 is refused: a web page that
-# points its own domain at 127.0.0.1 (DNS rebinding) must not read this app.
+# Rifiuta ogni nome host diverso da localhost / 127.0.0.1: una pagina web che fa
+# puntare il proprio dominio a 127.0.0.1 (DNS rebinding) non deve leggere l'app.
 server {
     listen 80 default_server;
     return 403;
@@ -12,20 +12,36 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # sendfile can serve stale file content from bind mounts on Docker Desktop.
+    # DNS di Docker, interrogato a ogni richiesta: nginx parte anche quando un
+    # servizio a cui inoltra è spento, e lo ritrova dopo un riavvio.
+    resolver 127.0.0.11 valid=10s;
+
+    # sendfile può servire contenuti vecchi dai bind mount di Docker Desktop.
     sendfile off;
 
-    # The browser revalidates every file, so an edit shows on a normal reload.
+    # Il browser riconvalida ogni file: una modifica si vede con un normale reload.
     add_header Cache-Control "no-cache" always;
 
-    # The repository is mounted as the web root: never serve dotfiles
-    # (.env, .git, .ai) or the Docker configuration.
+    # La cartella del progetto è la radice web: mai servire i file nascosti
+    # (.env, .git, .ai) né la configurazione Docker.
     location ~ /\. {
         return 404;
     }
 
     location ^~ /docker/ {
         return 404;
+    }
+
+    # Il Coach parla con Ollama da qui: stessa origine dell'app, niente CORS.
+    location /ollama/ {
+        set $ollama_upstream ${OLLAMA_URL};
+        rewrite ^/ollama/(.*)$ /$1 break;
+        proxy_pass $ollama_upstream;
+        # Ollama rifiuta le origini browser che non conosce.
+        proxy_set_header Origin "";
+        # La risposta arriva tutta a fine generazione, che su CPU dura minuti:
+        # attendere più del limite di 3 minuti del Coach.
+        proxy_read_timeout 300s;
     }
 
     location / {

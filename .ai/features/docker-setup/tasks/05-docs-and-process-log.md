@@ -34,3 +34,7 @@ Runs last because it documents the commands, settings and behaviors built in tas
 
 - Reader without Docker installed → the README's first step links Docker Desktop for macOS and Windows (REQ-16)
 - A decision is reversed in a later feature → the old `PROCESS.md` entry stays; a new dated entry records the change and why (REQ-18)
+
+## Notes from implementation
+
+- **Impacts Task 05**: the README must say that the host-Ollama option needs Docker Desktop (Docker's DNS ignores `extra_hosts`), and that on a CPU-only laptop the default `qwen2.5:7b` can exceed the 3-minute Coach timeout (measured over 5 minutes on WSL, i5-1240P), with a smaller model set in `.env` and in the Coach settings as the workaround. /dev task 03, 2026-11-05.

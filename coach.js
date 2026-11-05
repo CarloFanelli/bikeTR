@@ -25,13 +25,18 @@ const show = (id) => { const el = $(id); if (el) el.hidden = false; };
 // v2_capacityTier.
 // ============================================================================
 
-const COACH_DEFAULT_ENDPOINT = 'http://localhost:11434';
+// Ollama gira in Docker dietro nginx: stesso indirizzo dell'app, niente CORS.
+const COACH_DEFAULT_ENDPOINT = '/ollama';
+// Vecchio default (Ollama fuori da Docker): chi lo ha salvato passa al nuovo.
+const COACH_OLD_DEFAULT_ENDPOINT = /^http:\/\/localhost:11434\/?$/;
 const COACH_DEFAULT_MODEL = 'qwen2.5:7b';
 const COACH_EMBED_MODEL = 'nomic-embed-text';
 const COACH_SETTINGS_KEY = 'biketr_coach_settings';
 
 function loadCoachSettings() {
-  return safeLoad(COACH_SETTINGS_KEY, {}, (x) => x && typeof x === 'object' && !Array.isArray(x));
+  const s = safeLoad(COACH_SETTINGS_KEY, {}, (x) => x && typeof x === 'object' && !Array.isArray(x));
+  if (COACH_OLD_DEFAULT_ENDPOINT.test(s.endpoint || '')) delete s.endpoint;
+  return s;
 }
 function saveCoachSettings(s) { safeSave(COACH_SETTINGS_KEY, s); }
 
@@ -439,7 +444,7 @@ let _papersIndexCache = null;
 async function loadPapersIndex() {
   if (_papersIndexCache) return _papersIndexCache;
   const res = await fetch('papers_index.json');
-  if (!res.ok) throw new Error(`papers_index.json non trovato (HTTP ${res.status}). Esegui: node build_papers_index.mjs`);
+  if (!res.ok) throw new Error(`papers_index.json non trovato (HTTP ${res.status}). Ripristinalo da git: git restore papers_index.json`);
   _papersIndexCache = await res.json();
   return _papersIndexCache;
 }
@@ -700,8 +705,8 @@ async function coach_generate(activities, stats, durataMin) {
       <p style="margin:.5rem 0">${escHtml(e.message)}</p>
       <p class="muted" style="font-size:.85rem">Verifica:</p>
       <ul class="muted" style="font-size:.85rem">
-        <li>Indice paper costruito? Esegui da terminale: <code>node build_papers_index.mjs</code></li>
-        <li>Modello embeddings scaricato? <code>ollama list</code> deve includere <b>nomic-embed-text</b></li>
+        <li>Indice paper presente? Se <code>papers_index.json</code> manca, ripristinalo da git: <code>git restore papers_index.json</code></li>
+        <li>Modello embeddings scaricato? Al primo avvio Docker lo scarica da solo: l'avanzamento è in <code>docker compose logs ollama-pull</code>, e <code>docker compose exec ollama ollama list</code> deve includere <b>nomic-embed-text</b></li>
         <li>Ollama attivo su <code>${escHtml(endpoint)}</code>?</li>
       </ul>
     </div>`;
