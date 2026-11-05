@@ -1,7 +1,7 @@
 # Task Progress - docker-setup
 
 01-normalize-line-endings: DONE
-02-docker-web-startup: TODO
+02-docker-web-startup: DONE
 03-coach-ollama-service: TODO
 04-strava-auth-server: TODO
 05-docs-and-process-log: TODO

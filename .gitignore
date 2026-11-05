@@ -3,3 +3,4 @@
 node_modules/
 .ai/memory.local/
 learning/
+.env
