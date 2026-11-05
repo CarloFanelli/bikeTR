@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BikeTR — Strava</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>BikeTR</h1>
+    <div id="auth-status"></div>
+  </header>
+
+  <nav id="main-nav" hidden>
+    <button class="nav-btn" data-view="home">🏠 Home</button>
+    <button class="nav-btn" data-view="training">🎯 Allenamento</button>
+    <button class="nav-btn" data-view="analysis">📊 Analisi</button>
+    <button class="nav-btn" data-view="activities">📋 Attività</button>
+    <button class="nav-btn" data-view="coach">🤖 Coach AI</button>
+  </nav>
+
+  <main>
+    <section id="setup" hidden>
+      <h2>Configurazione iniziale</h2>
+      <p class="warn">⚠️ Uso personale/locale: il <code>client_secret</code> resta nel tuo browser (localStorage). Non pubblicare questa pagina online.</p>
+      <ol>
+        <li>Vai su <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">strava.com/settings/api</a> e crea un'app.</li>
+        <li>Come <b>Authorization Callback Domain</b> metti <code>localhost</code>.</li>
+        <li>Copia qui sotto <b>Client ID</b> e <b>Client Secret</b>.</li>
+      </ol>
+      <label>Client ID <input id="client-id" type="text" /></label>
+      <label>Client Secret <input id="client-secret" type="password" /></label>
+      <button id="save-credentials">Salva e collega Strava</button>
+    </section>
+
+    <section id="loading" hidden><p>Carico i dati da Strava…</p></section>
+    <section id="error" hidden><p class="err"></p></section>
+
+    <section id="training" class="view-training" hidden>
+      <h2>🎯 Allenamento di oggi</h2>
+      <div id="training-card"></div>
+      <details open>
+        <summary>Prossimi 28 giorni — clicca per marcare "salto"</summary>
+        <div id="rest-planner-wrap"></div>
+      </details>
+      <details>
+        <summary>Impostazioni zone / volume</summary>
+        <div class="settings-grid">
+          <label>FC max <input id="hr-max" type="number" min="120" max="220" /></label>
+          <label>LTHR dichiarata <input id="hr-lthr" type="number" min="100" max="210" placeholder="es. 173" /></label>
+          <label>LTHR stimata (da attività)
+            <input id="hr-lthr-est" type="number" readonly placeholder="—" />
+          </label>
+          <label>Sorgente LTHR
+            <select id="lthr-source">
+              <option value="declared">Dichiarata</option>
+              <option value="estimated">Stimata</option>
+            </select>
+          </label>
+          <label>FTP dichiarata (W)
+            <input id="ftp-decl" type="number" min="50" max="500" placeholder="es. 220" />
+          </label>
+          <label>FTP stimata (da attività)
+            <input id="ftp-est" type="number" readonly placeholder="—" />
+          </label>
+          <label>Sorgente FTP (se non dichiarata)
+            <select id="ftp-source">
+              <option value="estimated">Stimata (TSS potenza)</option>
+              <option value="hr">HR-based (hrTSS)</option>
+            </select>
+          </label>
+          <label>Ore/sett. indicative <input id="weekly-hours" type="number" min="1" max="25" step="0.5" /></label>
+          <label>Giorni/sett. allenamento (inclusa lunga) <input id="weekly-days" type="number" min="2" max="7" /></label>
+          <label>Di cui uscite lunghe <input id="long-rides" type="number" min="0" max="3" /></label>
+          <label>Peso (kg) <input id="weight" type="number" min="30" max="150" step="0.5" /></label>
+          <label>Livello corpo libero
+            <select id="strength-level">
+              <option value="1">1 — Base (circuito × 2)</option>
+              <option value="2">2 — Intermedio (× 3, varianti)</option>
+              <option value="3">3 — Avanzato (+ pliometria)</option>
+            </select>
+          </label>
+        </div>
+
+        <fieldset class="settings-fieldset">
+          <legend>📅 Disponibilità settimanale</legend>
+          <div class="dow-pickers">
+            <div class="dow-block">
+              <div class="dow-label">Giorni disponibili per allenarmi</div>
+              <div class="dow-row" id="available-days-row"></div>
+              <div class="muted" style="font-size:.75rem">Toggle per ciascun giorno. I giorni non spuntati saranno auto-marcati come riposo nel piano.</div>
+            </div>
+            <div class="dow-block">
+              <div class="dow-label">Giorni per uscita lunga</div>
+              <div class="dow-row" id="long-ride-days-row"></div>
+              <div class="muted" style="font-size:.75rem">Default sabato. Solo i giorni qui spuntati possono essere LONG nel piano settimanale.</div>
+            </div>
+            <label>Durata max uscita lunga (min)
+              <input id="long-ride-max-min" type="number" min="60" max="420" step="15" placeholder="es. 240 = 4h" />
+            </label>
+            <div class="muted" style="font-size:.75rem">Il workout LONG sarà scalato a questa durata (default 180 min se vuoto).</div>
+          </div>
+        </fieldset>
+
+        <fieldset class="settings-fieldset">
+          <legend>🏁 Gara / evento (opzionale)</legend>
+          <div class="dow-pickers">
+            <label>Data gara / evento principale
+              <input id="race-date" type="date" />
+            </label>
+            <label>Nome evento (opzionale)
+              <input id="race-name" type="text" maxlength="40" placeholder="es. Granfondo X" />
+            </label>
+            <div class="muted" style="font-size:.75rem">Se compilato, le 3 settimane prima diventano fase di taper (Mujika 2018): volume −20% / −40% / −55%, intensità mantenuta.</div>
+          </div>
+        </fieldset>
+
+        <fieldset class="settings-fieldset">
+          <legend>🦵 Recovery tools (opzionale)</legend>
+          <label class="checkbox-line"><input id="has-compression" type="checkbox" /> Ho la pressoterapia (compressione pneumatica intermittente)</label>
+          <label class="checkbox-line"><input id="has-massage-gun" type="checkbox" /> Ho il massage gun (Theragun/Hypervolt o simili)</label>
+          <div class="muted" style="font-size:.75rem">Se attivi, i giorni RECOVERY/REST/MOBILITY e il post-sessione di HARD/LONG includeranno le note per usarli. Funzionano su sistemi diversi (compressione = drenaggio venoso/linfatico, percussione = tono muscolare locale): combinarli è plausibilmente additivo. Caveat: il massage gun NON va usato immediatamente prima di sessioni di sprint/forza esplosiva (depressione temporanea del pre-load neuromuscolare documentata).</div>
+        </fieldset>
+        <button id="save-settings">Salva impostazioni</button>
+        <p class="muted">Obiettivo corrente: <b>migliorare soglia/FTP</b>. Il consiglio tiene conto di carico degli ultimi 7/28 giorni e recupero.</p>
+      </details>
+    </section>
+
+    <section id="precision-section" class="view-home" hidden>
+      <h2>🎯 Precisione dati</h2>
+      <div id="precision-info"></div>
+      <button id="hydrate-btn">Aggiorna con streams (API call)</button>
+      <div id="hydrate-progress" class="muted" style="margin-top:.5rem"></div>
+    </section>
+
+    <section id="profile-section" class="view-home" hidden>
+      <h2>🧬 Profilo atleta</h2>
+      <div id="profile-card"></div>
+    </section>
+
+    <section id="predictions-section" class="view-analysis" hidden>
+      <h2>🔮 Previsioni sui tuoi segmenti preferiti</h2>
+      <p class="muted" style="margin-top:-.25rem">Trend sugli ultimi 10 tentativi + tempo stimato al prossimo passaggio.</p>
+      <div id="predictions-loading" class="muted">Carico segmenti…</div>
+      <div id="predictions-actions" style="margin:.5rem 0">
+        <button id="hydrate-segments-btn">📦 Completa da dettagli attività (bypass /all_efforts)</button>
+        <span id="hydrate-segments-progress" class="muted" style="margin-left:.5rem"></span>
+      </div>
+      <div id="predictions"></div>
+    </section>
+
+    <section id="load-chart-section" class="view-analysis" hidden>
+      <h2>📊 Carico ultimi 30 giorni</h2>
+      <div id="load-chart"></div>
+    </section>
+
+    <section id="form-trend-section" class="view-analysis" hidden>
+      <h2>📈 Trend forma (CTL / ATL / TSB)</h2>
+      <div id="form-trend"></div>
+    </section>
+
+    <section id="power-curve-section" class="view-analysis" hidden>
+      <h2>⚡ Curva di potenza & FTP stimato</h2>
+      <div id="power-curve"></div>
+    </section>
+
+    <section id="hr-zones-section" class="view-analysis" hidden>
+      <h2>❤️ Distribuzione zone FC (ultime 4 settimane)</h2>
+      <div id="hr-zones"></div>
+    </section>
+
+    <section id="power-profile-section" class="view-analysis" hidden>
+      <h2>🎯 Power Profile — Deficit e punti di forza</h2>
+      <p class="muted" style="margin-top:-.25rem">Confronto della tua curva di potenza con i rapporti ideali per identificare dove migliorare.</p>
+      <div id="power-profile"></div>
+    </section>
+
+    <section id="ftp-trend-section" class="view-analysis" hidden>
+      <h2>📈 Trend FTP nel tempo</h2>
+      <p class="muted" style="margin-top:-.25rem">Evoluzione della FTP stimata settimana per settimana.</p>
+      <div id="ftp-trend"></div>
+    </section>
+
+    <section id="ftp-lthr-breakdown-section" class="view-analysis" hidden>
+      <h2>🔍 Calcolo FTP / LTHR — dettaglio</h2>
+      <p class="muted" style="margin-top:-.25rem">Quale attività e quale formula hanno determinato i valori usati in tutta l'app.</p>
+      <div id="ftp-lthr-breakdown"></div>
+    </section>
+
+    <section id="segment-workouts-section" class="view-analysis" hidden>
+      <h2>🎯 Workout mirati per i tuoi segmenti</h2>
+      <p class="muted" style="margin-top:-.25rem">Intervalli costruiti sulla potenza e durata dei tuoi segmenti preferiti.</p>
+      <div id="segment-workouts"></div>
+    </section>
+
+    <section id="week-plan-section" class="view-training" hidden>
+      <h2>🗓️ Pianificazione prossimi 7 giorni</h2>
+      <p class="muted" style="margin-top:-.25rem">Proiezione: assume che tu segua il piano suggerito.</p>
+      <div id="week-plan"></div>
+    </section>
+
+    <section id="coach-section" class="view-coach" hidden>
+      <h2>🤖 Coach AI (Ollama locale)</h2>
+      <p class="muted" style="margin-top:-.25rem">
+        Workout suggerito da un LLM locale (Ollama) usando i tuoi dati: FTP, CTL/ATL/TSB, polarizzazione, ultime attività.
+        Tutto resta sul tuo Mac, niente cloud.
+      </p>
+
+      <div class="coach-controls">
+        <label>Durata disponibile (min)
+          <input id="coach-duration" type="number" min="20" max="240" step="5" value="60" />
+        </label>
+        <button id="coach-generate" class="primary">✨ Genera workout di oggi</button>
+      </div>
+
+      <div id="coach-output" style="margin-top:1rem"></div>
+
+      <details style="margin-top:1rem">
+        <summary class="muted">📋 Contesto inviato al modello</summary>
+        <div id="coach-context" class="coach-ctx"></div>
+      </details>
+
+      <details style="margin-top:1rem">
+        <summary>⚙️ Impostazioni Ollama</summary>
+        <div class="settings-grid">
+          <label>Endpoint
+            <input id="coach-endpoint" type="text" placeholder="http://localhost:11434" />
+          </label>
+          <label>Modello
+            <input id="coach-model" type="text" placeholder="qwen2.5:7b" />
+          </label>
+        </div>
+        <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem">
+          <button id="coach-save-settings">Salva</button>
+          <button id="coach-ping">Ping Ollama</button>
+          <span id="coach-settings-status" class="muted"></span>
+        </div>
+        <div id="coach-ping-status" class="muted" style="margin-top:.5rem"></div>
+        <details style="margin-top:.75rem">
+          <summary class="muted">Errore CORS? Come configurare Ollama</summary>
+          <div style="font-size:.85rem; line-height:1.5; margin-top:.5rem">
+            <p>Se l'app gira su <code>localhost:5050</code> e Ollama su <code>localhost:11434</code>, può servire abilitare CORS sul daemon Ollama.</p>
+            <p>Imposta la variabile d'ambiente <code>OLLAMA_ORIGINS</code> e riavvia il servizio:</p>
+            <pre>launchctl setenv OLLAMA_ORIGINS "http://localhost:5050,http://127.0.0.1:5050"
+brew services restart ollama</pre>
+            <p>Per uso solo locale puoi essere permissivo:</p>
+            <pre>launchctl setenv OLLAMA_ORIGINS "*"
+brew services restart ollama</pre>
+          </div>
+        </details>
+      </details>
+    </section>
+
+    <section id="athlete" class="view-home" hidden>
+      <h2>Profilo</h2>
+      <div class="profile">
+        <img id="athlete-avatar" alt="avatar" />
+        <div>
+          <div id="athlete-name" class="name"></div>
+          <div id="athlete-location" class="muted"></div>
+          <div id="athlete-stats" class="stats"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="activities" class="view-activities" hidden>
+      <h2>Attività recenti</h2>
+      <ul id="activities-list"></ul>
+    </section>
+  </main>
+
+  <button id="refresh-fab" title="Aggiorna dati" aria-label="Aggiorna" onclick="window.location.reload()">↻</button>
+  <button id="export-fab" title="Esporta JSON per Claude" aria-label="Esporta" hidden>📥</button>
+
+  <footer>
+    <button id="logout" hidden>Disconnetti / reset</button>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
