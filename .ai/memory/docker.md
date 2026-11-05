@@ -4,4 +4,4 @@ How BikeTR runs locally with Docker Compose: the services, how they reach each o
 
 ## Gotchas
 
-- **nginx template changes need a web restart**: nginx builds its configuration from `docker/nginx/default.conf.template` only when the `web` container starts, and `docker compose up -d` does not restart a container when only a mounted file changed. After editing the template, or pulling a version that changes it, run `docker compose restart web`; until then new routes answer 404.
+- **Mounted config and server code need a recreate**: nginx builds its configuration from `docker/nginx/default.conf.template` and the auth server loads `docker/auth/server.mjs` only when their containers start, and `docker compose up -d` does not restart a container when only a mounted file changed. After editing files under `docker/`, or pulling a version that changes them, run `docker compose up -d --force-recreate` (what the README tells users); until then new routes answer 404.
