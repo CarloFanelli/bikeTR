@@ -204,7 +204,7 @@
       <h2>🤖 Coach AI (Ollama locale)</h2>
       <p class="muted" style="margin-top:-.25rem">
         Workout suggerito da un LLM locale (Ollama) usando i tuoi dati: FTP, CTL/ATL/TSB, polarizzazione, ultime attività.
-        Tutto resta sul tuo Mac, niente cloud.
+        Tutto resta sul tuo computer, niente cloud.
       </p>
 
       <div class="coach-controls">
@@ -225,7 +225,7 @@
         <summary>⚙️ Impostazioni Ollama</summary>
         <div class="settings-grid">
           <label>Endpoint
-            <input id="coach-endpoint" type="text" placeholder="http://localhost:11434" />
+            <input id="coach-endpoint" type="text" placeholder="/ollama" />
           </label>
           <label>Modello
             <input id="coach-model" type="text" placeholder="qwen2.5:7b" />
@@ -238,15 +238,13 @@
         </div>
         <div id="coach-ping-status" class="muted" style="margin-top:.5rem"></div>
         <details style="margin-top:.75rem">
-          <summary class="muted">Errore CORS? Come configurare Ollama</summary>
+          <summary class="muted">Usare l'Ollama installato sul computer</summary>
           <div style="font-size:.85rem; line-height:1.5; margin-top:.5rem">
-            <p>Se l'app gira su <code>localhost:5050</code> e Ollama su <code>localhost:11434</code>, può servire abilitare CORS sul daemon Ollama.</p>
-            <p>Imposta la variabile d'ambiente <code>OLLAMA_ORIGINS</code> e riavvia il servizio:</p>
-            <pre>launchctl setenv OLLAMA_ORIGINS "http://localhost:5050,http://127.0.0.1:5050"
-brew services restart ollama</pre>
-            <p>Per uso solo locale puoi essere permissivo:</p>
-            <pre>launchctl setenv OLLAMA_ORIGINS "*"
-brew services restart ollama</pre>
+            <p>Di default il Coach usa l'Ollama avviato da Docker, all'indirizzo <code>/ollama</code>: non serve configurare nulla. Al primo avvio Docker scarica i modelli (circa 5 GB); l'avanzamento è in <code>docker compose logs -f ollama-pull</code>.</p>
+            <p>Per usare invece un Ollama installato sul computer (per esempio per sfruttare la GPU del Mac), nel file <code>.env</code> togli il <code>#</code> da queste due righe ed esegui di nuovo <code>docker compose up -d</code>:</p>
+            <pre>OLLAMA_CONTAINERS=0
+OLLAMA_URL=http://host.docker.internal:11434</pre>
+            <p>Scarica i modelli sul computer con <code>ollama pull qwen2.5:7b</code> e <code>ollama pull nomic-embed-text</code>, e lascia l'endpoint a <code>/ollama</code>. Se il Ping non risponde, avvia Ollama in ascolto su tutte le interfacce: <code>OLLAMA_HOST=0.0.0.0 ollama serve</code>.</p>
           </div>
         </details>
       </details>

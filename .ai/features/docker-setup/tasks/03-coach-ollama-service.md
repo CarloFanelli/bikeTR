@@ -58,3 +58,9 @@ Builds on the start command from Task 02. The browser reaches Ollama through the
 - Apple Silicon Mac → the Ollama image runs on ARM (REQ-14)
 - Coach "CORS error?" help panel → replaced by guidance for the host-Ollama option (REQ-17)
 - Coach error when the paper index is missing → no longer suggests `node build_papers_index.mjs` (REQ-17)
+
+## Notes from implementation
+
+- **Known limitation**: on the development laptop (WSL2, Intel i5-1240P, CPU only, 10 GB for WSL), one full Coach request with the default `qwen2.5:7b` did not finish within 5 minutes, so it misses the 3-minute Coach timeout (REQ-9, AC 5); `qwen2.5:3b` finished in 161 s. The user kept the defaults: this machine is for development, and the Coach is verified by hand on the user's Mac. /dev, 2026-11-05.
+- **Known limitation**: the host-Ollama option relies on Docker Desktop resolving `host.docker.internal` in its DNS. nginx resolves upstreams through Docker's DNS, which ignores `extra_hosts` entries (tested), so that planned line was dropped; on a Linux Docker Engine without Docker Desktop the host-Ollama option does not resolve. /dev, 2026-11-05.
+- **Known limitation**: when the Coach gives up on a request (its timeout or a new generation), Ollama keeps computing the abandoned answer for a few minutes and keeps the CPU busy. /dev, 2026-11-05.
