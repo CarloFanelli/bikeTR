@@ -51,3 +51,11 @@
 ### B-13 · open
 - **What**: When the Coach gives up on a request (time limit, or a new request), Ollama also stops computing that answer instead of keeping the processor busy for several minutes.
 - **From**: docker-setup (dev task 03, 2026-11-05)
+
+### B-14 · open
+- **What**: Buttons used long after the page loaded ("Refresh with streams", completing segments from activity details) ask for a fresh Strava access token each time, so a tab left open for more than 6 hours keeps working without a reload.
+- **From**: docker-setup (dev task 04, 2026-11-05)
+
+### B-15 · open
+- **What**: The README's feature list and the app's top navigation agree: the README describes a "🧪 Training v2" tab that the navigation does not show.
+- **From**: docker-setup (dev task 05, 2026-11-05)
