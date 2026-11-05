@@ -1,6 +1,6 @@
 import {
-  loadState, saveState, loadSettings, saveSettings, ensureAccessToken, api,
-  applyCachedStreams, hydrateWithStreams, exchangeCode, loadPlannedRests, loadRainyDays,
+  loadSettings, saveSettings, getAuthStatus, getAccessToken, purgeLegacyStrava, api,
+  applyCachedStreams, hydrateWithStreams, loadPlannedRests, loadRainyDays,
   dayOffsetIso, cycleDayState, escapeHtml, fmtKm, fmtTime, fmtDate, TYPE_EMOJI,
   APP_CONFIG,
 } from './strava.js';
@@ -21,17 +21,6 @@ import {
 } from './predictions.js';
 import { initCoach } from './coach.js';
 import { initExport } from './export.js';
-
-// REDIRECT_URI deve corrispondere ESATTAMENTE all'"Authorization Callback Domain"
-// configurato nell'app Strava. Normalizziamo per evitare doppi slash o path con
-// frammenti/query, e ricostruiamo sempre puntando al file index.html servito.
-const REDIRECT_URI = (() => {
-  const origin = window.location.origin;
-  let path = window.location.pathname.replace(/\/+/g, '/');
-  // se siamo su una pagina diversa (es. activity.html) torniamo all'index
-  if (path.endsWith('/activity.html')) path = path.replace(/activity\.html$/, '');
-  return origin + path;
-})();
 
 const $ = (id) => document.getElementById(id);
 const show = (id) => $(id).hidden = false;
@@ -189,16 +178,6 @@ function renderActivities(list) {
     });
   });
   show('activities');
-}
-
-function startOAuth(state) {
-  const url = new URL('https://www.strava.com/oauth/authorize');
-  url.searchParams.set('client_id', state.clientId);
-  url.searchParams.set('redirect_uri', REDIRECT_URI);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('approval_prompt', 'auto');
-  url.searchParams.set('scope', 'read,activity:read_all,profile:read_all');
-  window.location.href = url.toString();
 }
 
 // DOW: dow ISO con lunedì = 1, domenica = 7. Internamente JS usa 0=Domenica…6=Sabato;
@@ -375,58 +354,51 @@ function renderTraining(activities, stats) {
   show('training');
 }
 
+// Il server di autenticazione, al ritorno da Strava, rimanda qui con ?auth_error=…
+const AUTH_CALLBACK_ERRORS = {
+  denied: 'Autorizzazione negata su Strava: BikeTR non è stato collegato.',
+  state: 'Ritorno da Strava non valido o scaduto: riprova con "Collega Strava".',
+  rejected: 'Strava ha rifiutato il collegamento. Controlla STRAVA_CLIENT_ID e STRAVA_CLIENT_SECRET nel file .env, poi esegui di nuovo docker compose up -d.',
+  unreachable: 'Strava non raggiungibile durante il collegamento. Riprova tra poco.',
+};
+
+// Senza credenziali nel .env indica quali mancano, altrimenti offre "Collega Strava".
+function showSetup(missing) {
+  $('setup-missing-names').textContent = missing.join(' e ');
+  $('setup-missing').hidden = !missing.length;
+  $('connect-strava').hidden = missing.length > 0;
+  show('setup');
+}
+
 async function main() {
-  const state = loadState();
+  purgeLegacyStrava();
 
-  $('logout').hidden = !state.clientId;
-  $('logout').addEventListener('click', () => {
-    localStorage.removeItem('biketr_strava');
-    window.location.href = REDIRECT_URI;
+  $('connect-strava').addEventListener('click', () => {
+    window.location.href = '/auth/login';
   });
-
-  $('save-credentials').addEventListener('click', () => {
-    const cid = $('client-id').value.trim();
-    const cs = $('client-secret').value.trim();
-    if (!cid || !cs) return alert('Inserisci Client ID e Client Secret');
-    saveState({ clientId: cid, clientSecret: cs });
-    startOAuth({ clientId: cid, clientSecret: cs });
+  $('logout').addEventListener('click', async () => {
+    await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
+    window.location.reload();
   });
 
   const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  const oauthError = params.get('error');
-
-  if (oauthError) {
-    showError('OAuth Strava: ' + oauthError);
-    show('setup');
-    return;
-  }
-
-  if (code && state.clientId) {
-    show('loading');
-    try {
-      const t = await exchangeCode(code, state);
-      state.accessToken = t.access_token;
-      state.refreshToken = t.refresh_token;
-      state.expiresAt = t.expires_at;
-      saveState(state);
-      window.history.replaceState({}, '', REDIRECT_URI);
-    } catch (e) {
-      hide('loading');
-      showError(e.message);
-      show('setup');
-      return;
-    }
-  }
-
-  if (!state.clientId || !state.refreshToken) {
-    show('setup');
-    return;
+  const authError = params.get('auth_error');
+  if (authError) {
+    const detail = params.get('detail');
+    showError((AUTH_CALLBACK_ERRORS[authError] || authError) + (detail ? ` Risposta di Strava: ${detail}.` : ''));
+    // Una ricarica della pagina non ripete il messaggio.
+    window.history.replaceState({}, '', window.location.pathname);
   }
 
   show('loading');
   try {
-    const token = await ensureAccessToken(state);
+    const status = await getAuthStatus();
+    if (status.missing.length || !status.connected) {
+      hide('loading');
+      showSetup(status.missing);
+      return;
+    }
+    const token = await getAccessToken();
     const athlete = await api('/athlete', token);
     const stats = await api(`/athletes/${athlete.id}/stats`, token);
     // Carico 60 attività per avere abbastanza storico per il consiglio
@@ -502,7 +474,8 @@ async function main() {
     });
   } catch (e) {
     hide('loading');
-    showError(e.message);
+    if (e.code === 'not_connected') showSetup([]);
+    else showError(e.message);
   }
 }
 

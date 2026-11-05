@@ -21,21 +21,22 @@
   </nav>
 
   <main>
+    <section id="error" hidden><p class="err"></p></section>
+
     <section id="setup" hidden>
-      <h2>Configurazione iniziale</h2>
-      <p class="warn">⚠️ Uso personale/locale: il <code>client_secret</code> resta nel tuo browser (localStorage). Non pubblicare questa pagina online.</p>
-      <ol>
-        <li>Vai su <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">strava.com/settings/api</a> e crea un'app.</li>
-        <li>Come <b>Authorization Callback Domain</b> metti <code>localhost</code>.</li>
-        <li>Copia qui sotto <b>Client ID</b> e <b>Client Secret</b>.</li>
-      </ol>
-      <label>Client ID <input id="client-id" type="text" /></label>
-      <label>Client Secret <input id="client-secret" type="password" /></label>
-      <button id="save-credentials">Salva e collega Strava</button>
+      <h2>Collega Strava</h2>
+      <div id="setup-missing" hidden>
+        <p class="warn">Nel file <code>.env</code> manca: <b id="setup-missing-names"></b>.</p>
+        <ol>
+          <li>Vai su <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">strava.com/settings/api</a> e crea un'app; come <b>Authorization Callback Domain</b> metti <code>localhost</code>.</li>
+          <li>Nella cartella del progetto copia <code>.env.example</code> in <code>.env</code> (se non c'è già) e scrivi <b>Client ID</b> e <b>Client Secret</b> in <code>STRAVA_CLIENT_ID</code> e <code>STRAVA_CLIENT_SECRET</code>.</li>
+          <li>Esegui di nuovo <code>docker compose up -d</code> e ricarica questa pagina.</li>
+        </ol>
+      </div>
+      <button id="connect-strava" hidden>Collega Strava</button>
     </section>
 
     <section id="loading" hidden><p>Carico i dati da Strava…</p></section>
-    <section id="error" hidden><p class="err"></p></section>
 
     <section id="training" class="view-training" hidden>
       <h2>🎯 Allenamento di oggi</h2>
@@ -272,7 +273,7 @@ OLLAMA_URL=http://host.docker.internal:11434</pre>
   <button id="export-fab" title="Esporta JSON per Claude" aria-label="Esporta" hidden>📥</button>
 
   <footer>
-    <button id="logout" hidden>Disconnetti / reset</button>
+    <button id="logout" hidden>Disconnetti da Strava</button>
   </footer>
 
   <script type="module" src="app.js"></script>

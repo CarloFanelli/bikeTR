@@ -1,5 +1,5 @@
 import {
-  loadState, ensureAccessToken, api, escapeHtml,
+  getAccessToken, purgeLegacyStrava, api, escapeHtml,
   fmtKm, fmtTime, fmtDate, TYPE_EMOJI,
 } from './strava.js';
 
@@ -22,14 +22,13 @@ function decodePolyline(str) {
 }
 
 async function main() {
-  const state = loadState();
+  purgeLegacyStrava();
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
   if (!id) { $('error').hidden = false; $('error').querySelector('p').textContent = 'ID attività mancante'; return; }
-  if (!state.refreshToken) { window.location.href = 'index.html'; return; }
 
   try {
-    const token = await ensureAccessToken(state);
+    const token = await getAccessToken();
     const a = await api('/activities/' + id, token);
     $('loading').hidden = true;
     $('detail').hidden = false;
@@ -101,6 +100,8 @@ async function main() {
       }).join('');
     }
   } catch (e) {
+    // Non collegato: la pagina principale mostra "Collega Strava".
+    if (e.code === 'not_connected') { window.location.href = 'index.html'; return; }
     $('loading').hidden = true;
     $('error').hidden = false;
     $('error').querySelector('p').textContent = e.message;

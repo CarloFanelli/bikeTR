@@ -11,11 +11,28 @@ services:
     environment:
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
     depends_on:
+      auth:
+        condition: service_started
       # Non aspetta i modelli: la pagina si apre anche durante il primo download,
       # e parte anche quando Ollama è spento (OLLAMA_CONTAINERS=0).
       ollama:
         condition: service_started
         required: false
+
+  # Login Strava: l'unico servizio che vede il client secret e il refresh token.
+  auth:
+    image: node:22-alpine
+    # Inoltra a Node il segnale di stop: senza, `docker compose down` attende 10 s.
+    init: true
+    command: ["node", "/app/server.mjs"]
+    volumes:
+      - ./docker/auth:/app:ro
+      # Token Strava: restano dopo `docker compose down`, spariscono con `down -v`.
+      - auth-data:/data
+    environment:
+      STRAVA_CLIENT_ID: ${STRAVA_CLIENT_ID:-}
+      STRAVA_CLIENT_SECRET: ${STRAVA_CLIENT_SECRET:-}
+      WEB_PORT: ${WEB_PORT:-5050}
 
   ollama:
     image: ollama/ollama:0.12.6
@@ -51,3 +68,4 @@ services:
 
 volumes:
   ollama-models:
+  auth-data:

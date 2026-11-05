@@ -1,8 +1,7 @@
-// Condiviso tra index e pagina dettaglio: gestione credenziali + token + fetch API.
+// Condiviso tra index e pagina dettaglio: token dal server di autenticazione + fetch API.
 import { APP_CONFIG, PHYSIO } from './constants.js';
 export { APP_CONFIG };
 
-const STORAGE = 'biketr_strava';
 const SETTINGS = 'biketr_settings';
 
 // safeLoad/safeSave: parsing localStorage difensivo.
@@ -27,9 +26,6 @@ export function safeSave(key, value) {
   catch (e) { console.warn(`[storage] saveSet failed for ${key}: ${e.message}`); return false; }
 }
 export const isPlainObject = (x) => x && typeof x === 'object' && !Array.isArray(x);
-
-export function loadState() { return safeLoad(STORAGE, {}, isPlainObject); }
-export function saveState(s) { safeSave(STORAGE, s); }
 
 export function loadSettings() { return safeLoad(SETTINGS, {}, isPlainObject); }
 export function saveSettings(s) { safeSave(SETTINGS, s); }
@@ -166,47 +162,50 @@ export function cycleDayState(iso) {
   }
 }
 
-export async function exchangeCode(code, state) {
-  const res = await fetch('https://www.strava.com/api/v3/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      client_id: state.clientId,
-      client_secret: state.clientSecret,
-      code,
-      grant_type: 'authorization_code',
-    }),
-  });
-  if (!res.ok) throw new Error('Scambio code fallito: ' + res.status);
-  return res.json();
-}
+// ---- Server di autenticazione (/auth/, dietro nginx) ----
+// Tiene client secret e refresh token; il browser riceve solo token di accesso.
 
-export async function refreshToken(state) {
-  const res = await fetch('https://www.strava.com/api/v3/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      client_id: state.clientId,
-      client_secret: state.clientSecret,
-      refresh_token: state.refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  });
-  if (!res.ok) throw new Error('Refresh token fallito: ' + res.status);
-  return res.json();
-}
+const AUTH_ERRORS = {
+  unreachable: 'Server di autenticazione non raggiungibile. Controlla i log con: docker compose logs auth',
+  not_connected: 'Non connesso a Strava.',
+  strava_unreachable: 'Strava non raggiungibile per rinnovare l\'accesso. Riprova tra poco.',
+};
 
-export async function ensureAccessToken(state) {
-  const now = Math.floor(Date.now() / 1000);
-  if (state.accessToken && state.expiresAt && state.expiresAt - 60 > now) {
-    return state.accessToken;
+// `code` dice al chiamante cosa fare: 'not_connected' → mostrare "Collega Strava".
+class AuthError extends Error {
+  constructor(code) {
+    super(AUTH_ERRORS[code] || `Errore del server di autenticazione (${code})`);
+    this.code = code;
   }
-  const t = await refreshToken(state);
-  state.accessToken = t.access_token;
-  state.refreshToken = t.refresh_token;
-  state.expiresAt = t.expires_at;
-  saveState(state);
-  return state.accessToken;
+}
+
+async function authJson(path) {
+  let res, body;
+  try {
+    res = await fetch(path);
+    body = await res.json();
+  } catch {
+    // Rete giù o risposta non JSON (nginx risponde 502 se il servizio è spento).
+    throw new AuthError('unreachable');
+  }
+  if (!res.ok) throw new AuthError(body.error);
+  return body;
+}
+
+// { missing: impostazioni .env mancanti, connected }
+export const getAuthStatus = () => authJson('/auth/status');
+
+// Token di accesso valido almeno un altro minuto (il server lo rinnova quando serve).
+// Un lavoro lungo lo chiede a ogni richiesta: un token tenuto a lungo scade.
+export async function getAccessToken() {
+  return (await authJson('/auth/token')).access_token;
+}
+
+// La versione precedente salvava nel browser client secret e token Strava (e,
+// se il JSON era rotto, una copia ".broken"): vanno cancellati.
+export function purgeLegacyStrava() {
+  localStorage.removeItem('biketr_strava');
+  localStorage.removeItem('biketr_strava.broken');
 }
 
 export async function api(path, token) {

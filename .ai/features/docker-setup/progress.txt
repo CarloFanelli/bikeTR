@@ -3,5 +3,5 @@
 01-normalize-line-endings: DONE
 02-docker-web-startup: DONE
 03-coach-ollama-service: DONE
-04-strava-auth-server: TODO
+04-strava-auth-server: DONE
 05-docs-and-process-log: TODO

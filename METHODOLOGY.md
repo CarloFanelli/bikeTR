@@ -7,14 +7,15 @@ Aggiornare questo file **ad ogni modifica** del comportamento dell'algoritmo.
 
 ## 1. Architettura generale
 
-App statica (HTML + JavaScript, no backend). Legge da **Strava API v3** via OAuth 2.0 (flusso Authorization Code). Credenziali utente (client ID/secret, refresh token) salvate in `localStorage`.
+App statica (HTML + JavaScript) servita da nginx in Docker. Legge da **Strava API v3** via OAuth 2.0 (flusso Authorization Code). Login e rinnovo dei token passano dal server di autenticazione, che tiene client ID/secret (dal file `.env`) e refresh token; il browser riceve solo token di accesso temporanei e chiama Strava direttamente.
 
 ### File principali
 | File | Ruolo |
 |---|---|
 | `index.html` | Markup, struttura viste (tab) |
 | `app.js` | Orchestrazione, routing viste, chiamate Strava |
-| `strava.js` | OAuth, fetch API, cache streams/segmenti, helpers data |
+| `strava.js` | Token dal server di autenticazione, fetch API, cache streams/segmenti, helpers data |
+| `docker/auth/server.mjs` | Server di autenticazione: login OAuth Strava, refresh token, token di accesso al browser |
 | `training.js` | Motore v1: categoria giorno, catalogo workout base, CTL/ATL/TSB, modello utente |
 | `training_v2.js` | Motore v2 evidence-based: protocolli peer-reviewed, scaling capacity tier |
 | `analysis.js` | Form trend, power curve, zone FC, polarizzazione, insight interpretativi |
@@ -24,7 +25,6 @@ App statica (HTML + JavaScript, no backend). Legge da **Strava API v3** via OAut
 ### Storage locale (localStorage keys)
 | Key | Contenuto | TTL |
 |---|---|---|
-| `biketr_strava` | access/refresh token, client id/secret, expiry | permanente |
 | `biketr_settings` | impostazioni utente (LTHR, FTP, peso, ore, giorni, ...) | permanente |
 | `biketr_planned_rests` | date ISO marcate come skip | permanente |
 | `biketr_rainy_days` | date ISO marcate come pioggia | permanente |
@@ -38,7 +38,7 @@ App statica (HTML + JavaScript, no backend). Legge da **Strava API v3** via OAut
 ### Endpoint utilizzati
 | Endpoint | Uso |
 |---|---|
-| `GET /oauth/token` | Exchange code + refresh token |
+| `POST /oauth/token` | Exchange code + refresh token (solo dal server di autenticazione) |
 | `GET /athlete` | Profilo |
 | `GET /athletes/{id}/stats` | Statistiche all-time e ultimi 4 sett |
 | `GET /athlete/activities?per_page=60` | Lista attività recenti |
@@ -543,7 +543,7 @@ Fallback: `hydrateSegmentsFromActivities` estrae `segment_efforts` dai dettagli 
 
 7. **Strength load**: `pesoTipo = 0.5` per WeightTraining è approssimazione. La forza affatica muscoli più di quanto il carico numerico suggerisca. Da qui la regola esplicita "ieri forza → oggi Z1".
 
-8. **Uso personale**: client_secret Strava esposto in localStorage, NON pubblicare online.
+8. **Uso personale**: l'app è pensata per girare solo sul proprio computer (porta aperta solo su 127.0.0.1), NON pubblicarla online.
 
 ---
 
