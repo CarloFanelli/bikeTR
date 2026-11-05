@@ -43,3 +43,11 @@
 ### B-11 · open
 - **What**: Store activities and settings on the server so data survives a browser change and only new activities are downloaded from Strava.
 - **From**: docker-setup (interview, 2026-11-05)
+
+### B-12 · open
+- **What**: The Coach shows the model's answer while it is being written instead of waiting in silence for the whole reply, so a slow computer shows progress and a long answer does not hit the time limit only because it arrives at the end.
+- **From**: docker-setup (dev task 03, 2026-11-05)
+
+### B-13 · open
+- **What**: When the Coach gives up on a request (time limit, or a new request), Ollama also stops computing that answer instead of keeping the processor busy for several minutes.
+- **From**: docker-setup (dev task 03, 2026-11-05)
