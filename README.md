@@ -203,10 +203,14 @@ constants.js    ← APP_CONFIG network limits only
 src/data/       ← Strava API (one access token per request), auth server, values saved in the browser
 src/core/       ← calculations, which get everything as input (no page, saved data or clock):
                   stream metrics, training load, CTL/ATL/TSB, FTP and LTHR estimates and trend,
-                  power curve and profile, segment predictions; formatting of distances, times and dates
+                  power curve and profile, segment predictions; formatting of distances, times and dates;
+                  mesocycle and taper (meso.ts), the evidence-based workout catalog (training-v2.ts:
+                  Seiler, Rønnestad, Coggan…) and the training plan (plan/: daily recommendation,
+                  load chart, 6-week model, week and 4-week plan)
 strava.js       ← today's names for src/data and src/core, streams download, escapeHtml
-training.js     ← v1 engine: recommend, mesocycles, buildMonthPlan… (resolveHr reads the clock and saved segments for src/core)
-training_v2.js  ← evidence-based workout catalog (Seiler, Rønnestad, Coggan…)
+training.js     ← Training tab cards (recommendation, rest calendar, load chart, plan) and today's names
+                  for the plan in src/core, which read the clock and the values saved in the browser
+training_v2.js  ← today's names for the workout catalog in src/core (reads the saved mesocycle)
 analysis.js     ← cards: power curve, CTL/ATL/TSB, HR zones, power profile, FTP trend
 predictions.js  ← starred segments download, prediction and segment workout cards
 coach.js        ← AI Coach tab: request to the Coach service, live steps, workout card
@@ -229,7 +233,7 @@ docker compose run --rm --no-deps app npm run check
 
 A failure names the file and line of each type error, the files of each import loop, and each file over the limit. Today's JavaScript files, which are not TypeScript yet, are left out of these checks.
 
-The calculation tests (`web/tests/core/`) run on made-up rides, settings and segments (`web/tests/fixtures/rides.json`) and compare every result, at two decimals, with the one today's screens give (`load-expected.json` in the same folder). That file was recorded from the JavaScript before the calculations moved to TypeScript; recording it again through today's screens must leave it unchanged:
+The calculation tests (`web/tests/core/`) run on made-up rides, settings and segments (`web/tests/fixtures/rides.json`) and, for the training plan, on made-up days, weeks of rides, settings and saved values (`plan-cases.json`). They compare every result, at two decimals, with the one today's screens give (`load-expected.json` and `plan-expected.json` in the same folder). Those files were recorded from the JavaScript before the calculations moved to TypeScript; recording them again through today's screens must leave them unchanged:
 
 ```bash
 docker compose run --rm --no-deps app node tests/reference/record.ts
@@ -242,7 +246,7 @@ git diff --exit-code web/tests/fixtures
 docker compose run --rm --no-deps coach pytest
 ```
 
-The tests use made-up activities (`docker/coach/tests/fixtures/rides.json`), made-up Coach requests and model answers (`coach_cases.json`), and the results the browser code gives for them (`metrics_expected.json` and `coach_expected.json` in the same folder). The browser Coach no longer exists: its last version is kept, for these results only, in `docker/coach/tests/reference/coach_before_move.js`. After changing a formula in the browser code, the made-up activities or the cases, regenerate those results by running the browser code in Node, in each time zone the fixtures list:
+The tests use made-up activities (`docker/coach/tests/fixtures/rides.json`), made-up Coach requests and model answers (`coach_cases.json`), and the results the browser code gives for them (`metrics_expected.json` and `coach_expected.json` in the same folder). The browser Coach no longer exists: its last version is kept, for these results only, in `docker/coach/tests/reference/coach_before_move.js`. After changing a formula in the browser calculations (`web/src`), the made-up activities or the cases, regenerate those results by running those calculations and the old browser Coach in Node, in each time zone the fixtures list:
 
 ```bash
 docker run --rm -v "${PWD}:/src:ro" -v "${PWD}/docker/coach/tests:/tests" node:22-alpine node /tests/reference/make_reference.mjs

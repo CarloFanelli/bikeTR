@@ -2,6 +2,7 @@
 // salvati nel browser, formattazione e metriche degli stream stanno in src/: qui
 // restano i nomi che usa il codice di oggi.
 import { APP_CONFIG } from './constants.js';
+import { dayOffsetIso as dayOffsetFrom } from './src/core/dates.ts';
 import { isoDay } from './src/core/format.ts';
 import { computeStreamsMetrics } from './src/core/streams.ts';
 import { AuthError } from './src/data/auth.ts';
@@ -9,7 +10,7 @@ import { loadStreamsCache, saveStreamsCache } from './src/data/storage.ts';
 import { fetchActivityStreams } from './src/data/strava.ts';
 
 export { APP_CONFIG, computeStreamsMetrics };
-export { fmtKm, fmtTime, fmtDate, isoDay } from './src/core/format.ts';
+export { fmtKm, fmtTime, fmtDate, isoDay, TYPE_EMOJI } from './src/core/format.ts';
 export { AuthError, getAuthStatus, logout } from './src/data/auth.ts';
 export {
   safeLoad, safeSave, isPlainObject, loadSettings, saveSettings, loadPlannedRests,
@@ -21,11 +22,7 @@ export {
 } from './src/data/strava.ts';
 
 export function todayIso() { return isoDay(new Date()); }
-export function dayOffsetIso(n) {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return isoDay(d);
-}
+export const dayOffsetIso = (n) => dayOffsetFrom(n, new Date());
 
 // Hydration opt-in: chiama questa per arricchire attività con streams (costo API).
 // Senza accesso a Strava (non collegato, server di autenticazione spento) salva
@@ -68,10 +65,4 @@ export function escapeHtml(s) {
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[c]));
 }
-export const TYPE_EMOJI = {
-  Ride: '🚴', VirtualRide: '🚴', EBikeRide: '🚴',
-  MountainBikeRide: '🚵', GravelRide: '🚵',
-  Run: '🏃', VirtualRun: '🏃', TrailRun: '🏃',
-  Swim: '🏊', Walk: '🚶', Hike: '🥾', Workout: '💪',
-};
 export const BIKE_TYPES = new Set(['Ride','VirtualRide','EBikeRide','MountainBikeRide','GravelRide']);

@@ -36,3 +36,7 @@ The training-load chart is the first interactive chart; Analisi (Task 10) reuses
 - Pointer between two points → values of the nearest point (REQ-19)
 - Chart with a single point → that point's values on hover (REQ-19)
 - N/A — network, concurrent: charts draw data already loaded (REQ-19)
+
+## Notes from implementation
+
+- **Impacts Task 09**: the Training calculations are in `web/src/core/plan/` (recommendation, load chart days, model, week and 4-week plan), `web/src/core/meso.ts` and `web/src/core/training-v2.ts`; they take a `PlanInputs` value (`plan/inputs.ts`) built from the clock and `web/src/data/storage.ts` (segment cache, FTP history, `loadMesocycle`, `loadRainyDays`). Before computing anything, the screen updates the mesocycle with `nextMesocycle` and saves it only when it says so, as `initMesocycle` does today. Show the recommendation's text as plain text (it can contain an activity name), and catch the error `recommend` throws on an FTP plateau without a power deficit, or the screen stops drawing as today's tab does. /dev, 2026-11-06.

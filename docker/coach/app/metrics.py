@@ -1,8 +1,8 @@
 """Numeri di allenamento del Coach, calcolati come nel browser: carico di ogni attività,
 forma (CTL/ATL/TSB), distribuzione dell'intensità, uscite recenti e fascia di volume.
 
-Le formule seguono quelle del browser (web/src/core: streams.ts, load.ts, form.ts; e
-training_v2.js) e del Coach del browser (coach_before_move.js); i test confrontano i
+Le formule seguono quelle del browser (web/src/core: streams.ts, load.ts, form.ts,
+training-v2.ts) e del Coach del browser (coach_before_move.js); i test confrontano i
 risultati con quelli del codice del browser.
 """
 

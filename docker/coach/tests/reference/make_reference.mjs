@@ -5,8 +5,9 @@
 // gli stessi numeri, gli stessi prompt e lo stesso workout.
 //
 // Il Coach del browser non esiste più: al posto di coach.js si usa la sua copia
-// coach_before_move.js. Gli altri moduli (.js nella cartella web/, con il TypeScript
-// di web/src/ che importano) sono quelli attuali.
+// coach_before_move.js. I moduli che importa (strava.js, training.js, analysis.js,
+// training_v2.js) sono sostituiti da file che danno gli stessi nomi ai calcoli
+// TypeScript di oggi in web/src/.
 //
 // Uso, dalla cartella del progetto (vedi README, sezione Tests):
 //   docker run --rm -v "${PWD}:/src:ro" -v "${PWD}/docker/coach/tests:/tests" node:22-alpine node /tests/reference/make_reference.mjs
@@ -26,15 +27,45 @@ const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const rides = readJson(fixture('rides.json'));
 const coachCases = readJson(fixture('coach_cases.json'));
 
-// Copia i moduli del browser in una cartella temporanea e li adatta al test:
-// il profilo atleta delle fixtures sostituisce le stime di resolveHr, le funzioni
-// interne del Coach vengono esportate e gli argomenti del disegno del workout registrati.
+// I moduli che coach_before_move.js importa, con i nomi di prima, sui calcoli di web/src/.
+// Il profilo atleta delle fixtures (globalThis.__profile) sostituisce le stime di resolveHr.
+const SHIMS = {
+  'strava.js': `
+export { loadSettings, safeLoad, safeSave } from './src/data/storage.ts';
+export { fmtTime } from './src/core/format.ts';
+export { computeStreamsMetrics } from './src/core/streams.ts';
+// Il Coach di prima leggeva solo APP_CONFIG.ollamaTimeoutMs, che l'app non ha mai impostato.
+export const APP_CONFIG = {};
+export function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+`,
+  'training.js': `
+import { resolveHr as resolveHrFrom } from './src/core/hr.ts';
+export { activityLoad } from './src/core/load.ts';
+export function resolveHr(settings, activities) {
+  if (globalThis.__profile) return globalThis.__profile;
+  return resolveHrFrom(settings, activities, null, new Date());
+}
+`,
+  'analysis.js': `
+import { buildFormTrend as formTrendFrom } from './src/core/form.ts';
+import { resolveHr } from './training.js';
+export const buildFormTrend = (activities, settings) => formTrendFrom(activities, resolveHr(settings, activities), new Date());
+`,
+  'training_v2.js': `
+export { v2_capacityTier } from './src/core/training-v2.ts';
+`,
+};
+
+// In una cartella temporanea: i calcoli di web/src/, i moduli qui sopra e il Coach di
+// prima, con le funzioni interne esportate e gli argomenti del disegno del workout registrati.
 async function loadBrowserModules() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'biketr-'));
-  for (const f of fs.readdirSync(BROWSER_SRC).filter(f => f.endsWith('.js'))) {
-    fs.copyFileSync(path.join(BROWSER_SRC, f), path.join(dir, f));
-  }
   fs.cpSync(path.join(BROWSER_SRC, 'src'), path.join(dir, 'src'), { recursive: true });
+  for (const [file, code] of Object.entries(SHIMS)) fs.writeFileSync(path.join(dir, file), code.trimStart());
   fs.copyFileSync(path.join(path.dirname(SCRIPT), 'coach_before_move.js'), path.join(dir, 'coach.js'));
   const patch = (file, find, replace) => {
     const p = path.join(dir, file);
@@ -42,8 +73,6 @@ async function loadBrowserModules() {
     if (!src.includes(find)) throw new Error(`${file}: non trovo "${find}", aggiorna make_reference.mjs`);
     fs.writeFileSync(p, src.replace(find, replace));
   };
-  patch('training.js', 'function resolveHr(settings, activities) {',
-    'function resolveHr(settings, activities) {\n  if (globalThis.__profile) return globalThis.__profile;');
   patch('coach.js', 'function renderCoachWorkout(',
     'function renderCoachWorkout(args) { globalThis.__rendered = args; return renderCoachWorkoutHtml(args); }\nfunction renderCoachWorkoutHtml(');
   fs.appendFileSync(path.join(dir, 'coach.js'),

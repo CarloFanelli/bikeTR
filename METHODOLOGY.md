@@ -16,11 +16,11 @@ App statica (HTML + JavaScript) servita da nginx in Docker. Legge da **Strava AP
 | `app.js` | Orchestrazione, routing viste, chiamate Strava |
 | `strava.js` | Token dal server di autenticazione, fetch API, cache streams/segmenti, helpers data |
 | `docker/auth/server.ts` | Server di autenticazione: login OAuth Strava, refresh token, token di accesso al browser |
-| `training.js` | Motore v1: categoria giorno, catalogo workout base, CTL/ATL/TSB, modello utente |
-| `training_v2.js` | Motore v2 evidence-based: protocolli peer-reviewed, scaling capacity tier |
+| `training.js` | Card della tab Allenamento (consiglio del giorno, calendario riposi, grafico del carico, piano) |
+| `training_v2.js` | Nomi di oggi per il catalogo workout v2 di `web/src/core/training-v2.ts` |
 | `analysis.js` | Card della tab Analisi: form trend, power curve, zone FC, polarizzazione, insight interpretativi |
 | `predictions.js` | Download dei segmenti preferiti, card di previsioni e allenamenti mirati |
-| `web/src/core/` | Calcoli in TypeScript, con tutto come parametro: metriche stream, carico, CTL/ATL/TSB, stime e trend FTP/LTHR, power curve e profilo, previsioni e stime dai segmenti |
+| `web/src/core/` | Calcoli in TypeScript, con tutto come parametro: metriche stream, carico, CTL/ATL/TSB, stime e trend FTP/LTHR, power curve e profilo, previsioni e stime dai segmenti, mesociclo e taper (`meso.ts`), catalogo workout v2 evidence-based con capacity tier (`training-v2.ts`), piano di allenamento (`plan/`: consiglio del giorno, modello utente, settimana, 4 settimane) |
 | `activity.html`, `activity.js` | Pagina dettaglio singola attività (mappa, split, segmenti) |
 
 ### Storage locale (localStorage keys)

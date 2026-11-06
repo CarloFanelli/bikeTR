@@ -178,3 +178,11 @@ export function isHard(act: Activity, hrLthr: number | null | undefined, ftp: nu
   if (act.name && HARD_TITLE_RX.test(act.name)) return true;
   return false;
 }
+
+// Forza o corpo libero, dal tipo di Strava o dal titolo: il giorno dopo il piano propone
+// recupero, e con la pioggia evita due giorni di forza di fila.
+const STRENGTH_TYPES = new Set(['WeightTraining', 'Workout', 'Crossfit']);
+const STRENGTH_TITLE_RX = /corpo\s*libero|corpolibero|bodyweight|body\s*weight|palestra|gym|forza|strength|calistenia|calisthenics|allenamento\s*generico|home\s*workout|circuit|functional|HIIT|tabata|kettlebell|TRX|resistance\s*band|pesi|sala\s*pesi|core\s*training|cross\s*training/i;
+export function isStrengthActivity(act: Pick<Activity, 'type' | 'name'>): boolean {
+  return STRENGTH_TYPES.has(act.type) || STRENGTH_TITLE_RX.test(act.name || '');
+}

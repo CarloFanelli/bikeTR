@@ -2,28 +2,11 @@
 // (README, sezione 7). Un valore illeggibile non blocca l'app: vale il default.
 
 import type { FtpPoint } from '../core/ftp.ts';
+import type { Mesocycle } from '../core/meso.ts';
+import type { Settings } from '../core/settings.ts';
 import type { StreamMetrics } from '../core/strava-types.ts';
 
-// Le impostazioni dell'atleta; un campo lasciato vuoto non viene salvato.
-export interface Settings {
-  hrMax?: number;
-  hrLthr?: number;
-  lthrSource?: string;
-  ftpDeclared?: number;
-  ftpSource?: string;
-  weeklyHours?: number;
-  weeklyDays?: number;
-  longRides?: number;
-  weight?: number;
-  strengthLevel?: number;
-  longRideMaxMin?: number;
-  availableDays?: number[];
-  longRideDays?: number[];
-  raceDate?: string;
-  raceName?: string;
-  hasCompression?: boolean;
-  hasMassageGun?: boolean;
-}
+export type { Settings };
 
 // Metriche di un'attività calcolate dai suoi stream, o l'errore del download.
 export type StreamsCacheEntry = (StreamMetrics & { _fetched: number; _error?: undefined }) | { _error: string; _fetched: number };
@@ -34,6 +17,7 @@ const PLANNED_RESTS = 'biketr_planned_rests';
 const RAINY_DAYS = 'biketr_rainy_days';
 const STREAMS_CACHE = 'biketr_streams_cache';
 const FTP_HISTORY = 'biketr_ftp_history';
+const MESOCYCLE = 'biketr_mesocycle';
 
 // Chiave assente: `fallback`, senza log. JSON illeggibile o rifiutato da `validator`:
 // copia in "<chiave>.broken", avviso in console e `fallback`. Non lancia mai.
@@ -99,6 +83,11 @@ export const saveStreamsCache = (cache: StreamsCache): boolean => safeSave(STREA
 // Un punto alla settimana, al massimo 52 (vedi nextFtpHistory).
 export const loadFtpHistory = (): FtpPoint[] => safeLoad<FtpPoint[]>(FTP_HISTORY, [], Array.isArray);
 export const saveFtpHistory = (history: FtpPoint[]): boolean => safeSave(FTP_HISTORY, history);
+
+// Il mesociclo in corso (vedi nextMesocycle); null prima della prima apertura della tab Allenamento.
+export const loadMesocycle = (): Mesocycle | null =>
+  safeLoad<Mesocycle | null>(MESOCYCLE, null, (x) => x === null || (typeof x === 'object' && !Array.isArray(x)));
+export const saveMesocycle = (meso: Mesocycle): boolean => safeSave(MESOCYCLE, meso);
 
 // Le versioni prima di Docker salvavano nel browser client secret e token Strava
 // (e, se il JSON era rotto, una copia ".broken"): vanno cancellati.
