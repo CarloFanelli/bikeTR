@@ -29,13 +29,15 @@ services:
       - ./web:/workspace/web
       # Pacchetti npm installati nel container: quelli del computer non entrano mai.
       - web-modules:/workspace/web/node_modules
+      # Codice del server di autenticazione, per il controllo dei tipi e i test.
+      - ./docker/auth:/workspace/docker/auth:ro
 
   # Login Strava: l'unico servizio che vede il client secret e il refresh token.
   auth:
     image: node:22-alpine
     # Inoltra a Node il segnale di stop: senza, `docker compose down` attende 10 s.
     init: true
-    command: ["node", "/app/server.mjs"]
+    command: ["node", "/app/server.ts"]
     volumes:
       - ./docker/auth:/app:ro
       # Token Strava: restano dopo `docker compose down`, spariscono con `down -v`.

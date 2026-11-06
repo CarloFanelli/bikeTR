@@ -2,7 +2,7 @@
 // file da cui è importato a sua volta (anche attraverso altri file) e nessun file
 // sorgente oltre 500 righe. Esce con codice 1 e nomina i file se ne trova.
 //
-// Uso: node scripts/check-structure.ts [cartella]   (di default la cartella web/)
+// Uso: node scripts/check-structure.ts [cartella...]   (di default la cartella web/)
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,17 +20,19 @@ const LEGACY = new Set([
   'predictions.js', 'strava.js', 'training.js', 'training_v2.js',
 ]);
 
-const root = path.resolve(process.argv[2] ?? path.join(import.meta.dirname, '..'));
-const rel = (file: string): string => path.relative(root, file).split(path.sep).join('/');
+const args = process.argv.slice(2);
+const roots = (args.length ? args : [path.join(import.meta.dirname, '..')]).map((dir) => path.resolve(dir));
+const posix = (from: string, file: string): string => path.relative(from, file).split(path.sep).join('/');
+const rel = (file: string): string => posix(process.cwd(), file);
 
 // File sorgente sotto la cartella, esclusi pacchetti installati e cartelle nascoste.
-function sourceFiles(dir: string): string[] {
+function sourceFiles(root: string, dir: string = root): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      return entry.name === 'node_modules' || entry.name.startsWith('.') ? [] : sourceFiles(full);
+      return entry.name === 'node_modules' || entry.name.startsWith('.') ? [] : sourceFiles(root, full);
     }
-    return SOURCE.test(entry.name) && !LEGACY.has(rel(full)) ? [full] : [];
+    return SOURCE.test(entry.name) && !LEGACY.has(posix(root, full)) ? [full] : [];
   });
 }
 
@@ -81,7 +83,7 @@ function findCycles(graph: Map<string, string[]>): string[][] {
 
 const lineCount = (text: string): number => text.split('\n').length - (text.endsWith('\n') ? 1 : 0);
 
-const files = sourceFiles(root);
+const files = roots.flatMap((root) => sourceFiles(root));
 const fileSet = new Set(files);
 const graph = new Map<string, string[]>();
 const problems: string[] = [];

@@ -186,7 +186,7 @@ Docker Compose services (`compose.yaml`); only the web port is published, on `12
 browser ──► web (nginx, http://localhost:5050)
              ├─ /         → app: Vite's development server for web/, with live reload
              ├─ /papers_index.json → the paper index, from the project folder (read-only)
-             ├─ /auth/    → auth: Strava login, keeps client secret and tokens (docker/auth/server.mjs)
+             ├─ /auth/    → auth: Strava login, keeps client secret and tokens (docker/auth/server.ts)
              └─ /coach/   → coach: the Coach service, Python with FastAPI (docker/coach);
                             keeps the rides it downloads from Strava in a Docker volume
                             └─► ollama: the Coach's models, kept in a Docker volume
@@ -217,7 +217,7 @@ activity.js     ← detail page entry point (activity.html)
 
 ## 10. Tests
 
-**Browser app.** One command type-checks the app's TypeScript in strict mode, runs its tests, and checks that no source file imports a file that imports it back (directly or through others) and that none is longer than 500 lines. It needs only Docker: no Strava connection, no Ollama, and it can run while BikeTR is running. From the project folder (the same command works in PowerShell):
+**Browser app and Auth server.** One command type-checks their TypeScript in strict mode, runs their tests (the Auth server's with a simulated Strava), and checks that no source file imports a file that imports it back (directly or through others) and that none is longer than 500 lines. It needs only Docker: no Strava connection, no Ollama, and it can run while BikeTR is running. From the project folder (the same command works in PowerShell):
 
 ```bash
 docker compose run --rm --no-deps app npm run check
