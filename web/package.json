@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "vue-tsc && vitest run && node scripts/check-structure.ts"
+    "check": "vue-tsc && tsc -p tsconfig.auth.json && vitest run && node scripts/check-structure.ts . ../docker/auth"
   },
   "dependencies": {
     "chart.js": "^4.6.1",

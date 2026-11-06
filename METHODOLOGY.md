@@ -15,7 +15,7 @@ App statica (HTML + JavaScript) servita da nginx in Docker. Legge da **Strava AP
 | `index.html` | Markup, struttura viste (tab) |
 | `app.js` | Orchestrazione, routing viste, chiamate Strava |
 | `strava.js` | Token dal server di autenticazione, fetch API, cache streams/segmenti, helpers data |
-| `docker/auth/server.mjs` | Server di autenticazione: login OAuth Strava, refresh token, token di accesso al browser |
+| `docker/auth/server.ts` | Server di autenticazione: login OAuth Strava, refresh token, token di accesso al browser |
 | `training.js` | Motore v1: categoria giorno, catalogo workout base, CTL/ATL/TSB, modello utente |
 | `training_v2.js` | Motore v2 evidence-based: protocolli peer-reviewed, scaling capacity tier |
 | `analysis.js` | Form trend, power curve, zone FC, polarizzazione, insight interpretativi |
