@@ -1,0 +1,205 @@
+{
+ "model": "nomic-embed-text",
+ "papers": [
+  {
+   "pmid": "16430681",
+   "title": "Quantifying training intensity distribution in elite endurance athletes: is there evidence for an \"optimal\" distribution?",
+   "authors": "Seiler & Kjerland",
+   "year": "2006",
+   "journal": "Scandinavian journal of medicine & science in sports",
+   "abstract": "This study was designed to quantify the daily distribution of training intensity in a group of well-trained junior cross-country skiers and compare the results of three different methods of training intensity quantification. Eleven male athletes performed treadmill tests to exhaustion to determine heart rate and VO2 corresponding to ventilatory thresholds (VT1, VT2), maximal oxygen consumption (VO2max), and maximal heart rate. VT1 and VT2 were used to delineate three intensity zones. During the same time period, all training sessions (N=384, 37 strength training, 347 endurance) performed over 32 consecutive days were quantified using continuous heart rate registration and session Rating of Perceived Exertion (RPE). In addition, a subset of 60 consecutive training sessions was quantified using blood lactate measurements. Intensity distribution across endurance training sessions (n=318) was similar when based on heart rate analysis (75+/-3%, zone 1; 8+/-3%, zone 2; 17+/-4%, zone 3) or session RPE (76+/-4%, zone 1; 6+/-5%, zone 2; 18+/-7%, zone 3). Similarly, from measurements of 60 consecutive sessions, 71% were performed with <or=2.0 mM blood lactate, 7% between 2 and 4 mM, and 22% with over 4 mM (mean=9.5+/-2.8 mM). In this group of nationally competitive junior skiers, training was organized after a polarized pattern, with most sessions performed clearly below (about 75%) or with substantial periods above (15-20%) the lactate accommodation zone, which is bounded by VT1 and VT2. The pattern quantified here is similar to that reported in observational studies of elite endurance athletes across several sports. It appears that elite endurance athletes train surprisingly little at the lactate threshold intensity.",
+   "embedding": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "pmid": "20861519",
+   "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+   "authors": "Seiler",
+   "year": "2010",
+   "journal": "International journal of sports physiology and performance",
+   "abstract": "Successful endurance training involves the manipulation of training intensity, duration, and frequency, with the implicit goals of maximizing performance, minimizing risk of negative training outcomes, and timing peak fitness and performances to be achieved when they matter most. Numerous descriptive studies of the training characteristics of nationally or internationally competitive endurance athletes training 10 to 13 times per week seem to converge on a typical intensity distribution in which about 80% of training sessions are performed at low intensity (2 mM blood lactate), with about 20% dominated by periods of high-intensity work, such as interval training at approx. 90% VO2max. Endurance athletes appear to self-organize toward a high-volume training approach with careful application of high-intensity training incorporated throughout the training cycle. Training intensification studies performed on already well-trained athletes do not provide any convincing evidence that a greater emphasis on high-intensity interval training in this highly trained athlete population gives long-term performance gains. The predominance of low-intensity, long-duration training, in combination with fewer, highly intensive bouts may be complementary in terms of optimizing adaptive signaling and technical mastery at an acceptable level of stress.",
+   "embedding": [
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "pmid": "22646668",
+   "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+   "authors": "Rønnestad et al.",
+   "year": "2014",
+   "journal": "Scandinavian journal of medicine & science in sports",
+   "abstract": "The purpose of this study was to compare the effect of two different methods of organizing endurance training in trained cyclists. One group of cyclists performed block periodization, wherein the first week constituted five sessions of high-intensity aerobic training (HIT), followed by 3 weeks of one weekly HIT session and focus on low-intensity training (LIT) (BP; n = 10, VO2max = 62 ± 2 mL/kg/min). Another group of cyclists performed a more traditional organization, with 4 weeks of two weekly HIT sessions interspersed with LIT (TRAD; n = 9, VO2max = 63 ± 2 mL/kg/min). Similar volumes of both HIT and LIT was performed in the two groups. While BP increased VO2max , peak power output (Wmax) and power output at 2 mmol/L [la(-)] by 4.6 ± 3.7%, 2.1 ± 2.8%, and 10 ± 12%, respectively (P < 0.05), no changes occurred in TRAD. BP showed relative improvements in VO2max compared with TRAD (P < 0.05). Mean effect size (ES) of the relative improvement in VO2max , Wmax , and power output at 2 mmol/L [la(-)] revealed large to moderate effects of BP training compared with TRAD training (ES = 1.34, ES = 0.85, and ES = 0.71, respectively). The present study suggests that block periodization of training provides superior adaptations to traditional organization during a 4-week endurance training period, despite similar training volume and intensity.",
+   "embedding": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "pmid": "33735833",
+   "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+   "authors": "Rønnestad et al.",
+   "year": "2021",
+   "journal": "International journal of sports physiology and performance",
+   "abstract": "PURPOSE: To compare the effects of a 1-week high-intensity aerobic-training shock microcycle composed of either 5 short-interval sessions (SI; n = 9, 5 series with 12 × 30-s work intervals interspersed with 15-s recovery and 3-min recovery between series) or 5 long-interval sessions (LI; n = 8, 6 series of 5-min work intervals with 2.5-min recovery between series) on indicators of endurance performance in well-trained cyclists. METHODS: Before and following 6 days with standardized training loads after the 1-week high-intensity aerobic-training shock microcycle, both groups were tested in physiological determinants of endurance performance. RESULTS: From pretraining to posttraining, SI achieved a larger improvement than LI in maximal oxygen uptake (5.7%; 95% confidence interval, 1.3-10.3; P = .015) and power output at a blood lactate concentration of 4 mmol·L-1 (3.8%; 95% confidence interval, 0.2-7.4; P = .038). There were no group differences in changes of fractional use of maximal oxygen uptake at a workload corresponding to a blood lactate concentration of 4 mmol·L-1, gross efficiency, or the 1-minute peak power output from the maximal-oxygen-uptake test. CONCLUSION: The SI protocol may induce superior changes in indicators of endurance performance compared with the LI protocol, indicating that SI can be a good strategy during a 1-week high-intensity aerobic-training shock microcycle in well-trained cyclists.",
+   "embedding": [
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "pmid": "23197584",
+   "title": "Cyclists' improvement of pedaling efficacy and performance after heavy strength training.",
+   "authors": "Hansen et al.",
+   "year": "2012",
+   "journal": "International journal of sports physiology and performance",
+   "abstract": "The authors tested whether heavy strength training, including hip-flexion exercise, would reduce the extent of the phase in the crank revolution where negative or retarding crank torque occurs. Negative torque normally occurs in the upstroke phase when the leg is lifted by flexing the hip. Eighteen well-trained cyclists either performed 12 wk of heavy strength training in addition to their usual endurance training (E+S; n = 10) or merely continued their usual endurance training during the intervention period (E; n = 8). The strength training consisted of 4 lower body exercises (3 × 4-10 repetition maximum) performed twice a week. E+S enhanced cycling performance by 7%, which was more than in E (P = .02). Performance was determined as average power output in a 5-min all-out trial performed subsequent to 185 min of submaximal cycling. The performance enhancement, which has been reported previously, was here shown to be accompanied by improved pedaling efficacy during the all-out cycling. Thus, E+S shortened the phase where negative crank torque occurs by ~16°, corresponding to ~14%, which was more than in E (P = .002). In conclusion, adding heavy strength training to usual endurance training in well-trained cyclists improves pedaling efficacy during 5-min all-out cycling performed after 185 min of cycling.",
+   "embedding": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "pmid": "28292885",
+   "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+   "authors": "Vikmoen et al.",
+   "year": "2017",
+   "journal": "Physiological reports",
+   "abstract": "The purpose of this study was to investigate the effects of adding heavy strength training to female duathletes' normal endurance training on both cycling and running performance. Nineteen well-trained female duathletes (VO2max cycling: 54 ± 3 ml∙kg-1∙min-1, VO2max running: 53 ± 3 ml∙kg-1∙min-1) were randomly assigned to either normal endurance training (E, n = 8) or normal endurance training combined with strength training (E+S, n = 11). The strength training consisted of four lower body exercises [3 × 4-10 repetition maximum (RM)] twice a week for 11 weeks. Running and cycling performance were assessed using 5-min all-out tests, performed immediately after prolonged periods of submaximal work (3 h cycling or 1.5 h running). E+S increased 1RM in half squat (45 ± 22%) and lean mass in the legs (3.1 ± 4.0%) more than E Performance during the 5-min all-out test increased in both cycling (7.0 ± 4.5%) and running (4.7 ± 6.0%) in E+S, whereas no changes occurred in E The changes in running performance were different between groups. E+S reduced oxygen consumption and heart rate during the final 2 h of prolonged cycling, whereas no changes occurred in E No changes occurred during the prolonged running in any group. Adding strength training to normal endurance training in well-trained female duathletes improved both running and cycling performance when tested immediately after prolonged submaximal work.",
+   "embedding": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "pmid": "29848161",
+   "title": "An Integrated, Multifactorial Approach to Periodization for Optimal Performance in Individual and Team Sports.",
+   "authors": "Mujika et al.",
+   "year": "2018",
+   "journal": "International journal of sports physiology and performance",
+   "abstract": "Sports periodization has traditionally focused on the exercise aspect of athletic preparation, while neglecting the integration of other elements that can impact an athlete's readiness for peak competition performances. Integrated periodization allows the coordinated inclusion of multiple training components best suited for a given training phase into an athlete's program. The aim of this article is to review the available evidence underpinning integrated periodization, focusing on exercise training, recovery, nutrition, psychological skills, and skill acquisition as key factors by which athletic preparation can be periodized. The periodization of heat and altitude adaptation, body composition, and physical therapy is also considered. Despite recent criticism, various methods of exercise training periodization can contribute to performance enhancement in a variety of elite individual and team sports, such as soccer. In the latter, both physical and strategic periodization are useful tools for managing the heavy travel schedule, fatigue, and injuries that occur throughout a competitive season. Recovery interventions should be periodized (ie, withheld or emphasized) to influence acute and chronic training adaptation and performance. Nutrient intake and timing in relation to exercise and as part of the periodization of an athlete's training and competition calendar can also promote physiological adaptations and performance capacity. Psychological skills are a central component of athletic performance, and their periodization should cater to each athlete's individual needs and the needs of the team. Skill acquisition can also be integrated into an athlete's periodized training program to make a significant contribution to competition performance.",
+   "embedding": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "pmid": "11772161",
+   "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+   "authors": "Laursen & Jenkins",
+   "year": "2002",
+   "journal": "Sports medicine (Auckland, N.Z.)",
+   "abstract": "While the physiological adaptations that occur following endurance training in previously sedentary and recreationally active individuals are relatively well understood, the adaptations to training in already highly trained endurance athletes remain unclear. While significant improvements in endurance performance and corresponding physiological markers are evident following submaximal endurance training in sedentary and recreationally active groups, an additional increase in submaximal training (i.e. volume) in highly trained individuals does not appear to further enhance either endurance performance or associated physiological variables [e.g. peak oxygen uptake (VO2peak), oxidative enzyme activity]. It seems that, for athletes who are already trained, improvements in endurance performance can be achieved only through high-intensity interval training (HIT). The limited research which has examined changes in muscle enzyme activity in highly trained athletes, following HIT, has revealed no change in oxidative or glycolytic enzyme activity, despite significant improvements in endurance performance (p < 0.05). Instead, an increase in skeletal muscle buffering capacity may be one mechanism responsible for an improvement in endurance performance. Changes in plasma volume, stroke volume, as well as muscle cation pumps, myoglobin, capillary density and fibre type characteristics have yet to be investigated in response to HIT with the highly trained athlete. Information relating to HIT programme optimisation in endurance athletes is also very sparse. Preliminary work using the velocity at which VO2max is achieved (V(max)) as the interval intensity, and fractions (50 to 75%) of the time to exhaustion at V(max) (T(max)) as the interval duration has been successful in eliciting improvements in performance in long-distance runners. However, V(max) and T(max) have not been used with cyclists. Instead, HIT programme optimisation research in cyclists has revealed that repeated supramaximal sprinting may be equally effective as more traditional HIT programmes for eliciting improvements in endurance performance. Further examination of the biochemical and physiological adaptations which accompany different HIT programmes, as well as investigation into the optimal HIT programme for eliciting performance enhancements in highly trained athletes is required.",
+   "embedding": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0
+   ]
+  },
+  {
+   "pmid": "23832851",
+   "title": "High-intensity interval training, solutions to the programming puzzle. Part II: anaerobic energy, neuromuscular load and practical applications.",
+   "authors": "Buchheit & Laursen",
+   "year": "2013",
+   "journal": "Sports medicine (Auckland, N.Z.)",
+   "abstract": "High-intensity interval training (HIT) is a well-known, time-efficient training method for improving cardiorespiratory and metabolic function and, in turn, physical performance in athletes. HIT involves repeated short (<45 s) to long (2-4 min) bouts of rather high-intensity exercise interspersed with recovery periods (refer to the previously published first part of this review). While athletes have used 'classical' HIT formats for nearly a century (e.g. repetitions of 30 s of exercise interspersed with 30 s of rest, or 2-4-min interval repetitions ran at high but still submaximal intensities), there is today a surge of research interest focused on examining the effects of short sprints and all-out efforts, both in the field and in the laboratory. Prescription of HIT consists of the manipulation of at least nine variables (e.g. work interval intensity and duration, relief interval intensity and duration, exercise modality, number of repetitions, number of series, between-series recovery duration and intensity); any of which has a likely effect on the acute physiological response. Manipulating HIT appropriately is important, not only with respect to the expected middle- to long-term physiological and performance adaptations, but also to maximize daily and/or weekly training periodization. Cardiopulmonary responses are typically the first variables to consider when programming HIT (refer to Part I). However, anaerobic glycolytic energy contribution and neuromuscular load should also be considered to maximize the training outcome. Contrasting HIT formats that elicit similar (and maximal) cardiorespiratory responses have been associated with distinctly different anaerobic energy contributions. The high locomotor speed/power requirements of HIT (i.e. ≥95 % of the minimal velocity/power that elicits maximal oxygen uptake [v/p(·)VO(2max)] to 100 % of maximal sprinting speed or power) and the accumulation of high-training volumes at high-exercise intensity (runners can cover up to 6-8 km at v(·)VO(2max) per session) can cause significant strain on the neuromuscular/musculoskeletal system. For athletes training twice a day, and/or in team sport players training a number of metabolic and neuromuscular systems within a weekly microcycle, this added physiological strain should be considered in light of the other physical and technical/tactical sessions, so as to avoid overload and optimize adaptation (i.e. maximize a given training stimulus and minimize musculoskeletal pain and/or injury risk). In this part of the review, the different aspects of HIT programming are discussed, from work/relief interval manipulation to HIT periodization, using different examples of training cycles from different sports, with continued reference to the cardiorespiratory adaptations outlined in Part I, as well as to anaerobic glycolytic contribution and neuromuscular/musculoskeletal load.",
+   "embedding": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0
+   ]
+  },
+  {
+   "pmid": "10331896",
+   "title": "Effects of different interval-training programs on cycling time-trial performance.",
+   "authors": "Stepto et al.",
+   "year": "1999",
+   "journal": "Medicine and science in sports and exercise",
+   "abstract": "PURPOSE: We have investigated the effect of varying the intensity of interval training on 40-km time-trial performance in 20 male endurance cyclists (peak oxygen uptake 4.8+/-0.6 L x min(-1), mean +/- SD). METHODS: Cyclists performed a 25-kJ sprint test, an incremental test to determine peak aerobic power (PP) and a simulated 40-km time-trial on a Kingcycle ergometer. They were then randomly assigned to one of five types of interval-training session: 12x30 s at 175% PP, 12x60 s at 100% PP, 12x2 min at 90% PP, 8x4 min at 85% PP, or 4x8 min at 80% PP. Cyclists completed 6 sessions over 3 wk, in addition to their usual aerobic base training. All laboratory tests were then repeated. RESULTS: Performances in the time trial were highly reliable when controlled for training effects (coefficient of variation = 1.1%). The percent improvement in the time trial was modeled as a polynomial function of the rank order of the intensity of the training intervals, a procedure validated by simulation. The cubic trend was strong and statistically significant (overall correlation = 0.70, P = 0.005) and predicted greatest enhancement for the intervals performed at 85% PP (2.8%, 95% CI = 4.3-1.3%) and at 175% PP (2.4%, 95% CI = 4.0-0.7%). Intervals performed at 100% PP and 80% PP did not produce statistically significant enhancements of performance. Quadratic and linear trends were weak or insubstantial. CONCLUSIONS: Interval training with work bouts close to race-pace enhance 1-h endurance performance; work bouts at much higher intensity also appear to improve performance, possibly by a different mechanism.",
+   "embedding": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1
+   ]
+  }
+ ]
+}

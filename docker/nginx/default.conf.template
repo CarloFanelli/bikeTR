@@ -32,23 +32,23 @@ server {
         return 404;
     }
 
-    # Il Coach parla con Ollama da qui: stessa origine dell'app, niente CORS.
-    location /ollama/ {
-        set $ollama_upstream ${OLLAMA_URL};
-        rewrite ^/ollama/(.*)$ /$1 break;
-        proxy_pass $ollama_upstream;
-        # Ollama rifiuta le origini browser che non conosce.
-        proxy_set_header Origin "";
-        # La risposta arriva tutta a fine generazione, che su CPU dura minuti:
-        # attendere più del limite di 3 minuti del Coach.
-        proxy_read_timeout 300s;
-    }
-
     # Login Strava e token di accesso: il server di autenticazione tiene i segreti,
     # il browser riceve solo token di accesso a breve durata.
     location /auth/ {
         set $auth_upstream http://auth:8080;
         proxy_pass $auth_upstream;
+    }
+
+    # Servizio Coach: conosce l'indirizzo di Ollama scritto in .env.
+    location /coach/ {
+        set $coach_upstream http://coach:8080;
+        proxy_pass $coach_upstream;
+        # Il workout arriva a eventi (passi, testo del modello): inoltrarli subito,
+        # senza aspettare di riempire un buffer.
+        proxy_buffering off;
+        # Su CPU il modello può tacere per minuti prima della prima parola: attendere
+        # più dei 3 minuti di silenzio che il servizio concede a Ollama.
+        proxy_read_timeout 300s;
     }
 
     location / {

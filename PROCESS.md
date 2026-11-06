@@ -95,3 +95,103 @@ Before this feature, running BikeTR took four manual, macOS-only steps (a Python
 - **Decision**: `.gitattributes` with `* text=auto eol=lf`.
 - **Why**: 17 files had Windows line endings, so checkouts on different systems showed files as modified when nothing had changed.
 - **Cost**: none; Git detects binary files and leaves them alone.
+
+## coach-service — the Coach moves to a Python service (2026-11-06)
+
+Before this feature, the whole Coach ran in the browser: it computed the training load, searched the paper index and called Ollama through nginx. The planned AI steps (tracing, evaluation, PDF search, a coaching graph) are built on Python libraries, so the Coach's work moves to a server-side service first.
+
+### 2026-11-06 · The Coach service is Python with FastAPI, uvicorn and httpx
+
+- **Decision**: a new `coach` service runs Python 3.12 with FastAPI on uvicorn and uses httpx to call Ollama; nginx forwards `/coach/` to it, and it publishes no port.
+- **Why**: Langfuse, LangGraph and the vector stores of the later steps are Python libraries. FastAPI streams responses and notices a closed connection, and httpx makes asynchronous calls with explicit timeouts, which the live answer and the stop of abandoned requests need.
+- **Cost**: a second language in the project, and four pinned packages to keep up to date.
+
+### 2026-11-06 · First Dockerfile, for the Coach service's packages only
+
+- **Decision**: `docker/coach/Dockerfile` builds an image with Python and the packages of `requirements.txt`; the code is mounted read-only like the auth server's. This revises "Official images and bind mounts, no Dockerfile and no build step" (2026-11-05) for this one service.
+- **Why**: Python packages must be installed before the service starts; installing them at every start would be slow and need the network each time.
+- **Cost**: the first start builds the image, and a change to `requirements.txt` needs `docker compose up -d --build`. A code change still needs only `--force-recreate`.
+
+### 2026-11-06 · Ollama's address comes only from `.env`
+
+- **Decision**: the Coach settings drop the Ollama address field and keep the model name; an address saved by older versions is deleted from the browser. "Ping Ollama" asks the Coach service, which uses `OLLAMA_URL`.
+- **Why**: once the service calls Ollama, an address typed in the browser would be one the service never uses; a single place to set it avoids two settings that disagree.
+- **Cost**: switching between Docker's Ollama and the computer's means editing `.env` and restarting.
+
+### 2026-11-06 · Every Coach service request from another website is refused
+
+- **Decision**: the service answers 403 to any request whose `Sec-Fetch-Site` header is present and not `same-origin`, before doing any work, as the auth server does for Disconnect.
+- **Why**: a page on another website open in the same browser could otherwise make the service download rides or keep the model busy.
+- **Cost**: the Coach service's addresses cannot be opened by typing them in the browser's address bar; `curl`, which sends no such header, still works for checks.
+
+### 2026-11-06 · The browser code is the reference for the Python numbers
+
+- **Decision**: a Node script runs the browser's own modules on made-up activities, with a frozen clock and in two time zones, and saves their results; the Python tests must reproduce them exactly (to 12 significant digits for unrounded loads, exactly for every rounded value). The athlete profile replaces the browser's FTP and heart-rate estimates in the script.
+- **Why**: a formula ported by hand can drift silently. JavaScript and Python differ in rounding (`Math.round(2.5)` is 3, Python's `round(2.5)` is 2), in summing (Python 3.12's `sum()` compensates rounding errors), and in how dates without a time zone are read, so the port reproduces JavaScript's behavior in a small `jscompat` module.
+- **Cost**: while the Coach's other tabs still compute the same numbers in the browser, the formulas exist twice; the tests keep them equal, and the reference must be regenerated after a formula change.
+
+### 2026-11-06 · Ride details store only figures that do not depend on FTP
+
+- **Decision**: for each ride, the service keeps unrounded normalized power, the number of power samples, the unrounded mean heart rate and the number of heart-rate samples; TSS and heart-rate TSS are computed at each request from the current FTP and threshold heart rate.
+- **Why**: the browser cached TSS computed with the FTP of the day it downloaded the data, so a new FTP needed a new download; now a new FTP changes the training load at once.
+- **Cost**: none measurable; the computation takes microseconds per ride.
+
+### 2026-11-06 · Ride days follow the browser's time zone
+
+- **Decision**: each request carries the browser's time zone, and the service uses it to place each ride on a day and to know which day is today.
+- **Why**: the Docker service runs in UTC while the browser runs in local time; Strava writes local start times with a "Z", so a ride at 23:30 counts on the next day in Rome, and the Coach must count it as the Training tab does.
+- **Cost**: one more field in each request.
+
+### 2026-11-06 · The Coach service downloads the rides itself and keeps only what it reads
+
+- **Decision**: on each Coach request the service asks the auth server for an access token and downloads the latest 60 activities; it saves the list, the athlete it belongs to, and the ride details of the latest 40 rides in a `coach-data` Docker volume. Of each activity it keeps only the figures the Coach reads (type, date, duration, distance, power, heart rate, climbing, suffer score): no coordinates, route maps or titles.
+- **Why**: the later AI steps run on the server and need the rides there; the browser's copy of the rides is not reachable from Docker. Keeping only the needed fields limits what a copy of the volume would expose.
+- **Cost**: the first Coach request after connecting makes up to 41 Strava requests (of the 100 allowed every 15 minutes, shared with the browser); later ones make 1 plus 1 per new ride.
+
+### 2026-11-06 · Ride details are downloaded once per ride and survive restarts
+
+- **Decision**: a ride's details are downloaded the first time it appears among the latest 40 rides and kept until it leaves them. A ride with neither power nor heart rate is saved as having no details and never asked again; a failed download is retried at the next request. A "too many requests" answer from Strava stops the downloads for that request.
+- **Why**: Strava's request limit is small, and second-by-second data never changes once a ride is uploaded.
+- **Cost**: when a download fails, that ride's training load comes from its summary figures until the next request, and the Coach says how many rides that affects.
+
+### 2026-11-06 · Disconnect deletes the Coach service's saved rides, even mid-download
+
+- **Decision**: "Disconnetti da Strava" first removes the tokens from the auth server, then asks the Coach service to delete its saved rides. A counter that grows at each deletion stops any download started before it from saving anything.
+- **Why**: the data belongs to the connection, and Strava's terms ask apps to delete data when access is withdrawn; without the counter, a download in progress could write deleted rides back.
+- **Cost**: if the Coach service is not running during Disconnect, its saved rides stay until the next Disconnect or `docker compose down -v`.
+
+### 2026-11-06 · When Strava cannot be reached, the Coach uses the saved rides
+
+- **Decision**: if Strava or the token renewal fails, or Strava answers "too many requests", the service uses the last saved list and details and reports when they were downloaded; with nothing saved it answers "Strava non raggiungibile, riprova più tardi".
+- **Why**: a workout from rides a few hours old is more useful than no workout.
+- **Cost**: the workout may miss the most recent rides; the Coach says from when its data is.
+
+### 2026-11-06 · The workout is built on the Coach service; the browser only asks and draws
+
+- **Decision**: the protocol catalog, the prompts, the paper search, the fallback rules and the cited papers move from `coach.js` to the Coach service. The browser sends the duration, the model name, its time zone and the athlete profile, then draws the steps and the result. The old browser code is kept in the tests folder, and the tests check that the service gives the same prompts, papers and workout for the same model answers.
+- **Why**: the next AI steps (agents, tracing, evaluations) run in Python on the server and need this logic there; comparing against the old code proves the move changed nothing for the user.
+- **Cost**: the browser code can no longer be changed and tested alone; the reference results must be regenerated in Node after changing the frozen copy or the test cases.
+
+### 2026-11-06 · The workout answer arrives as a stream of events
+
+- **Decision**: `POST /coach/workout` answers with one JSON line per event: each step (rides, ride details with progress, papers, model), the model's text while it is written, then the result or an error. Requests the service refuses (wrong duration, profile value, time zone or model name, missing FTP, another website) get a plain JSON error before any download or model call. nginx passes the events on as they arrive and waits up to 5 minutes between two of them.
+- **Why**: a generation on CPU takes minutes; seeing the steps and the text shows the Coach is working, and a refusal before any work costs nothing.
+- **Cost**: the browser needs a stream reader that rebuilds lines and characters split between network chunks; it has no automated test and was checked by hand.
+
+### 2026-11-06 · The Coach service reads the paper index through nginx
+
+- **Decision**: the service fetches `papers_index.json` from nginx (`http://web/papers_index.json`) at each request, instead of having the file mounted into its container as the plan said.
+- **Why**: Docker mounts a missing single file as an empty folder it creates in the project; `git restore papers_index.json` would then fail. Through nginx a missing file gives the same "non trovato (HTTP 404)" message the browser gave, and an edited index counts at the next request.
+- **Cost**: one small local request per workout, and the Coach's paper search depends on nginx, which already serves the Coach.
+
+### 2026-11-06 · The Coach's time limit is 3 minutes of silence, not 3 minutes in total
+
+- **Decision**: the Coach service waits as long as the model keeps writing and gives up only after 3 minutes without new text, including the wait before the first word. Answers are capped at 1,000 tokens by Ollama's own option; a cut answer goes to the fallback rules. The browser has no time limit of its own. This revises "Default Coach model and 3-minute timeout kept despite slow CPU generation" (2026-11-05): the default model stays, the limit changes meaning.
+- **Why**: on a CPU a correct answer can take more than 5 minutes while text keeps arriving; silence is what shows the model is stuck. The cap stops a model that never ends its answer.
+- **Cost**: a model that writes very slowly but steadily can keep the computer busy for a long time; the tab shows its text, so the user can stop it.
+
+### 2026-11-06 · An abandoned Coach request stops Ollama
+
+- **Decision**: when the browser leaves a request (new request from the same tab, reload, closed tab, dropped connection) or the silence limit fires, the service cancels that request's work and closes its connection to Ollama, which stops generating. Each request has its own connection, so other tabs carry on. Tests use a real fake Ollama server and a real uvicorn server to measure that the connection closes within 5 seconds.
+- **Why**: an abandoned answer that kept running in Ollama held the Mac's processor at 100%.
+- **Cost**: it relies on uvicorn telling the app that the client left while nothing is being written. The installed uvicorn and Starlette do this; an upgrade of either must keep the cancellation test green.

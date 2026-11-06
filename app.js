@@ -378,6 +378,9 @@ async function main() {
   });
   $('logout').addEventListener('click', async () => {
     await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
+    // Le corse salvate dal servizio Coach appartengono al collegamento. Dopo il
+    // logout nessuna richiesta del Coach può ottenere un nuovo token.
+    await fetch('/coach/forget', { method: 'POST' }).catch(() => {});
     window.location.reload();
   });
 
@@ -415,7 +418,7 @@ async function main() {
     renderTraining(activities, stats);
     renderAthlete(athlete, stats);
     renderActivities(activities.slice(0, 15));
-    try { initCoach(activities, stats); }
+    try { initCoach(activities); }
     catch (e) { console.warn('[BikeTR] initCoach error:', e); }
     try { initExport({ athlete, stats }); }
     catch (e) { console.warn('[BikeTR] initExport error:', e); }

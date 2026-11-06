@@ -225,9 +225,6 @@
       <details style="margin-top:1rem">
         <summary>⚙️ Impostazioni Ollama</summary>
         <div class="settings-grid">
-          <label>Endpoint
-            <input id="coach-endpoint" type="text" placeholder="/ollama" />
-          </label>
           <label>Modello
             <input id="coach-model" type="text" placeholder="qwen2.5:7b" />
           </label>
@@ -241,11 +238,11 @@
         <details style="margin-top:.75rem">
           <summary class="muted">Usare l'Ollama installato sul computer</summary>
           <div style="font-size:.85rem; line-height:1.5; margin-top:.5rem">
-            <p>Di default il Coach usa l'Ollama avviato da Docker, all'indirizzo <code>/ollama</code>: non serve configurare nulla. Al primo avvio Docker scarica i modelli (circa 5 GB); l'avanzamento è in <code>docker compose logs -f ollama-pull</code>.</p>
+            <p>Di default il Coach usa l'Ollama avviato da Docker: non serve configurare nulla. L'indirizzo di Ollama si cambia solo nel file <code>.env</code>. Al primo avvio Docker scarica i modelli (circa 5 GB); l'avanzamento è in <code>docker compose logs -f ollama-pull</code>.</p>
             <p>Per usare invece un Ollama installato sul computer (per esempio per sfruttare la GPU del Mac), nel file <code>.env</code> togli il <code>#</code> da queste due righe ed esegui di nuovo <code>docker compose up -d</code>:</p>
             <pre>OLLAMA_CONTAINERS=0
 OLLAMA_URL=http://host.docker.internal:11434</pre>
-            <p>Scarica i modelli sul computer con <code>ollama pull qwen2.5:7b</code> e <code>ollama pull nomic-embed-text</code>, e lascia l'endpoint a <code>/ollama</code>. Se il Ping non risponde, avvia Ollama in ascolto su tutte le interfacce: <code>OLLAMA_HOST=0.0.0.0 ollama serve</code>.</p>
+            <p>Scarica i modelli sul computer con <code>ollama pull qwen2.5:7b</code> e <code>ollama pull nomic-embed-text</code>. Se il Ping non risponde, avvia Ollama in ascolto su tutte le interfacce: <code>OLLAMA_HOST=0.0.0.0 ollama serve</code>.</p>
           </div>
         </details>
       </details>

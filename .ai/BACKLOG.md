@@ -28,9 +28,10 @@
 - **What**: Rewrite the README with the graph diagram, evaluation table with latency and cost, a decisions section (chunk size, model choice, what was tried and discarded) and run instructions; fix the feature list that mentions a Training v2 tab the UI lacks.
 - **From**: docker-setup (interview, 2026-11-05)
 
-### B-8 · open
+### B-8 · picked-up
 - **What**: Add minimal automated tests for the metric formulas (NP, TSS, CTL/ATL/TSB, FTP estimate) and for retrieval.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: coach-service (2026-11-06)
 
 ### B-9 · open
 - **What**: Escape Strava segment names in the segment-predictions error list, which today are inserted into the page as raw HTML.
@@ -44,13 +45,15 @@
 - **What**: Store activities and settings on the server so data survives a browser change and only new activities are downloaded from Strava.
 - **From**: docker-setup (interview, 2026-11-05)
 
-### B-12 · open
+### B-12 · picked-up
 - **What**: The Coach shows the model's answer while it is being written instead of waiting in silence for the whole reply, so a slow computer shows progress and a long answer does not hit the time limit only because it arrives at the end.
 - **From**: docker-setup (dev task 03, 2026-11-05)
+- **Picked up by**: coach-service (2026-11-06)
 
-### B-13 · open
+### B-13 · picked-up
 - **What**: When the Coach gives up on a request (time limit, or a new request), Ollama also stops computing that answer instead of keeping the processor busy for several minutes.
 - **From**: docker-setup (dev task 03, 2026-11-05)
+- **Picked up by**: coach-service (2026-11-06)
 
 ### B-14 · open
 - **What**: Buttons used long after the page loaded ("Refresh with streams", completing segments from activity details) ask for a fresh Strava access token each time, so a tab left open for more than 6 hours keeps working without a reload.
@@ -59,3 +62,15 @@
 ### B-15 · open
 - **What**: The README's feature list and the app's top navigation agree: the README describes a "🧪 Training v2" tab that the navigation does not show.
 - **From**: docker-setup (dev task 05, 2026-11-05)
+
+### B-16 · open
+- **What**: The other tabs read fitness, fatigue, form and training load from the Coach service, so the formulas live in one place.
+- **From**: coach-service (interview, 2026-11-06)
+
+### B-17 · open
+- **What**: The Coach tab gets a Stop button that ends the current request and stops Ollama.
+- **From**: coach-service (interview, 2026-11-06)
+
+### B-18 · open
+- **What**: Add automated tests for the Coach tab's browser code: reading the streamed answer (lines and characters split between network chunks) and cancelling an older request when the user asks again (no late events drawn). Both were checked only by hand in Node during coach-service.
+- **From**: coach-service (dev task 05, 2026-11-06)

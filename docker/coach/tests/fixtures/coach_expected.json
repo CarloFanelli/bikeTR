@@ -1,0 +1,2794 @@
+{
+ "cases": {
+  "valid-answer": {
+   "query": "cycling endurance training adaptation aerobic endurance Z2 base recovery pyramidal training intensity distribution trained well-trained cyclists block periodization",
+   "model": "qwen2.5:7b",
+   "messages": [
+    {
+     "role": "system",
+     "content": "Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.\n\nCATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):\n- z1_recovery: Recupero attivo Z1\n- z2_endurance: Z2 Aerobico\n- z2_long_intervals: Long ride Z2 + ride-at-the-end\n- sweet_spot_3x15: Sweet Spot 3×15'\n- threshold_3x10: Soglia 3×10'\n- seiler_4x8: Seiler 4×8' (FTP/VO2)\n- seiler_4x4: Seiler 4×4' (VO2max)\n- ronnestad_30_15: Rønnestad 30/15\n- over_under: Over-Under\n- z2_cadence_drills: Z2 + cadence drills\n- tempo_2x20: Tempo 2×20'\n- z2_progressive: Z2 progressivo\n- rest: Riposo\n\nREGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):\n1. TSB < -25: SEMPRE rest.\n2. TSB tra -25 e -15: z1_recovery.\n3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.\n4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.\n5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).\n6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.\n7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.\n8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).\n\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n- z2_endurance: piatto e costante, base pura, scelta neutra.\n- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.\n- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.\n\nREGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 \"ricchi\" (cadence_drills, progressive).\n\nPAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):\n[PMID:16430681] Seiler & Kjerland 2006. Quantifying training intensity distribution in elite endurance athletes: is there evidence for an \"optimal\" distribution?\nAbstract: This study was designed to quantify the daily distribution of training intensity in a group of well-trained junior cross-country skiers and compare the results of three different methods of training intensity quantification. Eleven male athletes performed treadmill tests to exhaustion to determine heart rate and VO2 corresponding to ventilatory thresholds (VT1, VT2), maximal oxygen consumption (VO2max), and maximal heart rate. VT1 and VT2 were used to delineate three intensity zones. During the same time period, all training sessions (N=384, 37 strength training, 347 endurance) performed over 32 consecutive days were quantified using continuous heart rate registration and session Rating of Perceived Exertion (RPE). In addition, a subset of 60 consecutive training sessions was quantified using blood lactate measurements. Intensity distribution across endurance training sessions (n=318) was similar when based on heart rate analysis (75+/-3%, zone 1; 8+/-3%, zone 2; 17+/-4%, zone 3) or session RPE (76+/-4%, zone 1; 6+/-5%, zone 2; 18+/-7%, zone 3). Similarly, from measurements of 60 consecutive sessions, 71% were performed with <or=2.0 mM blood lactate, 7% between 2 and 4 mM, and 22% …\n\n[PMID:20861519] Seiler 2010. What is best practice for training intensity and duration distribution in endurance athletes?\nAbstract: Successful endurance training involves the manipulation of training intensity, duration, and frequency, with the implicit goals of maximizing performance, minimizing risk of negative training outcomes, and timing peak fitness and performances to be achieved when they matter most. Numerous descriptive studies of the training characteristics of nationally or internationally competitive endurance athletes training 10 to 13 times per week seem to converge on a typical intensity distribution in which about 80% of training sessions are performed at low intensity (2 mM blood lactate), with about 20% dominated by periods of high-intensity work, such as interval training at approx. 90% VO2max. Endurance athletes appear to self-organize toward a high-volume training approach with careful application of high-intensity training incorporated throughout the training cycle. Training intensification studies performed on already well-trained athletes do not provide any convincing evidence that a greater emphasis on high-intensity interval training in this highly trained athlete population gives long-term performance gains. The predominance of low-intensity, long-duration training, in combination wi…\n\n[PMID:11772161] Laursen & Jenkins 2002. The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.\nAbstract: While the physiological adaptations that occur following endurance training in previously sedentary and recreationally active individuals are relatively well understood, the adaptations to training in already highly trained endurance athletes remain unclear. While significant improvements in endurance performance and corresponding physiological markers are evident following submaximal endurance training in sedentary and recreationally active groups, an additional increase in submaximal training (i.e. volume) in highly trained individuals does not appear to further enhance either endurance performance or associated physiological variables [e.g. peak oxygen uptake (VO2peak), oxidative enzyme activity]. It seems that, for athletes who are already trained, improvements in endurance performance can be achieved only through high-intensity interval training (HIT). The limited research which has examined changes in muscle enzyme activity in highly trained athletes, following HIT, has revealed no change in oxidative or glycolytic enzyme activity, despite significant improvements in endurance performance (p < 0.05). Instead, an increase in skeletal muscle buffering capacity may be one mechan…\n\n[PMID:33735833] Rønnestad et al. 2021. Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.\nAbstract: PURPOSE: To compare the effects of a 1-week high-intensity aerobic-training shock microcycle composed of either 5 short-interval sessions (SI; n = 9, 5 series with 12 × 30-s work intervals interspersed with 15-s recovery and 3-min recovery between series) or 5 long-interval sessions (LI; n = 8, 6 series of 5-min work intervals with 2.5-min recovery between series) on indicators of endurance performance in well-trained cyclists. METHODS: Before and following 6 days with standardized training loads after the 1-week high-intensity aerobic-training shock microcycle, both groups were tested in physiological determinants of endurance performance. RESULTS: From pretraining to posttraining, SI achieved a larger improvement than LI in maximal oxygen uptake (5.7%; 95% confidence interval, 1.3-10.3; P = .015) and power output at a blood lactate concentration of 4 mmol·L-1 (3.8%; 95% confidence interval, 0.2-7.4; P = .038). There were no group differences in changes of fractional use of maximal oxygen uptake at a workload corresponding to a blood lactate concentration of 4 mmol·L-1, gross efficiency, or the 1-minute peak power output from the maximal-oxygen-uptake test. CONCLUSION: The SI prot…\n\nOUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:\n\n{\"protocolId\":\"<id_dal_catalogo>\",\"razionale\":\"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>\",\"paperUsati\":[\"<PMID1>\",\"<PMID2>\"]}\n\nVincoli:\n- protocolId DEVE essere uno degli id del catalogo\n- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale\n- Non inventare PMID: usa solo quelli forniti sopra"
+    },
+    {
+     "role": "user",
+     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: 165 bpm · Peso: 70 kg · Tier: High volume\n- CTL 21 · ATL 44 · TSB -23\n- Polarizzazione 28gg: easy 78% / hard 22% · volume 692min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: sabato · DURATA DISPONIBILE: 60 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+    }
+   ],
+   "built": {
+    "title": "Seiler 4×8'",
+    "targetWatt": "265-275W (105-110% FTP)",
+    "struttura": [
+     "Riscaldamento 15': progressivo + 3 × 30\" spin-up",
+     "4 × 8' @ 265-275W (regola d'oro: ultima ripetuta = prima), recupero 2' @ 140W",
+     "Defaticamento 7': 140W"
+    ]
+   },
+   "razionale": "TSB positivo [PMID:20861519].",
+   "paperRefs": [
+    "20861519",
+    "16430681",
+    "16430681"
+   ],
+   "retrieved": [
+    {
+     "pmid": "16430681",
+     "score": 0.5997601439040672
+    },
+    {
+     "pmid": "20861519",
+     "score": 0.4798081151232538
+    },
+    {
+     "pmid": "11772161",
+     "score": 0.4798081151232538
+    },
+    {
+     "pmid": "33735833",
+     "score": 0.41983210073284705
+    }
+   ],
+   "fellBack": false
+  },
+  "too-short": {
+   "query": "cycling endurance training adaptation aerobic endurance Z2 base recovery pyramidal training intensity distribution trained well-trained cyclists block periodization short session",
+   "model": "qwen2.5:7b",
+   "messages": [
+    {
+     "role": "system",
+     "content": "Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.\n\nCATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):\n- z1_recovery: Recupero attivo Z1\n- z2_endurance: Z2 Aerobico\n- z2_long_intervals: Long ride Z2 + ride-at-the-end\n- sweet_spot_3x15: Sweet Spot 3×15'\n- threshold_3x10: Soglia 3×10'\n- seiler_4x8: Seiler 4×8' (FTP/VO2)\n- seiler_4x4: Seiler 4×4' (VO2max)\n- ronnestad_30_15: Rønnestad 30/15\n- over_under: Over-Under\n- z2_cadence_drills: Z2 + cadence drills\n- tempo_2x20: Tempo 2×20'\n- z2_progressive: Z2 progressivo\n- rest: Riposo\n\nREGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):\n1. TSB < -25: SEMPRE rest.\n2. TSB tra -25 e -15: z1_recovery.\n3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.\n4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.\n5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).\n6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.\n7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.\n8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).\n\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n- z2_endurance: piatto e costante, base pura, scelta neutra.\n- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.\n- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.\n\nREGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 \"ricchi\" (cadence_drills, progressive).\n\nPAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):\n[PMID:16430681] Seiler & Kjerland 2006. Quantifying training intensity distribution in elite endurance athletes: is there evidence for an \"optimal\" distribution?\nAbstract: This study was designed to quantify the daily distribution of training intensity in a group of well-trained junior cross-country skiers and compare the results of three different methods of training intensity quantification. Eleven male athletes performed treadmill tests to exhaustion to determine heart rate and VO2 corresponding to ventilatory thresholds (VT1, VT2), maximal oxygen consumption (VO2max), and maximal heart rate. VT1 and VT2 were used to delineate three intensity zones. During the same time period, all training sessions (N=384, 37 strength training, 347 endurance) performed over 32 consecutive days were quantified using continuous heart rate registration and session Rating of Perceived Exertion (RPE). In addition, a subset of 60 consecutive training sessions was quantified using blood lactate measurements. Intensity distribution across endurance training sessions (n=318) was similar when based on heart rate analysis (75+/-3%, zone 1; 8+/-3%, zone 2; 17+/-4%, zone 3) or session RPE (76+/-4%, zone 1; 6+/-5%, zone 2; 18+/-7%, zone 3). Similarly, from measurements of 60 consecutive sessions, 71% were performed with <or=2.0 mM blood lactate, 7% between 2 and 4 mM, and 22% …\n\n[PMID:20861519] Seiler 2010. What is best practice for training intensity and duration distribution in endurance athletes?\nAbstract: Successful endurance training involves the manipulation of training intensity, duration, and frequency, with the implicit goals of maximizing performance, minimizing risk of negative training outcomes, and timing peak fitness and performances to be achieved when they matter most. Numerous descriptive studies of the training characteristics of nationally or internationally competitive endurance athletes training 10 to 13 times per week seem to converge on a typical intensity distribution in which about 80% of training sessions are performed at low intensity (2 mM blood lactate), with about 20% dominated by periods of high-intensity work, such as interval training at approx. 90% VO2max. Endurance athletes appear to self-organize toward a high-volume training approach with careful application of high-intensity training incorporated throughout the training cycle. Training intensification studies performed on already well-trained athletes do not provide any convincing evidence that a greater emphasis on high-intensity interval training in this highly trained athlete population gives long-term performance gains. The predominance of low-intensity, long-duration training, in combination wi…\n\n[PMID:11772161] Laursen & Jenkins 2002. The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.\nAbstract: While the physiological adaptations that occur following endurance training in previously sedentary and recreationally active individuals are relatively well understood, the adaptations to training in already highly trained endurance athletes remain unclear. While significant improvements in endurance performance and corresponding physiological markers are evident following submaximal endurance training in sedentary and recreationally active groups, an additional increase in submaximal training (i.e. volume) in highly trained individuals does not appear to further enhance either endurance performance or associated physiological variables [e.g. peak oxygen uptake (VO2peak), oxidative enzyme activity]. It seems that, for athletes who are already trained, improvements in endurance performance can be achieved only through high-intensity interval training (HIT). The limited research which has examined changes in muscle enzyme activity in highly trained athletes, following HIT, has revealed no change in oxidative or glycolytic enzyme activity, despite significant improvements in endurance performance (p < 0.05). Instead, an increase in skeletal muscle buffering capacity may be one mechan…\n\n[PMID:33735833] Rønnestad et al. 2021. Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.\nAbstract: PURPOSE: To compare the effects of a 1-week high-intensity aerobic-training shock microcycle composed of either 5 short-interval sessions (SI; n = 9, 5 series with 12 × 30-s work intervals interspersed with 15-s recovery and 3-min recovery between series) or 5 long-interval sessions (LI; n = 8, 6 series of 5-min work intervals with 2.5-min recovery between series) on indicators of endurance performance in well-trained cyclists. METHODS: Before and following 6 days with standardized training loads after the 1-week high-intensity aerobic-training shock microcycle, both groups were tested in physiological determinants of endurance performance. RESULTS: From pretraining to posttraining, SI achieved a larger improvement than LI in maximal oxygen uptake (5.7%; 95% confidence interval, 1.3-10.3; P = .015) and power output at a blood lactate concentration of 4 mmol·L-1 (3.8%; 95% confidence interval, 0.2-7.4; P = .038). There were no group differences in changes of fractional use of maximal oxygen uptake at a workload corresponding to a blood lactate concentration of 4 mmol·L-1, gross efficiency, or the 1-minute peak power output from the maximal-oxygen-uptake test. CONCLUSION: The SI prot…\n\nOUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:\n\n{\"protocolId\":\"<id_dal_catalogo>\",\"razionale\":\"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>\",\"paperUsati\":[\"<PMID1>\",\"<PMID2>\"]}\n\nVincoli:\n- protocolId DEVE essere uno degli id del catalogo\n- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale\n- Non inventare PMID: usa solo quelli forniti sopra"
+    },
+    {
+     "role": "user",
+     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: 165 bpm · Peso: 70 kg · Tier: High volume\n- CTL 21 · ATL 44 · TSB -23\n- Polarizzazione 28gg: easy 78% / hard 22% · volume 692min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: sabato · DURATA DISPONIBILE: 45 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+    }
+   ],
+   "built": {
+    "title": "Z2 Aerobico (steady)",
+    "targetWatt": "175-200W (70-80% FTP)",
+    "struttura": [
+     "Riscaldamento 10': salita progressiva 140→175W",
+     "Lavoro 25': costante 175-200W, respirazione fluida (RPE 4-5/10)",
+     "Defaticamento 10': scendere gradualmente a 140W"
+    ]
+   },
+   "razionale": "Forma buona. · (Durata 45min insufficiente per il protocollo scelto, ripiego su Z2.)",
+   "paperRefs": [],
+   "retrieved": [
+    {
+     "pmid": "16430681",
+     "score": 0.5997601439040672
+    },
+    {
+     "pmid": "20861519",
+     "score": 0.4798081151232538
+    },
+    {
+     "pmid": "11772161",
+     "score": 0.4798081151232538
+    },
+    {
+     "pmid": "33735833",
+     "score": 0.41983210073284705
+    }
+   ],
+   "fellBack": true
+  },
+  "too-short-keeps-source": {
+   "query": "cycling endurance training adaptation aerobic endurance Z2 base recovery pyramidal training intensity distribution trained well-trained cyclists block periodization short session",
+   "model": "qwen2.5:7b",
+   "messages": [
+    {
+     "role": "system",
+     "content": "Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.\n\nCATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):\n- z1_recovery: Recupero attivo Z1\n- z2_endurance: Z2 Aerobico\n- z2_long_intervals: Long ride Z2 + ride-at-the-end\n- sweet_spot_3x15: Sweet Spot 3×15'\n- threshold_3x10: Soglia 3×10'\n- seiler_4x8: Seiler 4×8' (FTP/VO2)\n- seiler_4x4: Seiler 4×4' (VO2max)\n- ronnestad_30_15: Rønnestad 30/15\n- over_under: Over-Under\n- z2_cadence_drills: Z2 + cadence drills\n- tempo_2x20: Tempo 2×20'\n- z2_progressive: Z2 progressivo\n- rest: Riposo\n\nREGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):\n1. TSB < -25: SEMPRE rest.\n2. TSB tra -25 e -15: z1_recovery.\n3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.\n4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.\n5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).\n6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.\n7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.\n8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).\n\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n- z2_endurance: piatto e costante, base pura, scelta neutra.\n- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.\n- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.\n\nREGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 \"ricchi\" (cadence_drills, progressive).\n\nPAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):\n[PMID:23197584] Hansen et al. 2012. Cyclists' improvement of pedaling efficacy and performance after heavy strength training.\nAbstract: The authors tested whether heavy strength training, including hip-flexion exercise, would reduce the extent of the phase in the crank revolution where negative or retarding crank torque occurs. Negative torque normally occurs in the upstroke phase when the leg is lifted by flexing the hip. Eighteen well-trained cyclists either performed 12 wk of heavy strength training in addition to their usual endurance training (E+S; n = 10) or merely continued their usual endurance training during the intervention period (E; n = 8). The strength training consisted of 4 lower body exercises (3 × 4-10 repetition maximum) performed twice a week. E+S enhanced cycling performance by 7%, which was more than in E (P = .02). Performance was determined as average power output in a 5-min all-out trial performed subsequent to 185 min of submaximal cycling. The performance enhancement, which has been reported previously, was here shown to be accompanied by improved pedaling efficacy during the all-out cycling. Thus, E+S shortened the phase where negative crank torque occurs by ~16°, corresponding to ~14%, which was more than in E (P = .002). In conclusion, adding heavy strength training to usual endurance …\n\n[PMID:28292885] Vikmoen et al. 2017. Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.\nAbstract: The purpose of this study was to investigate the effects of adding heavy strength training to female duathletes' normal endurance training on both cycling and running performance. Nineteen well-trained female duathletes (VO2max cycling: 54 ± 3 ml∙kg-1∙min-1, VO2max running: 53 ± 3 ml∙kg-1∙min-1) were randomly assigned to either normal endurance training (E, n = 8) or normal endurance training combined with strength training (E+S, n = 11). The strength training consisted of four lower body exercises [3 × 4-10 repetition maximum (RM)] twice a week for 11 weeks. Running and cycling performance were assessed using 5-min all-out tests, performed immediately after prolonged periods of submaximal work (3 h cycling or 1.5 h running). E+S increased 1RM in half squat (45 ± 22%) and lean mass in the legs (3.1 ± 4.0%) more than E Performance during the 5-min all-out test increased in both cycling (7.0 ± 4.5%) and running (4.7 ± 6.0%) in E+S, whereas no changes occurred in E The changes in running performance were different between groups. E+S reduced oxygen consumption and heart rate during the final 2 h of prolonged cycling, whereas no changes occurred in E No changes occurred during the prol…\n\n[PMID:29848161] Mujika et al. 2018. An Integrated, Multifactorial Approach to Periodization for Optimal Performance in Individual and Team Sports.\nAbstract: Sports periodization has traditionally focused on the exercise aspect of athletic preparation, while neglecting the integration of other elements that can impact an athlete's readiness for peak competition performances. Integrated periodization allows the coordinated inclusion of multiple training components best suited for a given training phase into an athlete's program. The aim of this article is to review the available evidence underpinning integrated periodization, focusing on exercise training, recovery, nutrition, psychological skills, and skill acquisition as key factors by which athletic preparation can be periodized. The periodization of heat and altitude adaptation, body composition, and physical therapy is also considered. Despite recent criticism, various methods of exercise training periodization can contribute to performance enhancement in a variety of elite individual and team sports, such as soccer. In the latter, both physical and strategic periodization are useful tools for managing the heavy travel schedule, fatigue, and injuries that occur throughout a competitive season. Recovery interventions should be periodized (ie, withheld or emphasized) to influence acut…\n\n[PMID:22646668] Rønnestad et al. 2014. Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.\nAbstract: The purpose of this study was to compare the effect of two different methods of organizing endurance training in trained cyclists. One group of cyclists performed block periodization, wherein the first week constituted five sessions of high-intensity aerobic training (HIT), followed by 3 weeks of one weekly HIT session and focus on low-intensity training (LIT) (BP; n = 10, VO2max = 62 ± 2 mL/kg/min). Another group of cyclists performed a more traditional organization, with 4 weeks of two weekly HIT sessions interspersed with LIT (TRAD; n = 9, VO2max = 63 ± 2 mL/kg/min). Similar volumes of both HIT and LIT was performed in the two groups. While BP increased VO2max , peak power output (Wmax) and power output at 2 mmol/L [la(-)] by 4.6 ± 3.7%, 2.1 ± 2.8%, and 10 ± 12%, respectively (P < 0.05), no changes occurred in TRAD. BP showed relative improvements in VO2max compared with TRAD (P < 0.05). Mean effect size (ES) of the relative improvement in VO2max , Wmax , and power output at 2 mmol/L [la(-)] revealed large to moderate effects of BP training compared with TRAD training (ES = 1.34, ES = 0.85, and ES = 0.71, respectively). The present study suggests that block periodization of trai…\n\nOUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:\n\n{\"protocolId\":\"<id_dal_catalogo>\",\"razionale\":\"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>\",\"paperUsati\":[\"<PMID1>\",\"<PMID2>\"]}\n\nVincoli:\n- protocolId DEVE essere uno degli id del catalogo\n- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale\n- Non inventare PMID: usa solo quelli forniti sopra"
+    },
+    {
+     "role": "user",
+     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: 165 bpm · Peso: 70 kg · Tier: High volume\n- CTL 21 · ATL 44 · TSB -23\n- Polarizzazione 28gg: easy 78% / hard 22% · volume 692min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: sabato · DURATA DISPONIBILE: 45 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+    }
+   ],
+   "built": {
+    "title": "Z2 Aerobico (steady)",
+    "targetWatt": "175-200W (70-80% FTP)",
+    "struttura": [
+     "Riscaldamento 10': salita progressiva 140→175W",
+     "Lavoro 25': costante 175-200W, respirazione fluida (RPE 4-5/10)",
+     "Defaticamento 10': scendere gradualmente a 140W"
+    ]
+   },
+   "razionale": "Cadenza. · (Durata 45min insufficiente per il protocollo scelto, ripiego su Z2.)",
+   "paperRefs": [
+    "23197584"
+   ],
+   "retrieved": [
+    {
+     "pmid": "23197584",
+     "score": 0.5934424260562083
+    },
+    {
+     "pmid": "28292885",
+     "score": 0.5275043787166296
+    },
+    {
+     "pmid": "29848161",
+     "score": 0.4615663313770509
+    },
+    {
+     "pmid": "22646668",
+     "score": 0.3956282840374722
+    }
+   ],
+   "fellBack": true
+  },
+  "not-json": {
+   "query": "cycling endurance training adaptation overreaching recovery active rest high intensity interval stimulus VO2max",
+   "model": "qwen2.5:7b",
+   "messages": [
+    {
+     "role": "system",
+     "content": "Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.\n\nCATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):\n- z1_recovery: Recupero attivo Z1\n- z2_endurance: Z2 Aerobico\n- z2_long_intervals: Long ride Z2 + ride-at-the-end\n- sweet_spot_3x15: Sweet Spot 3×15'\n- threshold_3x10: Soglia 3×10'\n- seiler_4x8: Seiler 4×8' (FTP/VO2)\n- seiler_4x4: Seiler 4×4' (VO2max)\n- ronnestad_30_15: Rønnestad 30/15\n- over_under: Over-Under\n- z2_cadence_drills: Z2 + cadence drills\n- tempo_2x20: Tempo 2×20'\n- z2_progressive: Z2 progressivo\n- rest: Riposo\n\nREGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):\n1. TSB < -25: SEMPRE rest.\n2. TSB tra -25 e -15: z1_recovery.\n3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.\n4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.\n5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).\n6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.\n7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.\n8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).\n\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n- z2_endurance: piatto e costante, base pura, scelta neutra.\n- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.\n- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.\n\nREGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 \"ricchi\" (cadence_drills, progressive).\n\nPAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):\n[PMID:23197584] Hansen et al. 2012. Cyclists' improvement of pedaling efficacy and performance after heavy strength training.\nAbstract: The authors tested whether heavy strength training, including hip-flexion exercise, would reduce the extent of the phase in the crank revolution where negative or retarding crank torque occurs. Negative torque normally occurs in the upstroke phase when the leg is lifted by flexing the hip. Eighteen well-trained cyclists either performed 12 wk of heavy strength training in addition to their usual endurance training (E+S; n = 10) or merely continued their usual endurance training during the intervention period (E; n = 8). The strength training consisted of 4 lower body exercises (3 × 4-10 repetition maximum) performed twice a week. E+S enhanced cycling performance by 7%, which was more than in E (P = .02). Performance was determined as average power output in a 5-min all-out trial performed subsequent to 185 min of submaximal cycling. The performance enhancement, which has been reported previously, was here shown to be accompanied by improved pedaling efficacy during the all-out cycling. Thus, E+S shortened the phase where negative crank torque occurs by ~16°, corresponding to ~14%, which was more than in E (P = .002). In conclusion, adding heavy strength training to usual endurance …\n\n[PMID:28292885] Vikmoen et al. 2017. Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.\nAbstract: The purpose of this study was to investigate the effects of adding heavy strength training to female duathletes' normal endurance training on both cycling and running performance. Nineteen well-trained female duathletes (VO2max cycling: 54 ± 3 ml∙kg-1∙min-1, VO2max running: 53 ± 3 ml∙kg-1∙min-1) were randomly assigned to either normal endurance training (E, n = 8) or normal endurance training combined with strength training (E+S, n = 11). The strength training consisted of four lower body exercises [3 × 4-10 repetition maximum (RM)] twice a week for 11 weeks. Running and cycling performance were assessed using 5-min all-out tests, performed immediately after prolonged periods of submaximal work (3 h cycling or 1.5 h running). E+S increased 1RM in half squat (45 ± 22%) and lean mass in the legs (3.1 ± 4.0%) more than E Performance during the 5-min all-out test increased in both cycling (7.0 ± 4.5%) and running (4.7 ± 6.0%) in E+S, whereas no changes occurred in E The changes in running performance were different between groups. E+S reduced oxygen consumption and heart rate during the final 2 h of prolonged cycling, whereas no changes occurred in E No changes occurred during the prol…\n\n[PMID:29848161] Mujika et al. 2018. An Integrated, Multifactorial Approach to Periodization for Optimal Performance in Individual and Team Sports.\nAbstract: Sports periodization has traditionally focused on the exercise aspect of athletic preparation, while neglecting the integration of other elements that can impact an athlete's readiness for peak competition performances. Integrated periodization allows the coordinated inclusion of multiple training components best suited for a given training phase into an athlete's program. The aim of this article is to review the available evidence underpinning integrated periodization, focusing on exercise training, recovery, nutrition, psychological skills, and skill acquisition as key factors by which athletic preparation can be periodized. The periodization of heat and altitude adaptation, body composition, and physical therapy is also considered. Despite recent criticism, various methods of exercise training periodization can contribute to performance enhancement in a variety of elite individual and team sports, such as soccer. In the latter, both physical and strategic periodization are useful tools for managing the heavy travel schedule, fatigue, and injuries that occur throughout a competitive season. Recovery interventions should be periodized (ie, withheld or emphasized) to influence acut…\n\n[PMID:22646668] Rønnestad et al. 2014. Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.\nAbstract: The purpose of this study was to compare the effect of two different methods of organizing endurance training in trained cyclists. One group of cyclists performed block periodization, wherein the first week constituted five sessions of high-intensity aerobic training (HIT), followed by 3 weeks of one weekly HIT session and focus on low-intensity training (LIT) (BP; n = 10, VO2max = 62 ± 2 mL/kg/min). Another group of cyclists performed a more traditional organization, with 4 weeks of two weekly HIT sessions interspersed with LIT (TRAD; n = 9, VO2max = 63 ± 2 mL/kg/min). Similar volumes of both HIT and LIT was performed in the two groups. While BP increased VO2max , peak power output (Wmax) and power output at 2 mmol/L [la(-)] by 4.6 ± 3.7%, 2.1 ± 2.8%, and 10 ± 12%, respectively (P < 0.05), no changes occurred in TRAD. BP showed relative improvements in VO2max compared with TRAD (P < 0.05). Mean effect size (ES) of the relative improvement in VO2max , Wmax , and power output at 2 mmol/L [la(-)] revealed large to moderate effects of BP training compared with TRAD training (ES = 1.34, ES = 0.85, and ES = 0.71, respectively). The present study suggests that block periodization of trai…\n\nOUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:\n\n{\"protocolId\":\"<id_dal_catalogo>\",\"razionale\":\"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>\",\"paperUsati\":[\"<PMID1>\",\"<PMID2>\"]}\n\nVincoli:\n- protocolId DEVE essere uno degli id del catalogo\n- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale\n- Non inventare PMID: usa solo quelli forniti sopra"
+    },
+    {
+     "role": "user",
+     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: — bpm · Peso: — kg · Tier: Mid volume\n- CTL 49 · ATL 93 · TSB -44\n- Polarizzazione 28gg: easy 100% / hard 0% · volume 692min\n- Volume target: nullh/sett su null giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: sabato · DURATA DISPONIBILE: 90 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+    }
+   ],
+   "built": {
+    "title": "Riposo / mobilità",
+    "targetWatt": "—",
+    "struttura": [
+     "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+     "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+     "Il fitness cresce durante il riposo, non durante l'allenamento."
+    ]
+   },
+   "razionale": "Decisione fallback: TSB -44, polarizzazione hard 0% → Riposo",
+   "paperRefs": [],
+   "retrieved": [
+    {
+     "pmid": "23197584",
+     "score": 0.5934424260562083
+    },
+    {
+     "pmid": "28292885",
+     "score": 0.5275043787166296
+    },
+    {
+     "pmid": "29848161",
+     "score": 0.4615663313770509
+    },
+    {
+     "pmid": "22646668",
+     "score": 0.3956282840374722
+    }
+   ],
+   "fellBack": true
+  },
+  "json-in-text": {
+   "query": "cycling endurance training adaptation threshold sweet spot baseline training long ride fatigue resistance",
+   "model": "qwen2.5:7b",
+   "messages": [
+    {
+     "role": "system",
+     "content": "Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.\n\nCATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):\n- z1_recovery: Recupero attivo Z1\n- z2_endurance: Z2 Aerobico\n- z2_long_intervals: Long ride Z2 + ride-at-the-end\n- sweet_spot_3x15: Sweet Spot 3×15'\n- threshold_3x10: Soglia 3×10'\n- seiler_4x8: Seiler 4×8' (FTP/VO2)\n- seiler_4x4: Seiler 4×4' (VO2max)\n- ronnestad_30_15: Rønnestad 30/15\n- over_under: Over-Under\n- z2_cadence_drills: Z2 + cadence drills\n- tempo_2x20: Tempo 2×20'\n- z2_progressive: Z2 progressivo\n- rest: Riposo\n\nREGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):\n1. TSB < -25: SEMPRE rest.\n2. TSB tra -25 e -15: z1_recovery.\n3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.\n4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.\n5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).\n6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.\n7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.\n8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).\n\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n- z2_endurance: piatto e costante, base pura, scelta neutra.\n- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.\n- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.\n\nREGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 \"ricchi\" (cadence_drills, progressive).\n\nPAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):\n[PMID:23832851] Buchheit & Laursen 2013. High-intensity interval training, solutions to the programming puzzle. Part II: anaerobic energy, neuromuscular load and practical applications.\nAbstract: High-intensity interval training (HIT) is a well-known, time-efficient training method for improving cardiorespiratory and metabolic function and, in turn, physical performance in athletes. HIT involves repeated short (<45 s) to long (2-4 min) bouts of rather high-intensity exercise interspersed with recovery periods (refer to the previously published first part of this review). While athletes have used 'classical' HIT formats for nearly a century (e.g. repetitions of 30 s of exercise interspersed with 30 s of rest, or 2-4-min interval repetitions ran at high but still submaximal intensities), there is today a surge of research interest focused on examining the effects of short sprints and all-out efforts, both in the field and in the laboratory. Prescription of HIT consists of the manipulation of at least nine variables (e.g. work interval intensity and duration, relief interval intensity and duration, exercise modality, number of repetitions, number of series, between-series recovery duration and intensity); any of which has a likely effect on the acute physiological response. Manipulating HIT appropriately is important, not only with respect to the expected middle- to long-term …\n\n[PMID:10331896] Stepto et al. 1999. Effects of different interval-training programs on cycling time-trial performance.\nAbstract: PURPOSE: We have investigated the effect of varying the intensity of interval training on 40-km time-trial performance in 20 male endurance cyclists (peak oxygen uptake 4.8+/-0.6 L x min(-1), mean +/- SD). METHODS: Cyclists performed a 25-kJ sprint test, an incremental test to determine peak aerobic power (PP) and a simulated 40-km time-trial on a Kingcycle ergometer. They were then randomly assigned to one of five types of interval-training session: 12x30 s at 175% PP, 12x60 s at 100% PP, 12x2 min at 90% PP, 8x4 min at 85% PP, or 4x8 min at 80% PP. Cyclists completed 6 sessions over 3 wk, in addition to their usual aerobic base training. All laboratory tests were then repeated. RESULTS: Performances in the time trial were highly reliable when controlled for training effects (coefficient of variation = 1.1%). The percent improvement in the time trial was modeled as a polynomial function of the rank order of the intensity of the training intervals, a procedure validated by simulation. The cubic trend was strong and statistically significant (overall correlation = 0.70, P = 0.005) and predicted greatest enhancement for the intervals performed at 85% PP (2.8%, 95% CI = 4.3-1.3%) and a…\n\n[PMID:16430681] Seiler & Kjerland 2006. Quantifying training intensity distribution in elite endurance athletes: is there evidence for an \"optimal\" distribution?\nAbstract: This study was designed to quantify the daily distribution of training intensity in a group of well-trained junior cross-country skiers and compare the results of three different methods of training intensity quantification. Eleven male athletes performed treadmill tests to exhaustion to determine heart rate and VO2 corresponding to ventilatory thresholds (VT1, VT2), maximal oxygen consumption (VO2max), and maximal heart rate. VT1 and VT2 were used to delineate three intensity zones. During the same time period, all training sessions (N=384, 37 strength training, 347 endurance) performed over 32 consecutive days were quantified using continuous heart rate registration and session Rating of Perceived Exertion (RPE). In addition, a subset of 60 consecutive training sessions was quantified using blood lactate measurements. Intensity distribution across endurance training sessions (n=318) was similar when based on heart rate analysis (75+/-3%, zone 1; 8+/-3%, zone 2; 17+/-4%, zone 3) or session RPE (76+/-4%, zone 1; 6+/-5%, zone 2; 18+/-7%, zone 3). Similarly, from measurements of 60 consecutive sessions, 71% were performed with <or=2.0 mM blood lactate, 7% between 2 and 4 mM, and 22% …\n\n[PMID:23197584] Hansen et al. 2012. Cyclists' improvement of pedaling efficacy and performance after heavy strength training.\nAbstract: The authors tested whether heavy strength training, including hip-flexion exercise, would reduce the extent of the phase in the crank revolution where negative or retarding crank torque occurs. Negative torque normally occurs in the upstroke phase when the leg is lifted by flexing the hip. Eighteen well-trained cyclists either performed 12 wk of heavy strength training in addition to their usual endurance training (E+S; n = 10) or merely continued their usual endurance training during the intervention period (E; n = 8). The strength training consisted of 4 lower body exercises (3 × 4-10 repetition maximum) performed twice a week. E+S enhanced cycling performance by 7%, which was more than in E (P = .02). Performance was determined as average power output in a 5-min all-out trial performed subsequent to 185 min of submaximal cycling. The performance enhancement, which has been reported previously, was here shown to be accompanied by improved pedaling efficacy during the all-out cycling. Thus, E+S shortened the phase where negative crank torque occurs by ~16°, corresponding to ~14%, which was more than in E (P = .002). In conclusion, adding heavy strength training to usual endurance …\n\nOUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:\n\n{\"protocolId\":\"<id_dal_catalogo>\",\"razionale\":\"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>\",\"paperUsati\":[\"<PMID1>\",\"<PMID2>\"]}\n\nVincoli:\n- protocolId DEVE essere uno degli id del catalogo\n- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale\n- Non inventare PMID: usa solo quelli forniti sopra"
+    },
+    {
+     "role": "user",
+     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: 165 bpm · Peso: 70 kg · Tier: Mid volume\n- CTL 0 · ATL 0 · TSB 0\n- Polarizzazione 28gg: easy —% / hard —% · volume 0min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\nNessuna attività bici negli ultimi 7 giorni.\n\nOGGI: sabato · DURATA DISPONIBILE: 240 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+    }
+   ],
+   "built": {
+    "title": "Z2 progressivo (build-up)",
+    "targetWatt": "165W → 190W → 215W",
+    "struttura": [
+     "Riscaldamento 8': partenza fluida",
+     "Blocco 1 (75'): costante 165W (65% FTP, conversazionale)",
+     "Blocco 2 (75'): salita a 190W (75% FTP, respirazione fluida)",
+     "Blocco 3 (77'): finale a 215W (85% FTP, stimolo sub-soglia)",
+     "Defaticamento 5': 140W"
+    ]
+   },
+   "razionale": "(razionale non fornito)",
+   "paperRefs": [
+    "20861519"
+   ],
+   "retrieved": [
+    {
+     "pmid": "23832851",
+     "score": 0.6599120175960899
+    },
+    {
+     "pmid": "10331896",
+     "score": 0.5865884600854132
+    },
+    {
+     "pmid": "16430681",
+     "score": 0.36661778755338326
+    },
+    {
+     "pmid": "23197584",
+     "score": 0.2932942300427066
+    }
+   ],
+   "fellBack": false
+  },
+  "empty-answer": {
+   "query": "cycling endurance training adaptation aerobic endurance Z2 base recovery pyramidal training intensity distribution trained well-trained cyclists block periodization short session",
+   "model": "qwen2.5:7b",
+   "messages": [
+    {
+     "role": "system",
+     "content": "Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.\n\nCATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):\n- z1_recovery: Recupero attivo Z1\n- z2_endurance: Z2 Aerobico\n- z2_long_intervals: Long ride Z2 + ride-at-the-end\n- sweet_spot_3x15: Sweet Spot 3×15'\n- threshold_3x10: Soglia 3×10'\n- seiler_4x8: Seiler 4×8' (FTP/VO2)\n- seiler_4x4: Seiler 4×4' (VO2max)\n- ronnestad_30_15: Rønnestad 30/15\n- over_under: Over-Under\n- z2_cadence_drills: Z2 + cadence drills\n- tempo_2x20: Tempo 2×20'\n- z2_progressive: Z2 progressivo\n- rest: Riposo\n\nREGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):\n1. TSB < -25: SEMPRE rest.\n2. TSB tra -25 e -15: z1_recovery.\n3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.\n4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.\n5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).\n6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.\n7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.\n8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).\n\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n- z2_endurance: piatto e costante, base pura, scelta neutra.\n- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.\n- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.\n\nREGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 \"ricchi\" (cadence_drills, progressive).\n\nPAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):\n[PMID:23832851] Buchheit & Laursen 2013. High-intensity interval training, solutions to the programming puzzle. Part II: anaerobic energy, neuromuscular load and practical applications.\nAbstract: High-intensity interval training (HIT) is a well-known, time-efficient training method for improving cardiorespiratory and metabolic function and, in turn, physical performance in athletes. HIT involves repeated short (<45 s) to long (2-4 min) bouts of rather high-intensity exercise interspersed with recovery periods (refer to the previously published first part of this review). While athletes have used 'classical' HIT formats for nearly a century (e.g. repetitions of 30 s of exercise interspersed with 30 s of rest, or 2-4-min interval repetitions ran at high but still submaximal intensities), there is today a surge of research interest focused on examining the effects of short sprints and all-out efforts, both in the field and in the laboratory. Prescription of HIT consists of the manipulation of at least nine variables (e.g. work interval intensity and duration, relief interval intensity and duration, exercise modality, number of repetitions, number of series, between-series recovery duration and intensity); any of which has a likely effect on the acute physiological response. Manipulating HIT appropriately is important, not only with respect to the expected middle- to long-term …\n\n[PMID:10331896] Stepto et al. 1999. Effects of different interval-training programs on cycling time-trial performance.\nAbstract: PURPOSE: We have investigated the effect of varying the intensity of interval training on 40-km time-trial performance in 20 male endurance cyclists (peak oxygen uptake 4.8+/-0.6 L x min(-1), mean +/- SD). METHODS: Cyclists performed a 25-kJ sprint test, an incremental test to determine peak aerobic power (PP) and a simulated 40-km time-trial on a Kingcycle ergometer. They were then randomly assigned to one of five types of interval-training session: 12x30 s at 175% PP, 12x60 s at 100% PP, 12x2 min at 90% PP, 8x4 min at 85% PP, or 4x8 min at 80% PP. Cyclists completed 6 sessions over 3 wk, in addition to their usual aerobic base training. All laboratory tests were then repeated. RESULTS: Performances in the time trial were highly reliable when controlled for training effects (coefficient of variation = 1.1%). The percent improvement in the time trial was modeled as a polynomial function of the rank order of the intensity of the training intervals, a procedure validated by simulation. The cubic trend was strong and statistically significant (overall correlation = 0.70, P = 0.005) and predicted greatest enhancement for the intervals performed at 85% PP (2.8%, 95% CI = 4.3-1.3%) and a…\n\n[PMID:16430681] Seiler & Kjerland 2006. Quantifying training intensity distribution in elite endurance athletes: is there evidence for an \"optimal\" distribution?\nAbstract: This study was designed to quantify the daily distribution of training intensity in a group of well-trained junior cross-country skiers and compare the results of three different methods of training intensity quantification. Eleven male athletes performed treadmill tests to exhaustion to determine heart rate and VO2 corresponding to ventilatory thresholds (VT1, VT2), maximal oxygen consumption (VO2max), and maximal heart rate. VT1 and VT2 were used to delineate three intensity zones. During the same time period, all training sessions (N=384, 37 strength training, 347 endurance) performed over 32 consecutive days were quantified using continuous heart rate registration and session Rating of Perceived Exertion (RPE). In addition, a subset of 60 consecutive training sessions was quantified using blood lactate measurements. Intensity distribution across endurance training sessions (n=318) was similar when based on heart rate analysis (75+/-3%, zone 1; 8+/-3%, zone 2; 17+/-4%, zone 3) or session RPE (76+/-4%, zone 1; 6+/-5%, zone 2; 18+/-7%, zone 3). Similarly, from measurements of 60 consecutive sessions, 71% were performed with <or=2.0 mM blood lactate, 7% between 2 and 4 mM, and 22% …\n\n[PMID:23197584] Hansen et al. 2012. Cyclists' improvement of pedaling efficacy and performance after heavy strength training.\nAbstract: The authors tested whether heavy strength training, including hip-flexion exercise, would reduce the extent of the phase in the crank revolution where negative or retarding crank torque occurs. Negative torque normally occurs in the upstroke phase when the leg is lifted by flexing the hip. Eighteen well-trained cyclists either performed 12 wk of heavy strength training in addition to their usual endurance training (E+S; n = 10) or merely continued their usual endurance training during the intervention period (E; n = 8). The strength training consisted of 4 lower body exercises (3 × 4-10 repetition maximum) performed twice a week. E+S enhanced cycling performance by 7%, which was more than in E (P = .02). Performance was determined as average power output in a 5-min all-out trial performed subsequent to 185 min of submaximal cycling. The performance enhancement, which has been reported previously, was here shown to be accompanied by improved pedaling efficacy during the all-out cycling. Thus, E+S shortened the phase where negative crank torque occurs by ~16°, corresponding to ~14%, which was more than in E (P = .002). In conclusion, adding heavy strength training to usual endurance …\n\nOUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:\n\n{\"protocolId\":\"<id_dal_catalogo>\",\"razionale\":\"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>\",\"paperUsati\":[\"<PMID1>\",\"<PMID2>\"]}\n\nVincoli:\n- protocolId DEVE essere uno degli id del catalogo\n- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale\n- Non inventare PMID: usa solo quelli forniti sopra"
+    },
+    {
+     "role": "user",
+     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: 165 bpm · Peso: 70 kg · Tier: High volume\n- CTL 21 · ATL 44 · TSB -23\n- Polarizzazione 28gg: easy 78% / hard 22% · volume 692min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: sabato · DURATA DISPONIBILE: 20 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+    }
+   ],
+   "built": {
+    "title": "Recupero attivo Z1",
+    "targetWatt": "115-140W (45-55% FTP)",
+    "struttura": [
+     "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+     "Lavoro 10': costante 115-140W, gambe sciolte, niente sforzi",
+     "Defaticamento 5': scendere progressivamente"
+    ]
+   },
+   "razionale": "Decisione fallback: TSB -23, polarizzazione hard 22% → Recupero attivo Z1",
+   "paperRefs": [],
+   "retrieved": [
+    {
+     "pmid": "23832851",
+     "score": 0.6599120175960899
+    },
+    {
+     "pmid": "10331896",
+     "score": 0.5865884600854132
+    },
+    {
+     "pmid": "16430681",
+     "score": 0.36661778755338326
+    },
+    {
+     "pmid": "23197584",
+     "score": 0.2932942300427066
+    }
+   ],
+   "fellBack": true
+  },
+  "source-already-cited": {
+   "query": "cycling endurance training adaptation aerobic endurance Z2 base recovery pyramidal training intensity distribution trained well-trained cyclists block periodization",
+   "model": "qwen2.5:7b",
+   "messages": [
+    {
+     "role": "system",
+     "content": "Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.\n\nCATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):\n- z1_recovery: Recupero attivo Z1\n- z2_endurance: Z2 Aerobico\n- z2_long_intervals: Long ride Z2 + ride-at-the-end\n- sweet_spot_3x15: Sweet Spot 3×15'\n- threshold_3x10: Soglia 3×10'\n- seiler_4x8: Seiler 4×8' (FTP/VO2)\n- seiler_4x4: Seiler 4×4' (VO2max)\n- ronnestad_30_15: Rønnestad 30/15\n- over_under: Over-Under\n- z2_cadence_drills: Z2 + cadence drills\n- tempo_2x20: Tempo 2×20'\n- z2_progressive: Z2 progressivo\n- rest: Riposo\n\nREGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):\n1. TSB < -25: SEMPRE rest.\n2. TSB tra -25 e -15: z1_recovery.\n3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.\n4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.\n5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).\n6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.\n7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.\n8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).\n\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n- z2_endurance: piatto e costante, base pura, scelta neutra.\n- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.\n- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.\n\nREGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 \"ricchi\" (cadence_drills, progressive).\n\nPAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):\n[PMID:23197584] Hansen et al. 2012. Cyclists' improvement of pedaling efficacy and performance after heavy strength training.\nAbstract: The authors tested whether heavy strength training, including hip-flexion exercise, would reduce the extent of the phase in the crank revolution where negative or retarding crank torque occurs. Negative torque normally occurs in the upstroke phase when the leg is lifted by flexing the hip. Eighteen well-trained cyclists either performed 12 wk of heavy strength training in addition to their usual endurance training (E+S; n = 10) or merely continued their usual endurance training during the intervention period (E; n = 8). The strength training consisted of 4 lower body exercises (3 × 4-10 repetition maximum) performed twice a week. E+S enhanced cycling performance by 7%, which was more than in E (P = .02). Performance was determined as average power output in a 5-min all-out trial performed subsequent to 185 min of submaximal cycling. The performance enhancement, which has been reported previously, was here shown to be accompanied by improved pedaling efficacy during the all-out cycling. Thus, E+S shortened the phase where negative crank torque occurs by ~16°, corresponding to ~14%, which was more than in E (P = .002). In conclusion, adding heavy strength training to usual endurance …\n\n[PMID:28292885] Vikmoen et al. 2017. Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.\nAbstract: The purpose of this study was to investigate the effects of adding heavy strength training to female duathletes' normal endurance training on both cycling and running performance. Nineteen well-trained female duathletes (VO2max cycling: 54 ± 3 ml∙kg-1∙min-1, VO2max running: 53 ± 3 ml∙kg-1∙min-1) were randomly assigned to either normal endurance training (E, n = 8) or normal endurance training combined with strength training (E+S, n = 11). The strength training consisted of four lower body exercises [3 × 4-10 repetition maximum (RM)] twice a week for 11 weeks. Running and cycling performance were assessed using 5-min all-out tests, performed immediately after prolonged periods of submaximal work (3 h cycling or 1.5 h running). E+S increased 1RM in half squat (45 ± 22%) and lean mass in the legs (3.1 ± 4.0%) more than E Performance during the 5-min all-out test increased in both cycling (7.0 ± 4.5%) and running (4.7 ± 6.0%) in E+S, whereas no changes occurred in E The changes in running performance were different between groups. E+S reduced oxygen consumption and heart rate during the final 2 h of prolonged cycling, whereas no changes occurred in E No changes occurred during the prol…\n\n[PMID:29848161] Mujika et al. 2018. An Integrated, Multifactorial Approach to Periodization for Optimal Performance in Individual and Team Sports.\nAbstract: Sports periodization has traditionally focused on the exercise aspect of athletic preparation, while neglecting the integration of other elements that can impact an athlete's readiness for peak competition performances. Integrated periodization allows the coordinated inclusion of multiple training components best suited for a given training phase into an athlete's program. The aim of this article is to review the available evidence underpinning integrated periodization, focusing on exercise training, recovery, nutrition, psychological skills, and skill acquisition as key factors by which athletic preparation can be periodized. The periodization of heat and altitude adaptation, body composition, and physical therapy is also considered. Despite recent criticism, various methods of exercise training periodization can contribute to performance enhancement in a variety of elite individual and team sports, such as soccer. In the latter, both physical and strategic periodization are useful tools for managing the heavy travel schedule, fatigue, and injuries that occur throughout a competitive season. Recovery interventions should be periodized (ie, withheld or emphasized) to influence acut…\n\n[PMID:22646668] Rønnestad et al. 2014. Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.\nAbstract: The purpose of this study was to compare the effect of two different methods of organizing endurance training in trained cyclists. One group of cyclists performed block periodization, wherein the first week constituted five sessions of high-intensity aerobic training (HIT), followed by 3 weeks of one weekly HIT session and focus on low-intensity training (LIT) (BP; n = 10, VO2max = 62 ± 2 mL/kg/min). Another group of cyclists performed a more traditional organization, with 4 weeks of two weekly HIT sessions interspersed with LIT (TRAD; n = 9, VO2max = 63 ± 2 mL/kg/min). Similar volumes of both HIT and LIT was performed in the two groups. While BP increased VO2max , peak power output (Wmax) and power output at 2 mmol/L [la(-)] by 4.6 ± 3.7%, 2.1 ± 2.8%, and 10 ± 12%, respectively (P < 0.05), no changes occurred in TRAD. BP showed relative improvements in VO2max compared with TRAD (P < 0.05). Mean effect size (ES) of the relative improvement in VO2max , Wmax , and power output at 2 mmol/L [la(-)] revealed large to moderate effects of BP training compared with TRAD training (ES = 1.34, ES = 0.85, and ES = 0.71, respectively). The present study suggests that block periodization of trai…\n\nOUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:\n\n{\"protocolId\":\"<id_dal_catalogo>\",\"razionale\":\"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>\",\"paperUsati\":[\"<PMID1>\",\"<PMID2>\"]}\n\nVincoli:\n- protocolId DEVE essere uno degli id del catalogo\n- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale\n- Non inventare PMID: usa solo quelli forniti sopra"
+    },
+    {
+     "role": "user",
+     "content": "STATO ATLETA:\n- FTP: 280W · LTHR: 165 bpm · Peso: 70 kg · Tier: High volume\n- CTL 20 · ATL 40 · TSB -21\n- Polarizzazione 28gg: easy 78% / hard 22% · volume 692min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: sabato · DURATA DISPONIBILE: 55 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+    }
+   ],
+   "built": {
+    "title": "Z2 + cadence drills",
+    "targetWatt": "195-225W base · 180W drill (cadenza 100+ rpm)",
+    "struttura": [
+     "Riscaldamento 10': progressivo",
+     "Z2 base 19': 195-225W (70-80% FTP), cadenza libera 85-95 rpm",
+     "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 180W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+     "Defaticamento 5': 155W"
+    ]
+   },
+   "razionale": "Cadenza [PMID:23197584].",
+   "paperRefs": [
+    "23197584"
+   ],
+   "retrieved": [
+    {
+     "pmid": "23197584",
+     "score": 0.5934424260562083
+    },
+    {
+     "pmid": "28292885",
+     "score": 0.5275043787166296
+    },
+    {
+     "pmid": "29848161",
+     "score": 0.4615663313770509
+    },
+    {
+     "pmid": "22646668",
+     "score": 0.3956282840374722
+    }
+   ],
+   "fellBack": false
+  },
+  "no-ftp": {
+   "noFtp": true,
+   "fetches": 0
+  },
+  "unknown-protocol": {
+   "query": "cycling endurance training adaptation overreaching recovery active rest pyramidal training intensity distribution trained well-trained cyclists block periodization long ride fatigue resistance",
+   "model": "qwen2.5:7b",
+   "messages": [
+    {
+     "role": "system",
+     "content": "Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.\n\nCATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):\n- z1_recovery: Recupero attivo Z1\n- z2_endurance: Z2 Aerobico\n- z2_long_intervals: Long ride Z2 + ride-at-the-end\n- sweet_spot_3x15: Sweet Spot 3×15'\n- threshold_3x10: Soglia 3×10'\n- seiler_4x8: Seiler 4×8' (FTP/VO2)\n- seiler_4x4: Seiler 4×4' (VO2max)\n- ronnestad_30_15: Rønnestad 30/15\n- over_under: Over-Under\n- z2_cadence_drills: Z2 + cadence drills\n- tempo_2x20: Tempo 2×20'\n- z2_progressive: Z2 progressivo\n- rest: Riposo\n\nREGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):\n1. TSB < -25: SEMPRE rest.\n2. TSB tra -25 e -15: z1_recovery.\n3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.\n4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.\n5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).\n6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.\n7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.\n8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).\n\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n- z2_endurance: piatto e costante, base pura, scelta neutra.\n- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.\n- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.\n\nREGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 \"ricchi\" (cadence_drills, progressive).\n\nPAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):\n[PMID:23197584] Hansen et al. 2012. Cyclists' improvement of pedaling efficacy and performance after heavy strength training.\nAbstract: The authors tested whether heavy strength training, including hip-flexion exercise, would reduce the extent of the phase in the crank revolution where negative or retarding crank torque occurs. Negative torque normally occurs in the upstroke phase when the leg is lifted by flexing the hip. Eighteen well-trained cyclists either performed 12 wk of heavy strength training in addition to their usual endurance training (E+S; n = 10) or merely continued their usual endurance training during the intervention period (E; n = 8). The strength training consisted of 4 lower body exercises (3 × 4-10 repetition maximum) performed twice a week. E+S enhanced cycling performance by 7%, which was more than in E (P = .02). Performance was determined as average power output in a 5-min all-out trial performed subsequent to 185 min of submaximal cycling. The performance enhancement, which has been reported previously, was here shown to be accompanied by improved pedaling efficacy during the all-out cycling. Thus, E+S shortened the phase where negative crank torque occurs by ~16°, corresponding to ~14%, which was more than in E (P = .002). In conclusion, adding heavy strength training to usual endurance …\n\n[PMID:28292885] Vikmoen et al. 2017. Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.\nAbstract: The purpose of this study was to investigate the effects of adding heavy strength training to female duathletes' normal endurance training on both cycling and running performance. Nineteen well-trained female duathletes (VO2max cycling: 54 ± 3 ml∙kg-1∙min-1, VO2max running: 53 ± 3 ml∙kg-1∙min-1) were randomly assigned to either normal endurance training (E, n = 8) or normal endurance training combined with strength training (E+S, n = 11). The strength training consisted of four lower body exercises [3 × 4-10 repetition maximum (RM)] twice a week for 11 weeks. Running and cycling performance were assessed using 5-min all-out tests, performed immediately after prolonged periods of submaximal work (3 h cycling or 1.5 h running). E+S increased 1RM in half squat (45 ± 22%) and lean mass in the legs (3.1 ± 4.0%) more than E Performance during the 5-min all-out test increased in both cycling (7.0 ± 4.5%) and running (4.7 ± 6.0%) in E+S, whereas no changes occurred in E The changes in running performance were different between groups. E+S reduced oxygen consumption and heart rate during the final 2 h of prolonged cycling, whereas no changes occurred in E No changes occurred during the prol…\n\n[PMID:29848161] Mujika et al. 2018. An Integrated, Multifactorial Approach to Periodization for Optimal Performance in Individual and Team Sports.\nAbstract: Sports periodization has traditionally focused on the exercise aspect of athletic preparation, while neglecting the integration of other elements that can impact an athlete's readiness for peak competition performances. Integrated periodization allows the coordinated inclusion of multiple training components best suited for a given training phase into an athlete's program. The aim of this article is to review the available evidence underpinning integrated periodization, focusing on exercise training, recovery, nutrition, psychological skills, and skill acquisition as key factors by which athletic preparation can be periodized. The periodization of heat and altitude adaptation, body composition, and physical therapy is also considered. Despite recent criticism, various methods of exercise training periodization can contribute to performance enhancement in a variety of elite individual and team sports, such as soccer. In the latter, both physical and strategic periodization are useful tools for managing the heavy travel schedule, fatigue, and injuries that occur throughout a competitive season. Recovery interventions should be periodized (ie, withheld or emphasized) to influence acut…\n\n[PMID:22646668] Rønnestad et al. 2014. Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.\nAbstract: The purpose of this study was to compare the effect of two different methods of organizing endurance training in trained cyclists. One group of cyclists performed block periodization, wherein the first week constituted five sessions of high-intensity aerobic training (HIT), followed by 3 weeks of one weekly HIT session and focus on low-intensity training (LIT) (BP; n = 10, VO2max = 62 ± 2 mL/kg/min). Another group of cyclists performed a more traditional organization, with 4 weeks of two weekly HIT sessions interspersed with LIT (TRAD; n = 9, VO2max = 63 ± 2 mL/kg/min). Similar volumes of both HIT and LIT was performed in the two groups. While BP increased VO2max , peak power output (Wmax) and power output at 2 mmol/L [la(-)] by 4.6 ± 3.7%, 2.1 ± 2.8%, and 10 ± 12%, respectively (P < 0.05), no changes occurred in TRAD. BP showed relative improvements in VO2max compared with TRAD (P < 0.05). Mean effect size (ES) of the relative improvement in VO2max , Wmax , and power output at 2 mmol/L [la(-)] revealed large to moderate effects of BP training compared with TRAD training (ES = 1.34, ES = 0.85, and ES = 0.71, respectively). The present study suggests that block periodization of trai…\n\nOUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:\n\n{\"protocolId\":\"<id_dal_catalogo>\",\"razionale\":\"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>\",\"paperUsati\":[\"<PMID1>\",\"<PMID2>\"]}\n\nVincoli:\n- protocolId DEVE essere uno degli id del catalogo\n- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale\n- Non inventare PMID: usa solo quelli forniti sopra"
+    },
+    {
+     "role": "user",
+     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: 165 bpm · Peso: 70 kg · Tier: High volume\n- CTL 22 · ATL 50 · TSB -28\n- Polarizzazione 28gg: easy 78% / hard 22% · volume 692min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: venerdì · DURATA DISPONIBILE: 120 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+    }
+   ],
+   "built": {
+    "title": "Riposo / mobilità",
+    "targetWatt": "—",
+    "struttura": [
+     "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+     "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+     "Il fitness cresce durante il riposo, non durante l'allenamento."
+    ]
+   },
+   "razionale": "Decisione fallback: TSB -28, polarizzazione hard 22% → Riposo",
+   "paperRefs": [],
+   "retrieved": [
+    {
+     "pmid": "23197584",
+     "score": 0.5934424260562083
+    },
+    {
+     "pmid": "28292885",
+     "score": 0.5275043787166296
+    },
+    {
+     "pmid": "29848161",
+     "score": 0.4615663313770509
+    },
+    {
+     "pmid": "22646668",
+     "score": 0.3956282840374722
+    }
+   ],
+   "fellBack": true
+  },
+  "number-rationale": {
+   "query": "cycling endurance training adaptation overreaching recovery active rest pyramidal training intensity distribution trained well-trained cyclists block periodization",
+   "model": "qwen2.5:7b",
+   "messages": [
+    {
+     "role": "system",
+     "content": "Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.\n\nCATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):\n- z1_recovery: Recupero attivo Z1\n- z2_endurance: Z2 Aerobico\n- z2_long_intervals: Long ride Z2 + ride-at-the-end\n- sweet_spot_3x15: Sweet Spot 3×15'\n- threshold_3x10: Soglia 3×10'\n- seiler_4x8: Seiler 4×8' (FTP/VO2)\n- seiler_4x4: Seiler 4×4' (VO2max)\n- ronnestad_30_15: Rønnestad 30/15\n- over_under: Over-Under\n- z2_cadence_drills: Z2 + cadence drills\n- tempo_2x20: Tempo 2×20'\n- z2_progressive: Z2 progressivo\n- rest: Riposo\n\nREGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):\n1. TSB < -25: SEMPRE rest.\n2. TSB tra -25 e -15: z1_recovery.\n3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.\n4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.\n5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).\n6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.\n7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.\n8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).\n\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n- z2_endurance: piatto e costante, base pura, scelta neutra.\n- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.\n- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.\n\nREGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 \"ricchi\" (cadence_drills, progressive).\n\nPAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):\n[PMID:23832851] Buchheit & Laursen 2013. High-intensity interval training, solutions to the programming puzzle. Part II: anaerobic energy, neuromuscular load and practical applications.\nAbstract: High-intensity interval training (HIT) is a well-known, time-efficient training method for improving cardiorespiratory and metabolic function and, in turn, physical performance in athletes. HIT involves repeated short (<45 s) to long (2-4 min) bouts of rather high-intensity exercise interspersed with recovery periods (refer to the previously published first part of this review). While athletes have used 'classical' HIT formats for nearly a century (e.g. repetitions of 30 s of exercise interspersed with 30 s of rest, or 2-4-min interval repetitions ran at high but still submaximal intensities), there is today a surge of research interest focused on examining the effects of short sprints and all-out efforts, both in the field and in the laboratory. Prescription of HIT consists of the manipulation of at least nine variables (e.g. work interval intensity and duration, relief interval intensity and duration, exercise modality, number of repetitions, number of series, between-series recovery duration and intensity); any of which has a likely effect on the acute physiological response. Manipulating HIT appropriately is important, not only with respect to the expected middle- to long-term …\n\n[PMID:10331896] Stepto et al. 1999. Effects of different interval-training programs on cycling time-trial performance.\nAbstract: PURPOSE: We have investigated the effect of varying the intensity of interval training on 40-km time-trial performance in 20 male endurance cyclists (peak oxygen uptake 4.8+/-0.6 L x min(-1), mean +/- SD). METHODS: Cyclists performed a 25-kJ sprint test, an incremental test to determine peak aerobic power (PP) and a simulated 40-km time-trial on a Kingcycle ergometer. They were then randomly assigned to one of five types of interval-training session: 12x30 s at 175% PP, 12x60 s at 100% PP, 12x2 min at 90% PP, 8x4 min at 85% PP, or 4x8 min at 80% PP. Cyclists completed 6 sessions over 3 wk, in addition to their usual aerobic base training. All laboratory tests were then repeated. RESULTS: Performances in the time trial were highly reliable when controlled for training effects (coefficient of variation = 1.1%). The percent improvement in the time trial was modeled as a polynomial function of the rank order of the intensity of the training intervals, a procedure validated by simulation. The cubic trend was strong and statistically significant (overall correlation = 0.70, P = 0.005) and predicted greatest enhancement for the intervals performed at 85% PP (2.8%, 95% CI = 4.3-1.3%) and a…\n\n[PMID:16430681] Seiler & Kjerland 2006. Quantifying training intensity distribution in elite endurance athletes: is there evidence for an \"optimal\" distribution?\nAbstract: This study was designed to quantify the daily distribution of training intensity in a group of well-trained junior cross-country skiers and compare the results of three different methods of training intensity quantification. Eleven male athletes performed treadmill tests to exhaustion to determine heart rate and VO2 corresponding to ventilatory thresholds (VT1, VT2), maximal oxygen consumption (VO2max), and maximal heart rate. VT1 and VT2 were used to delineate three intensity zones. During the same time period, all training sessions (N=384, 37 strength training, 347 endurance) performed over 32 consecutive days were quantified using continuous heart rate registration and session Rating of Perceived Exertion (RPE). In addition, a subset of 60 consecutive training sessions was quantified using blood lactate measurements. Intensity distribution across endurance training sessions (n=318) was similar when based on heart rate analysis (75+/-3%, zone 1; 8+/-3%, zone 2; 17+/-4%, zone 3) or session RPE (76+/-4%, zone 1; 6+/-5%, zone 2; 18+/-7%, zone 3). Similarly, from measurements of 60 consecutive sessions, 71% were performed with <or=2.0 mM blood lactate, 7% between 2 and 4 mM, and 22% …\n\n[PMID:23197584] Hansen et al. 2012. Cyclists' improvement of pedaling efficacy and performance after heavy strength training.\nAbstract: The authors tested whether heavy strength training, including hip-flexion exercise, would reduce the extent of the phase in the crank revolution where negative or retarding crank torque occurs. Negative torque normally occurs in the upstroke phase when the leg is lifted by flexing the hip. Eighteen well-trained cyclists either performed 12 wk of heavy strength training in addition to their usual endurance training (E+S; n = 10) or merely continued their usual endurance training during the intervention period (E; n = 8). The strength training consisted of 4 lower body exercises (3 × 4-10 repetition maximum) performed twice a week. E+S enhanced cycling performance by 7%, which was more than in E (P = .02). Performance was determined as average power output in a 5-min all-out trial performed subsequent to 185 min of submaximal cycling. The performance enhancement, which has been reported previously, was here shown to be accompanied by improved pedaling efficacy during the all-out cycling. Thus, E+S shortened the phase where negative crank torque occurs by ~16°, corresponding to ~14%, which was more than in E (P = .002). In conclusion, adding heavy strength training to usual endurance …\n\nOUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:\n\n{\"protocolId\":\"<id_dal_catalogo>\",\"razionale\":\"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>\",\"paperUsati\":[\"<PMID1>\",\"<PMID2>\"]}\n\nVincoli:\n- protocolId DEVE essere uno degli id del catalogo\n- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale\n- Non inventare PMID: usa solo quelli forniti sopra"
+    },
+    {
+     "role": "user",
+     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: 165 bpm · Peso: 70 kg · Tier: High volume\n- CTL 22 · ATL 50 · TSB -28\n- Polarizzazione 28gg: easy 78% / hard 22% · volume 692min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: venerdì · DURATA DISPONIBILE: 70 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+    }
+   ],
+   "built": {
+    "title": "Riposo / mobilità",
+    "targetWatt": "—",
+    "struttura": [
+     "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+     "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+     "Il fitness cresce durante il riposo, non durante l'allenamento."
+    ]
+   },
+   "razionale": 7,
+   "paperRefs": [],
+   "retrieved": [
+    {
+     "pmid": "23832851",
+     "score": 0.6599120175960899
+    },
+    {
+     "pmid": "10331896",
+     "score": 0.5865884600854132
+    },
+    {
+     "pmid": "16430681",
+     "score": 0.36661778755338326
+    },
+    {
+     "pmid": "23197584",
+     "score": 0.2932942300427066
+    }
+   ],
+   "fellBack": false
+  }
+ },
+ "catalog": {
+  "z1_recovery": {
+   "name": "Recupero attivo Z1",
+   "fontePMID": "32432383",
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 0,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "70-85W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro -10': costante 70-85W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "70-85W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro 10': costante 70-85W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "70-85W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro 50': costante 70-85W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "70-85W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro 230': costante 70-85W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 0,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "115-140W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro -10': costante 115-140W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "115-140W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro 10': costante 115-140W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "115-140W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro 50': costante 115-140W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "115-140W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro 230': costante 115-140W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 0,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "150-185W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro -10': costante 150-185W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "150-185W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro 10': costante 150-185W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "150-185W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro 50': costante 150-185W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Recupero attivo Z1",
+      "targetWatt": "150-185W (45-55% FTP)",
+      "struttura": [
+       "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
+       "Lavoro 230': costante 150-185W, gambe sciolte, niente sforzi",
+       "Defaticamento 5': scendere progressivamente"
+      ]
+     }
+    }
+   ]
+  },
+  "z2_endurance": {
+   "name": "Z2 Aerobico",
+   "fontePMID": "16573837",
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 0,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "105-120W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 85→105W",
+       "Lavoro -20': costante 105-120W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "105-120W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 85→105W",
+       "Lavoro 0': costante 105-120W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "105-120W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 85→105W",
+       "Lavoro 40': costante 105-120W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "105-120W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 85→105W",
+       "Lavoro 220': costante 105-120W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 0,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "175-200W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 140→175W",
+       "Lavoro -20': costante 175-200W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "175-200W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 140→175W",
+       "Lavoro 0': costante 175-200W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "175-200W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 140→175W",
+       "Lavoro 40': costante 175-200W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "175-200W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 140→175W",
+       "Lavoro 220': costante 175-200W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 0,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "235-265W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 185→235W",
+       "Lavoro -20': costante 235-265W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "235-265W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 185→235W",
+       "Lavoro 0': costante 235-265W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "235-265W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 185→235W",
+       "Lavoro 40': costante 235-265W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Z2 Aerobico (steady)",
+      "targetWatt": "235-265W (70-80% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva 185→235W",
+       "Lavoro 220': costante 235-265W, respirazione fluida (RPE 4-5/10)",
+       "Defaticamento 10': scendere gradualmente a 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "z2_long_intervals": {
+   "name": "Long ride Z2 + ride-at-the-end",
+   "fontePMID": "20030780",
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 0,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 105-120W · Intervalli 145W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base -36': costante 105-120W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 145W (95% FTP), recupero 3' @ 85W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 105-120W · Intervalli 145W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base -16': costante 105-120W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 145W (95% FTP), recupero 3' @ 85W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 105-120W · Intervalli 145W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base 24': costante 105-120W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 145W (95% FTP), recupero 3' @ 85W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 105-120W · Intervalli 145W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base 204': costante 105-120W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 145W (95% FTP), recupero 3' @ 85W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 0,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 175-200W · Intervalli 240W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base -36': costante 175-200W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 240W (95% FTP), recupero 3' @ 140W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 175-200W · Intervalli 240W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base -16': costante 175-200W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 240W (95% FTP), recupero 3' @ 140W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 175-200W · Intervalli 240W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base 24': costante 175-200W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 240W (95% FTP), recupero 3' @ 140W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 175-200W · Intervalli 240W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base 204': costante 175-200W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 240W (95% FTP), recupero 3' @ 140W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 0,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 235-265W · Intervalli 315W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base -36': costante 235-265W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 315W (95% FTP), recupero 3' @ 185W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 235-265W · Intervalli 315W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base -16': costante 235-265W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 315W (95% FTP), recupero 3' @ 185W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 235-265W · Intervalli 315W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base 24': costante 235-265W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 315W (95% FTP), recupero 3' @ 185W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Long ride Z2 + ride-at-the-end",
+      "targetWatt": "Base 235-265W · Intervalli 315W",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Base 204': costante 235-265W (70-80% FTP), nutrizione 60-90g CHO/h",
+       "Finale: 3 × 5' @ 315W (95% FTP), recupero 3' @ 185W tra ripetute — fatigue resistance",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "sweet_spot_3x15": {
+   "name": "Sweet Spot 3×15'",
+   "fontePMID": null,
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 49,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 50,
+     "built": {
+      "title": "Sweet Spot 2×15'",
+      "targetWatt": "130-140W (88-93% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva fino a soglia",
+       "2 × 15' @ 130-140W, recupero 5' @ 85W tra ripetute",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Sweet Spot 2×15'",
+      "targetWatt": "130-140W (88-93% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva fino a soglia",
+       "2 × 15' @ 130-140W, recupero 5' @ 85W tra ripetute",
+       "Defaticamento 15': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Sweet Spot 3×15'",
+      "targetWatt": "130-140W (88-93% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva fino a soglia",
+       "3 × 15' @ 130-140W, recupero 5' @ 85W tra ripetute",
+       "Defaticamento 175': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 49,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 50,
+     "built": {
+      "title": "Sweet Spot 2×15'",
+      "targetWatt": "220-235W (88-93% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva fino a soglia",
+       "2 × 15' @ 220-235W, recupero 5' @ 140W tra ripetute",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Sweet Spot 2×15'",
+      "targetWatt": "220-235W (88-93% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva fino a soglia",
+       "2 × 15' @ 220-235W, recupero 5' @ 140W tra ripetute",
+       "Defaticamento 15': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Sweet Spot 3×15'",
+      "targetWatt": "220-235W (88-93% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva fino a soglia",
+       "3 × 15' @ 220-235W, recupero 5' @ 140W tra ripetute",
+       "Defaticamento 175': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 49,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 50,
+     "built": {
+      "title": "Sweet Spot 2×15'",
+      "targetWatt": "295-310W (88-93% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva fino a soglia",
+       "2 × 15' @ 295-310W, recupero 5' @ 185W tra ripetute",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Sweet Spot 2×15'",
+      "targetWatt": "295-310W (88-93% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva fino a soglia",
+       "2 × 15' @ 295-310W, recupero 5' @ 185W tra ripetute",
+       "Defaticamento 15': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Sweet Spot 3×15'",
+      "targetWatt": "295-310W (88-93% FTP)",
+      "struttura": [
+       "Riscaldamento 10': salita progressiva fino a soglia",
+       "3 × 15' @ 295-310W, recupero 5' @ 185W tra ripetute",
+       "Defaticamento 175': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "threshold_3x10": {
+   "name": "Soglia 3×10'",
+   "fontePMID": null,
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 54,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 55,
+     "built": {
+      "title": "Soglia 3×10'",
+      "targetWatt": "145-150W (95-100% FTP)",
+      "struttura": [
+       "Riscaldamento 12': progressivo + 2-3 spin-up da 30\"",
+       "3 × 10' @ 145-150W, recupero 4' @ 85W",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Soglia 3×10'",
+      "targetWatt": "145-150W (95-100% FTP)",
+      "struttura": [
+       "Riscaldamento 12': progressivo + 2-3 spin-up da 30\"",
+       "3 × 10' @ 145-150W, recupero 4' @ 85W",
+       "Defaticamento 10': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Soglia 3×10'",
+      "targetWatt": "145-150W (95-100% FTP)",
+      "struttura": [
+       "Riscaldamento 12': progressivo + 2-3 spin-up da 30\"",
+       "3 × 10' @ 145-150W, recupero 4' @ 85W",
+       "Defaticamento 190': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 54,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 55,
+     "built": {
+      "title": "Soglia 3×10'",
+      "targetWatt": "240-250W (95-100% FTP)",
+      "struttura": [
+       "Riscaldamento 12': progressivo + 2-3 spin-up da 30\"",
+       "3 × 10' @ 240-250W, recupero 4' @ 140W",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Soglia 3×10'",
+      "targetWatt": "240-250W (95-100% FTP)",
+      "struttura": [
+       "Riscaldamento 12': progressivo + 2-3 spin-up da 30\"",
+       "3 × 10' @ 240-250W, recupero 4' @ 140W",
+       "Defaticamento 10': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Soglia 3×10'",
+      "targetWatt": "240-250W (95-100% FTP)",
+      "struttura": [
+       "Riscaldamento 12': progressivo + 2-3 spin-up da 30\"",
+       "3 × 10' @ 240-250W, recupero 4' @ 140W",
+       "Defaticamento 190': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 54,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 55,
+     "built": {
+      "title": "Soglia 3×10'",
+      "targetWatt": "315-335W (95-100% FTP)",
+      "struttura": [
+       "Riscaldamento 12': progressivo + 2-3 spin-up da 30\"",
+       "3 × 10' @ 315-335W, recupero 4' @ 185W",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Soglia 3×10'",
+      "targetWatt": "315-335W (95-100% FTP)",
+      "struttura": [
+       "Riscaldamento 12': progressivo + 2-3 spin-up da 30\"",
+       "3 × 10' @ 315-335W, recupero 4' @ 185W",
+       "Defaticamento 10': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Soglia 3×10'",
+      "targetWatt": "315-335W (95-100% FTP)",
+      "struttura": [
+       "Riscaldamento 12': progressivo + 2-3 spin-up da 30\"",
+       "3 × 10' @ 315-335W, recupero 4' @ 185W",
+       "Defaticamento 190': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "seiler_4x8": {
+   "name": "Seiler 4×8' (FTP/VO2)",
+   "fontePMID": "23539309",
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 59,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Seiler 4×8'",
+      "targetWatt": "160-165W (105-110% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" spin-up",
+       "4 × 8' @ 160-165W (regola d'oro: ultima ripetuta = prima), recupero 2' @ 85W",
+       "Defaticamento 7': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Seiler 4×8'",
+      "targetWatt": "160-165W (105-110% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" spin-up",
+       "4 × 8' @ 160-165W (regola d'oro: ultima ripetuta = prima), recupero 2' @ 85W",
+       "Defaticamento 187': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 59,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Seiler 4×8'",
+      "targetWatt": "265-275W (105-110% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" spin-up",
+       "4 × 8' @ 265-275W (regola d'oro: ultima ripetuta = prima), recupero 2' @ 140W",
+       "Defaticamento 7': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Seiler 4×8'",
+      "targetWatt": "265-275W (105-110% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" spin-up",
+       "4 × 8' @ 265-275W (regola d'oro: ultima ripetuta = prima), recupero 2' @ 140W",
+       "Defaticamento 187': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 59,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Seiler 4×8'",
+      "targetWatt": "350-365W (105-110% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" spin-up",
+       "4 × 8' @ 350-365W (regola d'oro: ultima ripetuta = prima), recupero 2' @ 185W",
+       "Defaticamento 7': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Seiler 4×8'",
+      "targetWatt": "350-365W (105-110% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" spin-up",
+       "4 × 8' @ 350-365W (regola d'oro: ultima ripetuta = prima), recupero 2' @ 185W",
+       "Defaticamento 187': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "seiler_4x4": {
+   "name": "Seiler 4×4' (VO2max)",
+   "fontePMID": "23539308",
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 47,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 48,
+     "built": {
+      "title": "Seiler 4×4' (VO2max)",
+      "targetWatt": "175-180W (115-120% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" all-out",
+       "4 × 4' @ 175-180W (sforzo massimale sostenuto), recupero 3' @ 85W",
+       "Defaticamento 8': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Seiler 4×4' (VO2max)",
+      "targetWatt": "175-180W (115-120% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" all-out",
+       "4 × 4' @ 175-180W (sforzo massimale sostenuto), recupero 3' @ 85W",
+       "Defaticamento 20': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Seiler 4×4' (VO2max)",
+      "targetWatt": "175-180W (115-120% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" all-out",
+       "4 × 4' @ 175-180W (sforzo massimale sostenuto), recupero 3' @ 85W",
+       "Defaticamento 200': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 47,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 48,
+     "built": {
+      "title": "Seiler 4×4' (VO2max)",
+      "targetWatt": "290-300W (115-120% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" all-out",
+       "4 × 4' @ 290-300W (sforzo massimale sostenuto), recupero 3' @ 140W",
+       "Defaticamento 8': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Seiler 4×4' (VO2max)",
+      "targetWatt": "290-300W (115-120% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" all-out",
+       "4 × 4' @ 290-300W (sforzo massimale sostenuto), recupero 3' @ 140W",
+       "Defaticamento 20': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Seiler 4×4' (VO2max)",
+      "targetWatt": "290-300W (115-120% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" all-out",
+       "4 × 4' @ 290-300W (sforzo massimale sostenuto), recupero 3' @ 140W",
+       "Defaticamento 200': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 47,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 48,
+     "built": {
+      "title": "Seiler 4×4' (VO2max)",
+      "targetWatt": "385-400W (115-120% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" all-out",
+       "4 × 4' @ 385-400W (sforzo massimale sostenuto), recupero 3' @ 185W",
+       "Defaticamento 8': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Seiler 4×4' (VO2max)",
+      "targetWatt": "385-400W (115-120% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" all-out",
+       "4 × 4' @ 385-400W (sforzo massimale sostenuto), recupero 3' @ 185W",
+       "Defaticamento 20': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Seiler 4×4' (VO2max)",
+      "targetWatt": "385-400W (115-120% FTP)",
+      "struttura": [
+       "Riscaldamento 15': progressivo + 3 × 30\" all-out",
+       "4 × 4' @ 385-400W (sforzo massimale sostenuto), recupero 3' @ 185W",
+       "Defaticamento 200': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "ronnestad_30_15": {
+   "name": "Rønnestad 30/15",
+   "fontePMID": "32432383",
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 54,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 55,
+     "built": {
+      "title": "Rønnestad 30/15",
+      "targetWatt": "160W on · 75W off",
+      "struttura": [
+       "Riscaldamento 15': progressivo",
+       "3 set × 12 × (30\" @ 160W / 15\" @ 75W), recupero 3' @ 85W tra set",
+       "Defaticamento 7': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Rønnestad 30/15",
+      "targetWatt": "160W on · 75W off",
+      "struttura": [
+       "Riscaldamento 15': progressivo",
+       "3 set × 12 × (30\" @ 160W / 15\" @ 75W), recupero 3' @ 85W tra set",
+       "Defaticamento 12': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Rønnestad 30/15",
+      "targetWatt": "160W on · 75W off",
+      "struttura": [
+       "Riscaldamento 15': progressivo",
+       "3 set × 12 × (30\" @ 160W / 15\" @ 75W), recupero 3' @ 85W tra set",
+       "Defaticamento 192': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 54,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 55,
+     "built": {
+      "title": "Rønnestad 30/15",
+      "targetWatt": "265W on · 125W off",
+      "struttura": [
+       "Riscaldamento 15': progressivo",
+       "3 set × 12 × (30\" @ 265W / 15\" @ 125W), recupero 3' @ 140W tra set",
+       "Defaticamento 7': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Rønnestad 30/15",
+      "targetWatt": "265W on · 125W off",
+      "struttura": [
+       "Riscaldamento 15': progressivo",
+       "3 set × 12 × (30\" @ 265W / 15\" @ 125W), recupero 3' @ 140W tra set",
+       "Defaticamento 12': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Rønnestad 30/15",
+      "targetWatt": "265W on · 125W off",
+      "struttura": [
+       "Riscaldamento 15': progressivo",
+       "3 set × 12 × (30\" @ 265W / 15\" @ 125W), recupero 3' @ 140W tra set",
+       "Defaticamento 192': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 54,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 55,
+     "built": {
+      "title": "Rønnestad 30/15",
+      "targetWatt": "350W on · 165W off",
+      "struttura": [
+       "Riscaldamento 15': progressivo",
+       "3 set × 12 × (30\" @ 350W / 15\" @ 165W), recupero 3' @ 185W tra set",
+       "Defaticamento 7': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Rønnestad 30/15",
+      "targetWatt": "350W on · 165W off",
+      "struttura": [
+       "Riscaldamento 15': progressivo",
+       "3 set × 12 × (30\" @ 350W / 15\" @ 165W), recupero 3' @ 185W tra set",
+       "Defaticamento 12': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Rønnestad 30/15",
+      "targetWatt": "350W on · 165W off",
+      "struttura": [
+       "Riscaldamento 15': progressivo",
+       "3 set × 12 × (30\" @ 350W / 15\" @ 165W), recupero 3' @ 185W tra set",
+       "Defaticamento 192': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "over_under": {
+   "name": "Over-Under",
+   "fontePMID": null,
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 63,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 64,
+     "built": {
+      "title": "Over-Under 3 blocchi",
+      "targetWatt": "Over 160W · Under 145W",
+      "struttura": [
+       "Riscaldamento 12': progressivo",
+       "3 blocchi × [3 × (2' @ 160W + 2' @ 145W)] continuo, recupero 5' @ 85W tra blocchi",
+       "Defaticamento 6': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Over-Under 3 blocchi",
+      "targetWatt": "Over 160W · Under 145W",
+      "struttura": [
+       "Riscaldamento 12': progressivo",
+       "3 blocchi × [3 × (2' @ 160W + 2' @ 145W)] continuo, recupero 5' @ 85W tra blocchi",
+       "Defaticamento 182': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 63,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 64,
+     "built": {
+      "title": "Over-Under 3 blocchi",
+      "targetWatt": "Over 265W · Under 240W",
+      "struttura": [
+       "Riscaldamento 12': progressivo",
+       "3 blocchi × [3 × (2' @ 265W + 2' @ 240W)] continuo, recupero 5' @ 140W tra blocchi",
+       "Defaticamento 6': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Over-Under 3 blocchi",
+      "targetWatt": "Over 265W · Under 240W",
+      "struttura": [
+       "Riscaldamento 12': progressivo",
+       "3 blocchi × [3 × (2' @ 265W + 2' @ 240W)] continuo, recupero 5' @ 140W tra blocchi",
+       "Defaticamento 182': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 63,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 64,
+     "built": {
+      "title": "Over-Under 3 blocchi",
+      "targetWatt": "Over 350W · Under 315W",
+      "struttura": [
+       "Riscaldamento 12': progressivo",
+       "3 blocchi × [3 × (2' @ 350W + 2' @ 315W)] continuo, recupero 5' @ 185W tra blocchi",
+       "Defaticamento 6': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Over-Under 3 blocchi",
+      "targetWatt": "Over 350W · Under 315W",
+      "struttura": [
+       "Riscaldamento 12': progressivo",
+       "3 blocchi × [3 × (2' @ 350W + 2' @ 315W)] continuo, recupero 5' @ 185W tra blocchi",
+       "Defaticamento 182': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "z2_cadence_drills": {
+   "name": "Z2 + cadence drills",
+   "fontePMID": "23197584",
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 45,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 46,
+     "built": {
+      "title": "Z2 + cadence drills",
+      "targetWatt": "105-120W base · 100W drill (cadenza 100+ rpm)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Z2 base 10': 105-120W (70-80% FTP), cadenza libera 85-95 rpm",
+       "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 100W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Z2 + cadence drills",
+      "targetWatt": "105-120W base · 100W drill (cadenza 100+ rpm)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Z2 base 24': 105-120W (70-80% FTP), cadenza libera 85-95 rpm",
+       "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 100W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Z2 + cadence drills",
+      "targetWatt": "105-120W base · 100W drill (cadenza 100+ rpm)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Z2 base 204': 105-120W (70-80% FTP), cadenza libera 85-95 rpm",
+       "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 100W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 45,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 46,
+     "built": {
+      "title": "Z2 + cadence drills",
+      "targetWatt": "175-200W base · 165W drill (cadenza 100+ rpm)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Z2 base 10': 175-200W (70-80% FTP), cadenza libera 85-95 rpm",
+       "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 165W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Z2 + cadence drills",
+      "targetWatt": "175-200W base · 165W drill (cadenza 100+ rpm)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Z2 base 24': 175-200W (70-80% FTP), cadenza libera 85-95 rpm",
+       "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 165W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Z2 + cadence drills",
+      "targetWatt": "175-200W base · 165W drill (cadenza 100+ rpm)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Z2 base 204': 175-200W (70-80% FTP), cadenza libera 85-95 rpm",
+       "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 165W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 45,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 46,
+     "built": {
+      "title": "Z2 + cadence drills",
+      "targetWatt": "235-265W base · 215W drill (cadenza 100+ rpm)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Z2 base 10': 235-265W (70-80% FTP), cadenza libera 85-95 rpm",
+       "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 215W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Z2 + cadence drills",
+      "targetWatt": "235-265W base · 215W drill (cadenza 100+ rpm)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Z2 base 24': 235-265W (70-80% FTP), cadenza libera 85-95 rpm",
+       "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 215W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Z2 + cadence drills",
+      "targetWatt": "235-265W base · 215W drill (cadenza 100+ rpm)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "Z2 base 204': 235-265W (70-80% FTP), cadenza libera 85-95 rpm",
+       "Drill 3 × 5' a cadenza alta (100-110 rpm) @ 215W (65% FTP, mantieni potenza), rec 3' a cadenza normale",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "tempo_2x20": {
+   "name": "Tempo 2×20'",
+   "fontePMID": null,
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 59,
+     "built": null
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Tempo 2×20'",
+      "targetWatt": "125-130W (83-87% FTP)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "2 × 20' @ 125-130W (tempo continuo, RPE 6/10), recupero 5' @ 85W",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Tempo 2×20'",
+      "targetWatt": "125-130W (83-87% FTP)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "2 × 20' @ 125-130W (tempo continuo, RPE 6/10), recupero 5' @ 85W",
+       "Defaticamento 185': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 59,
+     "built": null
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Tempo 2×20'",
+      "targetWatt": "210-220W (83-87% FTP)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "2 × 20' @ 210-220W (tempo continuo, RPE 6/10), recupero 5' @ 140W",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Tempo 2×20'",
+      "targetWatt": "210-220W (83-87% FTP)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "2 × 20' @ 210-220W (tempo continuo, RPE 6/10), recupero 5' @ 140W",
+       "Defaticamento 185': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 59,
+     "built": null
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Tempo 2×20'",
+      "targetWatt": "275-290W (83-87% FTP)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "2 × 20' @ 275-290W (tempo continuo, RPE 6/10), recupero 5' @ 185W",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Tempo 2×20'",
+      "targetWatt": "275-290W (83-87% FTP)",
+      "struttura": [
+       "Riscaldamento 10': progressivo",
+       "2 × 20' @ 275-290W (tempo continuo, RPE 6/10), recupero 5' @ 185W",
+       "Defaticamento 185': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "z2_progressive": {
+   "name": "Z2 progressivo",
+   "fontePMID": "20861519",
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 0,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "100W → 115W → 130W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (-5'): costante 100W (65% FTP, conversazionale)",
+       "Blocco 2 (-5'): salita a 115W (75% FTP, respirazione fluida)",
+       "Blocco 3 (-3'): finale a 130W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "100W → 115W → 130W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (2'): costante 100W (65% FTP, conversazionale)",
+       "Blocco 2 (2'): salita a 115W (75% FTP, respirazione fluida)",
+       "Blocco 3 (3'): finale a 130W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "100W → 115W → 130W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (15'): costante 100W (65% FTP, conversazionale)",
+       "Blocco 2 (15'): salita a 115W (75% FTP, respirazione fluida)",
+       "Blocco 3 (17'): finale a 130W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "100W → 115W → 130W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (75'): costante 100W (65% FTP, conversazionale)",
+       "Blocco 2 (75'): salita a 115W (75% FTP, respirazione fluida)",
+       "Blocco 3 (77'): finale a 130W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 85W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 0,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "165W → 190W → 215W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (-5'): costante 165W (65% FTP, conversazionale)",
+       "Blocco 2 (-5'): salita a 190W (75% FTP, respirazione fluida)",
+       "Blocco 3 (-3'): finale a 215W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "165W → 190W → 215W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (2'): costante 165W (65% FTP, conversazionale)",
+       "Blocco 2 (2'): salita a 190W (75% FTP, respirazione fluida)",
+       "Blocco 3 (3'): finale a 215W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "165W → 190W → 215W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (15'): costante 165W (65% FTP, conversazionale)",
+       "Blocco 2 (15'): salita a 190W (75% FTP, respirazione fluida)",
+       "Blocco 3 (17'): finale a 215W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "165W → 190W → 215W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (75'): costante 165W (65% FTP, conversazionale)",
+       "Blocco 2 (75'): salita a 190W (75% FTP, respirazione fluida)",
+       "Blocco 3 (77'): finale a 215W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 140W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 0,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "215W → 250W → 285W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (-5'): costante 215W (65% FTP, conversazionale)",
+       "Blocco 2 (-5'): salita a 250W (75% FTP, respirazione fluida)",
+       "Blocco 3 (-3'): finale a 285W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "215W → 250W → 285W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (2'): costante 215W (65% FTP, conversazionale)",
+       "Blocco 2 (2'): salita a 250W (75% FTP, respirazione fluida)",
+       "Blocco 3 (3'): finale a 285W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "215W → 250W → 285W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (15'): costante 215W (65% FTP, conversazionale)",
+       "Blocco 2 (15'): salita a 250W (75% FTP, respirazione fluida)",
+       "Blocco 3 (17'): finale a 285W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Z2 progressivo (build-up)",
+      "targetWatt": "215W → 250W → 285W",
+      "struttura": [
+       "Riscaldamento 8': partenza fluida",
+       "Blocco 1 (75'): costante 215W (65% FTP, conversazionale)",
+       "Blocco 2 (75'): salita a 250W (75% FTP, respirazione fluida)",
+       "Blocco 3 (77'): finale a 285W (85% FTP, stimolo sub-soglia)",
+       "Defaticamento 5': 185W"
+      ]
+     }
+    }
+   ]
+  },
+  "rest": {
+   "name": "Riposo",
+   "fontePMID": null,
+   "builds": [
+    {
+     "ftp": 150,
+     "duration": 0,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 20,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 60,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 150,
+     "duration": 240,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 0,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 20,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 60,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 250,
+     "duration": 240,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 0,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 20,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 60,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    },
+    {
+     "ftp": 333,
+     "duration": 240,
+     "built": {
+      "title": "Riposo / mobilità",
+      "targetWatt": "—",
+      "struttura": [
+       "Sonno + idratazione + nutrienti (recupero attivo del sistema nervoso).",
+       "Mobilità leggera 15-20' opzionale: foam rolling, hip flexor stretch, 90/90 rotation.",
+       "Il fitness cresce durante il riposo, non durante l'allenamento."
+      ]
+     }
+    }
+   ]
+  }
+ },
+ "fallback": [
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "rest",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "z1_recovery",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_cadence_drills",
+  "z2_cadence_drills",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_cadence_drills",
+  "z2_cadence_drills",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_cadence_drills",
+  "z2_cadence_drills",
+  "z2_long_intervals",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "sweet_spot_3x15",
+  "z2_long_intervals",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "z2_long_intervals",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "z2_long_intervals",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_cadence_drills",
+  "z2_cadence_drills",
+  "z2_long_intervals",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "z2_long_intervals",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "z2_long_intervals",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "z2_long_intervals",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "z2_long_intervals",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "z2_long_intervals",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_cadence_drills",
+  "z2_cadence_drills",
+  "z2_long_intervals",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "z2_long_intervals",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "z2_long_intervals",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "z2_long_intervals",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "z2_long_intervals",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "threshold_3x10",
+  "z2_long_intervals",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_cadence_drills",
+  "z2_cadence_drills",
+  "z2_long_intervals",
+  "seiler_4x4",
+  "seiler_4x4",
+  "seiler_4x4",
+  "seiler_4x4",
+  "seiler_4x4",
+  "z2_long_intervals",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "z2_long_intervals",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "seiler_4x8",
+  "z2_long_intervals",
+  "seiler_4x4",
+  "seiler_4x4",
+  "seiler_4x4",
+  "seiler_4x4",
+  "seiler_4x4",
+  "z2_long_intervals",
+  "seiler_4x4",
+  "seiler_4x4",
+  "seiler_4x4",
+  "seiler_4x4",
+  "seiler_4x4",
+  "z2_long_intervals",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_progressive",
+  "z2_cadence_drills",
+  "z2_cadence_drills",
+  "z2_long_intervals"
+ ]
+}

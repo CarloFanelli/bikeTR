@@ -1,0 +1,98 @@
+{
+  "_comment": "Casi del Coach completo. Gli embedding del finto indice dei paper sono vettori unitari (il paper i ha 1 nella posizione i): la somiglianza con una query dipende solo dal suo valore in quella posizione. In 'tieQuery' i paper 1 e 7 hanno lo stesso punteggio.",
+  "model": "qwen2.5:7b",
+  "queries": {
+    "tieQuery": [10, 8, 1, 7, 0, 0, 0, 8, 0, 0],
+    "middle": [0, 0, 6, 0, 9, 8, 7, 0, 0, 0],
+    "tail": [5, 0, 0, 0, 4, 0, 0, 0, 9, 8]
+  },
+  "cases": [
+    {
+      "name": "valid-answer",
+      "scenario": "base",
+      "timeZone": "Europe/Rome",
+      "duration": 60,
+      "query": "tieQuery",
+      "answer": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"TSB positivo [PMID:20861519].\",\"paperUsati\":[\"20861519\",99999999,16430681,\"16430681\"]}"
+    },
+    {
+      "name": "too-short",
+      "scenario": "base",
+      "timeZone": "Europe/Rome",
+      "duration": 45,
+      "query": "tieQuery",
+      "answer": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Forma buona.\",\"paperUsati\":[]}"
+    },
+    {
+      "name": "too-short-keeps-source",
+      "scenario": "base",
+      "timeZone": "Europe/Rome",
+      "duration": 45,
+      "query": "middle",
+      "answer": "{\"protocolId\":\"z2_cadence_drills\",\"razionale\":\"Cadenza.\",\"paperUsati\":[]}"
+    },
+    {
+      "name": "not-json",
+      "scenario": "noLthr",
+      "timeZone": "Europe/Rome",
+      "duration": 90,
+      "query": "middle",
+      "answer": "Penso che oggi sia meglio un lavoro aerobico."
+    },
+    {
+      "name": "json-in-text",
+      "scenario": "noActivities",
+      "timeZone": "Europe/Rome",
+      "duration": 240,
+      "query": "tail",
+      "answer": "Ecco la scelta:\n```json\n{\"protocolId\": \"z2_progressive\", \"razionale\": \"\", \"paperUsati\": \"20861519\"}\n```\nBuon allenamento!"
+    },
+    {
+      "name": "unknown-protocol",
+      "scenario": "base",
+      "timeZone": "America/New_York",
+      "duration": 120,
+      "query": "middle",
+      "answer": "{\"protocolId\":\"vo2_extreme\",\"razionale\":\"x\",\"paperUsati\":[]}"
+    },
+    {
+      "name": "empty-answer",
+      "scenario": "base",
+      "timeZone": "Europe/Rome",
+      "duration": 20,
+      "query": "tail",
+      "answer": ""
+    },
+    {
+      "name": "source-already-cited",
+      "scenario": "ftp280",
+      "timeZone": "Europe/Rome",
+      "duration": 55,
+      "query": "middle",
+      "answer": "{\"protocolId\":\"z2_cadence_drills\",\"razionale\":\"Cadenza [PMID:23197584].\",\"paperUsati\":[\"23197584\"]}"
+    },
+    {
+      "name": "number-rationale",
+      "scenario": "base",
+      "timeZone": "America/New_York",
+      "duration": 70,
+      "query": "tail",
+      "answer": "{\"protocolId\": \"rest\", \"razionale\": 7}"
+    },
+    {
+      "name": "no-ftp",
+      "scenario": "noFtp",
+      "timeZone": "Europe/Rome",
+      "duration": 60,
+      "query": "tieQuery",
+      "answer": "{\"protocolId\":\"rest\"}"
+    }
+  ],
+  "catalogFtps": [150, 250, 333],
+  "catalogDurations": [20, 60, 240],
+  "fallback": {
+    "tsb": [-30, -26, -25, -16, -15, -10, 0, 5, 6, 10, 11],
+    "hardPct": [null, 10, 14, 15, 30, 31],
+    "durations": [45, 60, 70, 71, 119, 120]
+  }
+}

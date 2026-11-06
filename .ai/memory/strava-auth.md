@@ -6,7 +6,7 @@ How BikeTR connects to Strava: where the client credentials live, who holds the 
 
 ### Auth server
 The small server-side service that reads the Strava client credentials (Client ID, client secret) from `.env`, runs the OAuth login and stores the **Strava tokens**. It hands the browser short-lived access tokens; the client secret and refresh token never leave it.
-_Avoid_: "backend" (reserved for the future AI-agent service, which may reuse the tokens), "proxy" (it does not forward Strava API calls).
+_Avoid_: "backend" (generic: the **Coach service** runs on the server too and asks this server for tokens), "proxy" (it does not forward Strava API calls).
 
 ### Strava tokens
 The refresh token and the access token (with its expiry) obtained by authorizing BikeTR on Strava; held by the **Auth server**, the refresh token is replaced on each renewal. Distinct from the client credentials (Client ID and client secret), which come from `.env` and identify the app, not the user.
