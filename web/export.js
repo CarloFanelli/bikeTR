@@ -6,7 +6,7 @@
 //
 // Rate limit Strava: 100 req / 15 min, 1000/giorno. Throttle automatico a ~6.5 req/min.
 import {
-  api, getAccessToken, loadSettings,
+  AuthError, fetchActivities, fetchActivity, fetchActivityStreams, loadSettings,
   loadStreamsCache, saveStreamsCache, computeStreamsMetrics,
   fmtKm, fmtTime,
 } from './strava.js';
@@ -15,34 +15,22 @@ import {
 // 100 req in 900 s → 9 s/req. Usiamo 10 s per sicurezza.
 const THROTTLE_MS = 10000;
 const PAGE_SIZE = 200; // max consentito da Strava per /athlete/activities
+// Streams completi: più serie di quelle che servono alle metriche.
+const FULL_STREAMS = 'time,heartrate,watts,cadence,velocity_smooth,altitude,distance,temp,grade_smooth';
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 // Paginazione completa dello storico.
-export async function fetchAllActivities(token, onProgress) {
+async function fetchAllActivities(onProgress) {
   const all = [];
   for (let page = 1; page <= 200; page++) {
-    const batch = await api(`/athlete/activities?per_page=${PAGE_SIZE}&page=${page}`, token);
+    const batch = await fetchActivities(PAGE_SIZE, page);
     if (!Array.isArray(batch) || batch.length === 0) break;
     all.push(...batch);
     onProgress?.(all.length, page);
     if (batch.length < PAGE_SIZE) break;
   }
   return all;
-}
-
-// Dettaglio per attività (segment_efforts, splits, description, gear...).
-export async function fetchActivityDetail(activityId, token) {
-  return api(`/activities/${activityId}?include_all_efforts=true`, token);
-}
-
-// Streams completi (più campi rispetto al fetchActivityStreams di strava.js).
-export async function fetchActivityStreamsFull(activityId, token) {
-  const keys = 'time,heartrate,watts,cadence,velocity_smooth,altitude,distance,temp,grade_smooth';
-  const url = `https://www.strava.com/api/v3/activities/${activityId}/streams?keys=${keys}&key_by_type=true`;
-  const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
-  if (!res.ok) throw new Error('streams ' + activityId + ': ' + res.status);
-  return res.json();
 }
 
 // Snellisce un summary activity rimuovendo campi rumorosi/ridondanti.
@@ -210,6 +198,8 @@ async function throttledQueue(items, fn, onProgress) {
     try {
       results.push({ ok: true, value: await fn(items[i], i) });
     } catch (e) {
+      // Senza accesso a Strava le richieste successive fallirebbero tutte.
+      if (e instanceof AuthError) throw e;
       results.push({ ok: false, error: e.message });
       // Su 429 (rate limit) aspetta più a lungo
       if (e.message.includes('429')) {
@@ -378,9 +368,8 @@ export async function openExportDialog({ athlete, stats }) {
   // Step 1: conta le attività (paginazione full).
   let allActivities = [];
   try {
-    const token = await getAccessToken();
     $('export-stats').textContent = 'Conto le attività…';
-    allActivities = await fetchAllActivities(token, (done, page) => {
+    allActivities = await fetchAllActivities((done, page) => {
       $('export-stats').textContent = `Caricate ${done} attività (pagina ${page})…`;
     });
     const dates = allActivities.map(a => a.start_date_local).filter(Boolean).sort();
@@ -393,11 +382,12 @@ export async function openExportDialog({ athlete, stats }) {
     $('est-max').textContent = `— ${eM.calls} chiamate API · ~${eM.minutes} min`;
     $('export-go').disabled = false;
   } catch (e) {
+    if (e.code === 'not_connected') return window.location.reload();
     $('export-stats').innerHTML = `<span class="err">Errore: ${e.message}</span>`;
     return;
   }
 
-  $('export-go').onclick = async () => {
+  const runExport = async () => {
     const mode = document.querySelector('input[name=export-mode]:checked')?.value || 'compact';
     const fromStr = $('export-from').value;
     const toStr = $('export-to').value;
@@ -430,8 +420,7 @@ export async function openExportDialog({ athlete, stats }) {
     $('export-cancel').textContent = 'Chiudi (continua in background)';
     $('export-progress-bar').style.display = 'block';
 
-    // Step 2: arricchimento per attività. Il token si chiede a ogni richiesta:
-    // un export lungo dura più di un token di accesso.
+    // Step 2: arricchimento per attività (ogni richiesta chiede il suo token di accesso).
     const detailCache = {};       // id → detailExtra
     const streamsCache = loadStreamsCache(); // mantiene anche metriche
     const streamsRaw = {};        // id → streamsExtract (solo modalità max)
@@ -440,7 +429,7 @@ export async function openExportDialog({ athlete, stats }) {
       const needDetail = acts.filter(a => !detailCache[a.id]);
       $('export-progress').textContent = `Scarico dettagli (${needDetail.length})…`;
       await throttledQueue(needDetail, async (a) => {
-        const d = await fetchActivityDetail(a.id, await getAccessToken());
+        const d = await fetchActivity(a.id, { allEfforts: true });
         detailCache[a.id] = detailExtra(d);
         return d;
       }, (done, total, msg) => {
@@ -458,7 +447,7 @@ export async function openExportDialog({ athlete, stats }) {
       const needStreams = acts.filter(a => !streamsRaw[a.id]);
       $('export-progress').textContent = `Scarico streams (${needStreams.length})…`;
       await throttledQueue(needStreams, async (a) => {
-        const s = await fetchActivityStreamsFull(a.id, await getAccessToken());
+        const s = await fetchActivityStreams(a.id, FULL_STREAMS);
         streamsRaw[a.id] = streamsExtract(s);
         // Aggiorna anche cache metriche derivate
         try {
@@ -503,6 +492,13 @@ export async function openExportDialog({ athlete, stats }) {
     $('export-go').textContent = 'Esporta di nuovo';
     $('export-cancel').textContent = 'Chiudi';
   };
+  // Senza accesso a Strava l'export si ferma: se scollegati la pagina ricaricata
+  // mostra "Collega Strava", altrimenti il messaggio, e si può riprovare.
+  $('export-go').onclick = () => runExport().catch((e) => {
+    if (e.code === 'not_connected') return window.location.reload();
+    $('export-progress').textContent = '❌ ' + e.message;
+    $('export-go').disabled = false;
+  });
 }
 
 // Init: aggancia il FAB.

@@ -101,7 +101,7 @@ docker compose down
 docker compose down -v
 ```
 
-**Disconnect** with the "Disconnetti da Strava" button at the bottom of the page: it deletes the Strava tokens held by the auth server and the rides and ride details the Coach service saved. A tab that was already open keeps the access token it holds and can still read Strava until it reloads or the token expires (at most 6 hours).
+**Disconnect** with the "Disconnetti da Strava" button at the bottom of the page: it deletes the Strava tokens held by the auth server and the rides and ride details the Coach service saved. A tab that was already open loses access too: its next Strava download sends it back to the **Collega Strava** screen.
 
 ## 5. AI Coach
 
@@ -150,7 +150,7 @@ The Coach works without any setup: Docker runs Ollama and downloads the two mode
 
 ## 7. localStorage layout
 
-All keys written by the app (see `safeLoad`/`safeSave` in `web/strava.js`). The Strava tokens are not here: the auth server keeps them.
+All keys written by the app (see `safeLoad`/`safeSave` in `web/src/data/storage.ts`). The Strava tokens are not here: the auth server keeps them.
 
 | Key | Type | Written by | Contents |
 |---|---|---|---|
@@ -194,13 +194,15 @@ browser ──► web (nginx, http://localhost:5050)
 ollama-pull: downloads the missing models at start, then exits
 ```
 
-The browser calls the Strava API directly with short-lived access tokens obtained from `/auth/token`; the client secret and the refresh token never leave the auth server. The nginx configuration is `docker/nginx/default.conf.template`.
+The browser calls the Strava API directly with a short-lived access token it asks `/auth/token` for right before each request, so a tab left open for hours keeps working; the client secret and the refresh token never leave the auth server. The nginx configuration is `docker/nginx/default.conf.template`.
 
 ES modules in `web/`, served as they are by Vite's development server. Module flow:
 
 ```
 constants.js    ← PHYSIO / TYPE_WEIGHTS / APP_CONFIG constants only
-strava.js       ← access tokens from the auth server, Strava API fetch, storage (safeLoad/safeSave), fmt/escape utilities
+src/data/       ← Strava API (one access token per request), auth server, values saved in the browser
+src/core/       ← formatting of distances, times and dates
+strava.js       ← today's names for src/data and src/core, streams metrics, escapeHtml
 training.js     ← v1 engine: resolveHr, recommend, mesocycles, buildMonthPlan, isHard…
 training_v2.js  ← evidence-based workout catalog (Seiler, Rønnestad, Coggan…)
 analysis.js     ← power curve, CTL/ATL/TSB, HR zones, power profile, FTP trend

@@ -2,7 +2,7 @@
 
 01-web-toolchain: DONE
 02-auth-server-typescript: DONE
-03-strava-data-access: TODO
+03-strava-data-access: DONE
 04-ride-load-calculations: TODO
 05-training-plan-calculations: TODO
 06-app-shell-navigation: TODO

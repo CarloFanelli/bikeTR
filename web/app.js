@@ -1,5 +1,6 @@
 import {
-  loadSettings, saveSettings, getAuthStatus, getAccessToken, purgeLegacyStrava, api,
+  loadSettings, saveSettings, getAuthStatus, logout, purgeLegacyStrava,
+  fetchAthlete, fetchAthleteStats, fetchActivities, fetchStarredSegments,
   applyCachedStreams, hydrateWithStreams, loadPlannedRests, loadRainyDays,
   dayOffsetIso, cycleDayState, escapeHtml, fmtKm, fmtTime, fmtDate, TYPE_EMOJI,
   APP_CONFIG,
@@ -32,7 +33,7 @@ function showError(msg) {
   el.querySelector('p').textContent = msg;
 }
 
-function renderPrecisionCard(activities, token, stats) {
+function renderPrecisionCard(activities, stats) {
   const s = loadSettings();
   const profile = resolveHr(s, activities);
   const bikes = activities.filter(a => a.type?.includes('Ride'));
@@ -100,13 +101,14 @@ function renderPrecisionCard(activities, token, stats) {
     $('hydrate-btn').disabled = true;
     $('hydrate-progress').textContent = 'Avvio…';
     try {
-      await hydrateWithStreams(activities, token, profile.ftp, profile.hrLthr, APP_CONFIG.maxStreamsFetch, (d, t) => {
+      await hydrateWithStreams(activities, profile.ftp, profile.hrLthr, APP_CONFIG.maxStreamsFetch, (d, t) => {
         $('hydrate-progress').textContent = `Scarico streams: ${d}/${t}`;
       });
       $('hydrate-progress').textContent = '✅ Cache aggiornata. Ricalcolo…';
-      renderPrecisionCard(activities, token, stats);
+      renderPrecisionCard(activities, stats);
       renderTraining(activities, stats);
     } catch (e) {
+      if (showSetupIfDisconnected(e)) return;
       $('hydrate-progress').textContent = '❌ ' + e.message;
     } finally {
       $('hydrate-btn').disabled = false;
@@ -362,6 +364,14 @@ const AUTH_CALLBACK_ERRORS = {
   unreachable: 'Strava non raggiungibile durante il collegamento. Riprova tra poco.',
 };
 
+// Scollegati nel frattempo (per esempio da un'altra scheda): la pagina ricaricata
+// mostra "Collega Strava".
+function showSetupIfDisconnected(e) {
+  if (e.code !== 'not_connected') return false;
+  window.location.reload();
+  return true;
+}
+
 // Senza credenziali nel .env indica quali mancano, altrimenti offre "Collega Strava".
 function showSetup(missing) {
   $('setup-missing-names').textContent = missing.join(' e ');
@@ -377,7 +387,7 @@ async function main() {
     window.location.href = '/auth/login';
   });
   $('logout').addEventListener('click', async () => {
-    await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
+    await logout();
     // Le corse salvate dal servizio Coach appartengono al collegamento. Dopo il
     // logout nessuna richiesta del Coach può ottenere un nuovo token.
     await fetch('/coach/forget', { method: 'POST' }).catch(() => {});
@@ -401,18 +411,17 @@ async function main() {
       showSetup(status.missing);
       return;
     }
-    const token = await getAccessToken();
-    const athlete = await api('/athlete', token);
-    const stats = await api(`/athletes/${athlete.id}/stats`, token);
+    const athlete = await fetchAthlete();
+    const stats = await fetchAthleteStats(athlete.id);
     // Carico 60 attività per avere abbastanza storico per il consiglio
-    const activities = await api('/athlete/activities?per_page=60', token);
+    const activities = await fetchActivities(60);
     hide('loading');
     $('auth-status').textContent = `Connesso come ${athlete.firstname}`;
     $('logout').hidden = false;
 
     // Applica metriche da streams già in cache (ricariche successive sono istantanee)
     applyCachedStreams(activities);
-    renderPrecisionCard(activities, token, stats);
+    renderPrecisionCard(activities, stats);
 
     bindSettings(activities, stats);
     renderTraining(activities, stats);
@@ -425,7 +434,7 @@ async function main() {
     initNav();
 
     show('predictions-section');
-    loadSegmentPredictions(token, (done, total, errors) => {
+    loadSegmentPredictions((done, total, errors) => {
       $('predictions-loading').textContent = `Carico segmenti ${done}/${total}${errors ? ' (errori: ' + errors + ')' : ''}…`;
     }).then(async ({list, diag}) => {
       $('predictions-loading').style.display = 'none';
@@ -434,18 +443,19 @@ async function main() {
       $('hydrate-segments-btn').onclick = async () => {
         $('hydrate-segments-btn').disabled = true;
         $('hydrate-segments-progress').textContent = 'Scarico dettagli attività…';
-        // Recupera tutti gli ID dei preferiti per il filtro
-        const allStarred = [];
-        for (let page = 1; page <= 10; page++) {
-          const batch = await api(`/segments/starred?per_page=50&page=${page}`, token);
-          allStarred.push(...batch.map(s => s.id));
-          if (batch.length < 50) break;
+        try {
+          // Tutti gli ID dei preferiti, per il filtro
+          const allStarred = (await fetchStarredSegments()).map(s => s.id);
+          const result = await hydrateSegmentsFromActivities(activities, APP_CONFIG.maxSegmentsHydrate, allStarred, (d, t) => {
+            $('hydrate-segments-progress').textContent = `Attività ${d}/${t}…`;
+          });
+          $('hydrate-segments-progress').textContent = `✅ Scaricate ${result.fetched} attività, aggiunti ${result.addedEfforts} efforts. Ricarico…`;
+          setTimeout(() => window.location.reload(), 800);
+        } catch (e) {
+          if (showSetupIfDisconnected(e)) return;
+          $('hydrate-segments-progress').textContent = '❌ ' + e.message;
+          $('hydrate-segments-btn').disabled = false;
         }
-        const result = await hydrateSegmentsFromActivities(activities, token, APP_CONFIG.maxSegmentsHydrate, allStarred, (d, t) => {
-          $('hydrate-segments-progress').textContent = `Attività ${d}/${t}…`;
-        });
-        $('hydrate-segments-progress').textContent = `✅ Scaricate ${result.fetched} attività, aggiunti ${result.addedEfforts} efforts. Ricarico…`;
-        setTimeout(() => window.location.reload(), 800);
       };
       const s = loadSettings();
       const form = buildFormTrend(activities, s);
@@ -471,8 +481,9 @@ async function main() {
         show('segment-workouts-section');
       }
 
-      renderPrecisionCard(activities, token, stats);
+      renderPrecisionCard(activities, stats);
     }).catch(e => {
+      if (showSetupIfDisconnected(e)) return;
       $('predictions-loading').textContent = 'Errore caricamento segmenti: ' + e.message;
     });
   } catch (e) {

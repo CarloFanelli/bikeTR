@@ -1,5 +1,5 @@
 import {
-  getAccessToken, purgeLegacyStrava, api, escapeHtml,
+  fetchActivity, purgeLegacyStrava, escapeHtml,
   fmtKm, fmtTime, fmtDate, TYPE_EMOJI,
 } from './strava.js';
 
@@ -28,8 +28,7 @@ async function main() {
   if (!id) { $('error').hidden = false; $('error').querySelector('p').textContent = 'ID attività mancante'; return; }
 
   try {
-    const token = await getAccessToken();
-    const a = await api('/activities/' + id, token);
+    const a = await fetchActivity(id);
     $('loading').hidden = true;
     $('detail').hidden = false;
 

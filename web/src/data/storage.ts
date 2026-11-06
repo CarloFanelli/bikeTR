@@ -1,0 +1,107 @@
+// Valori salvati nel browser (localStorage), con i nomi e i formati di sempre
+// (README, sezione 7). Un valore illeggibile non blocca l'app: vale il default.
+
+// Le impostazioni dell'atleta; un campo lasciato vuoto non viene salvato.
+export interface Settings {
+  hrMax?: number;
+  hrLthr?: number;
+  lthrSource?: string;
+  ftpDeclared?: number;
+  ftpSource?: string;
+  weeklyHours?: number;
+  weeklyDays?: number;
+  longRides?: number;
+  weight?: number;
+  strengthLevel?: number;
+  longRideMaxMin?: number;
+  availableDays?: number[];
+  longRideDays?: number[];
+  raceDate?: string;
+  raceName?: string;
+  hasCompression?: boolean;
+  hasMassageGun?: boolean;
+}
+
+// Metriche di un'attività calcolate dai suoi stream, o l'errore del download.
+export interface StreamMetrics {
+  NP?: number;
+  IF?: number;
+  TSS?: number;
+  hrZones?: number[];
+  hrTSS?: number;
+}
+export type StreamsCacheEntry = (StreamMetrics & { _fetched: number; _error?: undefined }) | { _error: string; _fetched: number };
+export type StreamsCache = Record<string, StreamsCacheEntry>;
+
+const SETTINGS = 'biketr_settings';
+const PLANNED_RESTS = 'biketr_planned_rests';
+const RAINY_DAYS = 'biketr_rainy_days';
+const STREAMS_CACHE = 'biketr_streams_cache';
+
+// Chiave assente: `fallback`, senza log. JSON illeggibile o rifiutato da `validator`:
+// copia in "<chiave>.broken", avviso in console e `fallback`. Non lancia mai.
+export function safeLoad<T>(key: string, fallback: T, validator?: (x: unknown) => boolean): T {
+  const raw = localStorage.getItem(key);
+  if (raw == null) return fallback;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (validator && !validator(parsed)) throw new Error('validator-rejected');
+    return parsed as T;
+  } catch (e) {
+    try { localStorage.setItem(key + '.broken', raw); } catch { /* quota */ }
+    console.warn(`[storage] ${key} corrotto (${(e as Error).message}). Fallback ai default. Backup in ${key}.broken`);
+    return fallback;
+  }
+}
+
+export function safeSave(key: string, value: unknown): boolean {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    console.warn(`[storage] saveSet failed for ${key}: ${(e as Error).message}`);
+    return false;
+  }
+}
+
+export const isPlainObject = (x: unknown): x is Record<string, unknown> =>
+  x !== null && typeof x === 'object' && !Array.isArray(x);
+
+export const loadSettings = (): Settings => safeLoad<Settings>(SETTINGS, {}, isPlainObject);
+export const saveSettings = (s: Settings): boolean => safeSave(SETTINGS, s);
+
+export const loadPlannedRests = (): string[] => safeLoad<string[]>(PLANNED_RESTS, [], Array.isArray);
+const savePlannedRests = (days: string[]): boolean => safeSave(PLANNED_RESTS, days);
+
+export const loadRainyDays = (): string[] => safeLoad<string[]>(RAINY_DAYS, [], Array.isArray);
+const saveRainyDays = (days: string[]): boolean => safeSave(RAINY_DAYS, days);
+
+// Stato di un giorno del calendario: normale → saltato → pioggia → normale.
+export function cycleDayState(iso: string): void {
+  const skips = loadPlannedRests();
+  const rainy = loadRainyDays();
+  const si = skips.indexOf(iso);
+  const ri = rainy.indexOf(iso);
+  if (si < 0 && ri < 0) {
+    skips.push(iso);
+    savePlannedRests(skips);
+  } else if (si >= 0) {
+    skips.splice(si, 1);
+    savePlannedRests(skips);
+    rainy.push(iso);
+    saveRainyDays(rainy);
+  } else {
+    rainy.splice(ri, 1);
+    saveRainyDays(rainy);
+  }
+}
+
+export const loadStreamsCache = (): StreamsCache => safeLoad<StreamsCache>(STREAMS_CACHE, {}, isPlainObject);
+export const saveStreamsCache = (cache: StreamsCache): boolean => safeSave(STREAMS_CACHE, cache);
+
+// Le versioni prima di Docker salvavano nel browser client secret e token Strava
+// (e, se il JSON era rotto, una copia ".broken"): vanno cancellati.
+export function purgeLegacyStrava(): void {
+  localStorage.removeItem('biketr_strava');
+  localStorage.removeItem('biketr_strava.broken');
+}

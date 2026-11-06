@@ -1,63 +1,29 @@
-// Condiviso tra index e pagina dettaglio: token dal server di autenticazione + fetch API.
+// Condiviso tra index e pagina dettaglio. Strava, server di autenticazione, valori
+// salvati nel browser e formattazione stanno in src/: qui restano i nomi che usa il
+// codice di oggi, più le metriche degli stream.
 import { APP_CONFIG, PHYSIO } from './constants.js';
+import { isoDay } from './src/core/format.ts';
+import { AuthError } from './src/data/auth.ts';
+import { loadStreamsCache, saveStreamsCache } from './src/data/storage.ts';
+import { fetchActivityStreams } from './src/data/strava.ts';
+
 export { APP_CONFIG };
+export { fmtKm, fmtTime, fmtDate, isoDay } from './src/core/format.ts';
+export { AuthError, getAuthStatus, logout } from './src/data/auth.ts';
+export {
+  safeLoad, safeSave, isPlainObject, loadSettings, saveSettings, loadPlannedRests,
+  loadRainyDays, cycleDayState, loadStreamsCache, saveStreamsCache, purgeLegacyStrava,
+} from './src/data/storage.ts';
+export {
+  fetchAthlete, fetchAthleteStats, fetchActivities, fetchActivity, fetchStarredSegments,
+  fetchSegmentEfforts, fetchActivityStreams,
+} from './src/data/strava.ts';
 
-const SETTINGS = 'biketr_settings';
-
-// safeLoad/safeSave: parsing localStorage difensivo.
-// - Se la chiave manca, ritorna `fallback` (non logga).
-// - Se il parsing fallisce o il validator rifiuta, salva backup ".broken",
-//   logga warning e ritorna `fallback`. Mai throw.
-export function safeLoad(key, fallback, validator) {
-  const raw = localStorage.getItem(key);
-  if (raw == null) return fallback;
-  try {
-    const parsed = JSON.parse(raw);
-    if (validator && !validator(parsed)) throw new Error('validator-rejected');
-    return parsed;
-  } catch (e) {
-    try { localStorage.setItem(key + '.broken', raw); } catch { /* quota */ }
-    console.warn(`[storage] ${key} corrotto (${e.message}). Fallback ai default. Backup in ${key}.broken`);
-    return fallback;
-  }
-}
-export function safeSave(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
-  catch (e) { console.warn(`[storage] saveSet failed for ${key}: ${e.message}`); return false; }
-}
-export const isPlainObject = (x) => x && typeof x === 'object' && !Array.isArray(x);
-
-export function loadSettings() { return safeLoad(SETTINGS, {}, isPlainObject); }
-export function saveSettings(s) { safeSave(SETTINGS, s); }
-
-const PLANNED_RESTS = 'biketr_planned_rests';
-export function loadPlannedRests() { return safeLoad(PLANNED_RESTS, [], Array.isArray); }
-export function savePlannedRests(arr) { safeSave(PLANNED_RESTS, arr); }
-
-export function isoDay(d) {
-  const x = new Date(d);
-  x.setHours(0,0,0,0);
-  const y = x.getFullYear();
-  const m = String(x.getMonth()+1).padStart(2,'0');
-  const day = String(x.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
 export function todayIso() { return isoDay(new Date()); }
 export function dayOffsetIso(n) {
   const d = new Date();
   d.setDate(d.getDate() + n);
   return isoDay(d);
-}
-// ---- Cache streams (metriche derivate per attività, non i dati grezzi) ----
-const STREAMS_CACHE = 'biketr_streams_cache';
-export function loadStreamsCache() { return safeLoad(STREAMS_CACHE, {}, isPlainObject); }
-export function saveStreamsCache(c) { safeSave(STREAMS_CACHE, c); }
-
-export async function fetchActivityStreams(activityId, token) {
-  const url = `https://www.strava.com/api/v3/activities/${activityId}/streams?keys=time,heartrate,watts,cadence&key_by_type=true`;
-  const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
-  if (!res.ok) throw new Error('streams ' + activityId + ': ' + res.status);
-  return res.json();
 }
 
 // NP = ((rolling30s^4 avg))^(1/4); IF = NP/FTP; TSS = (seconds × NP × IF) / (FTP × 3600) × 100
@@ -104,17 +70,23 @@ export function computeStreamsMetrics(streams, ftp, lthr) {
   return out;
 }
 
-// Hydration opt-in: chiama questa per arricchire attività con streams (costo API)
-export async function hydrateWithStreams(activities, token, ftp, lthr, maxFetch = APP_CONFIG.maxStreamsFetch, onProgress) {
+// Hydration opt-in: chiama questa per arricchire attività con streams (costo API).
+// Senza accesso a Strava (non collegato, server di autenticazione spento) salva
+// quanto scaricato, si ferma e lancia l'errore, invece di segnarlo su ogni attività.
+export async function hydrateWithStreams(activities, ftp, lthr, maxFetch = APP_CONFIG.maxStreamsFetch, onProgress) {
   const cache = loadStreamsCache();
   const bikes = activities.filter(a => a.type?.includes('Ride')).slice(0, maxFetch);
   const toFetch = bikes.filter(a => !cache[a.id] || cache[a.id]._error);
   let done = 0;
   for (const a of toFetch) {
     try {
-      const streams = await fetchActivityStreams(a.id, token);
+      const streams = await fetchActivityStreams(a.id);
       cache[a.id] = { ...computeStreamsMetrics(streams, ftp, lthr), _fetched: Date.now() };
     } catch (e) {
+      if (e instanceof AuthError) {
+        saveStreamsCache(cache);
+        throw e;
+      }
       cache[a.id] = { _error: e.message, _fetched: Date.now() };
     }
     done++;
@@ -134,101 +106,8 @@ export function applyCachedStreams(activities) {
   });
 }
 
-export function togglePlannedRest(iso) {
-  const arr = loadPlannedRests();
-  const i = arr.indexOf(iso);
-  if (i >= 0) arr.splice(i, 1); else arr.push(iso);
-  savePlannedRests(arr);
-  return arr;
-}
-
-const RAINY_DAYS = 'biketr_rainy_days';
-export function loadRainyDays() { return safeLoad(RAINY_DAYS, [], Array.isArray); }
-export function saveRainyDays(arr) { safeSave(RAINY_DAYS, arr); }
-
-// Ciclo stato giorno: normale → skip → pioggia → normale
-export function cycleDayState(iso) {
-  const skips = loadPlannedRests();
-  const rainy = loadRainyDays();
-  const si = skips.indexOf(iso);
-  const ri = rainy.indexOf(iso);
-  if (si < 0 && ri < 0) {
-    skips.push(iso); savePlannedRests(skips);
-  } else if (si >= 0) {
-    skips.splice(si, 1); savePlannedRests(skips);
-    rainy.push(iso); saveRainyDays(rainy);
-  } else {
-    rainy.splice(ri, 1); saveRainyDays(rainy);
-  }
-}
-
-// ---- Server di autenticazione (/auth/, dietro nginx) ----
-// Tiene client secret e refresh token; il browser riceve solo token di accesso.
-
-const AUTH_ERRORS = {
-  unreachable: 'Server di autenticazione non raggiungibile. Controlla i log con: docker compose logs auth',
-  not_connected: 'Non connesso a Strava.',
-  strava_unreachable: 'Strava non raggiungibile per rinnovare l\'accesso. Riprova tra poco.',
-};
-
-// `code` dice al chiamante cosa fare: 'not_connected' → mostrare "Collega Strava".
-class AuthError extends Error {
-  constructor(code) {
-    super(AUTH_ERRORS[code] || `Errore del server di autenticazione (${code})`);
-    this.code = code;
-  }
-}
-
-async function authJson(path) {
-  let res, body;
-  try {
-    res = await fetch(path);
-    body = await res.json();
-  } catch {
-    // Rete giù o risposta non JSON (nginx risponde 502 se il servizio è spento).
-    throw new AuthError('unreachable');
-  }
-  if (!res.ok) throw new AuthError(body.error);
-  return body;
-}
-
-// { missing: impostazioni .env mancanti, connected }
-export const getAuthStatus = () => authJson('/auth/status');
-
-// Token di accesso valido almeno un altro minuto (il server lo rinnova quando serve).
-// Un lavoro lungo lo chiede a ogni richiesta: un token tenuto a lungo scade.
-export async function getAccessToken() {
-  return (await authJson('/auth/token')).access_token;
-}
-
-// La versione precedente salvava nel browser client secret e token Strava (e,
-// se il JSON era rotto, una copia ".broken"): vanno cancellati.
-export function purgeLegacyStrava() {
-  localStorage.removeItem('biketr_strava');
-  localStorage.removeItem('biketr_strava.broken');
-}
-
-export async function api(path, token) {
-  const res = await fetch('https://www.strava.com/api/v3' + path, {
-    headers: { Authorization: 'Bearer ' + token },
-  });
-  if (!res.ok) throw new Error('API ' + path + ': ' + res.status);
-  return res.json();
-}
-
-export function fmtKm(m) { return (m / 1000).toFixed(1) + ' km'; }
-export function fmtTime(s) {
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  return h ? `${h}h ${m}m` : `${m}m`;
-}
-export function fmtDate(iso) {
-  return new Date(iso).toLocaleDateString('it-IT', {
-    day: '2-digit', month: 'short', year: 'numeric'
-  });
-}
 export function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[c]));
 }

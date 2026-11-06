@@ -1,5 +1,5 @@
 // Analisi approfondita: Power Curve + FTP stimato, Trend forma (CTL/ATL/TSB), Zone FC.
-import { safeLoad, safeSave, isoDay, dayOffsetIso, escapeHtml, fmtTime } from './strava.js';
+import { safeLoad, safeSave, isoDay, dayOffsetIso, escapeHtml, fmtTime, fmtDate } from './strava.js';
 import {
   resolveHr, isHard, activityLoad, typeWeight, buildDateHelpers,
   levelFromKm, muscularFatigueScore, loadMesocycle, saveMesocycle, MESO_BLOCKS,
@@ -969,7 +969,6 @@ function renderFtpLthrBreakdown(activities, settings) {
   const segEst = estimatesFromSegments() || {};
   const profile = resolveHr(settings, activities);
 
-  const fmtDate = d => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' });
   const fmtMin = sec => Math.round((sec || 0) / 60);
   const actLink = a => `<a href="activity.html?id=${a.id}">${escapeHtml(a.name || ('#' + a.id))}</a>`;
 
@@ -994,7 +993,7 @@ function renderFtpLthrBreakdown(activities, settings) {
       } else {
         ftpHtml += `<tr class="${isWinner ? 'ftp-row-winner' : ''}">
           <td>${r.bucket}${isWinner ? ' 🏆' : ''}</td>
-          <td>${actLink(r.act)}<div class="muted" style="font-size:.75rem">${fmtDate(r.act.start_date_local)} · ${fmtMin(r.act.moving_time)} min</div></td>
+          <td>${actLink(r.act)}<div class="muted" style="font-size:.75rem">${fmtDate(r.act.start_date_local, { year: '2-digit' })} · ${fmtMin(r.act.moving_time)} min</div></td>
           <td><b>${r.rawWatts}</b> W</td>
           <td>${r.decayValue.toFixed(2)}</td>
           <td>× ${r.factor.toFixed(2)}</td>
@@ -1023,7 +1022,7 @@ function renderFtpLthrBreakdown(activities, settings) {
     const isM1Win = lthr.m1Row.value === lthr.final;
     lthrHtml += `<tr class="${isM1Win ? 'ftp-row-winner' : ''}">
       <td>M1${isM1Win ? ' 🏆' : ''}</td>
-      <td>${actLink(lthr.m1Row.act)}<div class="muted" style="font-size:.75rem">HRmax osservato ${lthr.m1Row.observedHRmax} bpm · ${fmtDate(lthr.m1Row.act.start_date_local)}</div></td>
+      <td>${actLink(lthr.m1Row.act)}<div class="muted" style="font-size:.75rem">HRmax osservato ${lthr.m1Row.observedHRmax} bpm · ${fmtDate(lthr.m1Row.act.start_date_local, { year: '2-digit' })}</div></td>
       <td>HRmax × 0.91 (midpoint Friel/Coggan 88–92%)</td>
       <td><b>${lthr.m1Row.value}</b> bpm</td>
     </tr>`;
@@ -1031,7 +1030,7 @@ function renderFtpLthrBreakdown(activities, settings) {
       const isM2Win = lthr.m2Row.value === lthr.final;
       lthrHtml += `<tr class="${isM2Win ? 'ftp-row-winner' : ''}">
         <td>M2${isM2Win ? ' 🏆' : ''}</td>
-        <td>${actLink(lthr.m2Row.act)}<div class="muted" style="font-size:.75rem">avg HR ${lthr.m2Row.rawHr} bpm · ${fmtDate(lthr.m2Row.act.start_date_local)} · ${fmtMin(lthr.m2Row.act.moving_time)} min</div></td>
+        <td>${actLink(lthr.m2Row.act)}<div class="muted" style="font-size:.75rem">avg HR ${lthr.m2Row.rawHr} bpm · ${fmtDate(lthr.m2Row.act.start_date_local, { year: '2-digit' })} · ${fmtMin(lthr.m2Row.act.moving_time)} min</div></td>
         <td>best avg HR (test-like 20-60min) × 0.98</td>
         <td><b>${lthr.m2Row.value}</b> bpm</td>
       </tr>`;
