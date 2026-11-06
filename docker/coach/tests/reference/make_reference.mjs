@@ -5,7 +5,8 @@
 // gli stessi numeri, gli stessi prompt e lo stesso workout.
 //
 // Il Coach del browser non esiste più: al posto di coach.js si usa la sua copia
-// coach_before_move.js. Gli altri moduli (.js nella cartella web/) sono quelli attuali.
+// coach_before_move.js. Gli altri moduli (.js nella cartella web/, con il TypeScript
+// di web/src/ che importano) sono quelli attuali.
 //
 // Uso, dalla cartella del progetto (vedi README, sezione Tests):
 //   docker run --rm -v "${PWD}:/src:ro" -v "${PWD}/docker/coach/tests:/tests" node:22-alpine node /tests/reference/make_reference.mjs
@@ -33,6 +34,7 @@ async function loadBrowserModules() {
   for (const f of fs.readdirSync(BROWSER_SRC).filter(f => f.endsWith('.js'))) {
     fs.copyFileSync(path.join(BROWSER_SRC, f), path.join(dir, f));
   }
+  fs.cpSync(path.join(BROWSER_SRC, 'src'), path.join(dir, 'src'), { recursive: true });
   fs.copyFileSync(path.join(path.dirname(SCRIPT), 'coach_before_move.js'), path.join(dir, 'coach.js'));
   const patch = (file, find, replace) => {
     const p = path.join(dir, file);

@@ -1,21 +1,21 @@
 // Previsioni sui segmenti preferiti: carica segmenti starred, storico tentativi,
 // calcola trend e stima tempo al prossimo tentativo (regressione lineare).
-import { api, safeLoad, safeSave, APP_CONFIG, fmtTime, escapeHtml } from './strava.js';
+import {
+  safeLoad, safeSave, isPlainObject, APP_CONFIG, fmtTime, escapeHtml, AuthError,
+  fetchStarredSegments, fetchSegmentEfforts, fetchActivity,
+} from './strava.js';
 
 const SEG_CACHE = 'biketr_segments_cache_v2';
 function clearSegCache() { localStorage.removeItem(SEG_CACHE); }
 function loadSegCache() {
-  return safeLoad(SEG_CACHE, {}, (x) => x && typeof x === 'object' && !Array.isArray(x));
+  return safeLoad(SEG_CACHE, {}, isPlainObject);
 }
 function saveSegCache(c) { safeSave(SEG_CACHE, c); }
 
-async function loadSegmentPredictions(token, onProgress) {
-  const starred = [];
-  for (let page = 1; page <= 10; page++) {
-    const batch = await api(`/segments/starred?per_page=50&page=${page}`, token);
-    starred.push(...batch);
-    if (batch.length < 50) break;
-  }
+// Senza accesso a Strava (non collegato, server di autenticazione spento) salva
+// quanto scaricato, si ferma e lancia l'errore, invece di segnarlo su ogni segmento.
+async function loadSegmentPredictions(onProgress) {
+  const starred = await fetchStarredSegments();
   const cache = loadSegCache();
   const CACHE_TTL_OK = 24 * 60 * 60 * 1000; // 24h per risultati con tentativi
   const CACHE_TTL_EMPTY = 2 * 60 * 60 * 1000; // 2h per risultati vuoti (potrebbe essere stato flaky)
@@ -45,7 +45,7 @@ async function loadSegmentPredictions(token, onProgress) {
       continue;
     }
     try {
-      const efforts = await api(`/segments/${seg.id}/all_efforts?per_page=100`, token);
+      const efforts = await fetchSegmentEfforts(seg.id);
       cache[seg.id] = { efforts, _fetched: now, _segment: {
         average_grade: seg.average_grade, elevation_difference: seg.elevation_high - seg.elevation_low,
         total_elevation_gain: seg.total_elevation_gain, distance: seg.distance,
@@ -59,6 +59,10 @@ async function loadSegmentPredictions(token, onProgress) {
       }
       if (i < starred.length - 1) await new Promise(r => setTimeout(r, 150));
     } catch (e) {
+      if (e instanceof AuthError) {
+        saveSegCache(cache);
+        throw e;
+      }
       diag.errors.push({ name: seg.name, id: seg.id, msg: e.message });
       // NON cache-o errori: così ri-tento alla prossima visita
       if (String(e.message).includes('429')) {
@@ -72,7 +76,8 @@ async function loadSegmentPredictions(token, onProgress) {
 
 // Arricchisce la cache segmenti estraendo segment_efforts dai dettagli attività.
 // Costoso: 1 API call per attività. Ma bypassa i limiti di /all_efforts.
-async function hydrateSegmentsFromActivities(activities, token, maxFetch = APP_CONFIG.maxSegmentsHydrate, starredIds = null, onProgress) {
+// Come sopra, un errore di accesso a Strava ferma il lavoro.
+async function hydrateSegmentsFromActivities(activities, maxFetch = APP_CONFIG.maxSegmentsHydrate, starredIds = null, onProgress) {
   const bikes = activities.filter(a => a.type?.includes('Ride')).slice(0, maxFetch);
   const cache = loadSegCache();
   const now = Date.now();
@@ -85,7 +90,7 @@ async function hydrateSegmentsFromActivities(activities, token, maxFetch = APP_C
     // Evita rifetch se abbiamo già memorizzato (attributo _detailFetched sull'attività stessa)
     if (a._detailFetched) continue;
     try {
-      const detail = await api(`/activities/${a.id}`, token);
+      const detail = await fetchActivity(a.id);
       a._detailFetched = true;
       fetched++;
       if (Array.isArray(detail.segment_efforts)) {
@@ -116,7 +121,12 @@ async function hydrateSegmentsFromActivities(activities, token, maxFetch = APP_C
         }
       }
       if (i < bikes.length - 1) await new Promise(r => setTimeout(r, 150));
-    } catch (e) { /* skip */ }
+    } catch (e) {
+      if (e instanceof AuthError) {
+        saveSegCache(cache);
+        throw e;
+      }
+    }
   }
   saveSegCache(cache);
   return { fetched, addedEfforts };
