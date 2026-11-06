@@ -88,3 +88,15 @@
 ### B-20 · open
 - **What**: Build optimized files for the browser app and serve them with nginx, for a possible cloud deployment (the optional Cloud Run step of the roadmap).
 - **From**: vue-ts-restructure (interview, 2026-11-06)
+
+### B-21 · open
+- **What**: Save the mesocycle week when the Training tab opens. Today it is saved only on the first opening and at the end of a block, so the plan and its banner always treat the current week as week 1 of the block.
+- **From**: vue-ts-restructure (dev task 05, 2026-11-06)
+
+### B-22 · open
+- **What**: Stop the daily recommendation from crashing when the FTP history is on a plateau and the power profile shows no deficit. Today it reads a label that does not exist, and the Training tab stops drawing.
+- **From**: vue-ts-restructure (dev task 05, 2026-11-06)
+
+### B-23 · open
+- **What**: Remove or make reachable the "no ride history: start with pure aerobic work" advice. With no bike rides, the "Reactivation" advice always wins first, so this branch never runs.
+- **From**: vue-ts-restructure (dev task 05, 2026-11-06)
