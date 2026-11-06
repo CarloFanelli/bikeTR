@@ -1,0 +1,740 @@
+{
+ "model": "BAAI/bge-small-en-v1.5",
+ "embeddingDim": 10,
+ "papers": [
+  {
+   "pmid": "16430681",
+   "title": "Quantifying training intensity distribution in elite endurance athletes: is there evidence for an \"optimal\" distribution?",
+   "authors": "Seiler & Kjerland",
+   "year": "2006",
+   "journal": "Scandinavian journal of medicine & science in sports",
+   "abstract": "This made-up test passage 1 of PMID 16430681 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 16430681 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 16430681 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort. This made-up test passage 4 of PMID 16430681 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:16430681 §1",
+     "text": "This made-up test passage 1 of PMID 16430681 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:16430681 §2",
+     "text": "This made-up test passage 2 of PMID 16430681 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:16430681 §3",
+     "text": "This made-up test passage 3 of PMID 16430681 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:16430681 §4",
+     "text": "This made-up test passage 4 of PMID 16430681 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts.",
+     "embedding": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "pmid": "20861519",
+   "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+   "authors": "Seiler",
+   "year": "2010",
+   "journal": "International journal of sports physiology and performance",
+   "abstract": "This made-up test passage 1 of PMID 20861519 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 20861519 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 20861519 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:20861519 §1",
+     "text": "This made-up test passage 1 of PMID 20861519 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:20861519 §2",
+     "text": "This made-up test passage 2 of PMID 20861519 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:20861519 §3",
+     "text": "This made-up test passage 3 of PMID 20861519 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "pmid": "22646668",
+   "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+   "authors": "Rønnestad et al.",
+   "year": "2014",
+   "journal": "Scandinavian journal of medicine & science in sports",
+   "abstract": "This made-up test passage 1 of PMID 22646668 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 22646668 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 22646668 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:22646668 §1",
+     "text": "This made-up test passage 1 of PMID 22646668 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:22646668 §2",
+     "text": "This made-up test passage 2 of PMID 22646668 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:22646668 §3",
+     "text": "This made-up test passage 3 of PMID 22646668 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "pmid": "33735833",
+   "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+   "authors": "Rønnestad et al.",
+   "year": "2021",
+   "journal": "International journal of sports physiology and performance",
+   "abstract": "This made-up test passage 1 of PMID 33735833 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 33735833 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 33735833 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:33735833 §1",
+     "text": "This made-up test passage 1 of PMID 33735833 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:33735833 §2",
+     "text": "This made-up test passage 2 of PMID 33735833 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:33735833 §3",
+     "text": "This made-up test passage 3 of PMID 33735833 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "pmid": "23197584",
+   "title": "Cyclists' improvement of pedaling efficacy and performance after heavy strength training.",
+   "authors": "Hansen et al.",
+   "year": "2012",
+   "journal": "International journal of sports physiology and performance",
+   "abstract": "This made-up test passage 1 of PMID 23197584 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 23197584 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 23197584 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:23197584 §1",
+     "text": "This made-up test passage 1 of PMID 23197584 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:23197584 §2",
+     "text": "This made-up test passage 2 of PMID 23197584 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:23197584 §3",
+     "text": "This made-up test passage 3 of PMID 23197584 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "pmid": "28292885",
+   "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+   "authors": "Vikmoen et al.",
+   "year": "2017",
+   "journal": "Physiological reports",
+   "abstract": "This made-up test passage 1 of PMID 28292885 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 28292885 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 28292885 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:28292885 §1",
+     "text": "This made-up test passage 1 of PMID 28292885 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:28292885 §2",
+     "text": "This made-up test passage 2 of PMID 28292885 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:28292885 §3",
+     "text": "This made-up test passage 3 of PMID 28292885 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "pmid": "29848161",
+   "title": "An Integrated, Multifactorial Approach to Periodization for Optimal Performance in Individual and Team Sports.",
+   "authors": "Mujika et al.",
+   "year": "2018",
+   "journal": "International journal of sports physiology and performance",
+   "abstract": "This made-up test passage 1 of PMID 29848161 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 29848161 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 29848161 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort. This made-up test passage 4 of PMID 29848161 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:29848161 §1",
+     "text": "This made-up test passage 1 of PMID 29848161 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:29848161 §2",
+     "text": "This made-up test passage 2 of PMID 29848161 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:29848161 §3",
+     "text": "This made-up test passage 3 of PMID 29848161 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:29848161 §4",
+     "text": "This made-up test passage 4 of PMID 29848161 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "pmid": "11772161",
+   "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+   "authors": "Laursen & Jenkins",
+   "year": "2002",
+   "journal": "Sports medicine (Auckland, N.Z.)",
+   "abstract": "This made-up test passage 1 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort. This made-up test passage 4 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts. This made-up test passage 5 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:11772161 §1",
+     "text": "This made-up test passage 1 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:11772161 §2",
+     "text": "This made-up test passage 2 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:11772161 §3",
+     "text": "This made-up test passage 3 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:11772161 §4",
+     "text": "This made-up test passage 4 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+     ]
+    },
+    {
+     "label": "PMID:11772161 §5",
+     "text": "This made-up test passage 5 of PMID 11772161 stands in for a published abstract, so the tests carry no copyrighted text: invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "pmid": "23832851",
+   "title": "High-intensity interval training, solutions to the programming puzzle. Part II: anaerobic energy, neuromuscular load and practical applications.",
+   "authors": "Buchheit & Laursen",
+   "year": "2013",
+   "journal": "Sports medicine (Auckland, N.Z.)",
+   "abstract": "This made-up test passage 1 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort. This made-up test passage 4 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts. This made-up test passage 5 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart. This made-up test passage 6 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 7 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:23832851 §1",
+     "text": "This made-up test passage 1 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+     ]
+    },
+    {
+     "label": "PMID:23832851 §2",
+     "text": "This made-up test passage 2 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+     ]
+    },
+    {
+     "label": "PMID:23832851 §3",
+     "text": "This made-up test passage 3 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+     ]
+    },
+    {
+     "label": "PMID:23832851 §4",
+     "text": "This made-up test passage 4 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+     ]
+    },
+    {
+     "label": "PMID:23832851 §5",
+     "text": "This made-up test passage 5 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+     ]
+    },
+    {
+     "label": "PMID:23832851 §6",
+     "text": "This made-up test passage 6 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+     ]
+    },
+    {
+     "label": "PMID:23832851 §7",
+     "text": "This made-up test passage 7 of PMID 23832851 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "pmid": "10331896",
+   "title": "Effects of different interval-training programs on cycling time-trial performance.",
+   "authors": "Stepto et al.",
+   "year": "1999",
+   "journal": "Medicine and science in sports and exercise",
+   "abstract": "This made-up test passage 1 of PMID 10331896 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence. This made-up test passage 2 of PMID 10331896 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions. This made-up test passage 3 of PMID 10331896 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort. This made-up test passage 4 of PMID 10331896 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts.",
+   "textUsed": "abstract",
+   "passages": [
+    {
+     "label": "PMID:10331896 §1",
+     "text": "This made-up test passage 1 of PMID 10331896 stands in for a published abstract, so the tests carry no copyrighted text: the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "label": "PMID:10331896 §2",
+     "text": "This made-up test passage 2 of PMID 10331896 stands in for a published abstract, so the tests carry no copyrighted text: sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts; the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "label": "PMID:10331896 §3",
+     "text": "This made-up test passage 3 of PMID 10331896 stands in for a published abstract, so the tests carry no copyrighted text: the made-up conclusion keeps recovery days and hard days clearly apart; no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "label": "PMID:10331896 §4",
+     "text": "This made-up test passage 4 of PMID 10331896 stands in for a published abstract, so the tests carry no copyrighted text: no number in it comes from a real study and nothing here is evidence; invented cyclists trained for several weeks with easy rides and a few hard interval sessions; the invented results describe changes in threshold power, heart rate and perceived effort; sessions were logged as minutes in each intensity zone, from easy endurance to maximal efforts.",
+     "embedding": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+     ]
+    }
+   ]
+  }
+ ]
+}

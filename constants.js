@@ -59,10 +59,9 @@ export const TYPE_WEIGHTS = {
   Handcycle: 0.8, Velomobile: 0.8, Skateboard: 0.4,
 };
 
-// Configurazione runtime: limiti rete e timeout. Modificabili a mano via
+// Configurazione runtime: limiti rete. Modificabili a mano via
 // devtools (window.APP_CONFIG) o in futuro tramite UI settings.
 export const APP_CONFIG = {
   maxStreamsFetch: 40,
   maxSegmentsHydrate: 30,
-  ollamaTimeoutMs: 180000,
 };

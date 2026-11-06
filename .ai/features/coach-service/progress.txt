@@ -1,0 +1,7 @@
+# Task Progress - coach-service
+
+01-coach-service-setup: DONE
+02-training-numbers: DONE
+03-ride-download: DONE
+04-workout-on-service: DONE
+05-stop-and-time-limit: DONE

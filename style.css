@@ -665,7 +665,7 @@ footer button { background: #2a2e38; }
   border-radius: 3px;
   font-size: .85rem;
 }
-.coach-error pre, .coach-ctx pre {
+.coach-error pre, .coach-ctx pre, .coach-live {
   background: #0f1115;
   padding: .75rem;
   border-radius: 6px;
@@ -675,6 +675,8 @@ footer button { background: #2a2e38; }
   word-break: break-word;
 }
 .coach-ctx pre { max-height: 320px; }
+/* Testo del modello mentre lo scrive */
+.coach-live { margin-top: .5rem; max-height: 240px; overflow-y: auto; }
 
 .coach-title { font-size: 1.05rem; margin-bottom: .35rem; }
 .coach-title b { color: var(--accent); }
