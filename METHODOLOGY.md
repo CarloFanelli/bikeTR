@@ -18,8 +18,9 @@ App statica (HTML + JavaScript) servita da nginx in Docker. Legge da **Strava AP
 | `docker/auth/server.ts` | Server di autenticazione: login OAuth Strava, refresh token, token di accesso al browser |
 | `training.js` | Motore v1: categoria giorno, catalogo workout base, CTL/ATL/TSB, modello utente |
 | `training_v2.js` | Motore v2 evidence-based: protocolli peer-reviewed, scaling capacity tier |
-| `analysis.js` | Form trend, power curve, zone FC, polarizzazione, insight interpretativi |
-| `predictions.js` | Previsioni segmenti preferiti, stime FTP/LTHR da efforts |
+| `analysis.js` | Card della tab Analisi: form trend, power curve, zone FC, polarizzazione, insight interpretativi |
+| `predictions.js` | Download dei segmenti preferiti, card di previsioni e allenamenti mirati |
+| `web/src/core/` | Calcoli in TypeScript, con tutto come parametro: metriche stream, carico, CTL/ATL/TSB, stime e trend FTP/LTHR, power curve e profilo, previsioni e stime dai segmenti |
 | `activity.html`, `activity.js` | Pagina dettaglio singola attività (mappa, split, segmenti) |
 
 ### Storage locale (localStorage keys)
@@ -67,7 +68,7 @@ Potenza massima media sostenibile per 1 ora. Base per tutti i calcoli di carico 
 1. **FTP dichiarata** dall'utente nei settings → prevale sempre
 2. **MAX** tra:
    - **FTP da attività** (`estimateFTP`): power-duration model con quattro bucket (10–20', 20–40', 40–90', e fallback per <10'), pesati per recency (half-life ≈ 8 settimane). Coefficiente per il bucket 20–40': **0.95**.
-   - **FTP da segmenti** (`estimatesFromSegments` in `predictions.js`): quattro metodi combinati, viene scelto quello con confidenza più alta:
+   - **FTP da segmenti** (`estimatesFromSegments` in `web/src/core/segments.ts`): quattro metodi combinati, viene scelto quello con confidenza più alta:
      - **`best_15_30`** — miglior `average_watts` su effort 15-30' × 0.95 (retrocompatibile).
      - **`weighted_recent`** — stesso bucket ma pesato per recency con decay `exp(-ageWeeks/12)` (recency-weighted, confidenza 0.75).
      - **`suitable_climb`** — best effort 15-40' SOLO su segmenti di salita 3–12% con ≥ 40 m di dislivello e ≥ 1500 m di lunghezza (confidenza 0.9): sforzi su salita eliminano drafting/vento e sono il miglior proxy reale di FTP.

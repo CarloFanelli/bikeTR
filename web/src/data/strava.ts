@@ -5,7 +5,7 @@
 import { getAccessToken } from './auth.ts';
 import type {
   Activity, ActivityDetail, Athlete, AthleteStats, Segment, SegmentEffort, Streams,
-} from './strava-types.ts';
+} from '../core/strava-types.ts';
 
 const API = 'https://www.strava.com/api/v3';
 const METRICS_STREAMS = 'time,heartrate,watts,cadence';

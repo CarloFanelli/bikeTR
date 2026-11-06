@@ -6,221 +6,37 @@ import {
   isoDay, todayIso, dayOffsetIso, escapeHtml, fmtKm, fmtTime, TYPE_EMOJI, BIKE_TYPES,
   safeLoad, safeSave, loadRainyDays,
 } from './strava.js';
-import { buildFormTrend, buildPowerProfile, compositeFatigueScore, buildFtpTrend } from './analysis.js';
 import { estimatesFromSegments } from './predictions.js';
 import { v2_workoutForCategory } from './training_v2.js';
+import { buildDateHelpers as dateHelpersFrom } from './src/core/dates.ts';
+import { buildFormTrend as formTrendFrom, compositeFatigueScore as compositeFatigueFrom } from './src/core/form.ts';
+import { buildFtpTrend as ftpTrendFrom } from './src/core/ftp.ts';
+import { estimateFTP as estimateFtpFrom, estimateLTHR, resolveHr as resolveHrFrom } from './src/core/hr.ts';
+import {
+  TYPE_WEIGHTS, typeWeight, hikeSpecificLoad, muscularFatigueScore as muscularFatigueFrom, activityLoad, isHard,
+} from './src/core/load.ts';
+import { buildPowerProfile } from './src/core/power.ts';
+import {
+  levelFromKm, consistencyScore as consistencyFrom, buildProfile as buildProfileFrom, personalRecords,
+} from './src/core/profile.ts';
+import { loadFtpHistory } from './src/data/storage.ts';
 
-// ---- Stima FTP ----
-// Strategia: miglior Weighted Avg Power osservato sulle attività "tipo test"
-// (20-60 min con Weighted Avg significativo) × 0.95.
-// Il fattore 0.95 deriva dal classico test 20' dove FTP = 95% della potenza media 20'.
-// Limitazione: senza streams reali, il WAP summary di Strava non è una NP esatta
-// ma una buona approssimazione; per 20-60 min ragionevolmente accurato.
-// Stima FTP da attività con power-duration model multi-bucket + decadimento temporale.
-// Bucket: 20-40min (×0.95), 40-60min (×0.98), 60-90min (×1.0), <20min fallback (×0.90).
-// Sforzi recenti pesano di più (half-life 8 settimane).
-function estimateFTP(activities) {
-  if (!activities) return null;
-  const bikes = activities.filter(a => a.type && a.type.includes('Ride'));
-  const withPower = bikes.filter(a => a.weighted_average_watts || a.average_watts);
-  if (!withPower.length) return null;
-
-  const now = Date.now();
-  const decay = (a) => {
-    const ageWeeks = (now - new Date(a.start_date_local).getTime()) / (7 * 86400000);
-    return Math.exp(-ageWeeks / 12);
-  };
-
-  // Power-duration buckets per attività
-  const buckets = [
-    { min: 40*60, max: 90*60, factor: 0.98, label: '40-90min' },
-    { min: 20*60, max: 40*60, factor: 0.95, label: '20-40min' },
-    { min: 10*60, max: 20*60, factor: 0.90, label: '10-20min' },
-    { min: 0,     max: 10*60, factor: 0.85, label: '<10min' },
-  ];
-
-  const estimates = [];
-  for (const b of buckets) {
-    const pool = withPower.filter(a => {
-      const t = a.moving_time || 0;
-      return t >= b.min && t < b.max;
-    });
-    if (!pool.length) continue;
-    // Best recency-weighted watts
-    const scored = pool.map(a => {
-      const w = a.weighted_average_watts || a.average_watts;
-      return { watts: w, weighted: w * decay(a), act: a };
-    }).sort((a, c) => c.weighted - a.weighted);
-    const best = scored[0];
-    estimates.push({
-      ftp: Math.round(best.watts * b.factor),
-      bucket: b.label,
-      rawWatts: best.watts,
-      decay: decay(best.act),
-    });
-  }
-
-  if (!estimates.length) {
-    // Fallback assoluto
-    const best = Math.max(...withPower.map(a => a.weighted_average_watts || a.average_watts));
-    return Math.round(best * 0.88);
-  }
-
-  // Priorità: bucket più lunghi sono più affidabili per FTP
-  // Prendi il primo disponibile (già ordinati per durata decrescente)
-  return estimates[0].ftp;
-}
-
-// ---- Stima LTHR (migliorata) ----
-// Approccio multi-metodo, prende il MAX:
-//   M1) HRmax osservato × 0.91  (midpoint Friel/Coggan/Allen: LTHR ≈ 88-92% HRmax)
-//   M2) Best avg HR su attività 20-60 min × 0.98 (se contiene un vero test allora ≈ LTHR)
-// Filtro: M2 usa solo attività con max_HR ≥ 0.9 × HRmax osservato (garanzia che l'atleta
-// abbia davvero spinto in quell'uscita, non un Z2 mal classificato come "lungo sostenuto").
-function estimateLTHR(activities) {
-  if (!activities) return null;
-  const bikes = activities.filter(a =>
-    a.type && a.type.includes('Ride') && a.has_heartrate
-  );
-  if (!bikes.length) return null;
-  const maxHrs = bikes.map(a => a.max_heartrate || 0).filter(x => x > 0);
-  if (!maxHrs.length) return null;
-  const observedHRmax = Math.max(...maxHrs);
-
-  // M1: 91% di HRmax osservato (media letteratura Friel/Coggan/Allen 88-92%).
-  // 0.91 è lo standard simmetrico usato anche dalla stima inversa HRmax = LTHR/0.91.
-  const m1 = Math.round(observedHRmax * 0.91);
-
-  // M2: best avg HR in attività 20-60 min dove max HR era vicino al max osservato
-  const testLike = bikes.filter(a =>
-    a.average_heartrate && a.max_heartrate &&
-    (a.moving_time||0) >= 20*60 && (a.moving_time||0) <= 60*60 &&
-    a.max_heartrate >= observedHRmax * 0.9
-  );
-  let m2 = null;
-  if (testLike.length) {
-    const best = Math.max(...testLike.map(a => a.average_heartrate));
-    m2 = Math.round(best * 0.98);
-  }
-
-  return Math.max(m1, m2 || 0);
-}
-
+// I calcoli stanno in src/core/ e ricevono tutto come parametro. Queste versioni con i
+// nomi e gli argomenti di prima leggono l'orologio, i segmenti salvati e lo storico FTP.
+const estimateFTP = (activities) => estimateFtpFrom(activities, new Date());
+const consistencyScore = (activities) => consistencyFrom(activities, new Date());
+const buildProfile = (stats, activities, settings) => buildProfileFrom(stats, activities, settings, new Date());
+const muscularFatigueScore = (activities, daysWindow = 7) => muscularFatigueFrom(activities, daysWindow, new Date());
+const buildDateHelpers = (dayOffset) => dateHelpersFrom(dayOffset, new Date());
+// I test del servizio Coach (make_reference.mjs) sostituiscono il profilo qui.
 function resolveHr(settings, activities) {
-  const s = settings || {};
-  const lthrDecl = s.hrLthr || null;
-  const lthrEstAct = estimateLTHR(activities);
-  const segEst = estimatesFromSegments() || {};
-  // Stima LTHR: prendo il MAX tra stima da attività e da segmenti (segmenti più affidabili)
-  const lthrEst = Math.max(lthrEstAct || 0, segEst.lthrFromSegments || 0) || null;
-  const lthrSource = s.lthrSource || (lthrDecl ? 'declared' : (lthrEst ? 'estimated' : null));
-  const hrLthr = (lthrSource === 'declared' && lthrDecl) ? lthrDecl
-    : (lthrSource === 'estimated' && lthrEst) ? lthrEst
-    : (lthrDecl || lthrEst);
-
-  const ftpDecl = s.ftpDeclared || null;
-  const ftpEstAct = estimateFTP(activities);
-  // Stima FTP: MAX tra attività e segmenti
-  const ftpEst = Math.max(ftpEstAct || 0, segEst.ftpFromSegments || 0) || null;
-  const ftpSource = ftpDecl ? 'declared'
-    : (s.ftpSource === 'estimated' && ftpEst) ? 'estimated'
-    : null;
-  const ftp = ftpDecl || (ftpSource === 'estimated' ? ftpEst : null);
-
-  const hrMax = s.hrMax || (segEst.hrMaxFromSegments)
-    || (hrLthr ? Math.round(hrLthr / 0.91) : undefined);
-  return {
-    hrMax, hrLthr, ftp,
-    lthrDecl, lthrEst, lthrSource,
-    lthrEstFromActivities: lthrEstAct,
-    lthrEstFromSegments: segEst.lthrFromSegments || null,
-    ftpDecl, ftpEst, ftpSource,
-    ftpEstFromActivities: ftpEstAct,
-    ftpEstFromSegments: segEst.ftpFromSegments || null,
-  };
+  return resolveHrFrom(settings, activities, estimatesFromSegments(), new Date());
 }
-
-// Classifica il livello dell'atleta in base ai km all-time
-function levelFromKm(km) {
-  if (km < 500) return { key: 'new', label: 'Nuovo alla bici',
-    note: 'Focus adattamento: 1 sola intensità/sett, solo Sweet Spot, niente VO2max per ora.' };
-  if (km < 3000) return { key: 'beginner', label: 'Principiante',
-    note: 'Base aerobica prioritaria. 1 sessione di qualità/sett, evita VO2max.' };
-  if (km < 15000) return { key: 'intermediate', label: 'Intermedio',
-    note: 'Puoi reggere 2 intensità/sett + lunga. Rotazione Sweet Spot/Soglia/VO2.' };
-  if (km < 50000) return { key: 'advanced', label: 'Avanzato',
-    note: 'Piano polarizzato, intensità mirate, volume sostenuto.' };
-  return { key: 'veteran', label: 'Veterano',
-    note: 'Gestione fine del recupero, varietà negli stimoli, attenzione ai segnali.' };
-}
-
-function consistencyScore(activities) {
-  const bikeActs = activities.filter(a => a.type && a.type.includes('Ride'));
-  const { ago } = buildDateHelpers(0);
-  let weeksOk = 0;
-  for (let w = 0; w < 8; w++) {
-    const from = w * 7, to = from + 7;
-    const cnt = bikeActs.filter(a => {
-      const da = ago(a.start_date_local);
-      return da >= from && da < to;
-    }).length;
-    if (cnt >= 3) weeksOk++;
-  }
-  return weeksOk / 8;
-}
-
-function buildProfile(stats, activities, settings) {
-  const s = settings || {};
-  const allRide = stats?.all_ride_totals || {};
-  const recent = stats?.recent_ride_totals || {};
-  const allKm = (allRide.distance || 0) / 1000;
-  const allCount = allRide.count || 0;
-  const recentKm = (recent.distance || 0) / 1000;
-  const recentHours = (recent.moving_time || 0) / 3600;
-  const recentCount = recent.count || 0;
-  const level = levelFromKm(allKm);
-  const consistency = consistencyScore(activities);
-
-  let wPerKg = null;
-  if (s.weight) {
-    const acts = activities.filter(a => a.weighted_average_watts || a.average_watts).slice(0, 20);
-    if (acts.length) {
-      const best = Math.max(...acts.map(a => a.weighted_average_watts || a.average_watts));
-      wPerKg = (best / s.weight).toFixed(2);
-    }
-  }
-
-  // Forma: confronto ore recenti (4 sett.) con una soglia per livello
-  const expectedWeeklyHours = level.key === 'new' ? 3
-    : level.key === 'beginner' ? 5
-    : level.key === 'intermediate' ? 7
-    : level.key === 'advanced' ? 10 : 12;
-  const weeklyRecent = recentHours / 4;
-  const formRatio = expectedWeeklyHours > 0 ? weeklyRecent / expectedWeeklyHours : 0;
-  const form = formRatio > 1.1 ? 'ottima'
-    : formRatio > 0.85 ? 'buona'
-    : formRatio > 0.5 ? 'in costruzione' : 'bassa / da riavviare';
-
-  return {
-    allKm, allCount, recentKm, recentHours, recentCount,
-    level, consistency, wPerKg, form, weeklyRecent,
-  };
-}
-
-function personalRecords(activities) {
-  const rides = activities.filter(a => a.type && a.type.includes('Ride'));
-  if (!rides.length) return null;
-  const by = (fn) => rides.reduce((best, a) => fn(a) > fn(best) ? a : best, rides[0]);
-  const longest = by(a => a.moving_time || 0);
-  const mostClimb = by(a => a.total_elevation_gain || 0);
-  const fastest = rides.filter(a => a.distance > 30000).reduce(
-    (b, a) => (!b || (a.average_speed||0) > (b.average_speed||0)) ? a : b, null
-  );
-  const mostSuffer = rides.filter(a => a.suffer_score).reduce(
-    (b, a) => (!b || a.suffer_score > b.suffer_score) ? a : b, null
-  );
-  return { longest, mostClimb, fastest, mostSuffer };
-}
+const buildFormTrend = (activities, settings) =>
+  formTrendFrom(activities, resolveHr(settings, activities), new Date());
+const compositeFatigueScore = (activities, settings) =>
+  compositeFatigueFrom(buildFormTrend(activities, settings), activities, new Date());
+const buildFtpTrend = () => ftpTrendFrom(loadFtpHistory());
 
 function renderRecords(recs) {
   if (!recs) return '';
@@ -263,196 +79,6 @@ function renderProfile(p, records) {
     </div>
     ${renderRecords(records)}
   `;
-}
-
-// Peso BASE di ciascun tipo sul carico totale.
-// typeWeight() restituisce un peso dinamico che tiene conto del dislivello per hike/walk.
-const TYPE_WEIGHTS = {
-  Ride: 1.0, VirtualRide: 1.0, EBikeRide: 0.7,
-  MountainBikeRide: 1.0, GravelRide: 1.0,
-  Run: 1.0, VirtualRun: 1.0, TrailRun: 1.05,
-  Swim: 0.9,
-  Walk: 0.2, Hike: 0.5,
-  Workout: 0.6, WeightTraining: 0.5, Crossfit: 0.8,
-  Yoga: 0.3, Pilates: 0.4, Elliptical: 0.8, StairStepper: 0.8,
-  RockClimbing: 0.6, InlineSkate: 0.7, NordicSki: 1.0,
-  BackcountrySki: 1.0, AlpineSki: 0.7, Snowboard: 0.6,
-  Rowing: 0.9, Canoeing: 0.7, Kayaking: 0.7,
-  Handcycle: 0.8, Velomobile: 0.8, Skateboard: 0.4,
-};
-
-// Peso dinamico: hike/walk scalano con dislivello, trail run con D+
-function typeWeight(act) {
-  // Retrocompatibilità: se chiamato con stringa sola (vecchio modo)
-  if (typeof act === 'string') return TYPE_WEIGHTS[act] ?? 0.5;
-  if (!act) return 0.5;
-
-  const type = act.type || '';
-  const base = TYPE_WEIGHTS[type] ?? 0.5;
-  const elev = act.total_elevation_gain || 0;
-
-  // Hike/Walk: scala con dislivello (escursione alpina 1500m D+ è quasi come una bici dura)
-  if (type === 'Hike' || type === 'Walk') {
-    if (elev > 1500) return 0.9;  // escursione alpina seria
-    if (elev > 1000) return 0.8;  // escursione impegnativa
-    if (elev > 500) return 0.65;  // escursione media
-    if (elev > 200) return 0.45;  // passeggiata collinare
-    return base;
-  }
-
-  // Trail run: bonus dislivello
-  if (type === 'TrailRun') {
-    if (elev > 800) return 1.15;
-    if (elev > 400) return 1.1;
-    return base;
-  }
-
-  return base;
-}
-
-// ---- Carico specifico per Hike con modello dislivello ----
-// Il modello ACSM stima che il costo metabolico dell'hiking su pendenza
-// è 2-3x quello del cammino in piano. Dislivello = stress muscolare eccentrico.
-function hikeSpecificLoad(act, hrMax, hrLthr) {
-  const hours = (act.moving_time || 0) / 3600;
-  const elev = act.total_elevation_gain || 0;
-  const w = typeWeight(act);
-
-  // Se HR disponibile, usa hrTSS-like con peso dinamico
-  if (hrLthr && act.has_heartrate && act.average_heartrate) {
-    const r = act.average_heartrate / hrLthr;
-    const hrLoad = r * r * hours * 100 * w;
-    // Bonus dislivello: stress muscolare eccentrico (discesa) + concentrico (salita)
-    const elevBonus = elev / 100 * 1.2;
-    return hrLoad + elevBonus;
-  }
-
-  // Senza HR: modello basato su durata + dislivello
-  const baseTSS = hours * 45 * w; // ~45 TSS/h per hike moderato
-  const elevBonus = elev / 100 * 1.5; // 1.5 TSS per 100m D+
-  const durationBonus = hours > 3 ? (hours - 3) * 12 : 0; // fatica cumulativa >3h
-  return baseTSS + elevBonus + durationBonus;
-}
-
-// ---- Fatigue muscolare da attività non-bici ----
-// Restituisce un "muscular fatigue score" (0-100) per le ultime 7 attività
-// che tiene conto di: dislivello, forza, eccentrico (trail run, hike in discesa)
-function muscularFatigueScore(activities, daysWindow = 7) {
-  const { ago } = buildDateHelpers(0);
-  const recent = activities.filter(a => {
-    const da = ago(a.start_date_local);
-    return da >= 0 && da < daysWindow;
-  });
-
-  let score = 0;
-  for (const a of recent) {
-    const elev = a.total_elevation_gain || 0;
-    const hours = (a.moving_time || 0) / 3600;
-    const type = a.type || '';
-
-    // Dislivello totale = stress eccentrico/concentrico
-    score += elev / 100 * 0.8;
-
-    // Forza/corpo libero = DOMS per 24-48h
-    if (['WeightTraining', 'Workout', 'Crossfit'].includes(type)) {
-      score += hours * 12;
-    }
-
-    // Trail running = impatto articolare + eccentrico
-    if (type === 'TrailRun') {
-      score += hours * 6 + elev / 100 * 1.0;
-    }
-
-    // Hike lungo = fatica muscolare periferica
-    if (type === 'Hike' && hours > 3) {
-      score += (hours - 3) * 5;
-    }
-
-    // Rock climbing = grip/core
-    if (type === 'RockClimbing') {
-      score += hours * 8;
-    }
-  }
-
-  return Math.min(100, Math.round(score));
-}
-
-// Load di un'attività — cascata di precisione:
-//  0) TSS/hrTSS calcolati da streams (NP vera, time-weighted HR) — MAX precisione
-//  1) TSS approssimato: IF² × hours × 100 (FTP + Weighted Avg Power summary)
-//  2) hrTSS approssimato: (avgHR/LTHR)² × hours × 100
-//  3) Proxy HR-max based (fallback vecchio)
-//  4) Suffer score o stima lineare
-// Moltiplicato per peso tipo dinamico (bici=1, hike scala con D+, ecc.)
-// Attività hike/walk con dislivello usano modello specifico.
-function activityLoad(act, hrMax, hrLthr, ftp) {
-  const w = typeWeight(act);
-
-  // Hike/Walk con dislivello significativo: modello specifico
-  if ((act.type === 'Hike' || act.type === 'Walk') && (act.total_elevation_gain || 0) > 100) {
-    return hikeSpecificLoad(act, hrMax, hrLthr);
-  }
-
-  const min = (act.moving_time || 0) / 60;
-  const hours = min / 60;
-
-  // 0) Streams-based (quando disponibili in cache)
-  if (act._metrics) {
-    if (ftp && act._metrics.TSS != null) return act._metrics.TSS * w;
-    if (hrLthr && act._metrics.hrTSS != null) return act._metrics.hrTSS * w;
-  }
-  // 1) TSS approssimato con potenza summary
-  if (ftp && act.weighted_average_watts) {
-    const IF = act.weighted_average_watts / ftp;
-    return IF * IF * hours * 100 * w;
-  }
-  // 2) hrTSS approssimato
-  if (hrLthr && act.has_heartrate && act.average_heartrate) {
-    const r = act.average_heartrate / hrLthr;
-    return r * r * hours * 100 * w;
-  }
-  // 3) proxy hrMax
-  if (act.has_heartrate && act.average_heartrate && hrMax) {
-    const r = Math.min(act.average_heartrate / hrMax, 1.1);
-    return min * r * r * 10 * w;
-  }
-  if (act.suffer_score) return act.suffer_score * w;
-  return min * 0.5 * w;
-}
-
-// Classifica un'attività come "dura" (intensità sopra soglia).
-// Cascata di segnali, dal più affidabile al più euristico:
-//   1) potenza: IF ≥ 0.85 vs FTP → hard
-//   2) FC: avg HR > 92% LTHR → hard
-//   3) suffer_score Strava ≥ 60 → hard
-//   4) titolo contiene keyword da workout strutturato → hard
-//   5) altrimenti: NON hard (anche una lunga 2h Z2 senza HR non è "hard")
-const _HARD_TITLE_RX = /intervalli|interval|sst|sweet ?spot|soglia|threshold|vo2|over[- ]?under|tabata|hiit|seiler|r[øo]nnestad/i;
-function isHard(act, hrLthr, ftp) {
-  const wap = act.weighted_average_watts || act.average_watts;
-  if (ftp && wap) return (wap / ftp) >= 0.85;
-  if (hrLthr && act.has_heartrate && act.average_heartrate) {
-    return act.average_heartrate > hrLthr * 0.92;
-  }
-  if ((act.suffer_score || 0) >= 60) return true;
-  if (act.name && _HARD_TITLE_RX.test(act.name)) return true;
-  return false;
-}
-
-function buildDateHelpers(dayOffset) {
-  const ref = new Date();
-  ref.setHours(0,0,0,0);
-  ref.setDate(ref.getDate() + dayOffset);
-  const ago = (iso) => {
-    const d = new Date(iso); d.setHours(0,0,0,0);
-    return Math.round((ref - d) / 86400000);
-  };
-  const refIso = (n) => {
-    const d = new Date(ref);
-    d.setDate(d.getDate() + n);
-    return isoDay(d);
-  };
-  return { ref, ago, refIso };
 }
 
 // Conversioni dow ISO (1=Lun … 7=Dom) ↔ JS (0=Dom … 6=Sab) e helper calendario.
@@ -1890,4 +1516,6 @@ export {
   workoutForCategory, buildWeekPlan, synthFromWorkout,
   buildMonthPlan, renderLoadSourceBadge, renderTrainingModel, buildDoneRec,
   renderWeekPlan, TYPE_WEIGHTS,
+  // Per analysis.js, che li espone con gli altri calcoli della tab Analisi.
+  buildFormTrend, compositeFatigueScore, buildFtpTrend,
 };
