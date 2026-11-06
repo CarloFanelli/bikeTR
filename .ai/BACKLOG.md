@@ -33,13 +33,15 @@
 - **From**: docker-setup (interview, 2026-11-05)
 - **Picked up by**: coach-service (2026-11-06)
 
-### B-9 · open
+### B-9 · picked-up
 - **What**: Escape Strava segment names in the segment-predictions error list, which today are inserted into the page as raw HTML.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: vue-ts-restructure (2026-11-06)
 
-### B-10 · open
+### B-10 · picked-up
 - **What**: Split the largest modules (training, analysis), break the circular imports between training, analysis, predictions and training v2, and remove duplicated helpers.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: vue-ts-restructure (2026-11-06)
 
 ### B-11 · open
 - **What**: Store activities and settings on the server so data survives a browser change and only new activities are downloaded from Strava.
@@ -55,22 +57,34 @@
 - **From**: docker-setup (dev task 03, 2026-11-05)
 - **Picked up by**: coach-service (2026-11-06)
 
-### B-14 · open
+### B-14 · picked-up
 - **What**: Buttons used long after the page loaded ("Refresh with streams", completing segments from activity details) ask for a fresh Strava access token each time, so a tab left open for more than 6 hours keeps working without a reload.
 - **From**: docker-setup (dev task 04, 2026-11-05)
+- **Picked up by**: vue-ts-restructure (2026-11-06)
 
-### B-15 · open
+### B-15 · picked-up
 - **What**: The README's feature list and the app's top navigation agree: the README describes a "🧪 Training v2" tab that the navigation does not show.
 - **From**: docker-setup (dev task 05, 2026-11-05)
+- **Picked up by**: vue-ts-restructure (2026-11-06)
 
 ### B-16 · open
 - **What**: The other tabs read fitness, fatigue, form and training load from the Coach service, so the formulas live in one place.
 - **From**: coach-service (interview, 2026-11-06)
 
-### B-17 · open
+### B-17 · picked-up
 - **What**: The Coach tab gets a Stop button that ends the current request and stops Ollama.
 - **From**: coach-service (interview, 2026-11-06)
+- **Picked up by**: vue-ts-restructure (2026-11-06)
 
-### B-18 · open
+### B-18 · picked-up
 - **What**: Add automated tests for the Coach tab's browser code: reading the streamed answer (lines and characters split between network chunks) and cancelling an older request when the user asks again (no late events drawn). Both were checked only by hand in Node during coach-service.
 - **From**: coach-service (dev task 05, 2026-11-06)
+- **Picked up by**: vue-ts-restructure (2026-11-06)
+
+### B-19 · open
+- **What**: Light and dark themes: follows the computer's setting by default, with a switch that is remembered.
+- **From**: vue-ts-restructure (interview, 2026-11-06)
+
+### B-20 · open
+- **What**: Build optimized files for the browser app and serve them with nginx, for a possible cloud deployment (the optional Cloud Run step of the roadmap).
+- **From**: vue-ts-restructure (interview, 2026-11-06)
