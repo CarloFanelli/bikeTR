@@ -1,6 +1,6 @@
 # Task Progress - vue-ts-restructure
 
-01-web-toolchain: TODO
+01-web-toolchain: DONE
 02-auth-server-typescript: TODO
 03-strava-data-access: TODO
 04-ride-load-calculations: TODO

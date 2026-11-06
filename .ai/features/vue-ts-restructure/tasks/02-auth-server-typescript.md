@@ -32,3 +32,7 @@ The Auth server is small and independent of the screens, so it moves right after
 
 - Many downloads ask for a token at once → the Auth server renews once and all of them get the same token (its current behavior) (REQ-21 from the spec edge-case table)
 - A tab of the old version still open after the switch → both read and write the same data formats; nothing is corrupted (REQ-25)
+
+## Notes from implementation
+
+- **Impacts Task 02**: the `app` container does not mount `docker/auth` yet: the plan placed that mount in the web toolchain task, but nothing used it there. Add `./docker/auth:/workspace/docker/auth:ro` to the `app` service together with `web/tsconfig.auth.json`, and check that `/@fs/workspace/docker/auth/…` stays refused. /dev, 2026-11-06.

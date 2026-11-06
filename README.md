@@ -2,7 +2,7 @@
 
 Experimental first version of the project, started on **May 7, 2026**.
 
-A browser app (HTML + JavaScript, no build step) for cycling analysis and training recommendations based on the user's Strava data. Designed for **personal, local use**: each person runs their own copy on their own computer, connected to their own Strava app. One Docker command starts everything: a web server for the app, a small auth server that holds the Strava secret, the Coach service (Python), and the local AI model used by the Coach. Settings and caches stay in the browser's `localStorage`.
+A browser app (HTML + JavaScript in `web/`, served by a live-reload development server) for cycling analysis and training recommendations based on the user's Strava data. Designed for **personal, local use**: each person runs their own copy on their own computer, connected to their own Strava app. One Docker command starts everything: a web server, the app's development server, a small auth server that holds the Strava secret, the Coach service (Python), and the local AI model used by the Coach. Settings and caches stay in the browser's `localStorage`.
 
 > ⚠️ The app is reachable only from your own computer (`127.0.0.1`), not from other devices on your network. **Do not deploy it to a public website.** The Strava Client ID and client secret live in the `.env` file, which Git ignores: never commit it.
 
@@ -79,13 +79,15 @@ Open <http://localhost:5050> and click **Collega Strava** (Connect to Strava). S
 
 **Always open `localhost`, never `127.0.0.1`.** The browser keeps saved data per address, so under `127.0.0.1` your settings and caches are not visible, and Strava always sends you back to `localhost`.
 
-**First start.** Docker downloads about 2 GB of images, builds the Coach service's image (installing its Python packages takes under a minute), and then downloads about 5 GB of AI models. The app opens within seconds; the Coach works once the models are downloaded, which takes several minutes. To watch the download:
+**First start.** Docker downloads about 2 GB of images, installs the app's npm packages and builds the Coach service's image (each takes under a minute), and then downloads about 5 GB of AI models. The app opens once its packages are installed, within about a minute; the Coach works once the models are downloaded, which takes several minutes. To watch the download:
 
 ```bash
 docker compose logs -f ollama-pull
 ```
 
 The download is complete when `docker compose ps -a` shows `ollama-pull` as exited with code 0. Later starts skip models that are already downloaded, and an interrupted download resumes at the next start.
+
+**Live reload.** A saved change to a file under `web/` shows in the open page within a few seconds, with no command and no manual reload.
 
 **Stop** everything (models, Strava connection and the rides the Coach saved are kept):
 
@@ -128,7 +130,7 @@ The Coach works without any setup: Docker runs Ollama and downloads the two mode
 3. Run `docker compose up -d`. No Ollama container starts any more.
 4. Click **Ping Ollama** in the Coach's "Impostazioni Ollama" panel. If it fails, your Ollama listens only on its own computer's loopback (the default on Linux and WSL) and Docker cannot reach it: start it listening on all interfaces with `OLLAMA_HOST=0.0.0.0 ollama serve`. Other devices on your network can then reach that Ollama too.
 
-**Paper index.** The Coach searches `papers_index.json`, which is part of the repository and built with `nomic-embed-text`: change the embedding model only together with a rebuilt index. The Coach service reads it through nginx, like the browser does, so an edited index counts from the next request. If the file is missing, restore it with `git restore papers_index.json`.
+**Paper index.** The Coach searches `papers_index.json`, which is part of the repository and built with `nomic-embed-text`: change the embedding model only together with a rebuilt index. The Coach service reads it through nginx, so an edited index counts from the next request. If the file is missing, restore it with `git restore papers_index.json`.
 
 **What a request does.** "Genera workout di oggi" sends the duration, the model name, the browser's time zone and your athlete profile (FTP, threshold and maximum heart rate, weight, weekly hours and days, as the rest of the app estimates them) to the Coach service. The service then names each step in the tab: downloading rides (with the ride-details progress on the first request, e.g. "Scarico dettagli corse 12/40"), searching papers, and the model, whose text appears as it is written.
 
@@ -137,9 +139,10 @@ The Coach works without any setup: Docker runs Ollama and downloads the two mode
 ## 6. Common problems
 
 - **Port 5050 is already in use** (for example an old `python3 -m http.server 5050` from the previous setup is still running): stop that program, or set another `WEB_PORT` in `.env`. Browser data is kept per address, so after changing the port the data saved under the old one is not visible.
+- **The page shows "502 Bad Gateway"**: the app's development server is not running yet. On the first start, and after an update that changes `web/package-lock.json`, it first installs its npm packages, which needs an internet connection; `docker compose logs app` shows the progress or the error.
 - **"Server di autenticazione non raggiungibile"** (auth server unreachable): in the first second after a start, reload the page. If it persists, look at `docker compose logs auth`.
 - **Strava rejects the connection**: check `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` in `.env` and that the Strava app's callback domain is `localhost`, then run `docker compose up -d` again.
-- **After updating BikeTR or editing files under `docker/`**: run `docker compose up -d --build --force-recreate`. The services read their configuration files and code only when they start, and `docker compose up -d` alone does not restart a container whose files changed; `--build` reinstalls the Coach service's Python packages when `docker/coach/requirements.txt` changed. Edits to the app's HTML, JavaScript and CSS need only a normal browser reload.
+- **After updating BikeTR or editing files under `docker/`**: run `docker compose up -d --build --force-recreate`. The services read their configuration files and code only when they start, and `docker compose up -d` alone does not restart a container whose files changed; `--build` reinstalls the Coach service's Python packages when `docker/coach/requirements.txt` changed, and the app's container installs its npm packages again when `web/package-lock.json` changed. Edits to files under `web/` need no command (section 4, Live reload).
 - **"Coach non raggiungibile"** (Coach service unreachable): start BikeTR with `docker compose up -d`; if it persists, look at `docker compose logs coach`.
 - **The Coach cannot reach Ollama or misses a model**: `docker compose logs ollama-pull` shows the download, and `docker compose exec ollama ollama list` lists the downloaded models.
 
@@ -147,7 +150,7 @@ The Coach works without any setup: Docker runs Ollama and downloads the two mode
 
 ## 7. localStorage layout
 
-All keys written by the app (see `safeLoad`/`safeSave` in `strava.js`). The Strava tokens are not here: the auth server keeps them.
+All keys written by the app (see `safeLoad`/`safeSave` in `web/strava.js`). The Strava tokens are not here: the auth server keeps them.
 
 | Key | Type | Written by | Contents |
 |---|---|---|---|
@@ -168,7 +171,7 @@ If a key is corrupted (JSON parsing fails or validation rejects it), a `key.brok
 
 ## 8. Runtime configuration
 
-These settings can be changed manually via `localStorage` or in `constants.js` (`APP_CONFIG`):
+These settings can be changed manually via `localStorage` or in `web/constants.js` (`APP_CONFIG`):
 
 - `maxStreamsFetch` (default: 40) — number of cycling activities for which to download streams when you click "Refresh with streams".
 - `maxSegmentsHydrate` (default: 30) — number of activities to analyze for `segment_efforts` when you click "Complete from activity details".
@@ -181,7 +184,8 @@ Docker Compose services (`compose.yaml`); only the web port is published, on `12
 
 ```
 browser ──► web (nginx, http://localhost:5050)
-             ├─ /         → app files: the project folder, mounted read-only
+             ├─ /         → app: Vite's development server for web/, with live reload
+             ├─ /papers_index.json → the paper index, from the project folder (read-only)
              ├─ /auth/    → auth: Strava login, keeps client secret and tokens (docker/auth/server.mjs)
              └─ /coach/   → coach: the Coach service, Python with FastAPI (docker/coach);
                             keeps the rides it downloads from Strava in a Docker volume
@@ -192,7 +196,7 @@ ollama-pull: downloads the missing models at start, then exits
 
 The browser calls the Strava API directly with short-lived access tokens obtained from `/auth/token`; the client secret and the refresh token never leave the auth server. The nginx configuration is `docker/nginx/default.conf.template`.
 
-ES modules, no bundler. Module flow:
+ES modules in `web/`, served as they are by Vite's development server. Module flow:
 
 ```
 constants.js    ← PHYSIO / TYPE_WEIGHTS / APP_CONFIG constants only
@@ -213,7 +217,15 @@ activity.js     ← detail page entry point (activity.html)
 
 ## 10. Tests
 
-The Coach service's tests check that its numbers (normalized power, training load, fitness, fatigue, form, intensity split, capacity tier) equal those of the browser code, and that for the same model answers it builds the same prompts, papers and workout as the browser Coach did. They need only Docker: no Ollama, no Strava connection, and they can run while BikeTR is running. From the project folder (the same command works in PowerShell):
+**Browser app.** One command type-checks the app's TypeScript in strict mode, runs its tests, and checks that no source file imports a file that imports it back (directly or through others) and that none is longer than 500 lines. It needs only Docker: no Strava connection, no Ollama, and it can run while BikeTR is running. From the project folder (the same command works in PowerShell):
+
+```bash
+docker compose run --rm --no-deps app npm run check
+```
+
+A failure names the file and line of each type error, the files of each import loop, and each file over the limit. Today's JavaScript files, which are not TypeScript yet, are left out of these checks.
+
+**Coach service.** The Coach service's tests check that its numbers (normalized power, training load, fitness, fatigue, form, intensity split, capacity tier) equal those of the browser code, and that for the same model answers it builds the same prompts, papers and workout as the browser Coach did. They need only Docker: no Ollama, no Strava connection, and they can run while BikeTR is running. From the project folder (the same command works in PowerShell):
 
 ```bash
 docker compose run --rm --no-deps coach pytest
@@ -233,4 +245,4 @@ docker run --rm -v "${PWD}:/src:ro" -v "${PWD}/docker/coach/tests:/tests" node:2
 - **Without Strava streams**, TSS and time in zones are approximated from the summary's `weighted_average_watts` or from hrTSS calculated using average heart rate (e.g. a long Z2 ride with 20 minutes at threshold averages out to Z2). Click "Refresh with streams" for precise calculations: one API call per activity (Strava rate limit: 100 per 15 minutes).
 - **An FTP from a dedicated test is always more reliable** than estimates. The four `estimatesFromSegments` methods mitigate but do not eliminate estimation error (±5–10% compared with the true value). A 20-minute all-out test every 4–6 weeks is recommended.
 - **The AI Coach depends on Ollama**: while the models download, or if Ollama is unavailable, the tab displays an error. On a CPU-only computer the default model is slow (section 5).
-- **The browser's stream reader has no automated test**: the Coach service's tests cover what it sends, and the reader (`coachEvents` in `coach.js`) was checked by hand against lines and characters split between network chunks.
+- **The browser's stream reader has no automated test**: the Coach service's tests cover what it sends, and the reader (`coachEvents` in `web/coach.js`) was checked by hand against lines and characters split between network chunks.

@@ -52,3 +52,7 @@ None
 - Saving a file with a syntax error → the page shows the error with file and line; fixing the file restores it without reload (REQ-24)
 - Web container restarted while a page is open → the page reconnects by itself when the server is back (REQ-24)
 - Editing from macOS, Windows or WSL → the change is detected within 3 seconds on each (REQ-24)
+
+## Notes from implementation
+
+- **Known limitation**: a syntax error in one of today's JavaScript files shows in the browser console (file and line) rather than as an error panel on the page, because Vite serves those files without parsing them; TypeScript and Vue files get the panel with file and line. Saving the fix reloads the page by itself. It ends when the old files are removed. /dev, 2026-11-06.

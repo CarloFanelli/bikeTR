@@ -46,3 +46,7 @@ Every section exists in the new app after Task 11, so the old one can go. Saved 
 - Files move to new folders → every command in the README still works as written (REQ-7)
 - N/A — all axes: documentation, checked by reading (REQ-22, REQ-26)
 - A Strava connection that is denied, expired, rejected or unreachable → the new app shows today's message for it (REQ-12 · from code)
+
+## Notes from implementation
+
+- **Impacts Task 12**: `build_papers_index.mjs` still sits at the project root, which must keep only documentation, configuration and data files; the plan does not say where it goes. Move it to its own folder (writing `papers_index.json` at the root as today) and update the references. /dev, 2026-11-06.

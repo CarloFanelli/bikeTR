@@ -6,13 +6,29 @@ services:
     ports:
       - "127.0.0.1:${WEB_PORT:-5050}:80"
     volumes:
+      # Solo per l'indice dei paper, che il Coach service scarica a ogni richiesta.
       - ./:/usr/share/nginx/html:ro
       - ./docker/nginx:/etc/nginx/templates:ro
     depends_on:
+      app:
+        condition: service_started
       auth:
         condition: service_started
       coach:
         condition: service_started
+
+  # L'app del browser: server di sviluppo Vite con live reload, raggiungibile solo da nginx.
+  app:
+    image: node:22-alpine
+    init: true
+    working_dir: /workspace/web
+    # Installa i pacchetti npm che mancano, poi esegue il comando.
+    entrypoint: ["sh", "scripts/start.sh"]
+    command: ["npx", "vite"]
+    volumes:
+      - ./web:/workspace/web
+      # Pacchetti npm installati nel container: quelli del computer non entrano mai.
+      - web-modules:/workspace/web/node_modules
 
   # Login Strava: l'unico servizio che vede il client secret e il refresh token.
   auth:
@@ -84,3 +100,4 @@ volumes:
   ollama-models:
   auth-data:
   coach-data:
+  web-modules:
