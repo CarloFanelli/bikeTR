@@ -1,8 +1,15 @@
-// Le risposte dell'API di Strava usate dall'app. Un campo con "?" può mancare:
-// per esempio una corsa senza misuratore di potenza non ha average_watts, e una
-// senza fascia cardio non ha average_heartrate.
+// Le risposte dell'API di Strava usate dall'app, che i calcoli ricevono come dati.
+// Un campo con "?" può mancare: per esempio una corsa senza misuratore di potenza non
+// ha average_watts, e una senza fascia cardio non ha average_heartrate.
 
-import type { StreamMetrics } from './storage.ts';
+// Metriche di un'attività calcolate dai suoi stream (vedi streams.ts).
+export interface StreamMetrics {
+  NP?: number;
+  IF?: number;
+  TSS?: number;
+  hrZones?: number[];
+  hrTSS?: number;
+}
 
 export interface Athlete {
   id: number;

@@ -1,6 +1,9 @@
 // Valori salvati nel browser (localStorage), con i nomi e i formati di sempre
 // (README, sezione 7). Un valore illeggibile non blocca l'app: vale il default.
 
+import type { FtpPoint } from '../core/ftp.ts';
+import type { StreamMetrics } from '../core/strava-types.ts';
+
 // Le impostazioni dell'atleta; un campo lasciato vuoto non viene salvato.
 export interface Settings {
   hrMax?: number;
@@ -23,13 +26,6 @@ export interface Settings {
 }
 
 // Metriche di un'attività calcolate dai suoi stream, o l'errore del download.
-export interface StreamMetrics {
-  NP?: number;
-  IF?: number;
-  TSS?: number;
-  hrZones?: number[];
-  hrTSS?: number;
-}
 export type StreamsCacheEntry = (StreamMetrics & { _fetched: number; _error?: undefined }) | { _error: string; _fetched: number };
 export type StreamsCache = Record<string, StreamsCacheEntry>;
 
@@ -37,6 +33,7 @@ const SETTINGS = 'biketr_settings';
 const PLANNED_RESTS = 'biketr_planned_rests';
 const RAINY_DAYS = 'biketr_rainy_days';
 const STREAMS_CACHE = 'biketr_streams_cache';
+const FTP_HISTORY = 'biketr_ftp_history';
 
 // Chiave assente: `fallback`, senza log. JSON illeggibile o rifiutato da `validator`:
 // copia in "<chiave>.broken", avviso in console e `fallback`. Non lancia mai.
@@ -98,6 +95,10 @@ export function cycleDayState(iso: string): void {
 
 export const loadStreamsCache = (): StreamsCache => safeLoad<StreamsCache>(STREAMS_CACHE, {}, isPlainObject);
 export const saveStreamsCache = (cache: StreamsCache): boolean => safeSave(STREAMS_CACHE, cache);
+
+// Un punto alla settimana, al massimo 52 (vedi nextFtpHistory).
+export const loadFtpHistory = (): FtpPoint[] => safeLoad<FtpPoint[]>(FTP_HISTORY, [], Array.isArray);
+export const saveFtpHistory = (history: FtpPoint[]): boolean => safeSave(FTP_HISTORY, history);
 
 // Le versioni prima di Docker salvavano nel browser client secret e token Strava
 // (e, se il JSON era rotto, una copia ".broken"): vanno cancellati.

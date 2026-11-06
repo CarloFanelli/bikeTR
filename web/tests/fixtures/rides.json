@@ -1,0 +1,1557 @@
+{
+ "_comment": "Uscite, impostazioni e segmenti inventati per i test dei calcoli (web/tests/core). tests/reference/record.ts li passa al JavaScript di prima della conversione e ne scrive i risultati in load-expected.json.",
+ "now": "2026-11-06T17:45:00Z",
+ "timeZone": "Europe/Rome",
+ "activities": [
+  {
+   "id": 3001,
+   "name": "Uscita con potenza e FC",
+   "type": "Ride",
+   "start_date_local": "2026-11-06T08:00:00Z",
+   "moving_time": 5400,
+   "elapsed_time": 5520,
+   "distance": 45000,
+   "total_elevation_gain": 600,
+   "weighted_average_watts": 230,
+   "average_watts": 210,
+   "has_heartrate": true,
+   "average_heartrate": 150,
+   "max_heartrate": 178,
+   "suffer_score": 95,
+   "average_speed": 8.33
+  },
+  {
+   "id": 3002,
+   "name": "Solo FC a tarda sera",
+   "type": "Ride",
+   "start_date_local": "2026-11-05T23:30:00Z",
+   "moving_time": 1860,
+   "elapsed_time": 1980,
+   "distance": 12250,
+   "total_elevation_gain": 50,
+   "has_heartrate": true,
+   "average_heartrate": 160,
+   "max_heartrate": 182,
+   "suffer_score": 30,
+   "average_speed": 6.6
+  },
+  {
+   "id": 3003,
+   "name": "Solo potenza",
+   "type": "Ride",
+   "start_date_local": "2026-11-04T18:00:00Z",
+   "moving_time": 2700,
+   "elapsed_time": 2820,
+   "distance": 20000,
+   "total_elevation_gain": 150,
+   "weighted_average_watts": 245,
+   "average_watts": 235,
+   "has_heartrate": false,
+   "average_speed": 7.4
+  },
+  {
+   "id": 3004,
+   "name": "Giro lungo senza sensori",
+   "type": "Ride",
+   "start_date_local": "2026-11-03T09:00:00Z",
+   "moving_time": 7200,
+   "elapsed_time": 7320,
+   "distance": 50000,
+   "total_elevation_gain": 900,
+   "has_heartrate": false,
+   "suffer_score": null,
+   "average_speed": 6.9
+  },
+  {
+   "id": 3005,
+   "name": "Intervalli soglia",
+   "type": "Ride",
+   "start_date_local": "2026-11-02T18:00:00Z",
+   "moving_time": 3600,
+   "elapsed_time": 3720,
+   "distance": 24000,
+   "total_elevation_gain": 200,
+   "has_heartrate": false,
+   "average_speed": 6.7
+  },
+  {
+   "id": 3006,
+   "name": "Corsa",
+   "type": "Run",
+   "start_date_local": "2026-11-02T07:00:00Z",
+   "moving_time": 3000,
+   "elapsed_time": 3120,
+   "distance": 10000,
+   "total_elevation_gain": 80,
+   "has_heartrate": true,
+   "average_heartrate": 155,
+   "max_heartrate": 172,
+   "suffer_score": 40
+  },
+  {
+   "id": 3007,
+   "name": "Escursione alpina",
+   "type": "Hike",
+   "start_date_local": "2026-11-01T08:00:00Z",
+   "moving_time": 14400,
+   "elapsed_time": 14520,
+   "distance": 14000,
+   "total_elevation_gain": 1200,
+   "has_heartrate": true,
+   "average_heartrate": 120,
+   "max_heartrate": 150
+  },
+  {
+   "id": 3008,
+   "name": "Passeggiata",
+   "type": "Walk",
+   "start_date_local": "2026-10-31T10:00:00Z",
+   "moving_time": 3600,
+   "elapsed_time": 3720,
+   "distance": 5000,
+   "total_elevation_gain": 50,
+   "has_heartrate": false
+  },
+  {
+   "id": 3009,
+   "name": "Palestra",
+   "type": "WeightTraining",
+   "start_date_local": "2026-10-30T18:00:00Z",
+   "moving_time": 3600,
+   "elapsed_time": 3720,
+   "distance": 0,
+   "total_elevation_gain": 0,
+   "has_heartrate": false
+  },
+  {
+   "id": 3010,
+   "name": "Trail",
+   "type": "TrailRun",
+   "start_date_local": "2026-10-29T07:00:00Z",
+   "moving_time": 5400,
+   "elapsed_time": 5520,
+   "distance": 15000,
+   "total_elevation_gain": 900,
+   "has_heartrate": true,
+   "average_heartrate": 162,
+   "max_heartrate": 180,
+   "suffer_score": 110
+  },
+  {
+   "id": 3011,
+   "name": "Test 25 minuti",
+   "type": "VirtualRide",
+   "start_date_local": "2026-10-27T19:00:00Z",
+   "moving_time": 1500,
+   "elapsed_time": 1620,
+   "distance": 14000,
+   "total_elevation_gain": 0,
+   "weighted_average_watts": 270,
+   "average_watts": 260,
+   "has_heartrate": true,
+   "average_heartrate": 168,
+   "max_heartrate": 186,
+   "average_speed": 9.3
+  },
+  {
+   "id": 3012,
+   "name": "Lunga in salita",
+   "type": "Ride",
+   "start_date_local": "2026-10-25T08:00:00Z",
+   "moving_time": 9000,
+   "elapsed_time": 9120,
+   "distance": 75000,
+   "total_elevation_gain": 2000,
+   "weighted_average_watts": 205,
+   "average_watts": 190,
+   "has_heartrate": true,
+   "average_heartrate": 140,
+   "max_heartrate": 170,
+   "suffer_score": 140,
+   "average_speed": 9.0
+  },
+  {
+   "id": 3013,
+   "name": "Gravel",
+   "type": "GravelRide",
+   "start_date_local": "2026-10-15T09:00:00Z",
+   "moving_time": 7200,
+   "elapsed_time": 7320,
+   "distance": 40000,
+   "total_elevation_gain": 500,
+   "has_heartrate": true,
+   "average_heartrate": 138,
+   "max_heartrate": 165,
+   "average_speed": 5.6
+  },
+  {
+   "id": 3014,
+   "name": "E-bike",
+   "type": "EBikeRide",
+   "start_date_local": "2026-10-10T10:00:00Z",
+   "moving_time": 4800,
+   "elapsed_time": 4920,
+   "distance": 30000,
+   "total_elevation_gain": 700,
+   "has_heartrate": false,
+   "average_speed": 6.2
+  },
+  {
+   "id": 3015,
+   "name": "Nuoto",
+   "type": "Swim",
+   "start_date_local": "2026-10-05T07:00:00Z",
+   "moving_time": 2700,
+   "elapsed_time": 2820,
+   "distance": 2000,
+   "total_elevation_gain": 0,
+   "has_heartrate": false
+  },
+  {
+   "id": 3016,
+   "name": "Sprint breve",
+   "type": "Ride",
+   "start_date_local": "2026-09-20T08:00:00Z",
+   "moving_time": 480,
+   "elapsed_time": 600,
+   "distance": 5000,
+   "total_elevation_gain": 60,
+   "weighted_average_watts": 380,
+   "average_watts": 360,
+   "has_heartrate": false,
+   "average_speed": 10.4
+  },
+  {
+   "id": 3017,
+   "name": "Salita 15 minuti",
+   "type": "Ride",
+   "start_date_local": "2026-09-10T08:00:00Z",
+   "moving_time": 900,
+   "elapsed_time": 1020,
+   "distance": 6000,
+   "total_elevation_gain": 300,
+   "weighted_average_watts": 300,
+   "average_watts": 295,
+   "has_heartrate": true,
+   "average_heartrate": 170,
+   "max_heartrate": 184,
+   "average_speed": 6.7
+  },
+  {
+   "id": 3018,
+   "name": "Granfondo",
+   "type": "Ride",
+   "start_date_local": "2026-08-10T08:00:00Z",
+   "moving_time": 10800,
+   "elapsed_time": 10920,
+   "distance": 95000,
+   "total_elevation_gain": 1800,
+   "weighted_average_watts": 195,
+   "average_watts": 180,
+   "has_heartrate": true,
+   "average_heartrate": 142,
+   "max_heartrate": 175,
+   "suffer_score": 180,
+   "average_speed": 8.8
+  },
+  {
+   "id": 3019,
+   "name": "Yoga",
+   "type": "Yoga",
+   "start_date_local": "2026-11-05T07:00:00Z",
+   "moving_time": 3600,
+   "elapsed_time": 3720,
+   "distance": 0,
+   "total_elevation_gain": 0,
+   "has_heartrate": false
+  },
+  {
+   "id": 3020,
+   "name": "Collina senza FC",
+   "type": "Hike",
+   "start_date_local": "2026-10-20T09:00:00Z",
+   "moving_time": 5400,
+   "elapsed_time": 5520,
+   "distance": 6000,
+   "total_elevation_gain": 300,
+   "has_heartrate": false
+  },
+  {
+   "id": 3021,
+   "name": "Fuori finestra",
+   "type": "Ride",
+   "start_date_local": "2026-07-01T08:00:00Z",
+   "moving_time": 3600,
+   "elapsed_time": 3720,
+   "distance": 30000,
+   "total_elevation_gain": 400,
+   "weighted_average_watts": 225,
+   "average_watts": 215,
+   "has_heartrate": true,
+   "average_heartrate": 150,
+   "max_heartrate": 176,
+   "average_speed": 8.3
+  },
+  {
+   "id": 3022,
+   "name": "Crossfit",
+   "type": "Crossfit",
+   "start_date_local": "2026-11-04T07:00:00Z",
+   "moving_time": 2700,
+   "elapsed_time": 2820,
+   "distance": 0,
+   "total_elevation_gain": 0,
+   "has_heartrate": true,
+   "average_heartrate": 150,
+   "max_heartrate": 175
+  },
+  {
+   "id": 3023,
+   "name": "Arrampicata",
+   "type": "RockClimbing",
+   "start_date_local": "2026-10-12T10:00:00Z",
+   "moving_time": 7200,
+   "elapsed_time": 7320,
+   "distance": 0,
+   "total_elevation_gain": 0,
+   "has_heartrate": false
+  },
+  {
+   "id": 3024,
+   "name": "Camminata in quota",
+   "type": "Walk",
+   "start_date_local": "2026-10-18T09:00:00Z",
+   "moving_time": 10800,
+   "elapsed_time": 10920,
+   "distance": 12000,
+   "total_elevation_gain": 700,
+   "has_heartrate": true,
+   "average_heartrate": 110,
+   "max_heartrate": 135
+  }
+ ],
+ "streams": {
+  "byActivity": {
+   "3001": {
+    "watts": [
+     [
+      150,
+      1200
+     ],
+     [
+      260,
+      1800
+     ],
+     [
+      180,
+      2400
+     ]
+    ],
+    "heartrate": [
+     [
+      130,
+      1200
+     ],
+     [
+      165,
+      1800
+     ],
+     [
+      145,
+      2400
+     ]
+    ]
+   },
+   "3002": {
+    "heartrate": [
+     [
+      150,
+      900
+     ],
+     [
+      170,
+      960
+     ]
+    ]
+   },
+   "3003": {
+    "watts": [
+     [
+      200,
+      600
+     ],
+     [
+      270,
+      1500
+     ],
+     [
+      180,
+      600
+     ]
+    ]
+   }
+  },
+  "profiles": [
+   {
+    "ftp": 250,
+    "lthr": 165
+   },
+   {
+    "ftp": null,
+    "lthr": 165
+   },
+   {
+    "ftp": 280,
+    "lthr": null
+   },
+   {
+    "ftp": null,
+    "lthr": null
+   }
+  ]
+ },
+ "stats": {
+  "intermediate": {
+   "all_ride_totals": {
+    "count": 420,
+    "distance": 12500000,
+    "moving_time": 1800000,
+    "elapsed_time": 1900000,
+    "elevation_gain": 150000
+   },
+   "recent_ride_totals": {
+    "count": 14,
+    "distance": 520000,
+    "moving_time": 90000,
+    "elapsed_time": 95000,
+    "elevation_gain": 6000
+   }
+  },
+  "newcomer": {
+   "all_ride_totals": {
+    "count": 5,
+    "distance": 150000,
+    "moving_time": 30000,
+    "elapsed_time": 31000,
+    "elevation_gain": 900
+   },
+   "recent_ride_totals": {
+    "count": 2,
+    "distance": 40000,
+    "moving_time": 5000,
+    "elapsed_time": 5200,
+    "elevation_gain": 200
+   }
+  },
+  "missing": null
+ },
+ "levelKm": [
+  0,
+  499,
+  500,
+  2999,
+  3000,
+  14999,
+  15000,
+  49999,
+  50000,
+  120000
+ ],
+ "ftpHistories": {
+  "none": [],
+  "single": [
+   {
+    "date": "2026-10-30",
+    "ftp": 240,
+    "source": "estimated"
+   }
+  ],
+  "recent": [
+   {
+    "date": "2026-10-21",
+    "ftp": 248,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-28",
+    "ftp": 250,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-11-04",
+    "ftp": 252,
+    "source": "estimated"
+   }
+  ],
+  "growing": [
+   {
+    "date": "2026-09-11",
+    "ftp": 230,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-09-18",
+    "ftp": 233,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-09-25",
+    "ftp": 237,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-02",
+    "ftp": 240,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-09",
+    "ftp": 246,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-16",
+    "ftp": 250,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-23",
+    "ftp": 255,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-30",
+    "ftp": 262,
+    "source": "estimated"
+   }
+  ],
+  "plateau": [
+   {
+    "date": "2026-09-25",
+    "ftp": 250,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-02",
+    "ftp": 250,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-09",
+    "ftp": 251,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-16",
+    "ftp": 250,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-23",
+    "ftp": 250,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-30",
+    "ftp": 250,
+    "source": "estimated"
+   }
+  ],
+  "declining": [
+   {
+    "date": "2026-09-18",
+    "ftp": 270,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-09-25",
+    "ftp": 268,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-02",
+    "ftp": 262,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-09",
+    "ftp": 258,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-16",
+    "ftp": 252,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-23",
+    "ftp": 248,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-30",
+    "ftp": 245,
+    "source": "estimated"
+   }
+  ],
+  "full": [
+   {
+    "date": "2025-11-07",
+    "ftp": 220,
+    "source": "estimated"
+   },
+   {
+    "date": "2025-11-14",
+    "ftp": 221,
+    "source": "estimated"
+   },
+   {
+    "date": "2025-11-21",
+    "ftp": 222,
+    "source": "estimated"
+   },
+   {
+    "date": "2025-11-28",
+    "ftp": 223,
+    "source": "estimated"
+   },
+   {
+    "date": "2025-12-05",
+    "ftp": 224,
+    "source": "estimated"
+   },
+   {
+    "date": "2025-12-12",
+    "ftp": 225,
+    "source": "estimated"
+   },
+   {
+    "date": "2025-12-19",
+    "ftp": 226,
+    "source": "estimated"
+   },
+   {
+    "date": "2025-12-26",
+    "ftp": 220,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-01-02",
+    "ftp": 221,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-01-09",
+    "ftp": 222,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-01-16",
+    "ftp": 223,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-01-23",
+    "ftp": 224,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-01-30",
+    "ftp": 225,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-02-06",
+    "ftp": 226,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-02-13",
+    "ftp": 220,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-02-20",
+    "ftp": 221,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-02-27",
+    "ftp": 222,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-03-06",
+    "ftp": 223,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-03-13",
+    "ftp": 224,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-03-20",
+    "ftp": 225,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-03-27",
+    "ftp": 226,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-04-03",
+    "ftp": 220,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-04-10",
+    "ftp": 221,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-04-17",
+    "ftp": 222,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-04-24",
+    "ftp": 223,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-05-01",
+    "ftp": 224,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-05-08",
+    "ftp": 225,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-05-15",
+    "ftp": 226,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-05-22",
+    "ftp": 220,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-05-29",
+    "ftp": 221,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-06-05",
+    "ftp": 222,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-06-12",
+    "ftp": 223,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-06-19",
+    "ftp": 224,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-06-26",
+    "ftp": 225,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-07-03",
+    "ftp": 226,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-07-10",
+    "ftp": 220,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-07-17",
+    "ftp": 221,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-07-24",
+    "ftp": 222,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-07-31",
+    "ftp": 223,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-08-07",
+    "ftp": 224,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-08-14",
+    "ftp": 225,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-08-21",
+    "ftp": 226,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-08-28",
+    "ftp": 220,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-09-04",
+    "ftp": 221,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-09-11",
+    "ftp": 222,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-09-18",
+    "ftp": 223,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-09-25",
+    "ftp": 224,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-02",
+    "ftp": 225,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-09",
+    "ftp": 226,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-16",
+    "ftp": 220,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-23",
+    "ftp": 221,
+    "source": "estimated"
+   },
+   {
+    "date": "2026-10-30",
+    "ftp": 222,
+    "source": "estimated"
+   }
+  ]
+ },
+ "mesocycles": {
+  "threshold": {
+   "blockId": "threshold",
+   "weekInBlock": 1,
+   "ftpHistory": [
+    {
+     "date": "2026-10-23",
+     "ftp": 250
+    },
+    {
+     "date": "2026-10-30",
+     "ftp": 258
+    }
+   ]
+  },
+  "fullHistory": {
+   "blockId": "base",
+   "weekInBlock": 3,
+   "ftpHistory": [
+    {
+     "date": "2026-01-10",
+     "ftp": 230
+    },
+    {
+     "date": "2026-01-11",
+     "ftp": 231
+    },
+    {
+     "date": "2026-01-12",
+     "ftp": 232
+    },
+    {
+     "date": "2026-01-13",
+     "ftp": 233
+    },
+    {
+     "date": "2026-02-10",
+     "ftp": 234
+    },
+    {
+     "date": "2026-02-11",
+     "ftp": 235
+    },
+    {
+     "date": "2026-02-12",
+     "ftp": 236
+    },
+    {
+     "date": "2026-02-13",
+     "ftp": 237
+    },
+    {
+     "date": "2026-03-10",
+     "ftp": 238
+    },
+    {
+     "date": "2026-03-11",
+     "ftp": 239
+    },
+    {
+     "date": "2026-03-12",
+     "ftp": 240
+    },
+    {
+     "date": "2026-03-13",
+     "ftp": 241
+    },
+    {
+     "date": "2026-04-10",
+     "ftp": 242
+    },
+    {
+     "date": "2026-04-11",
+     "ftp": 243
+    },
+    {
+     "date": "2026-04-12",
+     "ftp": 244
+    },
+    {
+     "date": "2026-04-13",
+     "ftp": 245
+    },
+    {
+     "date": "2026-05-10",
+     "ftp": 246
+    },
+    {
+     "date": "2026-05-11",
+     "ftp": 247
+    },
+    {
+     "date": "2026-05-12",
+     "ftp": 248
+    },
+    {
+     "date": "2026-05-13",
+     "ftp": 249
+    }
+   ]
+  }
+ },
+ "segmentCache": {
+  "501": {
+   "efforts": [
+    {
+     "id": 9001,
+     "elapsed_time": 1320,
+     "moving_time": 1320,
+     "start_date": "2026-08-01T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 240,
+     "average_heartrate": 160,
+     "max_heartrate": 176
+    },
+    {
+     "id": 9002,
+     "elapsed_time": 1290,
+     "moving_time": 1290,
+     "start_date": "2026-08-20T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 246,
+     "average_heartrate": 161,
+     "max_heartrate": 177
+    },
+    {
+     "id": 9003,
+     "elapsed_time": 1275,
+     "moving_time": 1275,
+     "start_date": "2026-09-12T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 250,
+     "average_heartrate": 163,
+     "max_heartrate": 179
+    },
+    {
+     "id": 9004,
+     "elapsed_time": 1250,
+     "moving_time": 1250,
+     "start_date": "2026-09-30T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 255,
+     "average_heartrate": 164,
+     "max_heartrate": 181
+    },
+    {
+     "id": 9005,
+     "elapsed_time": 1262,
+     "moving_time": 1262,
+     "start_date": "2026-10-11T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 252,
+     "average_heartrate": 165,
+     "max_heartrate": 180
+    },
+    {
+     "id": 9006,
+     "elapsed_time": 1200,
+     "moving_time": 1200,
+     "start_date": "2026-10-20T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 265,
+     "average_heartrate": 166,
+     "max_heartrate": 184
+    }
+   ],
+   "_fetched": 1793000000000,
+   "_segment": {
+    "average_grade": 6.5,
+    "elevation_difference": 180,
+    "total_elevation_gain": 185,
+    "distance": 2800
+   }
+  },
+  "502": {
+   "efforts": [
+    {
+     "id": 9101,
+     "elapsed_time": 420,
+     "moving_time": 420,
+     "start_date": "2026-09-01T18:00:00Z",
+     "distance": 5000,
+     "average_watts": 310,
+     "average_heartrate": 170,
+     "max_heartrate": 180
+    },
+    {
+     "id": 9102,
+     "elapsed_time": 400,
+     "moving_time": 400,
+     "start_date": "2026-10-01T18:00:00Z",
+     "distance": 5000,
+     "average_watts": 320,
+     "average_heartrate": 171,
+     "max_heartrate": 183
+    },
+    {
+     "id": 9103,
+     "elapsed_time": 410,
+     "moving_time": 410,
+     "start_date": "2026-10-28T18:00:00Z",
+     "distance": 5000,
+     "average_watts": 315
+    },
+    {
+     "id": 9104,
+     "elapsed_time": 415,
+     "moving_time": 415,
+     "start_date": "2026-11-03T18:00:00Z",
+     "distance": 5000
+    }
+   ],
+   "_fetched": 1793000000000,
+   "_segment": {
+    "average_grade": 0.8,
+    "elevation_difference": 10,
+    "total_elevation_gain": 12,
+    "distance": 5000
+   }
+  },
+  "503": {
+   "efforts": [
+    {
+     "id": 9201,
+     "elapsed_time": 2500,
+     "moving_time": 2500,
+     "start_date": "2026-09-15T09:00:00Z",
+     "distance": 12000,
+     "average_watts": 230,
+     "average_heartrate": 158,
+     "max_heartrate": 172
+    },
+    {
+     "id": 9202,
+     "elapsed_time": 2450,
+     "moving_time": 2450,
+     "start_date": "2026-10-05T09:00:00Z",
+     "distance": 12000,
+     "average_watts": 232,
+     "average_heartrate": 160,
+     "max_heartrate": 174
+    },
+    {
+     "id": 9203,
+     "elapsed_time": 2400,
+     "moving_time": 2400,
+     "start_date": "2026-10-26T09:00:00Z",
+     "distance": 12000,
+     "average_watts": 235,
+     "average_heartrate": 162,
+     "max_heartrate": 175
+    }
+   ],
+   "_fetched": 1793000000000,
+   "_segment": {
+    "average_grade": 5,
+    "elevation_difference": 600,
+    "total_elevation_gain": 610,
+    "distance": 12000
+   }
+  },
+  "504": {
+   "efforts": [
+    {
+     "id": 9301,
+     "elapsed_time": 80,
+     "moving_time": 80,
+     "start_date": "2026-10-02T10:00:00Z",
+     "distance": 400,
+     "average_watts": 500,
+     "max_heartrate": 186
+    },
+    {
+     "id": 9302,
+     "elapsed_time": 70,
+     "moving_time": 70,
+     "start_date": "2026-10-16T10:00:00Z",
+     "distance": 400,
+     "average_watts": 520,
+     "max_heartrate": 188
+    },
+    {
+     "id": 9303,
+     "elapsed_time": 75,
+     "moving_time": 75,
+     "start_date": "2026-11-01T10:00:00Z",
+     "distance": 400
+    }
+   ],
+   "_fetched": 1793000000000,
+   "_segment": {
+    "average_grade": 4,
+    "elevation_difference": 16,
+    "total_elevation_gain": 16,
+    "distance": 400
+   }
+  },
+  "505": {
+   "efforts": [],
+   "_fetched": 1793000000000,
+   "_segment": {
+    "average_grade": 7,
+    "elevation_difference": 90,
+    "distance": 1600
+   }
+  },
+  "506": {
+   "_fetched": 1793000000000
+  }
+ },
+ "predictions": [
+  {
+   "segment": {
+    "id": 501,
+    "name": "Salita del Muro",
+    "distance": 2800,
+    "average_grade": 6.5,
+    "total_elevation_gain": 185
+   },
+   "efforts": [
+    {
+     "id": 9001,
+     "elapsed_time": 1320,
+     "moving_time": 1320,
+     "start_date": "2026-08-01T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 240,
+     "average_heartrate": 160,
+     "max_heartrate": 176
+    },
+    {
+     "id": 9002,
+     "elapsed_time": 1290,
+     "moving_time": 1290,
+     "start_date": "2026-08-20T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 246,
+     "average_heartrate": 161,
+     "max_heartrate": 177
+    },
+    {
+     "id": 9003,
+     "elapsed_time": 1275,
+     "moving_time": 1275,
+     "start_date": "2026-09-12T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 250,
+     "average_heartrate": 163,
+     "max_heartrate": 179
+    },
+    {
+     "id": 9004,
+     "elapsed_time": 1250,
+     "moving_time": 1250,
+     "start_date": "2026-09-30T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 255,
+     "average_heartrate": 164,
+     "max_heartrate": 181
+    },
+    {
+     "id": 9005,
+     "elapsed_time": 1262,
+     "moving_time": 1262,
+     "start_date": "2026-10-11T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 252,
+     "average_heartrate": 165,
+     "max_heartrate": 180
+    },
+    {
+     "id": 9006,
+     "elapsed_time": 1200,
+     "moving_time": 1200,
+     "start_date": "2026-10-20T08:10:00Z",
+     "distance": 2800,
+     "average_watts": 265,
+     "average_heartrate": 166,
+     "max_heartrate": 184
+    }
+   ]
+  },
+  {
+   "segment": {
+    "id": 502,
+    "name": "Rettilineo",
+    "distance": 5000,
+    "average_grade": 0.8,
+    "total_elevation_gain": 12
+   },
+   "efforts": [
+    {
+     "id": 9101,
+     "elapsed_time": 420,
+     "moving_time": 420,
+     "start_date": "2026-09-01T18:00:00Z",
+     "distance": 5000,
+     "average_watts": 310,
+     "average_heartrate": 170,
+     "max_heartrate": 180
+    },
+    {
+     "id": 9102,
+     "elapsed_time": 400,
+     "moving_time": 400,
+     "start_date": "2026-10-01T18:00:00Z",
+     "distance": 5000,
+     "average_watts": 320,
+     "average_heartrate": 171,
+     "max_heartrate": 183
+    },
+    {
+     "id": 9103,
+     "elapsed_time": 410,
+     "moving_time": 410,
+     "start_date": "2026-10-28T18:00:00Z",
+     "distance": 5000,
+     "average_watts": 315
+    },
+    {
+     "id": 9104,
+     "elapsed_time": 415,
+     "moving_time": 415,
+     "start_date": "2026-11-03T18:00:00Z",
+     "distance": 5000
+    }
+   ]
+  },
+  {
+   "segment": {
+    "id": 503,
+    "name": "Passo lungo",
+    "distance": 12000,
+    "average_grade": 5,
+    "total_elevation_gain": 610
+   },
+   "efforts": [
+    {
+     "id": 9201,
+     "elapsed_time": 2500,
+     "moving_time": 2500,
+     "start_date": "2026-09-15T09:00:00Z",
+     "distance": 12000,
+     "average_watts": 230,
+     "average_heartrate": 158,
+     "max_heartrate": 172
+    },
+    {
+     "id": 9202,
+     "elapsed_time": 2450,
+     "moving_time": 2450,
+     "start_date": "2026-10-05T09:00:00Z",
+     "distance": 12000,
+     "average_watts": 232,
+     "average_heartrate": 160,
+     "max_heartrate": 174
+    },
+    {
+     "id": 9203,
+     "elapsed_time": 2400,
+     "moving_time": 2400,
+     "start_date": "2026-10-26T09:00:00Z",
+     "distance": 12000,
+     "average_watts": 235,
+     "average_heartrate": 162,
+     "max_heartrate": 175
+    }
+   ]
+  },
+  {
+   "segment": {
+    "id": 504,
+    "name": "Strappo",
+    "distance": 400,
+    "average_grade": 4,
+    "total_elevation_gain": 16
+   },
+   "efforts": [
+    {
+     "id": 9301,
+     "elapsed_time": 80,
+     "moving_time": 80,
+     "start_date": "2026-10-02T10:00:00Z",
+     "distance": 400,
+     "average_watts": 500,
+     "max_heartrate": 186
+    },
+    {
+     "id": 9302,
+     "elapsed_time": 70,
+     "moving_time": 70,
+     "start_date": "2026-10-16T10:00:00Z",
+     "distance": 400,
+     "average_watts": 520,
+     "max_heartrate": 188
+    },
+    {
+     "id": 9303,
+     "elapsed_time": 75,
+     "moving_time": 75,
+     "start_date": "2026-11-01T10:00:00Z",
+     "distance": 400
+    }
+   ]
+  },
+  {
+   "segment": {
+    "id": 507,
+    "name": "Un solo tentativo",
+    "distance": 1500,
+    "average_grade": 3,
+    "total_elevation_gain": 45
+   },
+   "efforts": [
+    {
+     "id": 9401,
+     "elapsed_time": 300,
+     "moving_time": 300,
+     "start_date": "2026-10-10T10:00:00Z",
+     "distance": 1500,
+     "average_watts": 280
+    }
+   ]
+  }
+ ],
+ "formContexts": [
+  null,
+  {
+   "ctl": 85,
+   "tsb": 20
+  },
+  {
+   "ctl": 25,
+   "tsb": -25
+  },
+  {
+   "ctl": 50,
+   "tsb": 7
+  },
+  {
+   "ctl": 50,
+   "tsb": -12
+  },
+  {
+   "ctl": 60,
+   "tsb": 0
+  }
+ ],
+ "regressionPoints": [
+  [],
+  [
+   {
+    "x": 0,
+    "y": 5
+   }
+  ],
+  [
+   {
+    "x": 2,
+    "y": 1
+   },
+   {
+    "x": 2,
+    "y": 3
+   }
+  ],
+  [
+   {
+    "x": 0,
+    "y": 300
+   },
+   {
+    "x": 7,
+    "y": 295
+   },
+   {
+    "x": 14,
+    "y": 296
+   },
+   {
+    "x": 21,
+    "y": 290
+   }
+  ]
+ ],
+ "adjustCases": [
+  [
+   300,
+   290
+  ],
+  [
+   300,
+   250
+  ],
+  [
+   1200,
+   1190
+  ]
+ ],
+ "dateOffsets": [
+  0,
+  1,
+  3,
+  -2
+ ],
+ "scenarios": [
+  {
+   "name": "declared",
+   "settings": {
+    "hrMax": 186,
+    "hrLthr": 166,
+    "lthrSource": "declared",
+    "ftpDeclared": 255,
+    "weight": 72
+   },
+   "segments": true,
+   "ftpHistory": "growing",
+   "mesocycle": "threshold",
+   "stats": "intermediate"
+  },
+  {
+   "name": "estimated",
+   "settings": {
+    "ftpSource": "estimated",
+    "weight": 72
+   },
+   "segments": true,
+   "ftpHistory": "plateau",
+   "stats": "intermediate"
+  },
+  {
+   "name": "estimatedNoSegments",
+   "settings": {
+    "ftpSource": "estimated",
+    "lthrSource": "estimated",
+    "hrMax": 190,
+    "weight": 72
+   },
+   "segments": false,
+   "ftpHistory": "declining",
+   "stats": "newcomer"
+  },
+  {
+   "name": "empty",
+   "settings": {},
+   "segments": false,
+   "ftpHistory": "none",
+   "stats": "missing"
+  },
+  {
+   "name": "noActivities",
+   "settings": {
+    "hrMax": 186,
+    "hrLthr": 166,
+    "lthrSource": "declared",
+    "ftpDeclared": 255,
+    "weight": 72
+   },
+   "segments": false,
+   "ftpHistory": "single",
+   "noActivities": true,
+   "stats": "newcomer"
+  },
+  {
+   "name": "noActivitiesEmpty",
+   "settings": {},
+   "segments": false,
+   "ftpHistory": "none",
+   "noActivities": true,
+   "stats": "missing"
+  }
+ ],
+ "ftpPointCases": [
+  {
+   "scenario": "declared",
+   "ftpHistory": "none"
+  },
+  {
+   "scenario": "declared",
+   "ftpHistory": "recent"
+  },
+  {
+   "scenario": "estimated",
+   "ftpHistory": "growing",
+   "mesocycle": "threshold"
+  },
+  {
+   "scenario": "declared",
+   "ftpHistory": "full",
+   "mesocycle": "fullHistory"
+  },
+  {
+   "scenario": "empty",
+   "ftpHistory": "growing",
+   "mesocycle": "threshold"
+  }
+ ]
+}

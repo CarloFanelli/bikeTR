@@ -1,40 +1,49 @@
 // Analisi approfondita: Power Curve + FTP stimato, Trend forma (CTL/ATL/TSB), Zone FC.
-import { safeLoad, safeSave, isoDay, dayOffsetIso, escapeHtml, fmtTime, fmtDate } from './strava.js';
+// I calcoli stanno in src/core/ e ricevono tutto come parametro: qui restano le card e
+// le versioni con i nomi e gli argomenti di prima, che leggono orologio e valori salvati.
+import { escapeHtml, fmtDate } from './strava.js';
 import {
-  resolveHr, isHard, activityLoad, typeWeight, buildDateHelpers,
-  levelFromKm, muscularFatigueScore, loadMesocycle, saveMesocycle, MESO_BLOCKS,
-  athleteResponseCheck,
+  resolveHr, buildFormTrend, compositeFatigueScore, buildFtpTrend,
+  loadMesocycle, saveMesocycle, MESO_BLOCKS, athleteResponseCheck,
 } from './training.js';
-import { estimatesFromSegments, linearRegression } from './predictions.js';
-import { PHYSIO } from './constants.js';
+import { estimatesFromSegments } from './predictions.js';
+import { formInsights as formInsightsFrom, crossTrainingInsights as crossTrainingFrom } from './src/core/form.ts';
+import {
+  buildFtpBreakdown as ftpBreakdownFrom, buildFtpInsights, buildLthrBreakdown, nextFtpHistory,
+} from './src/core/ftp.ts';
+import { buildHrZones as hrZonesFrom } from './src/core/hr.ts';
+import { buildPowerCurve, buildPowerProfile } from './src/core/power.ts';
+import { loadFtpHistory, saveFtpHistory } from './src/data/storage.ts';
 
-// ---- Power Duration Curve ----
-function buildPowerCurve(activities, weightKg) {
-  const bikes = activities.filter(a => a.type && a.type.includes('Ride'));
-  const withPower = bikes.filter(a => a.weighted_average_watts || a.average_watts);
-  if (!withPower.length) return null;
-  const buckets = [
-    { label: '< 5 min', min: 0, max: 5*60 },
-    { label: '5–15 min', min: 5*60, max: 15*60 },
-    { label: '15–30 min', min: 15*60, max: 30*60 },
-    { label: '30–60 min', min: 30*60, max: 60*60 },
-    { label: '60–120 min', min: 60*60, max: 120*60 },
-    { label: '> 2h', min: 120*60, max: Infinity },
-  ];
-  buckets.forEach(b => {
-    const hits = withPower.filter(a => (a.moving_time||0) >= b.min && (a.moving_time||0) < b.max);
-    if (!hits.length) return;
-    const best = hits.reduce((x, a) => {
-      const w = a.weighted_average_watts || a.average_watts;
-      return w > (x?.watts || 0) ? { watts: w, act: a } : x;
-    }, null);
-    b.best = best;
+// Le card Forma e Zone FC usano soglia e FTP senza le stime dalle attività: contano
+// solo i valori dichiarati e i segmenti (resolveHr senza attività).
+function formInsights(data, activities, settings) {
+  const { hrLthr, ftp } = resolveHr(settings);
+  const meso = loadMesocycle();
+  const block = meso && MESO_BLOCKS.find(b => b.id === meso.blockId);
+  return formInsightsFrom(data, activities, {
+    hrLthr, ftp, now: new Date(),
+    ftpTrend: buildFtpTrend(),
+    meso: block ? { label: block.label, weeks: block.weeks, description: block.description, weekInBlock: meso.weekInBlock } : null,
+    response: athleteResponseCheck(activities, settings),
   });
-  const ref = buckets.find(b => b.label === '30–60 min')?.best?.watts
-    || buckets.find(b => b.label === '60–120 min')?.best?.watts;
-  const ftp = ref ? Math.round(ref * 0.95) : null;
-  const wPerKg = (ftp && weightKg) ? (ftp/weightKg).toFixed(2) : null;
-  return { buckets, ftp, wPerKg };
+}
+const buildHrZones = (activities, settings) => hrZonesFrom(activities, resolveHr(settings).hrLthr, new Date());
+const crossTrainingInsights = (activities) => crossTrainingFrom(activities, new Date());
+const buildFtpBreakdown = (activities) => ftpBreakdownFrom(activities, new Date());
+
+// Registra il punto FTP di oggi (chiamato su ogni renderTraining): un salvataggio per
+// caricamento, e lo stesso punto negli ultimi 20 del mesociclo.
+function recordFtpPoint(settings, activities) {
+  const history = nextFtpHistory(loadFtpHistory(), resolveHr(settings, activities), new Date());
+  if (!history) return;
+  saveFtpHistory(history);
+  const meso = loadMesocycle();
+  if (meso) {
+    const { date, ftp } = history[history.length - 1];
+    meso.ftpHistory = [...(meso.ftpHistory || []), { date, ftp }].slice(-20);
+    saveMesocycle(meso);
+  }
 }
 
 function renderPowerCurve(data, profile, settings) {
@@ -79,154 +88,6 @@ function renderPowerCurve(data, profile, settings) {
     </div>`;
   }
   return ftpCard + `<div class="pdc">${rows}</div>`;
-}
-
-// ---- CTL / ATL / TSB ----
-function buildFormTrend(activities, settings) {
-  const { hrMax, hrLthr, ftp } = resolveHr(settings, activities);
-  // Usa TUTTE le attività (con peso per tipo via activityLoad)
-  const DAYS = 90;
-  const daily = new Array(DAYS).fill(0);
-  const now = new Date(); now.setHours(0,0,0,0);
-  activities.forEach(a => {
-    const d = new Date(a.start_date_local); d.setHours(0,0,0,0);
-    const delta = Math.round((now - d) / 86400000);
-    if (delta >= 0 && delta < DAYS) daily[DAYS - 1 - delta] += activityLoad(a, hrMax, hrLthr, ftp);
-  });
-  const ctl = [], atl = [];
-  let cCTL = 0, cATL = 0;
-  const kCTL = 1 - Math.exp(-1/42);
-  const kATL = 1 - Math.exp(-1/7);
-  for (let i = 0; i < DAYS; i++) {
-    cCTL += (daily[i] - cCTL) * kCTL;
-    cATL += (daily[i] - cATL) * kATL;
-    ctl.push(cCTL); atl.push(cATL);
-  }
-  const tsb = ctl.map((c, i) => c - atl[i]);
-  return { daily, ctl, atl, tsb, DAYS };
-}
-
-function formInsights(data, activities, settings) {
-  const { ctl, atl, tsb, daily, DAYS } = data;
-  const cur = { ctl: ctl[DAYS-1], atl: atl[DAYS-1], tsb: tsb[DAYS-1] };
-  const prevCTL = ctl[Math.max(0, DAYS-15)];
-  const load7 = daily.slice(-7).reduce((s,v) => s+v, 0);
-  const loadPrev7 = daily.slice(-14, -7).reduce((s,v) => s+v, 0);
-  const deltaLoad = load7 - loadPrev7;
-  const restDaysLast7 = daily.slice(-7).filter(v => v < 5).length;
-  const { hrLthr, ftp } = resolveHr(settings);
-  const { ago } = buildDateHelpers(0);
-  const bikes = activities.filter(a => a.type && a.type.includes('Ride'));
-  const last7 = bikes.filter(a => ago(a.start_date_local) < 7);
-  const hardsLast7 = last7.filter(a => isHard(a, hrLthr, ftp)).length;
-  const longLast7 = last7.filter(a => (a.moving_time||0) >= 120*60).length;
-
-  const out = [];
-
-  // Range PMC classici del coaching basato su TSS:
-  // TSB -10 a +10 = forma di gara (pronto a performare)
-  // TSB 0 a -20 = carico normale
-  // TSB -20 a -30 = fase di carico profondo (costruzione)
-  // TSB < -50 = troppo stanco, non rendere
-  // TSB > +10 = rischio "imballato" / detraining
-  if (cur.tsb < -50) {
-    out.push({ icon: '🔴', text: `TSB a ${cur.tsb.toFixed(0)}: sei troppo stanco per rendere al meglio. La fatica (ATL=${cur.atl.toFixed(0)}) ha superato di molto il fitness (CTL=${cur.ctl.toFixed(0)}). Con questi valori le prestazioni crollano del 15-20%: non è il momento di forzare, ma di scaricare per 3-5 giorni prima di riprendere stimoli duri.` });
-  } else if (cur.tsb < -30) {
-    out.push({ icon: '🟠', text: `TSB a ${cur.tsb.toFixed(0)}: fase di carico profondo. Fatica ${cur.atl.toFixed(0)} supera nettamente fitness ${cur.ctl.toFixed(0)}. È la situazione di una settimana di costruzione intensa: il fitness sta crescendo ma le prestazioni immediate sono compromesse. Continua se è il tuo piano, ma entro 7-10 giorni serve uno scarico per "capitalizzare" il lavoro.` });
-  } else if (cur.tsb < -10) {
-    out.push({ icon: '🟡', text: `TSB a ${cur.tsb.toFixed(0)}: carico normale di allenamento. Stai accumulando stimolo per migliorare la forma futura — esattamente la zona in cui si costruiscono gli adattamenti senza rompere. Le prestazioni del giorno sono leggermente sotto il potenziale, ma è un prezzo sano da pagare.` });
-  } else if (cur.tsb <= 10) {
-    out.push({ icon: '🟢', text: `TSB ${cur.tsb > 0 ? '+' : ''}${cur.tsb.toFixed(0)}: forma di gara! Fitness ${cur.ctl.toFixed(0)} e fatica ${cur.atl.toFixed(0)} allineati con margine. Questa è la finestra ideale per un test FTP, un tentativo su un segmento PR, una gara o un'uscita di qualità massima. Sfrutta la freschezza.` });
-  } else {
-    out.push({ icon: '⚠️', text: `TSB +${cur.tsb.toFixed(0)}: troppo scarico. Ti senti "imballato" — le gambe non rispondono come dovrebbero nonostante la freschezza. Il CTL sta iniziando a scendere: se non hai una gara imminente, torna a stimoli regolari per evitare detraining.` });
-  }
-
-  if (loadPrev7 > 10) {
-    const pct = Math.round((deltaLoad / loadPrev7) * 100);
-    if (pct > 30) out.push({ icon: '📈', text: `Il carico è cresciuto del ${pct}% rispetto alla settimana precedente (${loadPrev7.toFixed(0)} → ${load7.toFixed(0)}). Aumenti oltre il 30% sono considerati "spike" e sono la prima causa di fatica acuta elevata. Se questo è volontario (es. mesociclo di carico) va bene per 1–2 settimane, ma deve essere seguito da uno scarico.` });
-    else if (pct < -30) out.push({ icon: '📉', text: `Il carico è sceso del ${Math.abs(pct)}% rispetto alla settimana precedente (${loadPrev7.toFixed(0)} → ${load7.toFixed(0)}). Riduzione consistente: può essere una fase di scarico pianificato, uno stop per malattia/viaggio o semplicemente una settimana meno strutturata. Se prolungata oltre 10 giorni inizia a incidere sul fitness.` });
-    else out.push({ icon: '➡️', text: `Carico stabile: ${load7.toFixed(0)} questa settimana vs ${loadPrev7.toFixed(0)} la precedente (${pct >= 0 ? '+' : ''}${pct}%). Progressione fisiologica, nessun spike.` });
-  }
-
-  if (hardsLast7 >= 3) {
-    out.push({ icon: '🔥', text: `${hardsLast7} sessioni ad alta intensità negli ultimi 7 giorni. Per costruire soglia, il sistema cardiovascolare e muscolare ha bisogno di tempo per adattarsi tra uno stimolo forte e il successivo: 3+ intensità/settimana è un dosaggio da atleta avanzato, e solo se bilanciato con recuperi veri. Se non sei abituato a questo ritmo, il rischio stallo/infortunio è reale.` });
-  } else if (hardsLast7 === 2) {
-    out.push({ icon: '🎯', text: `2 sessioni dure in 7 giorni: dosaggio classico per migliorare la soglia mantenendo spazio per il recupero. Distribuite bene (con almeno 48h in mezzo e giorni di Z2 tra l'una e l'altra) sono il cuore di un piano per l'FTP.` });
-  } else if (hardsLast7 === 0 && cur.tsb < -5) {
-    out.push({ icon: '🚴', text: `Nessuna sessione sopra soglia, ma TSB comunque negativo (${cur.tsb.toFixed(0)}): il carico viene quindi dal volume in Z2 o dalle uscite lunghe. Questo tipo di fatica è meno "acuta" ma più cumulativa — ottima per la base aerobica, da monitorare se prolungata.` });
-  }
-
-  if (longLast7 > 0) {
-    out.push({ icon: '🟠', text: `${longLast7} uscita lunga (≥2h) nell'ultima settimana. Le lunghe sono il contributo singolo più importante al CTL settimanale: una 3h ben fatta genera più carico di due sessioni di intensità da 60'. Ottimo strumento per costruire base aerobica e capacità di utilizzo dei grassi come carburante.` });
-  }
-
-  if (restDaysLast7 >= 4) {
-    out.push({ icon: '🛌', text: `${restDaysLast7} giorni su 7 senza attività. Riposo consistente: utile per recuperare da un blocco intenso o da un evento, ma se prolungato oltre una settimana il CTL inizia a scendere significativamente.` });
-  } else if (restDaysLast7 === 0) {
-    out.push({ icon: '⚡', text: `Attivo tutti i 7 giorni. Può funzionare per atleti esperti con sessioni molto calibrate (es. alternanza Z1/Z2/qualità), ma per la maggior parte dei ciclisti 1–2 giorni di riposo completo a settimana migliorano gli adattamenti e riducono il rischio di plateau.` });
-  }
-
-  const ctlDelta = cur.ctl - prevCTL;
-  if (ctlDelta > 5) out.push({ icon: '💪', text: `Fitness in forte crescita: CTL ${prevCTL.toFixed(0)} → ${cur.ctl.toFixed(0)} (+${ctlDelta.toFixed(0)}) in 2 settimane. Stai costruendo base a un ritmo sostenuto. Attenzione: aumenti superiori a 5–7 punti/settimana sono considerati aggressivi e vanno alternati a settimane di scarico.` });
-  else if (ctlDelta > 2) out.push({ icon: '📊', text: `Fitness in crescita graduale: CTL +${ctlDelta.toFixed(0)} in 2 settimane. Progressione sostenibile e sana — è il passo consigliato per costruire senza rompere gli equilibri.` });
-  else if (ctlDelta < -5) out.push({ icon: '⬇️', text: `Fitness in calo: CTL ${prevCTL.toFixed(0)} → ${cur.ctl.toFixed(0)} (${ctlDelta.toFixed(0)}) in 2 settimane. Se non è un taper intenzionale verso una gara, ripristina volume al più presto per evitare di perdere il lavoro fatto.` });
-
-  if (cur.tsb < -15) {
-    out.push({ icon: '💡', text: `Raccomandazione: inserisci 1–2 giorni di riposo completo o recupero attivo in Z1. Il TSB deve tornare almeno sopra −10 prima di proporre nuove sessioni di qualità, altrimenti lo stimolo viene assorbito male e accumuli solo fatica.` });
-  } else if (cur.tsb > 10 && hardsLast7 === 0) {
-    out.push({ icon: '💡', text: `Raccomandazione: stato di forma ottimo e nessun lavoro di intensità recente — è il momento per un blocco di Soglia o VO2max. Non sprecare la freschezza in un altro fondo facile.` });
-  } else if (cur.tsb > -5 && cur.tsb < 5 && hardsLast7 < 2) {
-    out.push({ icon: '💡', text: `Raccomandazione: equilibrio buono con spazio per crescere. Un paio di sessioni di Sweet Spot o Soglia nei prossimi giorni spingono il fitness senza mandare in rosso la fatica.` });
-  }
-
-  // Cross-training insights
-  const ctInsights = crossTrainingInsights(activities, settings);
-  if (ctInsights.insights.length > 0) {
-    for (const ins of ctInsights.insights) {
-      const icon = ins.type === 'balance' ? '⚖️' : ins.type === 'hiking' ? '🥾' : ins.type === 'strength' ? '💪' : ins.type === 'running' ? '🏃' : '🧘';
-      out.push({ icon, text: `${ins.text} ${ins.impact}` });
-    }
-  }
-
-  // FTP trend
-  const ftpTrend = buildFtpTrend();
-  if (ftpTrend?.insights?.length) {
-    for (const ins of ftpTrend.insights) {
-      out.push(ins);
-    }
-  }
-
-  // Mesocycle info
-  const meso = loadMesocycle();
-  if (meso) {
-    const block = MESO_BLOCKS.find(b => b.id === meso.blockId);
-    if (block) {
-      out.push({
-        icon: '📋',
-        text: `Mesociclo attivo: "${block.label}" — settimana ${meso.weekInBlock + 1}/${block.weeks}. ${block.description}`,
-      });
-    }
-  }
-
-  // Athlete response check
-  const response = athleteResponseCheck(activities, settings);
-  if (response && response.status !== 'stable') {
-    out.push({
-      icon: response.status === 'overreaching' ? '🔴' : '✅',
-      text: response.message,
-    });
-  }
-
-  // Muscular fatigue score
-  const mFatigue = muscularFatigueScore(activities, 7);
-  if (mFatigue > 40) {
-    out.push({
-      icon: '🦵',
-      text: `Fatica muscolare elevata (${mFatigue}/100) nelle ultime 7 attività. Cause: dislivello, forza, trail running. Gambe potenzialmente indolenzite — considera questo prima di sessioni di intensità in bici.`,
-    });
-  }
-
-  return out;
 }
 
 function renderFormTrend(data, activities, settings) {
@@ -274,31 +135,6 @@ function renderFormTrend(data, activities, settings) {
   `;
 }
 
-// ---- Zone FC ultime 4 settimane ----
-function buildHrZones(activities, settings) {
-  const { hrLthr } = resolveHr(settings);
-  if (!hrLthr) return null;
-  const bikes = activities.filter(a =>
-    a.type && a.type.includes('Ride') && a.has_heartrate && a.average_heartrate
-  );
-  const { ago } = buildDateHelpers(0);
-  const recent = bikes.filter(a => ago(a.start_date_local) < 28);
-  const zones = [
-    { label: 'Z1 Recupero', color: '#4ade80', min: 0, max: 0.75, minutes: 0 },
-    { label: 'Z2 Aerobico', color: '#22c55e', min: 0.75, max: 0.88, minutes: 0 },
-    { label: 'Z3 Tempo', color: '#facc15', min: 0.88, max: 0.94, minutes: 0 },
-    { label: 'Z4 Soglia', color: '#fc5200', min: 0.94, max: 1.05, minutes: 0 },
-    { label: 'Z5 VO2+', color: '#ff6b6b', min: 1.05, max: 99, minutes: 0 },
-  ];
-  recent.forEach(a => {
-    const r = a.average_heartrate / hrLthr;
-    const z = zones.find(z => r >= z.min && r < z.max);
-    if (z) z.minutes += (a.moving_time || 0) / 60;
-  });
-  const total = zones.reduce((s, z) => s + z.minutes, 0);
-  return { zones, total };
-}
-
 function renderHrZones(data) {
   if (!data) return '<p class="muted">Imposta LTHR nelle impostazioni per vedere la distribuzione zone.</p>';
   if (!data.total) return '<p class="muted">Nessuna attività con FC nelle ultime 4 settimane.</p>';
@@ -341,390 +177,6 @@ function renderHrZones(data) {
       </div>
     </details>
   `;
-}
-
-// ---- FTP Trend Tracking ----
-// Traccia l'evoluzione della FTP stimata nel tempo.
-// Salva un punto ogni settimana se c'è una stima disponibile.
-// Permette di identificare plateau e progressione.
-const FTP_HISTORY_STORAGE = 'biketr_ftp_history';
-
-function loadFtpHistory() { return safeLoad(FTP_HISTORY_STORAGE, [], Array.isArray); }
-function saveFtpHistory(h) { safeSave(FTP_HISTORY_STORAGE, h); }
-
-// Registra il punto FTP corrente (chiamato su ogni renderTraining)
-function recordFtpPoint(settings, activities) {
-  const { ftp, ftpSource, ftpEst, ftpDecl } = resolveHr(settings, activities);
-  const effectiveFtp = ftpDecl || ftpEst || ftp;
-  if (!effectiveFtp) return;
-
-  const history = loadFtpHistory();
-  const today = isoDay(new Date());
-
-  // Registra max 1 punto a settimana (evita spam)
-  const lastEntry = history[history.length - 1];
-  if (lastEntry) {
-    const daysSinceLast = (new Date(today) - new Date(lastEntry.date)) / 86400000;
-    if (daysSinceLast < 5) return; // troppo presto per un nuovo punto
-  }
-
-  history.push({
-    date: today,
-    ftp: effectiveFtp,
-    source: ftpDecl ? 'declared' : (ftpSource || 'estimated'),
-  });
-
-  // Mantieni max 52 punti (1 anno)
-  if (history.length > 52) history.splice(0, history.length - 52);
-  saveFtpHistory(history);
-
-  // Aggiorna anche il mesociclo
-  const meso = loadMesocycle();
-  if (meso) {
-    if (!meso.ftpHistory) meso.ftpHistory = [];
-    meso.ftpHistory.push({ date: today, ftp: effectiveFtp });
-    if (meso.ftpHistory.length > 20) meso.ftpHistory.splice(0, meso.ftpHistory.length - 20);
-    saveMesocycle(meso);
-  }
-}
-
-// Analizza il trend FTP e identifica plateau
-function buildFtpTrend() {
-  const history = loadFtpHistory();
-  if (history.length < 2) return null;
-
-  const points = history.map((h, i) => ({ x: i, y: h.ftp }));
-  const reg = linearRegression(points);
-
-  // Trend ultimi N punti
-  const recentN = Math.min(6, history.length);
-  const recent = history.slice(-recentN);
-  const recentPoints = recent.map((h, i) => ({ x: i, y: h.ftp }));
-  const recentReg = linearRegression(recentPoints);
-
-  // Plateau detection: se slope < 0.5 W/settimana per 6+ settimane
-  const isPlateauDetected = recentN >= 4 && Math.abs(recentReg.slope) < 0.5;
-
-  // Picco storico
-  const peakFtp = Math.max(...history.map(h => h.ftp));
-  const peakDate = history.find(h => h.ftp === peakFtp)?.date;
-  const currentFtp = history[history.length - 1].ftp;
-  const pctFromPeak = peakFtp > 0 ? +((currentFtp / peakFtp) * 100).toFixed(0) : 100;
-
-  // Variazione sulle ultime 4 settimane
-  const fourWeeksAgo = history.length >= 4 ? history[history.length - 4].ftp : history[0].ftp;
-  const delta4w = currentFtp - fourWeeksAgo;
-
-  return {
-    history,
-    slope: +reg.slope.toFixed(2), // W/punto (≈ W/settimana)
-    recentSlope: +recentReg.slope.toFixed(2),
-    isPlateauDetected,
-    peakFtp,
-    peakDate,
-    currentFtp,
-    pctFromPeak,
-    delta4w,
-    insights: buildFtpInsights(currentFtp, peakFtp, delta4w, isPlateauDetected, recentReg.slope),
-  };
-}
-
-function buildFtpInsights(current, peak, delta4w, isPlateau, recentSlope) {
-  const out = [];
-
-  if (isPlateau) {
-    out.push({
-      icon: '⚠️',
-      text: `FTP in plateau da diverse settimane (~${current}W). Considera un cambio di protocollo: se fai SST, passa a VO2max. Se fai VO2max, prova Over-Unders. Un nuovo stimolo può sbloccare la progressione.`,
-    });
-  }
-
-  if (delta4w > 8) {
-    out.push({
-      icon: '📈',
-      text: `FTP cresciuta di ${delta4w}W nelle ultime 4 settimane. Ottima progressione — il protocollo attuale funziona.`,
-    });
-  } else if (delta4w < -5) {
-    out.push({
-      icon: '📉',
-      text: `FTP calata di ${Math.abs(delta4w)}W nelle ultime 4 settimane. Possibili cause: scarico prolungato, malattia, sovrallenamento. Monitora la situazione.`,
-    });
-  }
-
-  if (current < peak * 0.92) {
-    out.push({
-      icon: '🎯',
-      text: `Sei al ${Math.round(current / peak * 100)}% del tuo picco storico (${peak}W). Margine di recupero: ${peak - current}W.`,
-    });
-  }
-
-  if (recentSlope > 2) {
-    out.push({
-      icon: '🚀',
-      text: `Trend FTP in forte crescita (~${recentSlope.toFixed(1)}W/settimana). Mantieni il ritmo ma monitora il recupero.`,
-    });
-  }
-
-  return out;
-}
-
-// ---- Fatigue Score composito (cardio + muscolare) ----
-// Combina TSB (fatica cardio) con muscular fatigue score per un indice completo
-function compositeFatigueScore(activities, settings) {
-  const form = buildFormTrend(activities, settings);
-  if (!form) return null;
-
-  const tsb = form.tsb[form.DAYS - 1];
-  const ctl = form.ctl[form.DAYS - 1];
-  const atl = form.atl[form.DAYS - 1];
-
-  // Muscular fatigue (da training.js)
-  const mFatigue = muscularFatigueScore(activities, 7);
-
-  // Normalizza TSB in scala 0-100 (100 = massima fatica)
-  // TSB -50 → 100, TSB 0 → 50, TSB +20 → 25
-  const cardioFatigue = Math.max(0, Math.min(100, 50 - tsb));
-
-  // Score composito: pesato 60% cardio + 40% muscolare
-  const composite = Math.round(cardioFatigue * 0.6 + mFatigue * 0.4);
-
-  // Cross-training impact sulle ultime 48h
-  const { ago } = buildDateHelpers(0);
-  const last48h = activities.filter(a => ago(a.start_date_local) >= 0 && ago(a.start_date_local) < 2);
-  const recentHikeElev = last48h
-    .filter(a => a.type === 'Hike' || a.type === 'Walk')
-    .reduce((s, a) => s + (a.total_elevation_gain || 0), 0);
-  const recentStrengthHours = last48h
-    .filter(a => ['WeightTraining', 'Workout', 'Crossfit'].includes(a.type))
-    .reduce((s, a) => s + (a.moving_time || 0) / 3600, 0);
-
-  return {
-    composite,
-    cardioFatigue: Math.round(cardioFatigue),
-    muscularFatigue: mFatigue,
-    tsb: +tsb.toFixed(1),
-    ctl: +ctl.toFixed(1),
-    atl: +atl.toFixed(1),
-    recentHikeElev,
-    recentStrengthHours: +recentStrengthHours.toFixed(1),
-    readiness: composite < 35 ? 'pronto' : composite < 55 ? 'moderato' : composite < 75 ? 'affaticato' : 'sovraccarico',
-    canDoHard: composite < 50 && mFatigue < 40,
-    shouldRest: composite > 70 || mFatigue > 60,
-  };
-}
-
-// ---- Power Profile Analysis: identifica deficit e punti di forza ----
-// Confronta la power curve dell'atleta con curve di riferimento (De Pauw et al. 2013)
-// e identifica dove l'atleta è più debole/forte relativamente al proprio livello.
-// Restituisce raccomandazioni specifiche per tipo di lavoro da fare.
-function buildPowerProfile(activities, weightKg) {
-  const pc = buildPowerCurve(activities, weightKg);
-  if (!pc || !weightKg) return null;
-
-  // Referenze W/kg per livello "recreational trained" (De Pauw 2013, semplificato)
-  // Sprint (5s), Anaerobic (1min), VO2max (5min), Threshold (20min), Endurance (60min)
-  const refBuckets = {
-    '< 5 min': { duration: 'sprint_anaerobic', refWkg: 6.5 },
-    '5–15 min': { duration: 'vo2max', refWkg: 4.0 },
-    '15–30 min': { duration: 'sub_threshold', refWkg: 3.5 },
-    '30–60 min': { duration: 'threshold', refWkg: 3.2 },
-    '60–120 min': { duration: 'endurance', refWkg: 2.8 },
-    '> 2h': { duration: 'long_endurance', refWkg: 2.5 },
-  };
-
-  const profile = {};
-  let hasData = false;
-
-  for (const b of pc.buckets) {
-    if (!b.best) continue;
-    hasData = true;
-    const ref = refBuckets[b.label];
-    if (!ref) continue;
-    const wkg = b.best.watts / weightKg;
-    const pctOfRef = wkg / ref.refWkg;
-    profile[ref.duration] = {
-      watts: b.best.watts,
-      wkg: +wkg.toFixed(2),
-      pctOfRef: +pctOfRef.toFixed(2),
-      label: b.label,
-    };
-  }
-
-  if (!hasData) return null;
-
-  // Calcola ratios chiave per identificare deficit
-  const ratios = {};
-  const vo2 = profile.vo2max;
-  const threshold = profile.threshold || profile.sub_threshold;
-  const sprint = profile.sprint_anaerobic;
-  const endurance = profile.endurance || profile.long_endurance;
-
-  if (vo2 && threshold) {
-    // Rapporto VO2/Soglia: se basso → VO2 debole
-    ratios.vo2_to_threshold = +(vo2.wkg / threshold.wkg).toFixed(2);
-  }
-  if (threshold && endurance) {
-    // Rapporto Soglia/Endurance: se basso → soglia debole rispetto a base
-    ratios.threshold_to_endurance = +(threshold.wkg / endurance.wkg).toFixed(2);
-  }
-  if (sprint && vo2) {
-    ratios.sprint_to_vo2 = +(sprint.wkg / vo2.wkg).toFixed(2);
-  }
-
-  // Identifica deficit e genera raccomandazioni
-  const deficits = [];
-  const strengths = [];
-
-  if (ratios.vo2_to_threshold && ratios.vo2_to_threshold < 1.15) {
-    deficits.push({
-      area: 'vo2max',
-      label: 'VO2max',
-      description: 'La tua potenza a 5 min è bassa rispetto alla soglia. Il "tetto" aerobico limita la crescita FTP.',
-      prescription: 'Priorità: sessioni VO2max (Seiler 4×4, 4×8, Rønnestad 30/15). 2 sessioni/settimana per 4-6 settimane.',
-      severity: ratios.vo2_to_threshold < 1.08 ? 'high' : 'medium',
-    });
-  } else if (ratios.vo2_to_threshold && ratios.vo2_to_threshold > 1.35) {
-    strengths.push({ area: 'vo2max', label: 'VO2max alto relativo alla soglia' });
-    deficits.push({
-      area: 'threshold',
-      label: 'Soglia/FTP',
-      description: 'Hai un buon VO2max ma la soglia non lo sfrutta. C\'è margine per alzare FTP senza toccare il VO2.',
-      prescription: 'Priorità: Sweet Spot 3×20 e Over-Unders. Lavoro specifico di soglia per 4-6 settimane.',
-      severity: 'medium',
-    });
-  }
-
-  if (ratios.threshold_to_endurance && ratios.threshold_to_endurance < 1.08) {
-    deficits.push({
-      area: 'endurance',
-      label: 'Resistenza/Base aerobica',
-      description: 'La potenza su uscite >1h cala poco rispetto alla soglia — ma è troppo bassa in assoluto. Serve volume.',
-      prescription: 'Priorità: uscite lunghe Z2 (2.5-4h) e fondo medio. Costruisci base prima di intensità.',
-      severity: 'medium',
-    });
-  }
-
-  if (sprint && vo2 && ratios.sprint_to_vo2 < 1.4) {
-    deficits.push({
-      area: 'neuromuscular',
-      label: 'Potenza neuromuscolare/Sprint',
-      description: 'Potenza massima bassa — limita scatti, partenze e capacità di rispondere agli attacchi.',
-      prescription: 'Aggiungi: sprint da fermo, partenze forza, e lavoro in palestra su esplosività.',
-      severity: 'low',
-    });
-  } else if (sprint && vo2 && ratios.sprint_to_vo2 > 2.0) {
-    strengths.push({ area: 'neuromuscular', label: 'Sprint/Potenza forte' });
-  }
-
-  // Calcola il deficit primario (quello che darà più guadagno se corretto)
-  const primaryDeficit = deficits.sort((a, b) => {
-    const sev = { high: 3, medium: 2, low: 1 };
-    return (sev[b.severity] || 0) - (sev[a.severity] || 0);
-  })[0] || null;
-
-  return {
-    profile,
-    ratios,
-    deficits,
-    strengths,
-    primaryDeficit,
-    // Tipo di blocco consigliato basato su deficit
-    recommendedFocus: primaryDeficit?.area || 'threshold',
-  };
-}
-
-// ---- Cross-training insights ----
-// Analizza l'impatto delle attività non-bici sul training mix
-function crossTrainingInsights(activities, settings) {
-  const { ago } = buildDateHelpers(0);
-  const last28 = activities.filter(a => ago(a.start_date_local) >= 0 && ago(a.start_date_local) < 28);
-
-  const categories = {
-    cycling: { types: new Set(['Ride','VirtualRide','EBikeRide','MountainBikeRide','GravelRide']), hours: 0, count: 0, elev: 0 },
-    running: { types: new Set(['Run','VirtualRun','TrailRun']), hours: 0, count: 0, elev: 0 },
-    hiking: { types: new Set(['Hike','Walk']), hours: 0, count: 0, elev: 0 },
-    strength: { types: new Set(['WeightTraining','Workout','Crossfit']), hours: 0, count: 0, elev: 0 },
-    swimming: { types: new Set(['Swim']), hours: 0, count: 0, elev: 0 },
-    flexibility: { types: new Set(['Yoga','Pilates']), hours: 0, count: 0, elev: 0 },
-    other: { types: new Set(), hours: 0, count: 0, elev: 0 },
-  };
-
-  for (const a of last28) {
-    let matched = false;
-    for (const key in categories) {
-      if (key === 'other') continue;
-      if (categories[key].types.has(a.type)) {
-        categories[key].hours += (a.moving_time || 0) / 3600;
-        categories[key].count++;
-        categories[key].elev += (a.total_elevation_gain || 0);
-        matched = true;
-        break;
-      }
-    }
-    if (!matched) {
-      categories.other.hours += (a.moving_time || 0) / 3600;
-      categories.other.count++;
-    }
-  }
-
-  const totalHours = Object.values(categories).reduce((s, c) => s + c.hours, 0);
-  const insights = [];
-
-  // Analisi cross-training e sinergie
-  if (categories.hiking.count > 0 && categories.hiking.elev > 0) {
-    const avgElevPerHike = Math.round(categories.hiking.elev / categories.hiking.count);
-    insights.push({
-      type: 'hiking',
-      text: `${categories.hiking.count} escursioni in 4 sett. (${categories.hiking.hours.toFixed(1)}h, ${Math.round(categories.hiking.elev)}m D+ totali, media ${avgElevPerHike}m/uscita).`,
-      impact: categories.hiking.elev > 3000
-        ? 'Impatto significativo su fatica muscolare. Le gambe hanno bisogno di più recupero tra sessioni dure in bici.'
-        : 'Contributo aerobico moderato. Il dislivello rinforza quadricipiti e glutei (positivo per la bici).',
-    });
-  }
-
-  if (categories.strength.count > 0) {
-    insights.push({
-      type: 'strength',
-      text: `${categories.strength.count} sessioni forza (${categories.strength.hours.toFixed(1)}h).`,
-      impact: categories.strength.count >= 2
-        ? 'Ottimo per efficienza pedalata (+3-7% FTP in 12 sett. secondo Rønnestad). Rispetta 24-48h prima di sessioni dure in bici.'
-        : 'Una sessione/sett è il minimo per vedere benefici. Prova ad aggiungerne una seconda.',
-    });
-  }
-
-  if (categories.running.count > 0) {
-    insights.push({
-      type: 'running',
-      text: `${categories.running.count} sessioni corsa (${categories.running.hours.toFixed(1)}h, ${Math.round(categories.running.elev)}m D+).`,
-      impact: 'La corsa contribuisce al VO2max e alla base aerobica ma aggiunge stress articolare. Considera questo nei giorni di recupero.',
-    });
-  }
-
-  if (categories.flexibility.count > 0) {
-    insights.push({
-      type: 'flexibility',
-      text: `${categories.flexibility.count} sessioni yoga/pilates (${categories.flexibility.hours.toFixed(1)}h).`,
-      impact: 'Mobilità e core stabilità: migliora postura sulla bici e previene infortuni. Nessun impatto negativo sul recupero.',
-    });
-  }
-
-  // Mix consiglio
-  const cyclingPct = totalHours > 0 ? (categories.cycling.hours / totalHours * 100) : 100;
-  if (cyclingPct < 50 && totalHours > 3) {
-    insights.push({
-      type: 'balance',
-      text: `Solo ${Math.round(cyclingPct)}% del volume è ciclismo. Le attività complementari contribuiscono al fitness generale ma per migliorare FTP serve che la bici resti la disciplina principale.`,
-      impact: 'Suggerimento: mantieni almeno 60-70% del volume in bici per progressione specifica.',
-    });
-  }
-
-  return {
-    categories,
-    totalHours,
-    cyclingPct: +cyclingPct.toFixed(0),
-    insights,
-    weeklyElevation: Math.round(categories.hiking.elev + categories.cycling.elev + categories.running.elev) / 4,
-  };
 }
 
 // ================ RENDER FUNCTIONS ================
@@ -880,87 +332,6 @@ function renderFtpTrend() {
   }
 
   return chartHtml + metricsHtml + plateauHtml + insightsHtml;
-}
-
-// =====================================================================
-// Breakdown FTP / LTHR — dettaglio del calcolo nella tab Analisi
-// Replica internamente estimateFTP / estimateLTHR esponendo le attività
-// che hanno determinato la stima.
-// =====================================================================
-
-function buildFtpBreakdown(activities) {
-  if (!activities) return null;
-  const bikes = activities.filter(a => a.type && a.type.includes('Ride'));
-  const withPower = bikes.filter(a => a.weighted_average_watts || a.average_watts);
-
-  const now = Date.now();
-  const decay = (a) => {
-    const ageWeeks = (now - new Date(a.start_date_local).getTime()) / (7 * 86400000);
-    return Math.exp(-ageWeeks / 12);
-  };
-
-  const buckets = [
-    { min: 40 * 60, max: 90 * 60, factor: 0.98, label: '40-90 min' },
-    { min: 20 * 60, max: 40 * 60, factor: 0.95, label: '20-40 min' },
-    { min: 10 * 60, max: 20 * 60, factor: 0.90, label: '10-20 min' },
-    { min: 0,       max: 10 * 60, factor: 0.85, label: '< 10 min' },
-  ];
-
-  const rows = [];
-  for (const b of buckets) {
-    const pool = withPower.filter(a => {
-      const t = a.moving_time || 0;
-      return t >= b.min && t < b.max;
-    });
-    if (!pool.length) {
-      rows.push({ bucket: b.label, factor: b.factor, empty: true });
-      continue;
-    }
-    const scored = pool.map(a => {
-      const w = a.weighted_average_watts || a.average_watts;
-      return { watts: w, weighted: w * decay(a), act: a };
-    }).sort((a, c) => c.weighted - a.weighted);
-    const best = scored[0];
-    rows.push({
-      bucket: b.label,
-      factor: b.factor,
-      act: best.act,
-      rawWatts: best.watts,
-      decayValue: decay(best.act),
-      ftpCandidate: Math.round(best.watts * b.factor),
-    });
-  }
-  const winning = rows.find(r => !r.empty);
-  return { rows, winning, fallback: !winning && withPower.length > 0 };
-}
-
-function buildLthrBreakdown(activities) {
-  if (!activities) return null;
-  const bikes = activities.filter(a => a.type && a.type.includes('Ride') && a.has_heartrate);
-  if (!bikes.length) return null;
-
-  const maxHrs = bikes.map(a => ({ act: a, hr: a.max_heartrate || 0 })).filter(x => x.hr > 0);
-  if (!maxHrs.length) return null;
-  maxHrs.sort((a, b) => b.hr - a.hr);
-  const observedHRmax = maxHrs[0].hr;
-  const m1 = Math.round(observedHRmax * 0.91);
-
-  const testLike = bikes.filter(a =>
-    a.average_heartrate && a.max_heartrate &&
-    (a.moving_time || 0) >= 20 * 60 && (a.moving_time || 0) <= 60 * 60 &&
-    a.max_heartrate >= observedHRmax * 0.9
-  ).sort((a, b) => (b.average_heartrate || 0) - (a.average_heartrate || 0));
-
-  let m2Row = null;
-  if (testLike.length) {
-    m2Row = { act: testLike[0], rawHr: testLike[0].average_heartrate, factor: 0.98, value: Math.round(testLike[0].average_heartrate * 0.98) };
-  }
-
-  return {
-    m1Row: { act: maxHrs[0].act, observedHRmax, factor: 0.91, value: m1 },
-    m2Row,
-    final: Math.max(m1, m2Row?.value || 0),
-  };
 }
 
 function renderFtpLthrBreakdown(activities, settings) {

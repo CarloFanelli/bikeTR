@@ -40,3 +40,7 @@ Analisi carries most of the charts and the segment list whose names were inserte
 - A long action ("Completa da dettagli attività") clicked twice → the button stays disabled while it runs; the second click does nothing (REQ-12)
 - Strava fails or hits its request limit during a long action → today's message; what was already downloaded is kept (REQ-12)
 - Names containing `<`, `&`, quotes or emoji → shown literally (REQ-20)
+
+## Notes from implementation
+
+- **Impacts Task 10**: to show the same values as today, the Form card's observations and the heart-rate zones card take threshold and FTP from `resolveHr(settings, undefined, segmentEstimates, now)`, without estimates from activities. The other cards pass the activities. Today's `analysis.js` (`formInsights`, `buildHrZones`) does it this way and the recorded results depend on it. The FTP history is read and saved with `loadFtpHistory`/`saveFtpHistory` in `web/src/data/storage.ts`, and `nextFtpHistory` computes the next one. /dev, 2026-11-06.

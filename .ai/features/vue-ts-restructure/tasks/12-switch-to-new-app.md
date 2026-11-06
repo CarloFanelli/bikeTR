@@ -50,3 +50,4 @@ Every section exists in the new app after Task 11, so the old one can go. Saved 
 ## Notes from implementation
 
 - **Impacts Task 12**: `build_papers_index.mjs` still sits at the project root, which must keep only documentation, configuration and data files; the plan does not say where it goes. Move it to its own folder (writing `papers_index.json` at the root as today) and update the references. /dev, 2026-11-06.
+- **Impacts Task 12**: `web/tests/reference/record.ts` records results by calling today's `strava.js`, `training.js`, `analysis.js` and `predictions.js`. When those files go, retire it (the recorded files in `web/tests/fixtures/` stay as the reference the tests compare with) and update README §10, which shows how to run it. /dev, 2026-11-06.

@@ -39,3 +39,7 @@ The plan builds on the load calculations of Task 04. Training and Training v2 im
 - Regenerated Coach reference results differ from today's files → treated as a port bug; the switch isn't complete until they are identical (REQ-9)
 - The frozen copy of the old browser Coach used by the reference script → stays as it is; the script adapts it when it runs, as it already does today (REQ-9)
 - N/A — network, permission: tests use only fixed local data (REQ-8, REQ-9, REQ-10)
+
+## Notes from implementation
+
+- **Impacts Task 05**: `buildDateHelpers` already lives in `web/src/core/dates.ts` (with `now` as input), not in the planned `plan/dates.ts`; the rest of `training.js:442-513` can import it. `training.js` keeps thin versions with the old arguments (`resolveHr`, `buildDateHelpers`, `buildFormTrend`, `compositeFatigueScore`, `buildFtpTrend`…) that read the clock and saved data; `analysis.js` imports several of them. Two mesocycle pieces wait for `core/meso.ts`: the mesocycle summary and athlete response that `analysis.js` passes to `formInsights`, and the mesocycle's last-20 FTP points that `analysis.js`'s `recordFtpPoint` saves. `tests/reference/record.ts` and `web/tests/fixtures/` are the pattern for this task's recorded results. When `make_reference.mjs` switches to shims, the `globalThis.__profile` override must stay on `resolveHr`. /dev, 2026-11-06.

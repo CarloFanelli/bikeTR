@@ -199,14 +199,16 @@ The browser calls the Strava API directly with a short-lived access token it ask
 ES modules in `web/`, served as they are by Vite's development server. Module flow:
 
 ```
-constants.js    ← PHYSIO / TYPE_WEIGHTS / APP_CONFIG constants only
+constants.js    ← APP_CONFIG network limits only
 src/data/       ← Strava API (one access token per request), auth server, values saved in the browser
-src/core/       ← formatting of distances, times and dates
-strava.js       ← today's names for src/data and src/core, streams metrics, escapeHtml
-training.js     ← v1 engine: resolveHr, recommend, mesocycles, buildMonthPlan, isHard…
+src/core/       ← calculations, which get everything as input (no page, saved data or clock):
+                  stream metrics, training load, CTL/ATL/TSB, FTP and LTHR estimates and trend,
+                  power curve and profile, segment predictions; formatting of distances, times and dates
+strava.js       ← today's names for src/data and src/core, streams download, escapeHtml
+training.js     ← v1 engine: recommend, mesocycles, buildMonthPlan… (resolveHr reads the clock and saved segments for src/core)
 training_v2.js  ← evidence-based workout catalog (Seiler, Rønnestad, Coggan…)
-analysis.js     ← power curve, CTL/ATL/TSB, HR zones, power profile, FTP trend
-predictions.js  ← starred segments, estimatesFromSegments, time regression
+analysis.js     ← cards: power curve, CTL/ATL/TSB, HR zones, power profile, FTP trend
+predictions.js  ← starred segments download, prediction and segment workout cards
 coach.js        ← AI Coach tab: request to the Coach service, live steps, workout card
 export.js       ← JSON export of the activities
 app.js          ← entry point: view routing, UI rendering, fetch orchestration
@@ -226,6 +228,13 @@ docker compose run --rm --no-deps app npm run check
 ```
 
 A failure names the file and line of each type error, the files of each import loop, and each file over the limit. Today's JavaScript files, which are not TypeScript yet, are left out of these checks.
+
+The calculation tests (`web/tests/core/`) run on made-up rides, settings and segments (`web/tests/fixtures/rides.json`) and compare every result, at two decimals, with the one today's screens give (`load-expected.json` in the same folder). That file was recorded from the JavaScript before the calculations moved to TypeScript; recording it again through today's screens must leave it unchanged:
+
+```bash
+docker compose run --rm --no-deps app node tests/reference/record.ts
+git diff --exit-code web/tests/fixtures
+```
 
 **Coach service.** The Coach service's tests check that its numbers (normalized power, training load, fitness, fatigue, form, intensity split, capacity tier) equal those of the browser code, and that for the same model answers it builds the same prompts, papers and workout as the browser Coach did. They need only Docker: no Ollama, no Strava connection, and they can run while BikeTR is running. From the project folder (the same command works in PowerShell):
 
