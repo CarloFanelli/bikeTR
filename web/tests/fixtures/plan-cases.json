@@ -1,0 +1,1700 @@
+{
+ "_comment": "Ingressi del piano di allenamento (Allenamento e Training v2). Generati a mano; i risultati registrati sono in plan-expected.json (vedi tests/reference/record.ts).",
+ "settings": {
+  "declared": {
+   "hrMax": 186,
+   "hrLthr": 166,
+   "lthrSource": "declared",
+   "ftpDeclared": 255,
+   "weight": 72,
+   "weeklyHours": 8,
+   "weeklyDays": 5,
+   "longRides": 1,
+   "longRideDays": [
+    6,
+    7
+   ],
+   "longRideMaxMin": 240,
+   "strengthLevel": 3,
+   "hasCompression": true,
+   "hasMassageGun": true
+  },
+  "estimated": {
+   "ftpSource": "estimated",
+   "lthrSource": "estimated",
+   "weight": 72,
+   "weeklyHours": 10,
+   "weeklyDays": 4,
+   "longRides": 2,
+   "availableDays": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    7
+   ],
+   "strengthLevel": 2,
+   "hasMassageGun": true
+  },
+  "empty": {},
+  "lowVolume": {
+   "hrLthr": 160,
+   "weeklyHours": 4,
+   "weeklyDays": 3,
+   "longRides": 1,
+   "longRideDays": [
+    7
+   ],
+   "longRideMaxMin": 150,
+   "strengthLevel": 1,
+   "weight": 80
+  },
+  "raceSoon": {
+   "hrMax": 186,
+   "hrLthr": 166,
+   "lthrSource": "declared",
+   "ftpDeclared": 255,
+   "weight": 72,
+   "weeklyHours": 8,
+   "weeklyDays": 5,
+   "longRides": 1,
+   "longRideDays": [
+    6,
+    7
+   ],
+   "longRideMaxMin": 240,
+   "strengthLevel": 3,
+   "hasCompression": true,
+   "hasMassageGun": true,
+   "raceDate": "2026-11-22",
+   "raceName": "Granfondo"
+  },
+  "raceMonday": {
+   "ftpSource": "estimated",
+   "weight": 72,
+   "weeklyHours": 6,
+   "weeklyDays": 4,
+   "raceDate": "2026-11-02"
+  }
+ },
+ "mesocycles": {
+  "thresholdWeek2": {
+   "startDate": "2026-10-21",
+   "blockIndex": 1,
+   "blockId": "threshold",
+   "weekInBlock": 2,
+   "blockHistory": [
+    {
+     "blockId": "base",
+     "startDate": "2026-09-23",
+     "endDate": "2026-10-21",
+     "weeks": 4
+    }
+   ],
+   "ftpHistory": [
+    {
+     "date": "2026-10-23",
+     "ftp": 250
+    },
+    {
+     "date": "2026-10-30",
+     "ftp": 258
+    }
+   ]
+  },
+  "baseDone": {
+   "startDate": "2026-10-01",
+   "blockIndex": 0,
+   "blockId": "base",
+   "weekInBlock": 3,
+   "blockHistory": [],
+   "ftpHistory": [
+    {
+     "date": "2026-10-20",
+     "ftp": 262
+    },
+    {
+     "date": "2026-10-27",
+     "ftp": 250
+    }
+   ]
+  },
+  "vo2Deload": {
+   "startDate": "2026-10-09",
+   "blockIndex": 2,
+   "blockId": "vo2max",
+   "weekInBlock": 3,
+   "blockHistory": [],
+   "ftpHistory": [
+    {
+     "date": "2026-10-27",
+     "ftp": 250
+    }
+   ]
+  },
+  "ronnestad": {
+   "startDate": "2026-11-02",
+   "blockIndex": 3,
+   "blockId": "ronnestad_block",
+   "weekInBlock": 0,
+   "blockHistory": [],
+   "ftpHistory": []
+  },
+  "unknownBlock": {
+   "startDate": "2026-10-26",
+   "blockIndex": 1,
+   "blockId": "mistero",
+   "weekInBlock": 0,
+   "blockHistory": [],
+   "ftpHistory": [
+    {
+     "date": "2026-10-20",
+     "ftp": 240
+    },
+    {
+     "date": "2026-10-27",
+     "ftp": 241
+    }
+   ]
+  },
+  "neuromuscularDone": {
+   "startDate": "2026-09-20",
+   "blockIndex": 4,
+   "blockId": "neuromuscular",
+   "weekInBlock": 3,
+   "blockHistory": [],
+   "ftpHistory": []
+  },
+  "noStart": {
+   "blockId": "threshold",
+   "weekInBlock": 1,
+   "ftpHistory": [
+    {
+     "date": "2026-10-23",
+     "ftp": 250
+    }
+   ]
+  },
+  "noHistory": {
+   "startDate": "2026-09-01",
+   "blockIndex": 0,
+   "blockId": "vo2max",
+   "weekInBlock": 0
+  }
+ },
+ "activitySets": {
+  "steady": [
+   {
+    "id": 4001,
+    "name": "Lunga della domenica",
+    "type": "Ride",
+    "start_date": "2026-11-15T09:00:00Z",
+    "start_date_local": "2026-11-15T09:00:00Z",
+    "distance": 55000,
+    "moving_time": 7200,
+    "elapsed_time": 7500,
+    "total_elevation_gain": 600,
+    "has_heartrate": true,
+    "average_heartrate": 128,
+    "max_heartrate": 158
+   },
+   {
+    "id": 4002,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-13T18:00:00Z",
+    "start_date_local": "2026-11-13T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 132,
+    "max_heartrate": 162
+   },
+   {
+    "id": 4003,
+    "name": "Lunga collinare",
+    "type": "Ride",
+    "start_date": "2026-11-08T09:00:00Z",
+    "start_date_local": "2026-11-08T09:00:00Z",
+    "distance": 70000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 900,
+    "has_heartrate": true,
+    "average_heartrate": 126,
+    "max_heartrate": 156
+   },
+   {
+    "id": 4004,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-06T18:00:00Z",
+    "start_date_local": "2026-11-06T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 135,
+    "max_heartrate": 165
+   },
+   {
+    "id": 4005,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-11-04T18:00:00Z",
+    "start_date_local": "2026-11-04T18:00:00Z",
+    "distance": 35000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 140,
+    "max_heartrate": 170
+   },
+   {
+    "id": 4006,
+    "name": "Lunga del primo novembre",
+    "type": "Ride",
+    "start_date": "2026-11-01T09:00:00Z",
+    "start_date_local": "2026-11-01T09:00:00Z",
+    "distance": 72000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 800,
+    "has_heartrate": true,
+    "average_heartrate": 125,
+    "max_heartrate": 155
+   },
+   {
+    "id": 4007,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-30T18:00:00Z",
+    "start_date_local": "2026-10-30T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 133,
+    "max_heartrate": 163
+   },
+   {
+    "id": 4008,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-10-28T18:00:00Z",
+    "start_date_local": "2026-10-28T18:00:00Z",
+    "distance": 34000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 141,
+    "max_heartrate": 171
+   },
+   {
+    "id": 4009,
+    "name": "Lunga in pianura",
+    "type": "Ride",
+    "start_date": "2026-10-25T09:00:00Z",
+    "start_date_local": "2026-10-25T09:00:00Z",
+    "distance": 68000,
+    "moving_time": 8400,
+    "elapsed_time": 8700,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 124,
+    "max_heartrate": 154
+   },
+   {
+    "id": 4010,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-23T18:00:00Z",
+    "start_date_local": "2026-10-23T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 131,
+    "max_heartrate": 161
+   }
+  ],
+  "alpineHike": [
+   {
+    "id": 4011,
+    "name": "Escursione al rifugio",
+    "type": "Hike",
+    "start_date": "2026-11-17T08:00:00Z",
+    "start_date_local": "2026-11-17T08:00:00Z",
+    "distance": 16000,
+    "moving_time": 19800,
+    "elapsed_time": 20100,
+    "total_elevation_gain": 1400,
+    "has_heartrate": true,
+    "average_heartrate": 112,
+    "max_heartrate": 150
+   },
+   {
+    "id": 4001,
+    "name": "Lunga della domenica",
+    "type": "Ride",
+    "start_date": "2026-11-15T09:00:00Z",
+    "start_date_local": "2026-11-15T09:00:00Z",
+    "distance": 55000,
+    "moving_time": 7200,
+    "elapsed_time": 7500,
+    "total_elevation_gain": 600,
+    "has_heartrate": true,
+    "average_heartrate": 128,
+    "max_heartrate": 158
+   },
+   {
+    "id": 4002,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-13T18:00:00Z",
+    "start_date_local": "2026-11-13T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 132,
+    "max_heartrate": 162
+   },
+   {
+    "id": 4003,
+    "name": "Lunga collinare",
+    "type": "Ride",
+    "start_date": "2026-11-08T09:00:00Z",
+    "start_date_local": "2026-11-08T09:00:00Z",
+    "distance": 70000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 900,
+    "has_heartrate": true,
+    "average_heartrate": 126,
+    "max_heartrate": 156
+   },
+   {
+    "id": 4004,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-06T18:00:00Z",
+    "start_date_local": "2026-11-06T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 135,
+    "max_heartrate": 165
+   },
+   {
+    "id": 4005,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-11-04T18:00:00Z",
+    "start_date_local": "2026-11-04T18:00:00Z",
+    "distance": 35000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 140,
+    "max_heartrate": 170
+   },
+   {
+    "id": 4006,
+    "name": "Lunga del primo novembre",
+    "type": "Ride",
+    "start_date": "2026-11-01T09:00:00Z",
+    "start_date_local": "2026-11-01T09:00:00Z",
+    "distance": 72000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 800,
+    "has_heartrate": true,
+    "average_heartrate": 125,
+    "max_heartrate": 155
+   },
+   {
+    "id": 4007,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-30T18:00:00Z",
+    "start_date_local": "2026-10-30T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 133,
+    "max_heartrate": 163
+   },
+   {
+    "id": 4008,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-10-28T18:00:00Z",
+    "start_date_local": "2026-10-28T18:00:00Z",
+    "distance": 34000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 141,
+    "max_heartrate": 171
+   },
+   {
+    "id": 4009,
+    "name": "Lunga in pianura",
+    "type": "Ride",
+    "start_date": "2026-10-25T09:00:00Z",
+    "start_date_local": "2026-10-25T09:00:00Z",
+    "distance": 68000,
+    "moving_time": 8400,
+    "elapsed_time": 8700,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 124,
+    "max_heartrate": 154
+   },
+   {
+    "id": 4010,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-23T18:00:00Z",
+    "start_date_local": "2026-10-23T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 131,
+    "max_heartrate": 161
+   }
+  ],
+  "hillHike": [
+   {
+    "id": 4012,
+    "name": "Collina",
+    "type": "Hike",
+    "start_date": "2026-11-17T09:00:00Z",
+    "start_date_local": "2026-11-17T09:00:00Z",
+    "distance": 11000,
+    "moving_time": 10800,
+    "elapsed_time": 11100,
+    "total_elevation_gain": 650,
+    "has_heartrate": true,
+    "average_heartrate": 108,
+    "max_heartrate": 138
+   },
+   {
+    "id": 4001,
+    "name": "Lunga della domenica",
+    "type": "Ride",
+    "start_date": "2026-11-15T09:00:00Z",
+    "start_date_local": "2026-11-15T09:00:00Z",
+    "distance": 55000,
+    "moving_time": 7200,
+    "elapsed_time": 7500,
+    "total_elevation_gain": 600,
+    "has_heartrate": true,
+    "average_heartrate": 128,
+    "max_heartrate": 158
+   },
+   {
+    "id": 4002,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-13T18:00:00Z",
+    "start_date_local": "2026-11-13T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 132,
+    "max_heartrate": 162
+   },
+   {
+    "id": 4003,
+    "name": "Lunga collinare",
+    "type": "Ride",
+    "start_date": "2026-11-08T09:00:00Z",
+    "start_date_local": "2026-11-08T09:00:00Z",
+    "distance": 70000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 900,
+    "has_heartrate": true,
+    "average_heartrate": 126,
+    "max_heartrate": 156
+   },
+   {
+    "id": 4004,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-06T18:00:00Z",
+    "start_date_local": "2026-11-06T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 135,
+    "max_heartrate": 165
+   },
+   {
+    "id": 4005,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-11-04T18:00:00Z",
+    "start_date_local": "2026-11-04T18:00:00Z",
+    "distance": 35000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 140,
+    "max_heartrate": 170
+   },
+   {
+    "id": 4006,
+    "name": "Lunga del primo novembre",
+    "type": "Ride",
+    "start_date": "2026-11-01T09:00:00Z",
+    "start_date_local": "2026-11-01T09:00:00Z",
+    "distance": 72000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 800,
+    "has_heartrate": true,
+    "average_heartrate": 125,
+    "max_heartrate": 155
+   },
+   {
+    "id": 4007,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-30T18:00:00Z",
+    "start_date_local": "2026-10-30T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 133,
+    "max_heartrate": 163
+   },
+   {
+    "id": 4008,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-10-28T18:00:00Z",
+    "start_date_local": "2026-10-28T18:00:00Z",
+    "distance": 34000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 141,
+    "max_heartrate": 171
+   },
+   {
+    "id": 4009,
+    "name": "Lunga in pianura",
+    "type": "Ride",
+    "start_date": "2026-10-25T09:00:00Z",
+    "start_date_local": "2026-10-25T09:00:00Z",
+    "distance": 68000,
+    "moving_time": 8400,
+    "elapsed_time": 8700,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 124,
+    "max_heartrate": 154
+   },
+   {
+    "id": 4010,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-23T18:00:00Z",
+    "start_date_local": "2026-10-23T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 131,
+    "max_heartrate": 161
+   }
+  ],
+  "trailRun": [
+   {
+    "id": 4013,
+    "name": "Corsa sui sentieri",
+    "type": "TrailRun",
+    "start_date": "2026-11-17T07:00:00Z",
+    "start_date_local": "2026-11-17T07:00:00Z",
+    "distance": 13000,
+    "moving_time": 4800,
+    "elapsed_time": 5100,
+    "total_elevation_gain": 450,
+    "has_heartrate": true,
+    "average_heartrate": 150,
+    "max_heartrate": 180
+   },
+   {
+    "id": 4014,
+    "name": "Giro quasi lungo",
+    "type": "Ride",
+    "start_date": "2026-11-10T18:00:00Z",
+    "start_date_local": "2026-11-10T18:00:00Z",
+    "distance": 50000,
+    "moving_time": 6900,
+    "elapsed_time": 7200,
+    "total_elevation_gain": 400,
+    "has_heartrate": true,
+    "average_heartrate": 130,
+    "max_heartrate": 160
+   },
+   {
+    "id": 4001,
+    "name": "Lunga della domenica",
+    "type": "Ride",
+    "start_date": "2026-11-15T09:00:00Z",
+    "start_date_local": "2026-11-15T09:00:00Z",
+    "distance": 55000,
+    "moving_time": 7200,
+    "elapsed_time": 7500,
+    "total_elevation_gain": 600,
+    "has_heartrate": true,
+    "average_heartrate": 128,
+    "max_heartrate": 158
+   },
+   {
+    "id": 4002,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-13T18:00:00Z",
+    "start_date_local": "2026-11-13T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 132,
+    "max_heartrate": 162
+   },
+   {
+    "id": 4003,
+    "name": "Lunga collinare",
+    "type": "Ride",
+    "start_date": "2026-11-08T09:00:00Z",
+    "start_date_local": "2026-11-08T09:00:00Z",
+    "distance": 70000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 900,
+    "has_heartrate": true,
+    "average_heartrate": 126,
+    "max_heartrate": 156
+   },
+   {
+    "id": 4004,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-06T18:00:00Z",
+    "start_date_local": "2026-11-06T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 135,
+    "max_heartrate": 165
+   },
+   {
+    "id": 4005,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-11-04T18:00:00Z",
+    "start_date_local": "2026-11-04T18:00:00Z",
+    "distance": 35000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 140,
+    "max_heartrate": 170
+   },
+   {
+    "id": 4006,
+    "name": "Lunga del primo novembre",
+    "type": "Ride",
+    "start_date": "2026-11-01T09:00:00Z",
+    "start_date_local": "2026-11-01T09:00:00Z",
+    "distance": 72000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 800,
+    "has_heartrate": true,
+    "average_heartrate": 125,
+    "max_heartrate": 155
+   },
+   {
+    "id": 4007,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-30T18:00:00Z",
+    "start_date_local": "2026-10-30T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 133,
+    "max_heartrate": 163
+   },
+   {
+    "id": 4008,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-10-28T18:00:00Z",
+    "start_date_local": "2026-10-28T18:00:00Z",
+    "distance": 34000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 141,
+    "max_heartrate": 171
+   },
+   {
+    "id": 4009,
+    "name": "Lunga in pianura",
+    "type": "Ride",
+    "start_date": "2026-10-25T09:00:00Z",
+    "start_date_local": "2026-10-25T09:00:00Z",
+    "distance": 68000,
+    "moving_time": 8400,
+    "elapsed_time": 8700,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 124,
+    "max_heartrate": 154
+   },
+   {
+    "id": 4010,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-23T18:00:00Z",
+    "start_date_local": "2026-10-23T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 131,
+    "max_heartrate": 161
+   }
+  ],
+  "gym": [
+   {
+    "id": 4015,
+    "name": "Corpo libero",
+    "type": "Workout",
+    "start_date": "2026-11-17T18:00:00Z",
+    "start_date_local": "2026-11-17T18:00:00Z",
+    "distance": 0,
+    "moving_time": 3000,
+    "elapsed_time": 3300,
+    "total_elevation_gain": 0,
+    "has_heartrate": false
+   },
+   {
+    "id": 4001,
+    "name": "Lunga della domenica",
+    "type": "Ride",
+    "start_date": "2026-11-15T09:00:00Z",
+    "start_date_local": "2026-11-15T09:00:00Z",
+    "distance": 55000,
+    "moving_time": 7200,
+    "elapsed_time": 7500,
+    "total_elevation_gain": 600,
+    "has_heartrate": true,
+    "average_heartrate": 128,
+    "max_heartrate": 158
+   },
+   {
+    "id": 4002,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-13T18:00:00Z",
+    "start_date_local": "2026-11-13T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 132,
+    "max_heartrate": 162
+   },
+   {
+    "id": 4003,
+    "name": "Lunga collinare",
+    "type": "Ride",
+    "start_date": "2026-11-08T09:00:00Z",
+    "start_date_local": "2026-11-08T09:00:00Z",
+    "distance": 70000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 900,
+    "has_heartrate": true,
+    "average_heartrate": 126,
+    "max_heartrate": 156
+   },
+   {
+    "id": 4004,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-06T18:00:00Z",
+    "start_date_local": "2026-11-06T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 135,
+    "max_heartrate": 165
+   },
+   {
+    "id": 4005,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-11-04T18:00:00Z",
+    "start_date_local": "2026-11-04T18:00:00Z",
+    "distance": 35000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 140,
+    "max_heartrate": 170
+   },
+   {
+    "id": 4006,
+    "name": "Lunga del primo novembre",
+    "type": "Ride",
+    "start_date": "2026-11-01T09:00:00Z",
+    "start_date_local": "2026-11-01T09:00:00Z",
+    "distance": 72000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 800,
+    "has_heartrate": true,
+    "average_heartrate": 125,
+    "max_heartrate": 155
+   },
+   {
+    "id": 4007,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-30T18:00:00Z",
+    "start_date_local": "2026-10-30T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 133,
+    "max_heartrate": 163
+   },
+   {
+    "id": 4008,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-10-28T18:00:00Z",
+    "start_date_local": "2026-10-28T18:00:00Z",
+    "distance": 34000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 141,
+    "max_heartrate": 171
+   },
+   {
+    "id": 4009,
+    "name": "Lunga in pianura",
+    "type": "Ride",
+    "start_date": "2026-10-25T09:00:00Z",
+    "start_date_local": "2026-10-25T09:00:00Z",
+    "distance": 68000,
+    "moving_time": 8400,
+    "elapsed_time": 8700,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 124,
+    "max_heartrate": 154
+   },
+   {
+    "id": 4010,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-23T18:00:00Z",
+    "start_date_local": "2026-10-23T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 131,
+    "max_heartrate": 161
+   }
+  ],
+  "yogaToday": [
+   {
+    "id": 4016,
+    "name": "Yoga mattutino",
+    "type": "Yoga",
+    "start_date": "2026-11-18T07:00:00Z",
+    "start_date_local": "2026-11-18T07:00:00Z",
+    "distance": 0,
+    "moving_time": 2700,
+    "elapsed_time": 3000,
+    "total_elevation_gain": 0,
+    "has_heartrate": false
+   },
+   {
+    "id": 4001,
+    "name": "Lunga della domenica",
+    "type": "Ride",
+    "start_date": "2026-11-15T09:00:00Z",
+    "start_date_local": "2026-11-15T09:00:00Z",
+    "distance": 55000,
+    "moving_time": 7200,
+    "elapsed_time": 7500,
+    "total_elevation_gain": 600,
+    "has_heartrate": true,
+    "average_heartrate": 128,
+    "max_heartrate": 158
+   },
+   {
+    "id": 4002,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-13T18:00:00Z",
+    "start_date_local": "2026-11-13T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 132,
+    "max_heartrate": 162
+   },
+   {
+    "id": 4003,
+    "name": "Lunga collinare",
+    "type": "Ride",
+    "start_date": "2026-11-08T09:00:00Z",
+    "start_date_local": "2026-11-08T09:00:00Z",
+    "distance": 70000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 900,
+    "has_heartrate": true,
+    "average_heartrate": 126,
+    "max_heartrate": 156
+   },
+   {
+    "id": 4004,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-11-06T18:00:00Z",
+    "start_date_local": "2026-11-06T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 135,
+    "max_heartrate": 165
+   },
+   {
+    "id": 4005,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-11-04T18:00:00Z",
+    "start_date_local": "2026-11-04T18:00:00Z",
+    "distance": 35000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 140,
+    "max_heartrate": 170
+   },
+   {
+    "id": 4006,
+    "name": "Lunga del primo novembre",
+    "type": "Ride",
+    "start_date": "2026-11-01T09:00:00Z",
+    "start_date_local": "2026-11-01T09:00:00Z",
+    "distance": 72000,
+    "moving_time": 9000,
+    "elapsed_time": 9300,
+    "total_elevation_gain": 800,
+    "has_heartrate": true,
+    "average_heartrate": 125,
+    "max_heartrate": 155
+   },
+   {
+    "id": 4007,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-30T18:00:00Z",
+    "start_date_local": "2026-10-30T18:00:00Z",
+    "distance": 28000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 200,
+    "has_heartrate": true,
+    "average_heartrate": 133,
+    "max_heartrate": 163
+   },
+   {
+    "id": 4008,
+    "name": "Medio ritmo",
+    "type": "Ride",
+    "start_date": "2026-10-28T18:00:00Z",
+    "start_date_local": "2026-10-28T18:00:00Z",
+    "distance": 34000,
+    "moving_time": 4500,
+    "elapsed_time": 4800,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 141,
+    "max_heartrate": 171
+   },
+   {
+    "id": 4009,
+    "name": "Lunga in pianura",
+    "type": "Ride",
+    "start_date": "2026-10-25T09:00:00Z",
+    "start_date_local": "2026-10-25T09:00:00Z",
+    "distance": 68000,
+    "moving_time": 8400,
+    "elapsed_time": 8700,
+    "total_elevation_gain": 300,
+    "has_heartrate": true,
+    "average_heartrate": 124,
+    "max_heartrate": 154
+   },
+   {
+    "id": 4010,
+    "name": "Giro dopo il lavoro",
+    "type": "Ride",
+    "start_date": "2026-10-23T18:00:00Z",
+    "start_date_local": "2026-10-23T18:00:00Z",
+    "distance": 27000,
+    "moving_time": 3600,
+    "elapsed_time": 3900,
+    "total_elevation_gain": 150,
+    "has_heartrate": true,
+    "average_heartrate": 131,
+    "max_heartrate": 161
+   }
+  ]
+ },
+ "cases": [
+  {
+   "name": "today",
+   "now": "2026-11-06T17:45:00Z",
+   "activities": "all",
+   "settings": "declared",
+   "level": "intermediate",
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": "thresholdWeek2",
+   "ftpHistory": "growing",
+   "segments": true
+  },
+  {
+   "name": "todaySkipped",
+   "now": "2026-11-06T17:45:00Z",
+   "activities": "all",
+   "settings": "raceMonday",
+   "level": "beginner",
+   "plannedRests": [
+    "2026-11-06",
+    "2026-11-07"
+   ],
+   "rainyDays": [
+    "2026-11-08"
+   ],
+   "mesocycle": null,
+   "ftpHistory": "plateau",
+   "segments": true
+  },
+  {
+   "name": "comeback",
+   "now": "2026-11-12T10:00:00Z",
+   "activities": "all",
+   "settings": "declared",
+   "level": "advanced",
+   "plannedRests": [
+    "2026-11-13"
+   ],
+   "rainyDays": [
+    "2026-11-12",
+    "2026-11-13"
+   ],
+   "mesocycle": "baseDone",
+   "ftpHistory": "declining",
+   "segments": false
+  },
+  {
+   "name": "afterAlpineHike",
+   "now": "2026-11-02T05:00:00Z",
+   "activities": "upToNow",
+   "settings": "declared",
+   "level": "intermediate",
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": "ronnestad",
+   "ftpHistory": "growing",
+   "segments": true
+  },
+  {
+   "name": "afterTrail",
+   "now": "2026-10-30T06:00:00Z",
+   "activities": "upToNow",
+   "settings": "empty",
+   "level": "new",
+   "plannedRests": [],
+   "rainyDays": [
+    "2026-10-30"
+   ],
+   "mesocycle": null,
+   "ftpHistory": "none",
+   "segments": false
+  },
+  {
+   "name": "afterGym",
+   "now": "2026-10-31T06:00:00Z",
+   "activities": "upToNow",
+   "settings": "estimated",
+   "level": "intermediate",
+   "plannedRests": [
+    "2026-11-02"
+   ],
+   "rainyDays": [],
+   "mesocycle": "vo2Deload",
+   "ftpHistory": "recent",
+   "segments": true
+  },
+  {
+   "name": "afterTest",
+   "now": "2026-10-28T06:00:00Z",
+   "activities": "upToNow",
+   "settings": "declared",
+   "level": "advanced",
+   "plannedRests": [],
+   "rainyDays": [
+    "2026-10-31",
+    "2026-11-01"
+   ],
+   "mesocycle": "unknownBlock",
+   "ftpHistory": "full",
+   "segments": true
+  },
+  {
+   "name": "afterLongRide",
+   "now": "2026-10-26T06:00:00Z",
+   "activities": "upToNow",
+   "settings": "declared",
+   "level": "intermediate",
+   "plannedRests": [
+    "2026-10-27"
+   ],
+   "rainyDays": [],
+   "mesocycle": "thresholdWeek2",
+   "ftpHistory": "plateau",
+   "segments": true
+  },
+  {
+   "name": "quietWeek",
+   "now": "2026-10-24T06:00:00Z",
+   "activities": "upToNow",
+   "settings": "lowVolume",
+   "level": "beginner",
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": null,
+   "ftpHistory": "none",
+   "segments": false
+  },
+  {
+   "name": "earlySeason",
+   "now": "2026-09-12T06:00:00Z",
+   "activities": "upToNow",
+   "settings": "estimated",
+   "level": "advanced",
+   "plannedRests": [],
+   "rainyDays": [
+    "2026-09-13"
+   ],
+   "mesocycle": "neuromuscularDone",
+   "ftpHistory": "single",
+   "segments": true
+  },
+  {
+   "name": "noActivities",
+   "now": "2026-11-06T17:45:00Z",
+   "activities": "none",
+   "settings": "declared",
+   "level": "new",
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": null,
+   "ftpHistory": "single",
+   "segments": false
+  },
+  {
+   "name": "noActivitiesEmpty",
+   "now": "2026-11-06T17:45:00Z",
+   "activities": "none",
+   "settings": "empty",
+   "level": null,
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": null,
+   "ftpHistory": "none",
+   "segments": false
+  },
+  {
+   "name": "crossTrainingOnly",
+   "now": "2026-11-06T17:45:00Z",
+   "activities": "nonBike",
+   "settings": "estimated",
+   "level": "intermediate",
+   "plannedRests": [],
+   "rainyDays": [
+    "2026-11-06"
+   ],
+   "mesocycle": null,
+   "ftpHistory": "none",
+   "segments": true
+  },
+  {
+   "name": "bikesOnly",
+   "now": "2026-11-09T06:00:00Z",
+   "activities": "bikes",
+   "settings": "declared",
+   "level": "advanced",
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": "baseDone",
+   "ftpHistory": "plateau",
+   "segments": true
+  },
+  {
+   "name": "raceSoon",
+   "now": "2026-11-06T17:45:00Z",
+   "activities": "all",
+   "settings": "raceSoon",
+   "level": "advanced",
+   "plannedRests": [],
+   "rainyDays": [
+    "2026-11-07"
+   ],
+   "mesocycle": "thresholdWeek2",
+   "ftpHistory": "growing",
+   "segments": true
+  },
+  {
+   "name": "rainySunday",
+   "now": "2026-11-08T06:00:00Z",
+   "activities": "all",
+   "settings": "declared",
+   "level": "intermediate",
+   "plannedRests": [],
+   "rainyDays": [
+    "2026-11-08",
+    "2026-11-09"
+   ],
+   "mesocycle": "noStart",
+   "ftpHistory": "growing",
+   "segments": true
+  },
+  {
+   "name": "mondayRain",
+   "now": "2026-11-09T06:00:00Z",
+   "activities": "all",
+   "settings": "lowVolume",
+   "level": "veteran",
+   "plannedRests": [
+    "2026-11-11"
+   ],
+   "rainyDays": [
+    "2026-11-09"
+   ],
+   "mesocycle": "noHistory",
+   "ftpHistory": "none",
+   "segments": false
+  },
+  {
+   "name": "hikeAlpine",
+   "now": "2026-11-18T06:00:00Z",
+   "activities": "alpineHike",
+   "settings": "declared",
+   "level": "intermediate",
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": null,
+   "ftpHistory": "growing",
+   "segments": false
+  },
+  {
+   "name": "hikeHill",
+   "now": "2026-11-18T06:00:00Z",
+   "activities": "hillHike",
+   "settings": "lowVolume",
+   "level": "beginner",
+   "plannedRests": [
+    "2026-11-20"
+   ],
+   "rainyDays": [],
+   "mesocycle": "thresholdWeek2",
+   "ftpHistory": "growing",
+   "segments": false
+  },
+  {
+   "name": "trailRun",
+   "now": "2026-11-18T06:00:00Z",
+   "activities": "trailRun",
+   "settings": "estimated",
+   "level": "advanced",
+   "plannedRests": [],
+   "rainyDays": [
+    "2026-11-19"
+   ],
+   "mesocycle": "vo2Deload",
+   "ftpHistory": "none",
+   "segments": true
+  },
+  {
+   "name": "gymYesterday",
+   "now": "2026-11-18T06:00:00Z",
+   "activities": "gym",
+   "settings": "declared",
+   "level": "intermediate",
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": "baseDone",
+   "ftpHistory": "growing",
+   "segments": false
+  },
+  {
+   "name": "yogaToday",
+   "now": "2026-11-18T06:00:00Z",
+   "activities": "yogaToday",
+   "settings": "empty",
+   "level": "new",
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": null,
+   "ftpHistory": "none",
+   "segments": false
+  },
+  {
+   "name": "freshBeginner",
+   "now": "2026-11-18T06:00:00Z",
+   "activities": "steady",
+   "settings": "declared",
+   "level": "beginner",
+   "plannedRests": [],
+   "rainyDays": [],
+   "mesocycle": null,
+   "ftpHistory": "growing",
+   "segments": false
+  },
+  {
+   "name": "quietWeekRested",
+   "now": "2026-10-24T06:00:00Z",
+   "activities": "upToNow",
+   "settings": "estimated",
+   "level": "veteran",
+   "plannedRests": [
+    "2026-10-25"
+   ],
+   "rainyDays": [],
+   "mesocycle": "vo2Deload",
+   "ftpHistory": "plateau",
+   "segments": true
+  }
+ ],
+ "dayOffsets": [
+  0,
+  1,
+  2,
+  3
+ ],
+ "workout": {
+  "categories": [
+   "PAST_REST",
+   "SKIP",
+   "REST",
+   "REST_RAIN",
+   "MOBILITY",
+   "STRENGTH",
+   "STRENGTH_BIKE",
+   "RECOVERY",
+   "LONG",
+   "EASY",
+   "SCONOSCIUTA"
+  ],
+  "settings": [
+   "declared",
+   "empty",
+   "lowVolume"
+  ],
+  "profiles": [
+   null,
+   {
+    "level": {
+     "key": "intermediate"
+    }
+   },
+   {
+    "hrLthr": 170,
+    "ftp": 280
+   }
+  ],
+  "variants": [
+   {
+    "hardIndex": 0,
+    "formCtx": null,
+    "isRecoveryWeek": false,
+    "totalHardsInWeek": 2
+   },
+   {
+    "hardIndex": 1,
+    "formCtx": {
+     "ctl": 80,
+     "atl": 65,
+     "tsb": 15
+    },
+    "isRecoveryWeek": false,
+    "totalHardsInWeek": 3
+   },
+   {
+    "hardIndex": 4,
+    "formCtx": {
+     "ctl": 40,
+     "atl": 65,
+     "tsb": -25
+    },
+    "isRecoveryWeek": true,
+    "totalHardsInWeek": 3
+   },
+   {
+    "hardIndex": 1,
+    "formCtx": {
+     "ctl": 120,
+     "atl": 155,
+     "tsb": -35
+    },
+    "isRecoveryWeek": false,
+    "totalHardsInWeek": 1
+   }
+  ],
+  "hard": {
+   "hardIndex": [
+    0,
+    1,
+    2
+   ],
+   "totalHardsInWeek": [
+    1,
+    2,
+    3
+   ],
+   "formCtx": [
+    null,
+    {
+     "ctl": 60,
+     "atl": 45,
+     "tsb": 15
+    },
+    {
+     "ctl": 200,
+     "atl": 240,
+     "tsb": -40
+    }
+   ],
+   "mesocycles": [
+    null,
+    "baseDone",
+    "thresholdWeek2",
+    "vo2Deload"
+   ]
+  },
+  "vo2": {
+   "variants": [
+    "seiler_4x8",
+    "seiler_4x4",
+    "ronnestad_30_15",
+    "over_unders",
+    "sst_3x20",
+    "sconosciuta"
+   ],
+   "volMul": [
+    1,
+    0.88,
+    0.6
+   ],
+   "tiers": [
+    null,
+    [
+     3,
+     0
+    ],
+    [
+     12,
+     50
+    ]
+   ]
+  },
+  "tiers": [
+   [
+    null,
+    0
+   ],
+   [
+    3,
+    0
+   ],
+   [
+    6,
+    0
+   ],
+   [
+    8,
+    30
+   ],
+   [
+    6,
+    80
+   ],
+   [
+    10,
+    60
+   ],
+   [
+    12,
+    50
+   ],
+   [
+    4,
+    200
+   ]
+  ],
+  "strengthLevels": [
+   1,
+   2,
+   3,
+   null
+  ],
+  "reducedVolume": [
+   0.6,
+   0.79,
+   0.8,
+   1
+  ]
+ },
+ "meso": {
+  "taper": {
+   "raceDates": [
+    null,
+    "2026-11-22",
+    "2026-11-29",
+    "2026-11-08",
+    "2026-11-02",
+    "2026-11-01",
+    "2026-11-16",
+    "2026-11-17"
+   ],
+   "weekStarts": [
+    null,
+    "2026-10-26",
+    "2026-11-02",
+    "2026-11-09",
+    "2026-11-16",
+    "2026-11-23"
+   ]
+  },
+  "weekRoles": {
+   "blocks": [
+    "base",
+    "threshold",
+    "vo2max",
+    "neuromuscular",
+    "ronnestad_block",
+    "mistero"
+   ],
+   "weekInBlock": [
+    0,
+    1,
+    3,
+    5,
+    null
+   ],
+   "weekOffsets": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  "deficits": [
+   null,
+   "vo2max",
+   "threshold",
+   "neuromuscular",
+   "endurance",
+   "sprint"
+  ],
+  "nextBlock": {
+   "blocks": [
+    "base",
+    "threshold",
+    "vo2max",
+    "neuromuscular",
+    "mistero"
+   ],
+   "deficits": [
+    null,
+    "vo2max",
+    "threshold",
+    "endurance"
+   ]
+  },
+  "initNows": [
+   "2026-11-06T17:45:00Z",
+   "2026-12-20T08:00:00Z"
+  ]
+ }
+}

@@ -26,3 +26,11 @@ export function isoDay(date: DateInput): string {
   const day = String(x.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+
+// Icona di ogni tipo di attività di Strava; gli altri tipi usano '•'.
+export const TYPE_EMOJI: Record<string, string> = {
+  Ride: '🚴', VirtualRide: '🚴', EBikeRide: '🚴',
+  MountainBikeRide: '🚵', GravelRide: '🚵',
+  Run: '🏃', VirtualRun: '🏃', TrailRun: '🏃',
+  Swim: '🏊', Walk: '🚶', Hike: '🥾', Workout: '💪',
+};

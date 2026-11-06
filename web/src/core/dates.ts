@@ -27,3 +27,10 @@ export function buildDateHelpers(dayOffset: number, now: Date): DateHelpers {
   };
   return { ref, ago, refIso };
 }
+
+// Data AAAA-MM-GG a n giorni da `now` (0 = oggi, -1 = ieri).
+export function dayOffsetIso(n: number, now: Date): string {
+  const d = new Date(now);
+  d.setDate(d.getDate() + n);
+  return isoDay(d);
+}

@@ -1,11 +1,13 @@
 // Risultati di riferimento dei calcoli: esegue il codice JavaScript delle pagine di oggi
 // (web/*.js) sulle uscite inventate di tests/fixtures/rides.json e scrive i risultati in
-// tests/fixtures/load-expected.json. I test di tests/core controllano che i calcoli
-// TypeScript di src/core diano gli stessi numeri.
+// tests/fixtures/load-expected.json; per il piano di allenamento, sui casi di
+// tests/fixtures/plan-cases.json, in tests/fixtures/plan-expected.json (record-plan.ts).
+// I test di tests/core controllano che i calcoli TypeScript di src/core diano gli stessi
+// risultati.
 //
-// Il file è stato scritto la prima volta dal codice di prima della conversione. Le pagine
+// I file sono stati scritti la prima volta dal codice di prima della conversione. Le pagine
 // di oggi usano ancora gli stessi nomi (ora presi da src/core): rieseguirlo deve lasciare
-// il file identico, e `git diff --exit-code tests/fixtures` lo conferma.
+// i file identici, e `git diff --exit-code tests/fixtures` lo conferma.
 //
 // Uso, dalla cartella del progetto:
 //   docker compose run --rm --no-deps app node tests/reference/record.ts
@@ -13,16 +15,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { planReference } from './record-plan.ts';
 import { replacer } from './serialize.ts';
 
 const FIXTURES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'fixtures');
 const WEB = path.resolve(FIXTURES, '..', '..');
-const rides = JSON.parse(fs.readFileSync(path.join(FIXTURES, 'rides.json'), 'utf8'));
+const readFixture = (name: string) => JSON.parse(fs.readFileSync(path.join(FIXTURES, name), 'utf8'));
+const rides = readFixture('rides.json');
+const plan = readFixture('plan-cases.json');
 
 // I giorni dipendono dal fuso orario, come nel browser: tutto gira in quello delle fixtures.
 process.env.TZ = rides.timeZone;
 
-// Browser simulato: localStorage, pagina e orologio fermo all'istante delle fixtures.
+// Browser simulato: localStorage, pagina e orologio fermo all'istante delle fixtures
+// (i casi del piano lo spostano).
 const store = new Map<string, string>();
 Object.assign(globalThis, {
   localStorage: {
@@ -32,19 +38,19 @@ Object.assign(globalThis, {
   },
   document: { getElementById: () => ({ innerHTML: '', value: '', textContent: '' }) },
 });
-const NOW = Date.parse(rides.now);
+let now = Date.parse(rides.now);
 const RealDate = Date;
 globalThis.Date = class extends RealDate {
   constructor(...args: ConstructorParameters<DateConstructor> | []) {
-    super(...((args.length ? args : [NOW]) as [number]));
+    super(...((args.length ? args : [now]) as [number]));
   }
 
-  static now() { return NOW; }
+  static now() { return now; }
 } as DateConstructor;
 
 const load = (file: string) => import(pathToFileURL(path.join(WEB, file)).href);
 const m = { ...(await load('strava.js')), ...(await load('training.js')), ...(await load('analysis.js')),
-  ...(await load('predictions.js')) };
+  ...(await load('predictions.js')), ...(await load('training_v2.js')) };
 
 // Serie degli stream nel formato di Strava, da blocchi [valore, secondi].
 const expand = (blocks: [number, number][]) => blocks.flatMap(([v, s]) => Array<number>(s).fill(v));
@@ -170,9 +176,17 @@ const reference = {
   scenarios: Object.fromEntries(rides.scenarios.map((sc: { name: string }) => [sc.name, scenarioReference(sc)])),
 };
 
-const out = path.join(FIXTURES, 'load-expected.json');
-fs.writeFileSync(out, JSON.stringify(reference, replacer, 1) + '\n');
-// Il container gira come root: il file resta del proprietario della cartella.
+const planned = planReference({
+  m, store, rides, plan, activities, setNow: (iso: string) => { now = Date.parse(iso); },
+});
+
+// Il container gira come root: i file restano del proprietario della cartella.
 const { uid, gid } = fs.statSync(FIXTURES);
-fs.chownSync(out, uid, gid);
-console.log('Scritto tests/fixtures/load-expected.json');
+function write(name: string, data: unknown) {
+  const out = path.join(FIXTURES, name);
+  fs.writeFileSync(out, JSON.stringify(data, replacer, 1) + '\n');
+  fs.chownSync(out, uid, gid);
+  console.log(`Scritto tests/fixtures/${name}`);
+}
+write('load-expected.json', reference);
+write('plan-expected.json', planned);

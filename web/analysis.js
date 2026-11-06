@@ -3,8 +3,7 @@
 // le versioni con i nomi e gli argomenti di prima, che leggono orologio e valori salvati.
 import { escapeHtml, fmtDate } from './strava.js';
 import {
-  resolveHr, buildFormTrend, compositeFatigueScore, buildFtpTrend,
-  loadMesocycle, saveMesocycle, MESO_BLOCKS, athleteResponseCheck,
+  resolveHr, buildFormTrend, compositeFatigueScore, buildFtpTrend, athleteResponseCheck,
 } from './training.js';
 import { estimatesFromSegments } from './predictions.js';
 import { formInsights as formInsightsFrom, crossTrainingInsights as crossTrainingFrom } from './src/core/form.ts';
@@ -12,19 +11,18 @@ import {
   buildFtpBreakdown as ftpBreakdownFrom, buildFtpInsights, buildLthrBreakdown, nextFtpHistory,
 } from './src/core/ftp.ts';
 import { buildHrZones as hrZonesFrom } from './src/core/hr.ts';
+import { mesoSummary, withFtpPoint } from './src/core/meso.ts';
 import { buildPowerCurve, buildPowerProfile } from './src/core/power.ts';
-import { loadFtpHistory, saveFtpHistory } from './src/data/storage.ts';
+import { loadFtpHistory, saveFtpHistory, loadMesocycle, saveMesocycle } from './src/data/storage.ts';
 
 // Le card Forma e Zone FC usano soglia e FTP senza le stime dalle attività: contano
 // solo i valori dichiarati e i segmenti (resolveHr senza attività).
 function formInsights(data, activities, settings) {
   const { hrLthr, ftp } = resolveHr(settings);
-  const meso = loadMesocycle();
-  const block = meso && MESO_BLOCKS.find(b => b.id === meso.blockId);
   return formInsightsFrom(data, activities, {
     hrLthr, ftp, now: new Date(),
     ftpTrend: buildFtpTrend(),
-    meso: block ? { label: block.label, weeks: block.weeks, description: block.description, weekInBlock: meso.weekInBlock } : null,
+    meso: mesoSummary(loadMesocycle()),
     response: athleteResponseCheck(activities, settings),
   });
 }
@@ -41,8 +39,7 @@ function recordFtpPoint(settings, activities) {
   const meso = loadMesocycle();
   if (meso) {
     const { date, ftp } = history[history.length - 1];
-    meso.ftpHistory = [...(meso.ftpHistory || []), { date, ftp }].slice(-20);
-    saveMesocycle(meso);
+    saveMesocycle(withFtpPoint(meso, date, ftp));
   }
 }
 

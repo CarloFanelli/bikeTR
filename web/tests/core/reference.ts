@@ -10,7 +10,7 @@ import type { Activity, Streams } from '../../src/core/strava-types.ts';
 import { computeStreamsMetrics } from '../../src/core/streams.ts';
 import { replacer } from '../reference/serialize.ts';
 
-const fixture = (name: string) =>
+export const fixture = (name: string) =>
   JSON.parse(fs.readFileSync(fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url)), 'utf8'));
 export const rides = fixture('rides.json');
 export const expected = fixture('load-expected.json');
@@ -51,6 +51,7 @@ export interface Scenario {
   settings: { weight?: number; hrMax?: number; hrLthr?: number; lthrSource?: string; ftpDeclared?: number; ftpSource?: string };
   segments: boolean;
   ftpHistory: string;
+  mesocycle?: string;
   noActivities?: boolean;
   stats: string;
 }
