@@ -5,31 +5,29 @@ server {
     return 403;
 }
 
+# Connessione del live reload: una WebSocket, che nginx inoltra solo se la richiesta
+# lo chiede (intestazione Upgrade).
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
 server {
     listen 80;
     server_name localhost 127.0.0.1;
-
-    root /usr/share/nginx/html;
-    index index.html;
 
     # DNS di Docker, interrogato a ogni richiesta: nginx parte anche quando un
     # servizio a cui inoltra è spento, e lo ritrova dopo un riavvio.
     resolver 127.0.0.11 valid=10s;
 
-    # sendfile può servire contenuti vecchi dai bind mount di Docker Desktop.
-    sendfile off;
-
-    # Il browser riconvalida ogni file: una modifica si vede con un normale reload.
-    add_header Cache-Control "no-cache" always;
-
-    # La cartella del progetto è la radice web: mai servire i file nascosti
-    # (.env, .git, .ai) né la configurazione Docker.
-    location ~ /\. {
-        return 404;
-    }
-
-    location ^~ /docker/ {
-        return 404;
+    # Indice dei paper: l'unico file della cartella del progetto servito da nginx,
+    # scaricato dal Coach service a ogni richiesta.
+    location = /papers_index.json {
+        root /usr/share/nginx/html;
+        # sendfile può servire contenuti vecchi dai bind mount di Docker Desktop.
+        sendfile off;
+        # Si riconvalida sempre: un indice modificato vale dalla richiesta successiva.
+        add_header Cache-Control "no-cache" always;
     }
 
     # Login Strava e token di accesso: il server di autenticazione tiene i segreti,
@@ -51,7 +49,17 @@ server {
         proxy_read_timeout 300s;
     }
 
+    # L'app: il server di sviluppo Vite, che vede solo la cartella web/.
     location / {
-        try_files $uri $uri/ =404;
+        set $app_upstream http://app:5173;
+        proxy_pass $app_upstream;
+        # Vite risponde solo ai nomi host localhost e 127.0.0.1: riceve quello del browser, non app:5173.
+        proxy_set_header Host $host;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        # La WebSocket del live reload resta aperta anche quando non cambia nulla:
+        # chiuderla dopo il minuto predefinito farebbe ricaricare la pagina.
+        proxy_read_timeout 1d;
     }
 }

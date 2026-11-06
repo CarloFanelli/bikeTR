@@ -5,7 +5,7 @@
 // gli stessi numeri, gli stessi prompt e lo stesso workout.
 //
 // Il Coach del browser non esiste più: al posto di coach.js si usa la sua copia
-// coach_before_move.js. Gli altri moduli (.js nella cartella del progetto) sono quelli attuali.
+// coach_before_move.js. Gli altri moduli (.js nella cartella web/) sono quelli attuali.
 //
 // Uso, dalla cartella del progetto (vedi README, sezione Tests):
 //   docker run --rm -v "${PWD}:/src:ro" -v "${PWD}/docker/coach/tests:/tests" node:22-alpine node /tests/reference/make_reference.mjs
@@ -18,7 +18,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const SCRIPT = fileURLToPath(import.meta.url);
 const TESTS = path.resolve(path.dirname(SCRIPT), '..');
-const BROWSER_SRC = '/src';
+const PROJECT = '/src';
+const BROWSER_SRC = path.join(PROJECT, 'web');
 const fixture = (name) => path.join(TESTS, 'fixtures', name);
 const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const rides = readJson(fixture('rides.json'));
@@ -188,7 +189,7 @@ if (process.env.REFERENCE_TZ) {
   };
 
   // Indice dei paper dei test: i paper veri, con embedding inventati (vettori unitari).
-  const real = readJson(path.join(BROWSER_SRC, 'papers_index.json'));
+  const real = readJson(path.join(PROJECT, 'papers_index.json'));
   write('papers_index.json', {
     model: real.model,
     papers: real.papers.map(({ embedding, ...meta }, i) =>
