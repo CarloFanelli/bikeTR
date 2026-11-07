@@ -253,3 +253,43 @@ Before this feature, the browser app was hand-written JavaScript: files of up to
 - **Decision**: the new app ran at `/nuova/` on the same address, sharing the saved browser data, and each section was compared with the old one in a browser before the next. Once every section existed, `http://localhost:5050` became the new app, and the old JavaScript, `activity.html`, `style.css` and the reference recorder were deleted. The paper-index builder moved to `tools/`, so the project root keeps only documentation, configuration and data.
 - **Why**: the browser keeps saved data per address, so keeping `localhost:5050` keeps settings, caches and the Strava connection, and the side-by-side comparison showed every difference before the switch.
 - **Cost**: `/nuova/` addresses no longer open anything, and the old app can come back only from git history.
+
+## model-switch — the Coach's chat model is chosen in `.env`: Ollama or a cloud model (2026-11-07)
+
+Before this feature, the Coach's answer could come only from Ollama, the browser sent the model's name, and the paper search needed Ollama's `nomic-embed-text`. Comparing a local model with a cloud one was not possible.
+
+### 2026-11-07 · The paper search runs inside the Coach service, with its own model
+
+- **Decision**: the papers and the search query are encoded by `BAAI/bge-small-en-v1.5` through `fastembed`, downloaded into the Coach image when it is built; the index records the model's name, and Ollama downloads only the chat model. This revises "Ollama runs in Docker on the CPU by default" (2026-11-05): `nomic-embed-text` is no longer used.
+- **Why**: the search must find the same papers whatever model writes the answer, and a cloud model must work with Ollama turned off.
+- **Cost**: the Coach image grows to about 630 MB and its first build needs internet; changing the search model means re-encoding the index (`python -m app.build_index --reencode`).
+
+### 2026-11-07 · `.env` chooses the chat model; the browser no longer sends one
+
+- **Decision**: `COACH_PROVIDER` (`ollama` when missing, or `cloud`) and the model's settings live only in `.env`, read by the Coach service at each request. Impostazioni shows the model in use and has no model field; a model name saved by older versions is deleted from the browser. This revises "Ollama's address comes only from `.env`" (2026-11-06), which kept the model's name in the browser.
+- **Why**: the cloud key must stay out of the browser, like the Strava secret, and a single file then describes a run, so runs made on different computers compare.
+- **Cost**: switching model takes an edit of `.env` and `docker compose up -d`, not a click.
+
+### 2026-11-07 · One OpenAI-compatible path for cloud models, with no fallback to Ollama
+
+- **Decision**: a cloud model is reached through the OpenAI-compatible chat format with `httpx`, no provider package; Claude is the reference provider, at `https://api.anthropic.com/v1/`. The prompt, catalog, fallback rules and citations are the same for every model; cloud requests send no temperature and allow 4,000 answer tokens. When the cloud provider fails, the Coach shows its error and does not ask Ollama instead.
+- **Why**: one path serves Claude and other providers with a change of address, and Anthropic presents this format as meant for testing and comparing models, which is this project's use. A silent switch to Ollama would hide which model answered.
+- **Cost**: only what the OpenAI-compatible format offers is reachable, and the code was tested against made-up providers only: the first real run on the Mac is the first contact with Claude.
+
+### 2026-11-07 · A spending cap in `.env`, counted by the Coach service
+
+- **Decision**: each cloud answer costs its tokens times `CLOUD_PRICE_IN` and `CLOUD_PRICE_OUT`; when the provider gives no token count (Stop, a dropped connection) the Coach counts 8,000 tokens read and 4,000 written. Requests the provider refuses or never receives cost nothing. The total is one file in the Coach's volume, written by one process at a time; it survives "Disconnetti da Strava", and once it reaches `CLOUD_SPENDING_LIMIT` cloud requests are refused. An unreadable total refuses them too, instead of counting as zero.
+- **Why**: the user pays for every test and must see the cost before and after it; counting high when unsure keeps the cap a real cap. Money spent is not Strava data, so disconnecting does not reset it.
+- **Cost**: the total is an estimate from prices typed by hand; two requests started together just under the cap can pass it by two answers; only `docker compose down -v` resets it.
+
+### 2026-11-07 · The connection check spends no tokens
+
+- **Decision**: **Verifica connessione** asks Ollama for its model list, or the cloud provider for the card of `CLOUD_MODEL` (`GET models/{name}` with the key), never for an answer.
+- **Why**: a check clicked many times while fixing `.env` must be free.
+- **Cost**: Claude's OpenAI-compatible layer documents only chat, so the lookup also sends the headers Claude's own model lookup expects; it is proven only against a made-up provider until the first click on the Mac.
+
+### 2026-11-07 · The live check runs on made-up rides, and its results go into git
+
+- **Decision**: `docker compose run --rm coach-tools python -m app.live_check` runs the Coach's steps with the chat model of `.env` on 3 made-up situations, the rides of the tests, and writes a new JSON file to `live-checks/`, never overwriting one and never writing the key. The files are committed.
+- **Why**: development happens on a laptop where Ollama must not run and no paid model is called, so runs happen on the Mac and travel through git to be evaluated. Made-up rides keep runs comparable, and send no real ride to a provider while it is unclear whether Strava's terms allow it.
+- **Cost**: 3 situations do not show how a model does on real, varied rides; a cloud run costs money and counts toward the same cap as the app.
