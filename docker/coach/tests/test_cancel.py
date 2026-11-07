@@ -13,9 +13,9 @@ import httpx
 import pytest
 import uvicorn
 
-from app import main, ollama, workout
+from app import main, ollama, search, workout
 from app.errors import CoachError
-from fakes import FakeRides, fixture_index
+from fakes import FakeRides, FakeSearch, fixture_index
 from fixture_data import NOW_MS, RIDES
 
 ANSWER = '{"protocolId":"z2_endurance","razionale":"Giornata facile.","paperUsati":[]}'
@@ -48,15 +48,7 @@ class FakeOllamaServer:
     async def handle(self, reader, writer):
         head = await reader.readuntil(b"\r\n\r\n")
         length = int(re.search(rb"content-length: *(\d+)", head, re.I).group(1))
-        body = json.loads(await reader.readexactly(length))
-        if head.startswith(b"POST /api/embeddings"):
-            data = json.dumps({"embedding": [1] * 10}).encode()
-            writer.write(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n"
-                         b"Content-Length: %d\r\n\r\n%s" % (len(data), data))
-            await writer.drain()
-            writer.close()
-            return
-        model = body["model"]
+        model = json.loads(await reader.readexactly(length))["model"]
         writer.write(b"HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nTransfer-Encoding: chunked\r\n\r\n")
         client_gone = asyncio.ensure_future(reader.read())  # b"" quando il client chiude
         try:
@@ -98,7 +90,8 @@ def request(model: str) -> workout.WorkoutRequest:
 async def run_workout(model: str, client: httpx.AsyncClient) -> list:
     events = []
     await workout.run(request(model), events.append, rides=FakeRides(RIDES["activities"]),
-                      ollama_client=client, load_index=fixture_index, now_ms=NOW_MS)
+                      ollama_client=client, embed=FakeSearch([1] * 10).encode,
+                      load_index=fixture_index, now_ms=NOW_MS)
     return events
 
 
@@ -143,10 +136,12 @@ def test_first_word_after_more_than_httpx_default_5_seconds_is_waited_for(monkey
 # --- Attraverso un vero server HTTP -----------------------------------------------------
 
 class CoachServer:
-    """Il servizio Coach in un vero uvicorn, su una porta libera, con Strava e indice finti."""
+    """Il servizio Coach in un vero uvicorn, su una porta libera, con Strava, modello di ricerca
+    e indice finti."""
 
     def __init__(self, monkeypatch, ollama_url: str):
         monkeypatch.setattr(main, "rides", FakeRides(RIDES["activities"]))
+        monkeypatch.setattr(search, "encode", FakeSearch([1] * 10).encode)
         monkeypatch.setattr(main, "load_index", fixture_index)
         monkeypatch.setattr(ollama, "OLLAMA_URL", ollama_url)
 

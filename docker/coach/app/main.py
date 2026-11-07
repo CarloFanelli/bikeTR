@@ -1,7 +1,7 @@
 """Servizio Coach: il lavoro del Coach AI lato server. Raggiunto da nginx su /coach/.
 
 Rotte:
-  GET  /coach/ping?model=  → Ollama risponde? quali modelli mancano?
+  GET  /coach/ping?model=  → Ollama risponde? il modello chat manca?
   POST /coach/workout      → il workout di oggi, come flusso di eventi (una riga JSON l'uno)
   POST /coach/forget       → cancella corse e dettagli corsa salvati (Disconnetti da Strava)
 
@@ -21,7 +21,7 @@ import httpx
 from fastapi import Depends, FastAPI, Header, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app import ollama, papers, workout
+from app import ollama, papers, search, workout
 from app.errors import CoachError
 from app.store import RideStore
 from app.strava import StravaRides
@@ -56,7 +56,7 @@ async def ping(model: str = ""):
         installed = await ollama.installed_models()
     except (httpx.HTTPError, ValueError):
         raise CoachError(503, "ollama_unreachable", f"Coach ok, {ollama.unreachable()}")
-    missing = [m for m in (model, ollama.EMBED_MODEL) if not ollama.is_installed(m, installed)]
+    missing = [] if ollama.is_installed(model, installed) else [model]
     return {
         "models": installed,
         "missing": [{"model": m, "command": ollama.pull_command(m)} for m in missing],
@@ -76,7 +76,7 @@ async def generate_workout(request: Request):
         try:
             async with ollama.client() as ollama_client:
                 await workout.run(req, events.put_nowait, rides=rides, ollama_client=ollama_client,
-                                  load_index=load_index, now_ms=time.time() * 1000)
+                                  embed=search.encode, load_index=load_index, now_ms=time.time() * 1000)
         except CoachError as e:
             events.put_nowait({"type": "error", "error": e.code, "message": e.message})
         except Exception:

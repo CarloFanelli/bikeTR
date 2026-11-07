@@ -25,8 +25,7 @@ const settings = { name: 'impostazioni' };
       <p class="hint text-medium-emphasis">Verifica:</p>
       <ul class="hint text-medium-emphasis">
         <li>Indice paper presente? Se <code>papers_index.json</code> manca, ripristinalo da git: <code>git restore papers_index.json</code></li>
-        <li>Modello embeddings scaricato? Al primo avvio Docker lo scarica da solo: l'avanzamento è in <code>docker compose logs ollama-pull</code>, e <code>docker compose exec ollama ollama list</code> deve includere <b>nomic-embed-text</b></li>
-        <li>Ollama attivo all'indirizzo scritto in <code>.env</code>? Il pulsante <b>Ping Ollama</b> in <RouterLink :to="settings">Impostazioni</RouterLink> lo verifica.</li>
+        <li>Indice codificato con un altro modello di ricerca? Il messaggio qui sopra dà il comando che lo ricodifica.</li>
       </ul>
     </template>
     <template v-else>

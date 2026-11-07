@@ -104,3 +104,7 @@
 ### B-24 · open
 - **What**: The Coach can use two chat models at the same time, a small cheap one for simple jobs and a bigger one for writing the plan, which needs .env to name more than one model (model routing).
 - **From**: model-switch (interview, 2026-11-07)
+
+### B-25 · open
+- **What**: A paper library screen in the app: see and open the papers the Coach searches, upload new ones and remove old ones. Each uploaded paper is indexed into the RAG search. The cost of adding a paper is shown before adding it (an estimate the user confirms) and after (the actual cost).
+- **From**: model-switch (user request after prep, 2026-11-07)

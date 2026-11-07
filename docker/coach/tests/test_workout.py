@@ -1,7 +1,7 @@
 """Il workout completo dal servizio: per le stesse risposte del modello, lo stesso
 risultato del Coach del browser (fixtures/coach_expected.json); gli eventi passo per
 passo; le richieste rifiutate prima di scaricare corse o chiamare il modello.
-Ollama, Strava e l'indice dei paper sono simulati."""
+Ollama, il modello di ricerca, Strava e l'indice dei paper sono simulati."""
 
 import asyncio
 import dataclasses
@@ -12,11 +12,11 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app import main, ollama, workout
+from app import main, ollama, papers, search, workout
 from app.errors import CoachError
 from app.jscompat import js_str
 from app.papers import PaperIndexError
-from fakes import INDEX, FakeRides, fixture_index
+from fakes import INDEX, FakeRides, FakeSearch, fixture_index
 from fixture_data import NOW_MS, RIDES, activities, load, scenario
 
 CASES = load("coach_cases.json")
@@ -28,16 +28,16 @@ BODY = {"duration": 60, "model": CASES["model"], "timeZone": "Europe/Rome", "pro
 
 
 class FakeOllama:
-    """Risponde come Ollama: embedding fisso; la risposta del modello a pezzi di 7 caratteri,
-    poi l'ultimo pezzo con done e il numero di token."""
+    """Risponde come Ollama: la risposta del modello a pezzi di 7 caratteri, poi l'ultimo
+    pezzo con done e il numero di token."""
 
-    def __init__(self, answer: str, embedding: list):
-        self.answer, self.embedding = answer, embedding
+    def __init__(self, answer: str):
+        self.answer = answer
         self.done_reason = "stop"
         self.requests = []
-        self.embed_status = self.chat_status = 200
+        self.chat_status = 200
         self.down = False
-        self.installed = [CASES["model"], "nomic-embed-text:latest"]
+        self.installed = [CASES["model"]]
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         if self.down:
@@ -46,10 +46,6 @@ class FakeOllama:
             return httpx.Response(200, json={"models": [{"name": m} for m in self.installed]})
         body = json.loads(request.content)
         self.requests.append((request.url.path, body))
-        if request.url.path == "/api/embeddings":
-            if self.embed_status != 200:
-                return httpx.Response(self.embed_status, json={"error": "model not found"})
-            return httpx.Response(200, json={"embedding": self.embedding})
         if self.chat_status != 200:
             return httpx.Response(self.chat_status, json={"error": "qualcosa non va"})
         pieces = [self.answer[i:i + 7] for i in range(0, len(self.answer), 7)]
@@ -63,7 +59,12 @@ class FakeOllama:
 
 
 def fake_ollama(case: dict) -> FakeOllama:
-    return FakeOllama(case["answer"], CASES["queries"][case["query"]])
+    return FakeOllama(case["answer"])
+
+
+def fake_search(case: dict) -> FakeSearch:
+    """Il modello di ricerca restituisce il vettore di query scelto per il caso."""
+    return FakeSearch(CASES["queries"][case["query"]])
 
 
 def request_of(case: dict) -> workout.WorkoutRequest:
@@ -72,27 +73,30 @@ def request_of(case: dict) -> workout.WorkoutRequest:
                                   "timeZone": case["timeZone"], "profile": profile})
 
 
-async def run_case(case: dict, fake: FakeOllama, req: workout.WorkoutRequest | None = None) -> list:
+async def run_case(case: dict, fake: FakeOllama, req: workout.WorkoutRequest | None = None,
+                   finder: FakeSearch | None = None) -> list:
     events = []
     async with fake.client() as client:
         await workout.run(req or request_of(case), events.append,
                           rides=FakeRides(activities(scenario(case["scenario"]))),
-                          ollama_client=client, load_index=fixture_index, now_ms=NOW_MS)
+                          ollama_client=client, embed=(finder or fake_search(case)).encode,
+                          load_index=fixture_index, now_ms=NOW_MS)
     return events
 
 
 @pytest.mark.parametrize("case", WORKOUT_CASES, ids=lambda c: c["name"])
 def test_model_answer_gives_the_browser_workout(case):
-    exp, fake = EXPECTED["cases"][case["name"]], fake_ollama(case)
-    result = asyncio.run(run_case(case, fake))[-1]
+    exp, fake, finder = EXPECTED["cases"][case["name"]], fake_ollama(case), fake_search(case)
+    result = asyncio.run(run_case(case, fake, finder=finder))[-1]
     assert result["type"] == "result"
     assert {k: result[k] for k in ("title", "targetWatt", "struttura")} == exp["built"]
     assert result["razionale"] == js_str(exp["razionale"])
     assert [p["pmid"] for p in result["paperRefs"]] == exp["paperRefs"]
     assert [{"pmid": p["pmid"], "score": p["score"]} for p in result["retrievedPapers"]] == exp["retrieved"]
     assert result["fellBack"] == exp["fellBack"]
-    (embed_path, embed), (chat_path, chat) = fake.requests
-    assert (embed_path, embed) == ("/api/embeddings", {"model": "nomic-embed-text", "prompt": exp["query"]})
+    assert finder.texts == [exp["query"]]
+    # A Ollama arriva solo la chat: la query è codificata dal modello di ricerca del servizio.
+    [(chat_path, chat)] = fake.requests
     assert (chat_path, chat["model"], chat["messages"]) == ("/api/chat", exp["model"], exp["messages"])
     assert (chat["stream"], chat["options"]) == (True, {"temperature": 0.2, "num_predict": 1000})
 
@@ -155,11 +159,13 @@ def test_half_a_surrogate_pair_reaches_the_model_escaped_as_from_the_browser():
 
 @pytest.fixture
 def service(monkeypatch):
-    fake, rides = fake_ollama(CASE["valid-answer"]), FakeRides(RIDES["activities"])
+    case = CASE["valid-answer"]
+    fake, finder, rides = fake_ollama(case), fake_search(case), FakeRides(RIDES["activities"])
     monkeypatch.setattr(main, "rides", rides)
     monkeypatch.setattr(main, "load_index", fixture_index)
     monkeypatch.setattr(ollama, "client", fake.client)
-    return SimpleNamespace(client=TestClient(main.app), ollama=fake, rides=rides)
+    monkeypatch.setattr(search, "encode", finder.encode)
+    return SimpleNamespace(client=TestClient(main.app), ollama=fake, search=finder, rides=rides)
 
 
 def post(service, body, headers=SAME_ORIGIN):
@@ -211,7 +217,7 @@ def with_profile(**values) -> dict:
 def test_refused_requests_download_nothing_and_call_no_model(service, body, headers, status, code, message):
     res = post(service, body, headers)
     assert (res.status_code, res.json()) == (status, {"error": code, "message": message})
-    assert service.rides.calls == 0 and service.ollama.requests == []
+    assert service.rides.calls == 0 and service.ollama.requests == [] and service.search.texts == []
 
 
 def test_browser_reference_also_stopped_before_any_call_without_ftp():
@@ -231,15 +237,12 @@ def bug(service):
 
 
 BREAKAGES = {
-    "embedding model missing": (lambda s: setattr(s.ollama, "embed_status", 404), "retrieval",
-                                "Modello nomic-embed-text non installato in Ollama. Scaricalo con: "
-                                + ollama.pull_command("nomic-embed-text")),
     "chat model missing": (lambda s: setattr(s.ollama, "chat_status", 404), "model",
                            f"Modello {CASES['model']} non installato in Ollama. Scaricalo con: "
                            + ollama.pull_command(CASES["model"])),
     "chat error": (lambda s: setattr(s.ollama, "chat_status", 500), "model",
                    'Chat HTTP 500: {"error":"qualcosa non va"}'),
-    "ollama down": (lambda s: setattr(s.ollama, "down", True), "retrieval",
+    "ollama down": (lambda s: setattr(s.ollama, "down", True), "model",
                     f"Ollama non raggiungibile su {ollama.OLLAMA_URL}"),
     "strava not connected": (not_connected, "not_connected", "Strava non collegato"),
     "bug": (bug, "internal", "Errore interno del Coach: dettagli con docker compose logs coach"),
@@ -258,7 +261,19 @@ def test_missing_paper_index_says_how_to_restore_it(service, monkeypatch):
     assert events_of(post(service, BODY))[-1] == {
         "type": "error", "error": "retrieval",
         "message": "papers_index.json non trovato (HTTP 404). Ripristinalo da git: git restore papers_index.json"}
-    assert service.ollama.requests == []
+    assert service.ollama.requests == [] and service.search.texts == []
+
+
+def test_index_of_another_search_model_gives_the_command_that_reencodes_it(service, monkeypatch):
+    async def old_index() -> dict:
+        return papers.check_index({**INDEX, "model": "nomic-embed-text"})
+    monkeypatch.setattr(main, "load_index", old_index)
+    assert events_of(post(service, BODY))[-1] == {
+        "type": "error", "error": "retrieval",
+        "message": "papers_index.json è codificato con nomic-embed-text, non con il modello di ricerca del Coach "
+                   "(BAAI/bge-small-en-v1.5). Ricodificalo con: "
+                   "docker compose run --rm coach-tools python -m app.build_index --reencode"}
+    assert service.ollama.requests == [] and service.search.texts == []
 
 
 # --- Ping Ollama --------------------------------------------------------------------------
@@ -270,13 +285,12 @@ def test_ping_with_every_model_installed(service):
 
 @pytest.mark.parametrize("url,pull", [("http://ollama:11434", "docker compose exec ollama ollama pull"),
                                       ("http://host.docker.internal:11434", "ollama pull")])
-def test_ping_names_the_missing_models_and_the_command_to_download_them(service, monkeypatch, url, pull):
+def test_ping_names_the_missing_chat_model_and_the_command_to_download_it(service, monkeypatch, url, pull):
     monkeypatch.setattr(ollama, "OLLAMA_URL", url)
     service.ollama.installed = ["llama3:8b"]
     res = service.client.get("/coach/ping", params={"model": "qwen2.5:7b"})
     assert (res.status_code, res.json()) == (200, {"models": ["llama3:8b"], "missing": [
-        {"model": "qwen2.5:7b", "command": f"{pull} qwen2.5:7b"},
-        {"model": "nomic-embed-text", "command": f"{pull} nomic-embed-text"}]})
+        {"model": "qwen2.5:7b", "command": f"{pull} qwen2.5:7b"}]})
 
 
 def test_ping_without_ollama(service, monkeypatch):

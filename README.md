@@ -64,7 +64,6 @@ Every other setting is optional and already has a default; `.env.example` descri
 |---|---|---|
 | `WEB_PORT` | `5050` | The port of the app's address |
 | `OLLAMA_CHAT_MODEL` | `qwen2.5:7b` | The Coach's chat model downloaded at start |
-| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | The embedding model used to search the papers |
 | `OLLAMA_CONTAINERS`, `OLLAMA_URL` | Ollama in Docker | Use an Ollama installed on your computer instead (section 5) |
 
 Settings are read when the services start: after changing `.env`, run `docker compose up -d` again. If the Strava credentials are missing, the app still opens and names the settings to fill in.
@@ -81,7 +80,7 @@ Open <http://localhost:5050> and click **Collega Strava** (Connect to Strava). S
 
 **Always open `localhost`, never `127.0.0.1`.** The browser keeps saved data per address, so under `127.0.0.1` your settings and caches are not visible, and Strava always sends you back to `localhost`.
 
-**First start.** Docker downloads about 2 GB of images, installs the app's npm packages and builds the Coach service's image (each takes under a minute), and then downloads about 5 GB of AI models. The app opens once its packages are installed, within about a minute; the Coach works once the models are downloaded, which takes several minutes. To watch the download:
+**First start.** Docker downloads about 2 GB of images, installs the app's npm packages and builds the Coach service's image with its paper search model (each takes a minute or two), and then downloads the Coach's chat model, about 5 GB. The app opens once its packages are installed, within about a minute; the Coach works once the chat model is downloaded, which takes several minutes. To watch the download:
 
 ```bash
 docker compose logs -f ollama-pull
@@ -107,7 +106,7 @@ docker compose down -v
 
 ## 5. AI Coach
 
-The Coach works without any setup: Docker runs Ollama and downloads the two models. Where Ollama runs is set only in `.env` (`OLLAMA_URL`); the "Coach AI (Ollama)" card in Impostazioni holds just the chat model name, and **Ping Ollama** asks the Coach service whether Ollama answers and which models are missing, with the command that downloads each one.
+The Coach works without any setup: Docker runs Ollama and downloads the chat model, and the Coach service finds the papers with its own small search model, installed with it. Where Ollama runs is set only in `.env` (`OLLAMA_URL`); the "Coach AI (Ollama)" card in Impostazioni holds just the chat model name, and **Ping Ollama** asks the Coach service whether Ollama answers and whether the chat model is missing, with the command that downloads it.
 
 **Changing the chat model.** Set `OLLAMA_CHAT_MODEL` in `.env`, run `docker compose up -d`, and write the same model name in the "Coach AI (Ollama)" card in Impostazioni. The card decides which model the Coach requests; `.env` decides which model Docker downloads.
 
@@ -115,11 +114,10 @@ The Coach works without any setup: Docker runs Ollama and downloads the two mode
 
 **Using the Ollama installed on your computer** (for example to use the GPU of a Mac). This option needs Docker Desktop.
 
-1. Install Ollama from <https://ollama.com> and download both models on your computer:
+1. Install Ollama from <https://ollama.com> and download the chat model on your computer:
 
    ```bash
    ollama pull qwen2.5:7b
-   ollama pull nomic-embed-text
    ```
 
 2. In `.env`, remove the `#` from these two lines:
@@ -132,7 +130,16 @@ The Coach works without any setup: Docker runs Ollama and downloads the two mode
 3. Run `docker compose up -d`. No Ollama container starts any more.
 4. Click **Ping Ollama** in Impostazioni. If it fails, your Ollama listens only on its own computer's loopback (the default on Linux and WSL) and Docker cannot reach it: start it listening on all interfaces with `OLLAMA_HOST=0.0.0.0 ollama serve`. Other devices on your network can then reach that Ollama too.
 
-**Paper index.** The Coach searches `papers_index.json`, which is part of the repository and built with `nomic-embed-text`: change the embedding model only together with a rebuilt index. The Coach service reads it through nginx, so an edited index counts from the next request. If the file is missing, restore it with `git restore papers_index.json`.
+**Paper index.** The Coach searches `papers_index.json`, which is part of the repository. Its papers are encoded by the search model inside the Coach service (`BAAI/bge-small-en-v1.5`, downloaded once when the Coach image is built, so the search then works without internet), and the index records that model's name. The Coach service reads it through nginx, so an edited index counts from the next request. If the file is missing, restore it with `git restore papers_index.json`. Two commands rebuild it, and neither needs Ollama:
+
+```bash
+# Re-encode the papers already in the index (needed only after changing the search model)
+docker compose run --rm coach-tools python -m app.build_index --reencode
+# Fetch the paper list again from PubMed, then encode it
+docker compose run --rm coach-tools python -m app.build_index
+```
+
+Both replace the file only once it is complete: if PubMed does not answer, or the command is interrupted, the index stays as it was.
 
 **What a request does.** "Genera workout di oggi" sends the duration, the model name, the browser's time zone and your athlete profile (FTP, threshold and maximum heart rate, weight, weekly hours and days, as the rest of the app estimates them) to the Coach service. The service then names each step on the screen: downloading rides (with the ride-details progress on the first request, e.g. "Scarico dettagli corse 12/40"), searching papers, and the model, whose text appears as it is written.
 
@@ -192,9 +199,10 @@ browser ──► web (nginx, http://localhost:5050)
              ├─ /auth/    → auth: Strava login, keeps client secret and tokens (docker/auth/server.ts)
              └─ /coach/   → coach: the Coach service, Python with FastAPI (docker/coach);
                             keeps the rides it downloads from Strava in a Docker volume
-                            └─► ollama: the Coach's models, kept in a Docker volume
+                            └─► ollama: the Coach's chat model, kept in a Docker volume
                                 (or the Ollama on your computer, set in .env)
-ollama-pull: downloads the missing models at start, then exits
+ollama-pull: downloads the chat model at start if it is missing, then exits
+coach-tools: starts only when named (docker compose run --rm coach-tools …); rebuilds the paper index
 ```
 
 The browser calls the Strava API directly with a short-lived access token it asks `/auth/token` for right before each request, so a tab left open for hours keeps working; the client secret and the refresh token never leave the auth server. The nginx configuration is `docker/nginx/default.conf.template`.

@@ -9,15 +9,20 @@ import math
 
 import httpx
 
+from app.search import SEARCH_MODEL
+
 # Il nome host deve essere localhost: nginx rifiuta gli altri (protezione dal DNS rebinding).
 INDEX_URL = "http://web/papers_index.json"
 INDEX_HEADERS = {"Host": "localhost"}
 TOP_K = 4
 PAPER_FIELDS = {"pmid", "title", "authors", "year", "abstract", "embedding"}
+RESTORE = "Ripristinalo da git: git restore papers_index.json"
+REENCODE = "docker compose run --rm coach-tools python -m app.build_index --reencode"
 
 
 class PaperIndexError(Exception):
-    """Indice dei paper mancante o illeggibile; il messaggio dice come ripristinarlo."""
+    """Indice dei paper mancante, illeggibile o codificato con un altro modello di ricerca;
+    il messaggio dice come rimediare."""
 
 
 async def load_index(client: httpx.AsyncClient) -> dict:
@@ -27,15 +32,26 @@ async def load_index(client: httpx.AsyncClient) -> dict:
         raise PaperIndexError("papers_index.json non raggiungibile: controlla nginx con "
                               "docker compose logs web") from e
     if res.status_code != 200:
-        raise PaperIndexError(f"papers_index.json non trovato (HTTP {res.status_code}). "
-                              "Ripristinalo da git: git restore papers_index.json")
+        raise PaperIndexError(f"papers_index.json non trovato (HTTP {res.status_code}). {RESTORE}")
     try:
         index = res.json()
-        if not all(PAPER_FIELDS <= p.keys() for p in index["papers"]):
-            raise ValueError("campi mancanti")
+    except ValueError as e:
+        raise PaperIndexError(f"papers_index.json illeggibile. {RESTORE}") from e
+    return check_index(index)
+
+
+def check_index(index) -> dict:
+    """L'indice, se il Coach può cercarci: almeno un paper, tutti i campi, e i vettori fatti
+    dal modello di ricerca in uso (vettori di un altro modello darebbero paper a caso)."""
+    try:
+        if not index["papers"] or not all(PAPER_FIELDS <= p.keys() for p in index["papers"]):
+            raise ValueError("nessun paper o campi mancanti")
     except (ValueError, KeyError, TypeError, AttributeError) as e:
-        raise PaperIndexError("papers_index.json illeggibile. Ripristinalo da git: "
-                              "git restore papers_index.json") from e
+        raise PaperIndexError(f"papers_index.json illeggibile. {RESTORE}") from e
+    if index.get("model") != SEARCH_MODEL:
+        raise PaperIndexError(f"papers_index.json è codificato con {index.get('model') or 'un modello senza nome'}, "
+                              f"non con il modello di ricerca del Coach ({SEARCH_MODEL}). "
+                              f"Ricodificalo con: {REENCODE}")
     return index
 
 

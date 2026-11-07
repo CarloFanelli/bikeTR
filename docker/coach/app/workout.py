@@ -160,8 +160,8 @@ def step(name: str, message: str, **extra) -> dict:
 
 
 async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: StravaRides,
-              ollama_client: httpx.AsyncClient, load_index: Callable[[], Awaitable[dict]],
-              now_ms: float) -> None:
+              ollama_client: httpx.AsyncClient, embed: Callable[[str], Awaitable[list]],
+              load_index: Callable[[], Awaitable[dict]], now_ms: float) -> None:
     emit(step("rides", "Scarico le corse da Strava…"))
     data = await rides.refresh(now_ms, progress=lambda done, total: emit(
         step("details", f"Scarico dettagli corse {done}/{total}", done=done, total=total)))
@@ -173,8 +173,8 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
     try:
         index = await load_index()
         query = prompts.retrieval_query(ctx, req.duration)
-        retrieved = papers.top_papers(index, await ollama.embed(ollama_client, query))
-    except (papers.PaperIndexError, ollama.OllamaError) as e:
+        retrieved = papers.top_papers(index, await embed(query))
+    except papers.PaperIndexError as e:
         raise CoachError(502, "retrieval", str(e)) from e
 
     emit(step("model", "Il modello sta scegliendo il protocollo…"))
