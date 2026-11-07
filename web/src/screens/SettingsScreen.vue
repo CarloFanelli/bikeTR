@@ -6,15 +6,13 @@ import { onBeforeRouteLeave } from 'vue-router';
 import {
   VAlert, VBtn, VCard, VCardText, VCardTitle, VCheckbox, VCol, VRow, VSelect, VTextField,
 } from 'vuetify/components';
-import { disconnect, session } from '../app/session.ts';
+import { disconnect, hrProfile, session } from '../app/session.ts';
 import CoachSettingsCard from '../components/CoachSettingsCard.vue';
 import DayToggle from '../components/DayToggle.vue';
 import NumberField from '../components/NumberField.vue';
-import { resolveHr } from '../core/hr.ts';
-import { estimatesFromSegments } from '../core/segments.ts';
 import { settingsErrors, settingsForm, settingsFromForm } from '../core/settings.ts';
 import { COACH_DEFAULT_MODEL } from '../data/coach.ts';
-import { loadCoachSettings, loadSegmentCache, loadSettings, saveCoachSettings, saveSettings } from '../data/storage.ts';
+import { loadCoachSettings, loadSettings, saveCoachSettings, saveSettings } from '../data/storage.ts';
 
 const LTHR_SOURCES = [{ title: 'Dichiarata', value: 'declared' }, { title: 'Stimata', value: 'estimated' }];
 const FTP_SOURCES = [{ title: 'Stimata (TSS potenza)', value: 'estimated' }, { title: 'HR-based (hrTSS)', value: 'hr' }];
@@ -25,8 +23,7 @@ const STRENGTH_LEVELS = [
 ];
 
 // Le stime vengono da attività e segmenti, non dalle impostazioni: si calcolano una volta.
-const now = new Date();
-const estimates = resolveHr(loadSettings(), session.activities, estimatesFromSegments(loadSegmentCache(), now), now);
+const estimates = hrProfile();
 
 const form = ref(settingsForm(loadSettings()));
 const model = ref(loadCoachSettings().model || COACH_DEFAULT_MODEL);

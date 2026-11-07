@@ -2,10 +2,12 @@
 // attività, caricati una volta all'apertura e letti da ogni sezione.
 
 import { reactive } from 'vue';
+import { type HrProfile, resolveHr } from '../core/hr.ts';
+import { estimatesFromSegments } from '../core/segments.ts';
 import type { Activity, Athlete, AthleteStats } from '../core/strava-types.ts';
 import { AuthError, getAuthStatus, logout } from '../data/auth.ts';
 import { forgetCoachRides } from '../data/coach.ts';
-import { applyCachedStreams, purgeLegacyStrava } from '../data/storage.ts';
+import { applyCachedStreams, loadSegmentCache, loadSettings, purgeLegacyStrava } from '../data/storage.ts';
 import { fetchActivities, fetchAthlete, fetchAthleteStats } from '../data/strava.ts';
 
 // Attività caricate all'apertura: abbastanza storico per il consiglio del giorno.
@@ -43,10 +45,21 @@ export async function startSession(): Promise<void> {
     applyCachedStreams(activities);
     Object.assign(session, { phase: 'ready', athlete, stats, activities });
   } catch (e) {
-    // Scollegati mentre carica (token cancellati, accesso revocato): "Collega Strava", non un errore.
-    if (e instanceof AuthError && e.code === 'not_connected') Object.assign(session, { phase: 'connect' });
-    else Object.assign(session, { phase: 'error', error: (e as Error).message });
+    if (!connectIfDisconnected(e)) Object.assign(session, { phase: 'error', error: (e as Error).message });
   }
+}
+
+// Scollegati mentre l'app lavora (token cancellati, accesso revocato): "Collega Strava",
+// non un errore. Restituisce true se era questo il caso.
+export function connectIfDisconnected(e: unknown): boolean {
+  if (!(e instanceof AuthError && e.code === 'not_connected')) return false;
+  session.phase = 'connect';
+  return true;
+}
+
+// FTP e LTHR di adesso, dichiarate o stimate da attività e segmenti salvati.
+export function hrProfile(now = new Date()): HrProfile {
+  return resolveHr(loadSettings(), session.activities, estimatesFromSegments(loadSegmentCache(), now), now);
 }
 
 // "Disconnetti da Strava": il server di autenticazione cancella i token, il servizio

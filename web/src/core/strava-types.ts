@@ -16,8 +16,14 @@ export interface Athlete {
   firstname: string;
   lastname: string;
   profile?: string;
+  sex?: string | null;
   city?: string | null;
+  state?: string | null;
   country?: string | null;
+  weight?: number | null;
+  ftp?: number | null;
+  premium?: boolean;
+  created_at?: string;
 }
 
 export interface Totals {
@@ -40,9 +46,12 @@ export interface AthleteStats {
 
 export interface Activity {
   id: number;
+  // Chi ha registrato l'attività.
+  athlete?: { id: number };
   name: string;
   type: string;
   sport_type?: string;
+  external_id?: string | null;
   start_date: string;
   start_date_local: string;
   timezone?: string;
@@ -50,8 +59,12 @@ export interface Activity {
   moving_time: number;
   elapsed_time: number;
   total_elevation_gain: number;
+  elev_high?: number;
+  elev_low?: number;
   average_speed?: number;
   max_speed?: number;
+  average_cadence?: number;
+  average_temp?: number;
   has_heartrate?: boolean;
   average_heartrate?: number;
   max_heartrate?: number;
@@ -61,15 +74,19 @@ export interface Activity {
   device_watts?: boolean;
   kilojoules?: number;
   suffer_score?: number | null;
+  calories?: number;
   workout_type?: number | null;
   trainer?: boolean;
+  commute?: boolean;
   manual?: boolean;
   private?: boolean;
+  achievement_count?: number;
   kudos_count?: number;
   pr_count?: number;
   gear_id?: string | null;
   upload_id?: number | null;
   start_latlng?: number[] | null;
+  end_latlng?: number[] | null;
   location_city?: string | null;
   location_state?: string | null;
   location_country?: string | null;
@@ -104,9 +121,13 @@ export interface SegmentEffort {
   start_date: string;
   start_date_local?: string;
   distance: number;
+  start_index?: number;
+  end_index?: number;
+  average_cadence?: number;
   average_heartrate?: number;
   max_heartrate?: number;
   average_watts?: number;
+  device_watts?: boolean;
   pr_rank?: number | null;
   kom_rank?: number | null;
   segment?: Segment;
@@ -120,15 +141,51 @@ export interface Split {
   elevation_difference?: number;
   average_speed?: number;
   average_heartrate?: number;
+  pace_zone?: number;
+}
+
+// Un giro (lap) registrato dal ciclocomputer.
+export interface Lap {
+  lap_index: number;
+  name: string;
+  start_index: number;
+  end_index: number;
+  distance: number;
+  elapsed_time: number;
+  moving_time: number;
+  total_elevation_gain?: number;
+  average_speed?: number;
+  max_speed?: number;
+  average_cadence?: number;
+  average_watts?: number;
+  max_watts?: number;
+  weighted_average_watts?: number;
+  average_heartrate?: number;
+  max_heartrate?: number;
+}
+
+// Il miglior tempo su una distanza standard (es. "5k") dentro l'attività.
+export interface BestEffort {
+  name: string;
+  distance: number;
+  elapsed_time: number;
+  moving_time: number;
+  start_index: number;
+  end_index: number;
+  pr_rank?: number | null;
 }
 
 export interface ActivityDetail extends Activity {
   description?: string | null;
-  calories?: number;
   device_name?: string;
+  total_photo_count?: number;
   splits_metric?: Split[];
+  laps?: Lap[];
+  best_efforts?: BestEffort[];
   segment_efforts?: SegmentEffort[];
-  gear?: { id: string; name: string; distance?: number } | null;
+  gear?: {
+    id: string; name: string; distance?: number; brand_name?: string; model_name?: string; frame_type?: number;
+  } | null;
 }
 
 // Serie secondo per secondo, una per chiave richiesta; manca quella che l'attività non ha.
