@@ -8,7 +8,7 @@ import pytest
 from app.metrics import coach_context
 from app.papers import top_papers
 from app.prompts import retrieval_query, system_prompt, user_prompt
-from fixture_data import DETAILS, NOW_MS, activities, load, profile, scenario
+from fixture_data import DETAILS, NOW_MS, RIDES, activities, load, profile, scenario
 
 INDEX = load("papers_index.json")
 CASES = load("coach_cases.json")
@@ -39,6 +39,21 @@ def test_prompt_cases_cover_every_paper_and_the_tricky_values():
     assert any("LTHR: — bpm · Peso: — kg" in u for u in users)                      # valori mancanti
     assert any("Nessuna attività bici negli ultimi 7 giorni." in u for u in users)
     assert any("OGGI: sabato" in u for u in users) and any("OGGI: venerdì" in u for u in users)
+
+
+def test_prompts_hold_no_activity_name_or_place():
+    """Con un provider cloud i prompt lasciano il computer: devono avere numeri e date delle
+    corse, mai il nome che l'atleta ha dato a un'attività né dove l'ha fatta."""
+    case = PROMPT_CASES[0]
+    sc = scenario(case["scenario"])
+    named = [{**a, "name": f"Giro segreto {a['id']}", "start_latlng": [45.4371, 10.9917],
+              "map": {"summary_polyline": "polilinea_segreta"}} for a in RIDES["activities"]]
+    ctx = coach_context(named, DETAILS, profile(sc["profile"]), NOW_MS, ZoneInfo(case["timeZone"]))
+    papers = top_papers(INDEX, CASES["queries"][case["query"]])
+    prompts = [system_prompt(papers), user_prompt(ctx, case["duration"]), retrieval_query(ctx, case["duration"])]
+    assert "(Ride):" in prompts[1]                       # le corse recenti ci sono
+    for secret in ("Giro segreto", "45.4371", "10.9917", "polilinea_segreta"):
+        assert all(secret not in p for p in prompts)
 
 
 def test_whole_kilometres_print_without_decimals_like_javascript():
