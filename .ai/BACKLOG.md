@@ -20,13 +20,15 @@
 - **What**: Trace every run with Langfuse: prompt, tools called, latency, tokens and cost.
 - **From**: docker-setup (interview, 2026-11-05)
 
-### B-6 · open
+### B-6 · picked-up
 - **What**: Create 20–30 questions with expected answer and papers to cite, plus a script measuring correctness and groundedness, with a before/after results table in the README.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: eval-set (2026-11-07)
 
-### B-7 · open
+### B-7 · picked-up
 - **What**: Rewrite the README with the graph diagram, evaluation table with latency and cost, a decisions section (chunk size, model choice, what was tried and discarded) and run instructions; fix the feature list that mentions a Training v2 tab the UI lacks.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: eval-set (2026-11-07)
 
 ### B-8 · picked-up
 - **What**: Add minimal automated tests for the metric formulas (NP, TSS, CTL/ATL/TSB, FTP estimate) and for retrieval.
@@ -108,3 +110,11 @@
 ### B-25 · open
 - **What**: A paper library screen in the app: see and open the papers the Coach searches, upload new ones and remove old ones. Each uploaded paper is indexed into the RAG search. The cost of adding a paper is shown before adding it (an estimate the user confirms) and after (the actual cost).
 - **From**: model-switch (user request after prep, 2026-11-07)
+
+### B-26 · open
+- **What**: After each workout the athlete taps "too easy", "right" or "too hard", and the Coach checks Strava for a ride that day; the last 7 days reach the model, with a selection rule (paper or practice) saying how to adjust, measured with the evaluation set. Where suggestions and taps are kept is still to decide.
+- **From**: eval-set (interview, 2026-11-07)
+
+### B-27 · open
+- **What**: A command that tries small prompt changes and keeps the ones that score better on the evaluation set, as a proposal the user approves. Every try calls the chat model, so it needs a cost guard.
+- **From**: eval-set (interview, 2026-11-07)
