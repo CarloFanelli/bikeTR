@@ -30,7 +30,10 @@ PLANS = {
     "late": lambda: [(5.5, PIECES[0])] + [(0, p) for p in PIECES[1:]],  # prima parola dopo 5,5 s
     "silent": lambda: [(3600, None)],                               # non scrive mai
     "forever": lambda: itertools.repeat((0.05, "bla ")),            # scrive senza fine
+    "mute": lambda: [(3600, None)],                                 # non risponde nemmeno
 }
+# Piani in cui il provider non manda neppure l'inizio della risposta (HTTP 200).
+NO_ANSWER = {"mute"}
 SILENCE = {
     "ollama": 'Il modello non ha scritto nulla per 3 minuti. Su un computer lento vedi il README, sezione 5, '
               '"Slow computers".',
@@ -47,7 +50,7 @@ class FakeModelServer:
     piano. Ricorda le risposte finite e quando il client ha chiuso prima della fine."""
 
     def __init__(self):
-        self.finished, self.closed = [], []
+        self.asked, self.finished, self.closed = [], [], []
 
     async def __aenter__(self):
         self.server = await asyncio.start_server(self.handle, "127.0.0.1", 0)
@@ -61,9 +64,11 @@ class FakeModelServer:
         head = await reader.readuntil(b"\r\n\r\n")
         length = int(re.search(rb"content-length: *(\d+)", head, re.I).group(1))
         model = json.loads(await reader.readexactly(length))["model"]
+        self.asked.append(model)
         cloud = b"/chat/completions" in head.split(b"\r\n", 1)[0]
         kind = b"text/event-stream" if cloud else b"application/x-ndjson"
-        writer.write(b"HTTP/1.1 200 OK\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n\r\n" % kind)
+        if model not in NO_ANSWER:
+            writer.write(b"HTTP/1.1 200 OK\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n\r\n" % kind)
         client_gone = asyncio.ensure_future(reader.read())  # b"" quando il client chiude
         try:
             for delay, piece in PLANS[model]():
@@ -238,6 +243,22 @@ def test_closed_connection_stops_the_provider_within_5_seconds(monkeypatch, kind
     assert closed < 5
     # Il provider fa pagare quello che ha già scritto: senza i token, il costo massimo.
     assert total == pytest.approx(CEILING[kind])
+
+
+def test_stop_before_the_cloud_provider_answers_costs_nothing(monkeypatch):
+    async def go():
+        async with FakeModelServer() as fake, CoachServer(monkeypatch, "cloud", "mute", fake.url) as client:
+            async with client.stream("POST", "/coach/workout", json=BODY, headers=SAME_ORIGIN) as res:
+                async for line in res.aiter_lines():
+                    if json.loads(line).get("step") == "model":
+                        break
+                deadline = time.monotonic() + 5
+                while not fake.asked and time.monotonic() < deadline:
+                    await asyncio.sleep(0.01)
+            await fake.wait_closed()
+            return await spent(CEILING["cloud"], limit=1)
+    # Il provider non ha accettato la richiesta, quindi non ha scritto nulla da far pagare.
+    assert asyncio.run(go()) == 0
 
 
 @pytest.mark.parametrize("kind", PROVIDERS)

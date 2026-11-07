@@ -20,8 +20,9 @@ ANSWER = next(c for c in CASES["cases"] if c["name"] == "valid-answer")["answer"
 CLOCK = datetime(2026, 11, 7, 18, 30, 5, tzinfo=timezone.utc)
 COACH_DIR = Path(__file__).resolve().parents[1]
 ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
+CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "duration", "provider", "model", "protocolId", "fellBack", "truncated", "jsonReadable",
-          "papersFound", "papersCited", "inputTokens", "outputTokens", "cost", "seconds", "modelRaw"}
+          "papersFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds", "modelRaw"}
 
 
 @pytest.fixture
@@ -59,7 +60,7 @@ def test_three_made_up_situations_with_the_env_model(fakes, tmp_path, cloud_spen
         assert (s["provider"], s["model"], s["modelRaw"], s["jsonReadable"]) == ("ollama", "qwen2.5:7b", ANSWER, True)
         assert len(s["papersFound"]) == 4 and {"pmid", "title", "score"} <= set(s["papersFound"][0])
         assert all(isinstance(pmid, str) for pmid in s["papersCited"])
-        assert (s["inputTokens"], s["outputTokens"], s["cost"]) == (900, 42, None)
+        assert (s["inputTokens"], s["outputTokens"], s["cost"], s["charged"]) == (900, 42, None, None)
     assert len(fakes["ollama"].requests) == 3 and len(fakes["search"].texts) == 3
     lines = capsys.readouterr().out.splitlines()
     assert lines[0].startswith("base (60 min): ") and " · ripiego: no · " in lines[0]
@@ -91,7 +92,8 @@ def test_cloud_run_records_costs_adds_them_to_the_total_and_never_writes_the_key
         monkeypatch.setenv(name, value)
     code, [file] = check(tmp_path, cloud_spending)
     assert code == 0
-    assert [s["cost"] for s in read(file)["situations"]] == [pytest.approx(ANSWER_COST)] * 3
+    assert [(s["cost"], s["charged"]) for s in read(file)["situations"]] == [(pytest.approx(ANSWER_COST),
+                                                                              pytest.approx(ANSWER_COST))] * 3
     assert read(file)["totalCost"] == pytest.approx(3 * ANSWER_COST)
     assert cloud_spending.total() == pytest.approx(3 * ANSWER_COST)
     assert CLOUD_KEY not in file.read_text() and fakes["cloud"].requests[0][1]["authorization"] == f"Bearer {CLOUD_KEY}"
@@ -159,6 +161,51 @@ def test_unknown_tokens_print_as_a_dash(fakes, tmp_path, cloud_spending, monkeyp
     _, [file] = check(tmp_path, cloud_spending)
     assert read(file)["situations"][0]["cost"] is None
     assert " · token: — in, — out · costo: —" in capsys.readouterr().out
+
+
+def test_answers_without_token_counts_add_their_high_estimate_to_the_run_total(fakes, tmp_path, cloud_spending,
+                                                                                monkeypatch, capsys):
+    for name, value in CLOUD_ENV.items():
+        monkeypatch.setenv(name, value)
+    fakes["cloud"].usage = None
+    _, [file] = check(tmp_path, cloud_spending)
+    run = read(file)
+    assert [(s["cost"], s["charged"]) for s in run["situations"]] == [(None, pytest.approx(CEILING_COST))] * 3
+    assert run["totalCost"] == pytest.approx(3 * CEILING_COST) and cloud_spending.total() == pytest.approx(3 * CEILING_COST)
+    out = capsys.readouterr().out
+    assert " · costo: — · addebitati: $0.0840" in out and "Costo totale: $0.2520" in out
+
+
+def test_a_situation_failing_mid_answer_records_what_it_added_to_the_total(fakes, tmp_path, cloud_spending,
+                                                                            monkeypatch, capsys):
+    for name, value in CLOUD_ENV.items():
+        monkeypatch.setenv(name, value)
+    fakes["cloud"].drop_after = 3
+    code, [file] = check(tmp_path, cloud_spending)
+    run = read(file)
+    assert code == 1 and [(s["error"], s["charged"]) for s in run["situations"]] == [("model", pytest.approx(CEILING_COST))] * 3
+    assert run["totalCost"] == pytest.approx(3 * CEILING_COST) and cloud_spending.total() == pytest.approx(3 * CEILING_COST)
+    assert "base (60 min): errore: Connessione con il provider cloud interrotta (ReadError) · addebitati: $0.0840" in (
+        capsys.readouterr().out)
+
+
+def test_an_unexpected_error_is_recorded_and_the_next_situation_runs(fakes, tmp_path, cloud_spending, monkeypatch):
+    for name, value in CLOUD_ENV.items():
+        monkeypatch.setenv(name, value)
+    encode, calls = fakes["search"].encode, []
+
+    async def broken_once(text):
+        calls.append(text)
+        if len(calls) == 1:
+            raise RuntimeError(f"modello di ricerca rotto ({CLOUD_KEY})")
+        return await encode(text)
+    monkeypatch.setattr(search, "encode", broken_once)
+    code, [file] = check(tmp_path, cloud_spending)
+    first, *others = read(file)["situations"]
+    assert code == 0 and all("protocolId" in s for s in others)
+    assert (first["error"], first["message"], first["charged"]) == (
+        "internal", "Errore interno del controllo dal vivo (RuntimeError): modello di ricerca rotto (***)", 0)
+    assert CLOUD_KEY not in file.read_text()
 
 
 def test_wrong_env_stops_before_any_call_and_writes_nothing(fakes, tmp_path, cloud_spending, monkeypatch, capsys):

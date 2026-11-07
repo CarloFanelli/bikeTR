@@ -53,6 +53,20 @@ class MadeUpRides:
         return self.data
 
 
+class SituationSpending(Spending):
+    """Lo stesso totale dell'app, più quanto vi aggiunge una sola situazione: anche la stima
+    alta di una risposta senza token o interrotta, che il costo della risposta non mostra."""
+
+    def __init__(self, path: Path):
+        super().__init__(path)
+        self.charged = 0.0
+
+    def add(self, dollars: float) -> float:
+        total = super().add(dollars)
+        self.charged += dollars
+        return total
+
+
 def index_from(path: Path):
     """L'indice dei paper letto dal file del progetto: nginx, da cui lo legge il servizio,
     qui non c'è. Gli stessi controlli del servizio (papers.check_index)."""
@@ -67,7 +81,7 @@ def index_from(path: Path):
     return load_index
 
 
-def record(base: dict, result: dict) -> dict:
+def record(base: dict, result: dict, charged: float | None) -> dict:
     """Quello che serve per valutare il modello. Campi scritti uno per uno: le impostazioni,
     che contengono la chiave, non finiscono mai nel file."""
     parsed = workout.parse_model_json(result["modelRaw"])
@@ -79,25 +93,35 @@ def record(base: dict, result: dict) -> dict:
             # I paper che il modello ha scritto di aver usato, come li ha scritti.
             "papersCited": [js_str(p) for p in cited] if isinstance(cited, list) else [],
             "inputTokens": result["inputTokens"], "outputTokens": result["outputTokens"],
-            "cost": result["cost"], "seconds": result["seconds"], "modelRaw": result["modelRaw"]}
+            "cost": result["cost"], "charged": charged, "seconds": result["seconds"], "modelRaw": result["modelRaw"]}
 
 
 async def situation(name: str, duration: int, made_up: dict, chat: provider.ChatSettings, spending: Spending,
                     load_index) -> dict:
     base = {"situation": name, "duration": duration, "provider": chat.provider, "model": chat.model}
     rides = MadeUpRides(made_up)
-    events = []
+    counted = SituationSpending(spending.path)
+    events, failure = [], None
     try:
         if chat.prices:
-            spending.check(chat.prices.limit)
+            counted.check(chat.prices.limit)
         req = workout.parse_request({"duration": duration, "timeZone": TIME_ZONE,
                                      "profile": made_up["profiles"][name]})
         async with provider.client(chat) as chat_client:
             await workout.run(req, events.append, rides=rides, chat=chat, chat_client=chat_client,
-                              embed=search.encode, load_index=load_index, now_ms=rides.now_ms, spending=spending)
+                              embed=search.encode, load_index=load_index, now_ms=rides.now_ms, spending=counted)
     except CoachError as e:
-        return {**base, "error": e.code, "message": e.message}
-    return record(base, events[-1])
+        failure = {"error": e.code, "message": e.message}
+    except Exception as e:
+        # Come il servizio a ogni richiesta: fallisce questa situazione, non il controllo. Il
+        # messaggio finisce nel file che va in git, quindi senza la chiave.
+        text = str(e).replace(chat.key, "***") if chat.key else str(e)
+        failure = {"error": "internal",
+                   "message": f"Errore interno del controllo dal vivo ({type(e).__name__}): {text}"}
+    charged = counted.charged if chat.prices else None
+    if failure:
+        return {**base, **failure, "charged": charged}
+    return record(base, events[-1], charged)
 
 
 def money(dollars: float | None) -> str:
@@ -110,10 +134,13 @@ def tokens(n: int | None) -> str:
 
 def summary(r: dict) -> str:
     head = f"{r['situation']} ({r['duration']} min): "
+    # Senza un costo suo (token mancanti, errore) la risposta può aver aggiunto la stima alta.
+    charged = f" · addebitati: {money(r['charged'])}" if r["charged"] and r.get("cost") is None else ""
     if "error" in r:
-        return head + f"errore: {r['message']}"
+        return head + f"errore: {r['message']}" + charged
     return (head + f"{r['protocolId']} · ripiego: {'sì' if r['fellBack'] else 'no'} · {r['seconds']:.1f}s · "
-            f"token: {tokens(r['inputTokens'])} in, {tokens(r['outputTokens'])} out · costo: {money(r['cost'])}")
+            f"token: {tokens(r['inputTokens'])} in, {tokens(r['outputTokens'])} out · costo: {money(r['cost'])}"
+            + charged)
 
 
 async def run_situations(chat: provider.ChatSettings, spending: Spending, load_index) -> list[dict]:
@@ -163,9 +190,10 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
         return 2
     started = clock()
     records = asyncio.run(run_situations(chat, spending or Spending(SPENDING_FILE), index_from(index_file)))
-    costs = [r["cost"] for r in records if r.get("cost") is not None]
+    # Quanto il controllo ha aggiunto al totale della spesa, stime alte comprese.
+    total = sum(r["charged"] for r in records) if chat.prices else None
     run = {"startedAt": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "provider": chat.provider, "model": chat.model,
-           "searchModel": search.SEARCH_MODEL, "totalCost": sum(costs) if costs else None, "situations": records}
+           "searchModel": search.SEARCH_MODEL, "totalCost": total, "situations": records}
     path = write_results(results_dir, file_stem(started, chat.model), run)
     print(f"Costo totale: {money(run['totalCost'])}")
     print(f"Risultati in {results_dir.name}/{path.name}")

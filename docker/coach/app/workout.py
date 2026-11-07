@@ -5,7 +5,6 @@ paper, scelta del modello, ripieghi deterministici e paper citati. Strada facend
 `emit` manda al browser gli eventi: step, context, token e infine result."""
 
 import json
-import math
 import re
 import time
 from dataclasses import dataclass
@@ -15,9 +14,9 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from app import papers, prompts, provider
-from app.chat import ChatEnd, ModelError
+from app.chat import Accepted, ChatEnd, ModelError
 from app.errors import CoachError
-from app.jscompat import js_str, js_truthy
+from app.jscompat import is_number, js_str, js_truthy
 from app.metrics import Profile, coach_context
 from app.protocols import PROTOCOLS, fallback_protocol_id
 from app.spending import Spending, charge, cost
@@ -35,15 +34,6 @@ class WorkoutRequest:
     duration: int
     tz: ZoneInfo
     profile: Profile
-
-
-def is_number(value) -> bool:
-    if not isinstance(value, (int, float)) or isinstance(value, bool):
-        return False
-    try:
-        return math.isfinite(value)
-    except OverflowError:   # intero JSON troppo grande per un float
-        return False
 
 
 def parse_duration(value) -> int:
@@ -182,20 +172,22 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
     emit(step("model", "Il modello sta scegliendo il protocollo…"))
     messages = [{"role": "system", "content": prompts.system_prompt(retrieved)},
                 {"role": "user", "content": prompts.user_prompt(ctx, req.duration)}]
-    answer, end, billed = [], ChatEnd(None, None, False), True
+    answer, end, accepted = [], ChatEnd(None, None, False), False
     try:
         async for piece in provider.stream(chat, chat_client, messages):
-            if isinstance(piece, ChatEnd):
+            if isinstance(piece, Accepted):
+                accepted = True
+            elif isinstance(piece, ChatEnd):
                 end = piece
             else:
                 answer.append(piece)
                 emit({"type": "token", "text": piece})
     except ModelError as e:
-        billed = e.billed
         raise CoachError(502, "model", str(e)) from e
     finally:
-        # Anche quando Stop annulla la richiesta: il provider fa pagare ciò che ha già scritto.
-        if chat.prices and billed:
+        # Anche quando Stop annulla la richiesta: accettata la richiesta, il provider fa pagare
+        # ciò che ha già scritto. Una richiesta rifiutata o mai arrivata non costa nulla.
+        if chat.prices and accepted:
             spending.add(charge(chat.prices, end.input_tokens, end.output_tokens))
 
     model_raw = "".join(answer)

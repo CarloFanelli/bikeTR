@@ -1,6 +1,7 @@
 """Ciò che Ollama e il provider cloud hanno in comune: il limite di silenzio, l'errore del
-modello e i pezzi della risposta. Ogni provider dà il testo man mano che arriva (str),
-poi un solo ChatEnd; workout.py non conosce i campi di Ollama o di OpenAI."""
+modello e i pezzi della risposta. Ogni provider dà Accepted quando accetta la richiesta, il
+testo man mano che arriva (str), poi un solo ChatEnd; workout.py non conosce i campi di
+Ollama o di OpenAI."""
 
 from dataclasses import dataclass
 
@@ -16,13 +17,13 @@ TIMEOUT = httpx.Timeout(10, read=READ_TIMEOUT)
 
 
 class ModelError(Exception):
-    """Il modello non risponde, non c'è o risponde con un errore; il messaggio è per l'utente.
-    billed è False quando il provider non ha accettato la richiesta (l'ha rifiutata o non è
-    stato raggiunto), quindi non fa pagare nulla."""
+    """Il modello non risponde, non c'è o risponde con un errore; il messaggio è per l'utente."""
 
-    def __init__(self, message: str, *, billed: bool = True):
-        super().__init__(message)
-        self.billed = billed
+
+@dataclass(frozen=True)
+class Accepted:
+    """Il provider ha accettato la richiesta (HTTP 200) e comincia a rispondere. Da qui in poi
+    fa pagare ciò che scrive, anche se la risposta si interrompe; prima, non è costata nulla."""
 
 
 @dataclass(frozen=True)

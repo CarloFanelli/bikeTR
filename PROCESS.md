@@ -278,7 +278,7 @@ Before this feature, the Coach's answer could come only from Ollama, the browser
 
 ### 2026-11-07 · A spending cap in `.env`, counted by the Coach service
 
-- **Decision**: each cloud answer costs its tokens times `CLOUD_PRICE_IN` and `CLOUD_PRICE_OUT`; when the provider gives no token count (Stop, a dropped connection) the Coach counts 8,000 tokens read and 4,000 written. Requests the provider refuses or never receives cost nothing. The total is one file in the Coach's volume, written by one process at a time; it survives "Disconnetti da Strava", and once it reaches `CLOUD_SPENDING_LIMIT` cloud requests are refused. An unreadable total refuses them too, instead of counting as zero.
+- **Decision**: each cloud answer costs its tokens times `CLOUD_PRICE_IN` and `CLOUD_PRICE_OUT`; when the provider gives no token count (Stop, a dropped connection) the Coach counts 8,000 tokens read and 4,000 written. A request costs nothing until the provider accepts it (HTTP 200): refused, never received, or stopped before that, it adds nothing. The total is one file in the Coach's volume, written by one process at a time; it survives "Disconnetti da Strava", and once it reaches `CLOUD_SPENDING_LIMIT` cloud requests are refused. An unreadable total refuses them too, instead of counting as zero.
 - **Why**: the user pays for every test and must see the cost before and after it; counting high when unsure keeps the cap a real cap. Money spent is not Strava data, so disconnecting does not reset it.
 - **Cost**: the total is an estimate from prices typed by hand; two requests started together just under the cap can pass it by two answers; only `docker compose down -v` resets it.
 

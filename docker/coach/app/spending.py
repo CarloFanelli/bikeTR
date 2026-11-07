@@ -6,13 +6,13 @@ quindi lo stesso tetto. Le risposte di Ollama non costano nulla e non passano di
 
 import fcntl
 import json
-import math
 import os
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
 from app.errors import CoachError
+from app.jscompat import is_number
 
 SPENDING_FILE = Path("/data/spending.json")
 # Una risposta fermata prima che il provider dica i token (Stop, silenzio, connessione caduta,
@@ -43,7 +43,7 @@ def charge(prices: Prices, input_tokens: int | None, output_tokens: int | None) 
 
 
 def is_amount(value) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value >= 0
+    return is_number(value) and value >= 0
 
 
 class Spending:
