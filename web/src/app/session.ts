@@ -3,11 +3,16 @@
 
 import { reactive } from 'vue';
 import { type HrProfile, resolveHr } from '../core/hr.ts';
+import { nextMesocycle } from '../core/meso.ts';
+import type { PlanInputs } from '../core/plan/inputs.ts';
 import { estimatesFromSegments } from '../core/segments.ts';
 import type { Activity, Athlete, AthleteStats } from '../core/strava-types.ts';
 import { AuthError, getAuthStatus, logout } from '../data/auth.ts';
 import { forgetCoachRides } from '../data/coach.ts';
-import { applyCachedStreams, loadSegmentCache, loadSettings, purgeLegacyStrava } from '../data/storage.ts';
+import {
+  applyCachedStreams, loadFtpHistory, loadMesocycle, loadRainyDays, loadSegmentCache, loadSettings, purgeLegacyStrava,
+  saveMesocycle,
+} from '../data/storage.ts';
 import { fetchActivities, fetchAthlete, fetchAthleteStats } from '../data/strava.ts';
 
 // Attività caricate all'apertura: abbastanza storico per il consiglio del giorno.
@@ -43,9 +48,22 @@ export async function startSession(): Promise<void> {
     const stats = await fetchAthleteStats(athlete.id);
     const activities = await fetchActivities(ACTIVITY_COUNT);
     applyCachedStreams(activities);
+    updateMesocycle(activities);
     Object.assign(session, { phase: 'ready', athlete, stats, activities });
   } catch (e) {
     if (!connectIfDisconnected(e)) Object.assign(session, { phase: 'error', error: (e as Error).message });
+  }
+}
+
+// Il mesociclo di oggi, aggiornato a ogni apertura come fa l'app di oggi, così ogni sezione
+// legge lo stesso blocco: si salva solo alla prima apertura e quando un blocco finisce.
+// Un mesociclo salvato rovinato non blocca l'app, come oggi.
+function updateMesocycle(activities: Activity[]): void {
+  try {
+    const { meso, changed } = nextMesocycle(loadMesocycle(), activities, loadSettings(), new Date());
+    if (changed) saveMesocycle(meso);
+  } catch (e) {
+    console.warn('[BikeTR] mesociclo non aggiornato:', e);
   }
 }
 
@@ -68,4 +86,12 @@ export async function disconnect(): Promise<void> {
   await logout();
   await forgetCoachRides();
   await startSession();
+}
+
+// Quello che il piano di allenamento legge dal browser oltre ad attività e impostazioni.
+export function planInputs(now = new Date()): PlanInputs {
+  return {
+    now, segmentEstimates: estimatesFromSegments(loadSegmentCache(), now), ftpHistory: loadFtpHistory(),
+    meso: loadMesocycle(), rainyDays: loadRainyDays(),
+  };
 }

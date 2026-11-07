@@ -3,7 +3,7 @@ import { disconnect, session, startSession } from '../../src/app/session.ts';
 import type { Activity } from '../../src/core/strava-types.ts';
 import { AuthError, getAuthStatus, logout } from '../../src/data/auth.ts';
 import { forgetCoachRides } from '../../src/data/coach.ts';
-import { applyCachedStreams, purgeLegacyStrava } from '../../src/data/storage.ts';
+import { applyCachedStreams, loadMesocycle, purgeLegacyStrava, saveMesocycle } from '../../src/data/storage.ts';
 import { fetchActivities, fetchAthlete, fetchAthleteStats } from '../../src/data/strava.ts';
 
 vi.mock('../../src/data/auth.ts', async (original) => ({
@@ -12,7 +12,10 @@ vi.mock('../../src/data/auth.ts', async (original) => ({
   logout: vi.fn(),
 }));
 vi.mock('../../src/data/coach.ts', () => ({ forgetCoachRides: vi.fn() }));
-vi.mock('../../src/data/storage.ts', () => ({ applyCachedStreams: vi.fn(), purgeLegacyStrava: vi.fn() }));
+vi.mock('../../src/data/storage.ts', () => ({
+  applyCachedStreams: vi.fn(), purgeLegacyStrava: vi.fn(), loadSettings: vi.fn(() => ({})),
+  loadMesocycle: vi.fn(), saveMesocycle: vi.fn(),
+}));
 vi.mock('../../src/data/strava.ts', () => ({
   fetchActivities: vi.fn(), fetchAthlete: vi.fn(), fetchAthleteStats: vi.fn(),
 }));
@@ -27,6 +30,7 @@ beforeEach(() => {
   vi.mocked(fetchAthlete).mockResolvedValue(athlete as never);
   vi.mocked(fetchAthleteStats).mockResolvedValue(stats as never);
   vi.mocked(fetchActivities).mockResolvedValue(activities);
+  vi.mocked(loadMesocycle).mockReturnValue(null);
 });
 
 describe('apertura della nuova app', () => {
@@ -38,6 +42,28 @@ describe('apertura della nuova app', () => {
     expect(fetchActivities).toHaveBeenCalledWith(60);
     expect(applyCachedStreams).toHaveBeenCalledWith(activities);
     expect(purgeLegacyStrava).toHaveBeenCalled();
+  });
+
+  it('mesociclo: alla prima apertura si sceglie e si salva, poi si salva solo a fine blocco', async () => {
+    await startSession();
+    expect(saveMesocycle).toHaveBeenCalledWith(expect.objectContaining({ weekInBlock: 0, blockIndex: 0 }));
+
+    vi.mocked(saveMesocycle).mockClear();
+    const today = new Date().toISOString().slice(0, 10);
+    vi.mocked(loadMesocycle).mockReturnValue({
+      startDate: today, blockIndex: 0, blockId: 'base', weekInBlock: 0, blockHistory: [], ftpHistory: [],
+    });
+    await startSession();
+    expect(saveMesocycle).not.toHaveBeenCalled();
+    expect(session.phase).toBe('ready');
+  });
+
+  it('un mesociclo salvato rovinato non blocca l\'apertura', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.mocked(loadMesocycle).mockReturnValue({ startDate: '2020-01-01', blockId: 'base' } as never);
+    await startSession();
+    expect(session.phase).toBe('ready');
+    expect(console.warn).toHaveBeenCalled();
   });
 
   it('non collegato: solo "Collega Strava"', async () => {

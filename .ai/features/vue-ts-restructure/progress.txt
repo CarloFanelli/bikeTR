@@ -8,7 +8,7 @@
 06-app-shell-navigation: DONE
 07-settings-screen: DONE
 08-home-and-activities: DONE
-09-training-screen: TODO
+09-training-screen: DONE
 10-analysis-screen: TODO
 11-coach-screen: TODO
 12-switch-to-new-app: TODO

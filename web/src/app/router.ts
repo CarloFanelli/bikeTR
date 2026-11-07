@@ -16,7 +16,10 @@ const notYet = () => import('../screens/NotYetScreen.vue');
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/home' },
   { path: '/home', name: 'home', component: () => import('../screens/HomeScreen.vue'), meta: { title: 'Home' } },
-  { path: '/allenamento', name: 'allenamento', component: notYet, meta: { title: 'Allenamento', legacy: '/#training' } },
+  {
+    path: '/allenamento', name: 'allenamento', component: () => import('../screens/TrainingScreen.vue'),
+    meta: { title: 'Allenamento' },
+  },
   { path: '/analisi', name: 'analisi', component: notYet, meta: { title: 'Analisi', legacy: '/#analysis' } },
   {
     path: '/attivita', name: 'attivita', component: () => import('../screens/ActivitiesScreen.vue'),
