@@ -201,7 +201,7 @@ ES modules in `web/`, served as they are by Vite's development server. Module fl
 ```
 constants.js    ← APP_CONFIG network limits only
 src/data/       ← Strava API (one access token per request), auth server, values saved in the browser,
-                  streams and starred segments download, JSON export
+                  streams and starred segments download, JSON export, Coach service request and answer reader
 src/core/       ← calculations, which get everything as input (no page, saved data or clock):
                   stream metrics, training load, CTL/ATL/TSB, FTP and LTHR estimates and trend,
                   power curve and profile, segment predictions; formatting of distances, times and dates;
@@ -214,7 +214,7 @@ training.js     ← Training tab cards (recommendation, rest calendar, load char
 training_v2.js  ← today's names for the workout catalog in src/core (reads the saved mesocycle)
 analysis.js     ← cards: power curve, CTL/ATL/TSB, HR zones, power profile, FTP trend
 predictions.js  ← segment prediction and segment workout cards (the download is in src/data)
-coach.js        ← AI Coach tab: request to the Coach service, live steps, workout card
+coach.js        ← AI Coach tab: live steps and workout card (the request and the answer reader are in src/data)
 export.js       ← JSON export window (the export itself is in src/data)
 app.js          ← entry point: view routing, UI rendering, fetch orchestration
 activity.js     ← detail page entry point (activity.html)
@@ -233,6 +233,8 @@ docker compose run --rm --no-deps app npm run check
 ```
 
 A failure names the file and line of each type error, the files of each import loop, and each file over the limit. Today's JavaScript files, which are not TypeScript yet, are left out of these checks.
+
+The Coach tests (`web/tests/coach/`) feed made-up answers to the browser's answer reader, with lines and characters such as "è" or an emoji split between network chunks, and to the request in progress: a new request or Stop must end the older one, and nothing it sends afterwards may appear.
 
 The calculation tests (`web/tests/core/`) run on made-up rides, settings and segments (`web/tests/fixtures/rides.json`) and, for the training plan, on made-up days, weeks of rides, settings and saved values (`plan-cases.json`). They compare every result, at two decimals, with the one today's screens give (`load-expected.json` and `plan-expected.json` in the same folder). Those files were recorded from the JavaScript before the calculations moved to TypeScript; recording them again through today's screens must leave them unchanged:
 
@@ -261,4 +263,3 @@ docker run --rm -v "${PWD}:/src:ro" -v "${PWD}/docker/coach/tests:/tests" node:2
 - **Without Strava streams**, TSS and time in zones are approximated from the summary's `weighted_average_watts` or from hrTSS calculated using average heart rate (e.g. a long Z2 ride with 20 minutes at threshold averages out to Z2). Click "Refresh with streams" for precise calculations: one API call per activity (Strava rate limit: 100 per 15 minutes).
 - **An FTP from a dedicated test is always more reliable** than estimates. The four `estimatesFromSegments` methods mitigate but do not eliminate estimation error (±5–10% compared with the true value). A 20-minute all-out test every 4–6 weeks is recommended.
 - **The AI Coach depends on Ollama**: while the models download, or if Ollama is unavailable, the tab displays an error. On a CPU-only computer the default model is slow (section 5).
-- **The browser's stream reader has no automated test**: the Coach service's tests cover what it sends, and the reader (`coachEvents` in `web/coach.js`) was checked by hand against lines and characters split between network chunks.

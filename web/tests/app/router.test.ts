@@ -3,11 +3,11 @@ import { createMemoryHistory } from 'vue-router';
 import { createAppRouter } from '../../src/app/router.ts';
 
 // Qui contano gli indirizzi, non le schermate: schermate vuote al posto di quelle vere.
-vi.mock('../../src/screens/NotYetScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/SettingsScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/HomeScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/TrainingScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/AnalysisScreen.vue', () => ({ default: {} }));
+vi.mock('../../src/screens/CoachScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/ActivitiesScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/ActivityDetailScreen.vue', () => ({ default: {} }));
 

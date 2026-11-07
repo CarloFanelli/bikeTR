@@ -6,12 +6,8 @@ import { createRouter, createWebHashHistory, type RouterHistory, type RouteRecor
 declare module 'vue-router' {
   interface RouteMeta {
     title: string;
-    // La stessa sezione nell'app di oggi, finché questa non è rifatta.
-    legacy?: string;
   }
 }
-
-const notYet = () => import('../screens/NotYetScreen.vue');
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/home' },
@@ -32,7 +28,10 @@ const routes: RouteRecordRaw[] = [
     path: '/attivita/:id', name: 'attivita-dettaglio', component: () => import('../screens/ActivityDetailScreen.vue'),
     meta: { title: 'Dettaglio attività' },
   },
-  { path: '/coach', name: 'coach', component: notYet, meta: { title: 'Coach AI', legacy: '/#coach' } },
+  {
+    path: '/coach', name: 'coach', component: () => import('../screens/CoachScreen.vue'),
+    meta: { title: 'Coach AI' },
+  },
   {
     path: '/impostazioni', name: 'impostazioni', component: () => import('../screens/SettingsScreen.vue'),
     meta: { title: 'Impostazioni' },
