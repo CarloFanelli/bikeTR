@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { CoachWorkout } from '../../src/core/coach-types.ts';
-import { coachProfile, errorHeading, metaLine, paperCitation, ridesNotes } from '../../src/core/coach-view.ts';
+import type { CoachStatus, CoachWorkout, ConnectionCheck } from '../../src/core/coach-types.ts';
+import {
+  checkLine, coachProfile, dataLine, errorHeading, metaLine, modelLine, paperCitation, ridesNotes, spendingLine,
+} from '../../src/core/coach-view.ts';
 import type { HrProfile } from '../../src/core/hr.ts';
 
 describe('testi del Coach', () => {
@@ -44,5 +46,37 @@ describe('testi del Coach', () => {
   it('titolo degli errori senza spiegazione propria', () => {
     expect(errorHeading('model')).toBe('Errore chiamata modello');
     expect(errorHeading()).toBe('Workout non generato');
+  });
+});
+
+describe('modello del Coach in Impostazioni e nel Coach', () => {
+  const ollama: CoachStatus = { provider: 'ollama', model: 'qwen2.5:7b' };
+  const cloud: CoachStatus = { provider: 'cloud', model: 'claude-x', spent: 0, limit: 5 };
+
+  it('locale o cloud e il nome del modello di .env', () => {
+    expect(modelLine(ollama)).toBe('locale (Ollama) · qwen2.5:7b');
+    expect(modelLine(cloud)).toBe('cloud · claude-x');
+  });
+
+  it('spesa e tetto solo per il cloud, $0.00 prima della prima risposta', () => {
+    expect(spendingLine(ollama)).toBe('');
+    expect(spendingLine(cloud)).toBe('Spesi $0.00 su un limite di $5.00');
+    expect(spendingLine({ ...cloud, spent: 0.0033 })).toBe('Spesi $0.0033 su un limite di $5.00');
+    expect(spendingLine({ ...cloud, spent: 1.256, limit: 0.5 })).toBe('Spesi $1.26 su un limite di $0.50');
+  });
+
+  it('i dati escono dal computer solo con un modello cloud', () => {
+    expect(dataLine(ollama)).toBe('Modello locale qwen2.5:7b (Ollama): tutto resta sul tuo computer, niente cloud.');
+    expect(dataLine(cloud)).toBe('Modello cloud claude-x: questi dati vengono inviati al provider cloud.');
+  });
+
+  it('esito della verifica della connessione', () => {
+    const check: ConnectionCheck = { provider: 'cloud', model: 'claude-x', found: true, command: null };
+    expect(checkLine(check)).toBe('✅ Il provider risponde, accetta la chiave e ha claude-x.');
+    expect(checkLine({ ...check, found: false }))
+      .toBe('⚠️ Il provider risponde e accetta la chiave, ma claude-x non è nel suo elenco: controlla CLOUD_MODEL in .env.');
+    const local: ConnectionCheck = { provider: 'ollama', model: 'qwen2.5:7b', found: true, command: null };
+    expect(checkLine(local)).toBe('✅ Ollama risponde e ha qwen2.5:7b.');
+    expect(checkLine({ ...local, found: false, command: 'ollama pull qwen2.5:7b' })).toBe('⚠️ qwen2.5:7b mancante in Ollama: scaricalo con');
   });
 });

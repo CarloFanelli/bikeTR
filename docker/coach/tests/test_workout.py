@@ -316,28 +316,3 @@ def test_index_of_another_search_model_gives_the_command_that_reencodes_it(servi
                    "(BAAI/bge-small-en-v1.5). Ricodificalo con: "
                    "docker compose run --rm coach-tools python -m app.build_index --reencode"}
     assert service.ollama.requests == [] and service.search.texts == []
-
-
-# --- Ping Ollama --------------------------------------------------------------------------
-
-def test_ping_with_every_model_installed(service):
-    res = service.client.get("/coach/ping", params={"model": CASES["model"]})
-    assert (res.status_code, res.json()) == (200, {"models": service.ollama.installed, "missing": []})
-
-
-@pytest.mark.parametrize("url,pull", [("http://ollama:11434", "docker compose exec ollama ollama pull"),
-                                      ("http://host.docker.internal:11434", "ollama pull")])
-def test_ping_names_the_missing_chat_model_and_the_command_to_download_it(service, monkeypatch, url, pull):
-    monkeypatch.setattr(ollama, "OLLAMA_URL", url)
-    service.ollama.installed = ["llama3:8b"]
-    res = service.client.get("/coach/ping", params={"model": "qwen2.5:7b"})
-    assert (res.status_code, res.json()) == (200, {"models": ["llama3:8b"], "missing": [
-        {"model": "qwen2.5:7b", "command": f"{pull} qwen2.5:7b"}]})
-
-
-def test_ping_without_ollama(service, monkeypatch):
-    monkeypatch.setattr(ollama, "OLLAMA_URL", "http://ollama:11434")
-    service.ollama.down = True
-    res = service.client.get("/coach/ping")
-    assert (res.status_code, res.json()) == (503, {
-        "error": "ollama_unreachable", "message": "Coach ok, Ollama non raggiungibile su http://ollama:11434"})

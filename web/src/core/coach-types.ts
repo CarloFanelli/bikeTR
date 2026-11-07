@@ -55,6 +55,23 @@ export interface CoachWorkout {
   rides: { fromSaved: boolean; downloadedAt: string | number | null; missingDetails: number };
 }
 
+// Il modello chat che il servizio usa (.env) e, per il cloud, dollari spesi e tetto di spesa.
+export interface CoachStatus {
+  provider: 'ollama' | 'cloud';
+  model: string;
+  spent?: number;
+  limit?: number;
+}
+
+// La verifica della connessione: il provider ha il modello? Se manca in Ollama, il comando
+// che lo scarica.
+export interface ConnectionCheck {
+  provider: 'ollama' | 'cloud';
+  model: string;
+  found: boolean;
+  command: string | null;
+}
+
 // Richiesta rifiutata o fallita: il codice (no_ftp, retrieval, model…) sceglie la spiegazione.
 export interface CoachRefusal {
   error?: string;

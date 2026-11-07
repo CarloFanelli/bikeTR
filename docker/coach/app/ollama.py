@@ -7,7 +7,6 @@ from urllib.parse import urlsplit
 import httpx
 
 from app.chat import READ_TIMEOUT, TIMEOUT, ChatEnd, ModelError, token_count
-from app.errors import CoachError
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434").rstrip("/")
 DEFAULT_CHAT_MODEL = "qwen2.5:7b"
@@ -25,16 +24,6 @@ def client() -> httpx.AsyncClient:
     # Chiudere il client (o abbandonare una risposta) chiude la connessione, e Ollama smette
     # di generare.
     return httpx.AsyncClient(base_url=OLLAMA_URL, timeout=TIMEOUT)
-
-
-def chat_model(name) -> str:
-    """Il modello chiesto dal browser, o quello predefinito se il campo è vuoto."""
-    if name is not None and not isinstance(name, str):
-        raise CoachError(400, "invalid_model", "Il nome del modello deve essere un testo")
-    model = (name or "").strip() or DEFAULT_CHAT_MODEL
-    if len(model) > MAX_MODEL_NAME:
-        raise CoachError(400, "invalid_model", f"Il nome del modello deve avere al massimo {MAX_MODEL_NAME} caratteri")
-    return model
 
 
 async def installed_models() -> list[str]:

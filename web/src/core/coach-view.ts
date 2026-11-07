@@ -1,7 +1,7 @@
-// Testi del Coach AI: il profilo atleta inviato al servizio e le righe della card del
-// workout. Ricevono i dati e restituiscono testi, senza leggere il browser.
+// Testi del Coach AI: il profilo atleta inviato al servizio, le righe della card del
+// workout e il modello in uso. Ricevono i dati e restituiscono testi, senza leggere il browser.
 
-import type { AthleteProfile, CoachWorkout, PaperRef } from './coach-types.ts';
+import type { AthleteProfile, CoachStatus, CoachWorkout, ConnectionCheck, PaperRef } from './coach-types.ts';
 import type { HrProfile } from './hr.ts';
 import type { Settings } from './settings.ts';
 
@@ -42,6 +42,34 @@ const cost = (w: CoachWorkout) =>
 export const metaLine = (w: CoachWorkout) =>
   `⚡ ${w.provider === 'cloud' ? 'cloud' : 'locale'} · ${w.model} · ${w.seconds.toFixed(1)}s · ` +
   `token: ${tokens(w.inputTokens)} in, ${tokens(w.outputTokens)} out${cost(w)}`;
+
+// Il modello chat scelto nel .env del servizio.
+export const modelLine = (s: CoachStatus) => `${s.provider === 'cloud' ? 'cloud' : 'locale (Ollama)'} · ${s.model}`;
+
+// Dollari con 2 decimali; sotto il centesimo 4, perché una risposta può costare meno.
+const dollars = (n: number) => `$${n > 0 && n < 0.01 ? n.toFixed(4) : n.toFixed(2)}`;
+
+// Spesa e tetto, solo per un modello cloud: Ollama non costa nulla.
+export const spendingLine = (s: CoachStatus) =>
+  s.provider === 'cloud' && s.spent != null && s.limit != null
+    ? `Spesi ${dollars(s.spent)} su un limite di ${dollars(s.limit)}`
+    : '';
+
+// Dove vanno i dati dell'atleta: fuori dal computer solo con un modello cloud.
+export const dataLine = (s: CoachStatus) =>
+  s.provider === 'cloud'
+    ? `Modello cloud ${s.model}: questi dati vengono inviati al provider cloud.`
+    : `Modello locale ${s.model} (Ollama): tutto resta sul tuo computer, niente cloud.`;
+
+// L'esito della verifica della connessione; se manca un modello di Ollama, il comando segue a parte.
+export function checkLine(c: ConnectionCheck): string {
+  if (c.provider === 'cloud') {
+    return c.found
+      ? `✅ Il provider risponde, accetta la chiave e ha ${c.model}.`
+      : `⚠️ Il provider risponde e accetta la chiave, ma ${c.model} non è nel suo elenco: controlla CLOUD_MODEL in .env.`;
+  }
+  return c.found ? `✅ Ollama risponde e ha ${c.model}.` : `⚠️ ${c.model} mancante in Ollama: scaricalo con`;
+}
 
 // Il titolo di un errore che non ha una spiegazione sua (FTP mancante, ricerca dei paper).
 export const errorHeading = (code?: string) => (code === 'model' ? 'Errore chiamata modello' : 'Workout non generato');

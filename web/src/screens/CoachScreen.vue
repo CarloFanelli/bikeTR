@@ -2,7 +2,7 @@
 // Coach AI: chiede al servizio Coach il workout di oggi e mostra il passo in corso, il
 // testo del modello mentre lo scrive, poi il risultato o l'errore. La richiesta sta in
 // app/coach-run.ts: continua anche cambiando sezione, e Stop la interrompe.
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import {
   VBtn, VCard, VCardText, VCardTitle, VExpansionPanel, VExpansionPanels, VExpansionPanelText, VExpansionPanelTitle,
   VTextField,
@@ -11,10 +11,17 @@ import { coachRun as run, generateWorkout, stopWorkout } from '../app/coach-run.
 import { hrProfile } from '../app/session.ts';
 import CoachErrorCard from '../components/CoachErrorCard.vue';
 import CoachWorkoutCard from '../components/CoachWorkoutCard.vue';
-import { coachProfile } from '../core/coach-view.ts';
+import type { CoachStatus } from '../core/coach-types.ts';
+import { coachProfile, dataLine } from '../core/coach-view.ts';
+import { coachStatus, type CoachAnswer } from '../data/coach.ts';
 import { loadCoachSettings, loadSettings, saveCoachSettings } from '../data/storage.ts';
 
 const duration = ref(String(loadCoachSettings().lastDuration || 60));
+// Il modello del .env del servizio: dice anche se i dati escono dal computer.
+const status = ref<CoachAnswer<CoachStatus> | null>(null);
+onMounted(async () => {
+  status.value = await coachStatus();
+});
 const context = computed(() => (run.context == null ? '' : JSON.stringify(run.context, null, 2)));
 // Il testo del modello resta finché non arriva il risultato o un errore, anche dopo Stop.
 const showLive = computed(() => run.live && !run.result && !run.error);
@@ -32,11 +39,12 @@ function generate() {
 
 <template>
   <VCard>
-    <VCardTitle>🤖 Coach AI (Ollama locale)</VCardTitle>
+    <VCardTitle>🤖 Coach AI</VCardTitle>
     <VCardText>
       <p class="text-medium-emphasis mb-4">
-        Workout suggerito da un LLM locale (Ollama) usando i tuoi dati: FTP, CTL/ATL/TSB, polarizzazione, ultime attività.
-        Tutto resta sul tuo computer, niente cloud.
+        Workout suggerito da un LLM usando i tuoi dati: FTP, CTL/ATL/TSB, polarizzazione, ultime attività.
+        <template v-if="status?.ok">{{ dataLine(status.value) }}</template>
+        <template v-else-if="status">{{ status.msg }}</template>
       </p>
       <div class="d-flex flex-wrap align-center ga-3">
         <VTextField
