@@ -1,6 +1,7 @@
 import { loadSettings, escapeHtml } from './strava.js';
 import { resolveHr } from './training.js';
-import { COACH_DEFAULT_MODEL, COACH_UNREACHABLE, pingOllama } from './src/data/coach.ts';
+import { coachProfile } from './src/core/coach-view.ts';
+import { COACH_DEFAULT_MODEL, COACH_INTERRUPTED, COACH_UNREACHABLE, pingOllama, requestWorkout } from './src/data/coach.ts';
 import { loadCoachSettings, saveCoachSettings } from './src/data/storage.ts';
 
 // helpers DOM (definiti localmente per evitare dipendenze cicliche con app.js)
@@ -18,41 +19,6 @@ const show = (id) => { const el = $(id); if (el) el.hidden = false; };
 //  3. La risposta è un flusso di eventi, una riga JSON l'uno: step, context, token
 //     (il testo del modello mentre lo scrive), poi result oppure error.
 // ============================================================================
-
-const COACH_INTERRUPTED = 'Connessione col Coach interrotta';
-
-// Profilo atleta per il servizio: i valori mancanti viaggiano come null e il
-// servizio usa gli stessi default del vecchio Coach del browser.
-function coachProfile(activities) {
-  const settings = loadSettings();
-  const hr = resolveHr(settings, activities);
-  return {
-    ftp: hr.ftp || null,
-    lthr: hr.hrLthr || null,
-    hrMax: hr.hrMax || null,
-    weight: settings.weight || null,
-    weeklyHours: settings.weeklyHours || null,
-    weeklyDays: settings.weeklyDays || null,
-  };
-}
-
-// Gli eventi del flusso, uno per riga. Un pezzo di rete può tagliare una riga o un
-// carattere a metà: TextDecoder in modalità stream tiene i byte incompleti, il buffer
-// tiene la riga incompleta fino al prossimo pezzo.
-async function* coachEvents(res) {
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  for (;;) {
-    const { value, done } = await reader.read();
-    buffer += decoder.decode(value, { stream: !done });
-    const lines = buffer.split('\n');
-    buffer = lines.pop();
-    for (const line of lines) if (line.trim()) yield JSON.parse(line);
-    if (done) break;
-  }
-  if (buffer.trim()) yield JSON.parse(buffer);
-}
 
 // ----------------------------------------------------------------------------
 // Render
@@ -154,7 +120,6 @@ function renderCoachError({ error, message }) {
 // ----------------------------------------------------------------------------
 // Generazione: richiesta al servizio Coach e disegno degli eventi
 //
-// Nessun limite di tempo qui: il servizio smette se il modello tace per 3 minuti.
 // Una nuova richiesta da questa scheda interrompe la precedente (AbortController):
 // la connessione si chiude e il servizio ferma Ollama. Ricaricare o chiudere la
 // scheda chiude la connessione allo stesso modo; le altre schede non ne risentono.
@@ -177,27 +142,20 @@ async function coach_generate(activities, durataMin) {
 
   let started = false;
   try {
-    const res = await fetch('/coach/workout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        duration: durataMin,
-        model,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        profile: coachProfile(activities),
-      }),
-      signal: ctrl.signal,
-    });
-    if (!res.ok) {
-      // Richiesta rifiutata dal servizio ({error, message}); senza un corpo JSON
-      // è nginx a rispondere: il servizio non è avviato.
-      const body = await res.json().catch(() => null);
-      if (ctrl.signal.aborted) return;
-      out.innerHTML = renderCoachError(body?.message ? body : { message: COACH_UNREACHABLE });
+    const settings = loadSettings();
+    const answer = await requestWorkout({
+      duration: durataMin,
+      model,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      profile: coachProfile(resolveHr(settings, activities), settings),
+    }, ctrl.signal);
+    if (ctrl.signal.aborted) return;
+    if (answer.refusal) {
+      out.innerHTML = renderCoachError(answer.refusal);
       return;
     }
     started = true;
-    for await (const ev of coachEvents(res)) {
+    for await (const ev of answer.events) {
       // Eventi già arrivati di una richiesta interrotta: li disegna la richiesta nuova.
       if (ctrl.signal.aborted) return;
       if (ev.type === 'step') stepLine.textContent = `⏳ ${ev.message}`;

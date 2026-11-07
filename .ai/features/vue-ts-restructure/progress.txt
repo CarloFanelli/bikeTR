@@ -10,5 +10,5 @@
 08-home-and-activities: DONE
 09-training-screen: DONE
 10-analysis-screen: DONE
-11-coach-screen: TODO
+11-coach-screen: DONE
 12-switch-to-new-app: TODO
