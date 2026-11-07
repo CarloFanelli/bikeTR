@@ -8,13 +8,13 @@ Run it from the project folder:
 docker compose run --rm coach-tools python -m app.live_check
 ```
 
-The command prints one line per situation (protocol, fallback use, seconds, tokens, cost), then the run's total cost and the file name. With a cloud model, every answer adds to the same spending total as the app and stops at the same `CLOUD_SPENDING_LIMIT`.
+The command prints one line per situation (protocol, fallback use, seconds, tokens, cost), then the run's total cost and the file name. When an answer has no cost of its own (no token counts, or an error) but added the high estimate to the spending total, its line ends with `addebitati` and that amount. With a cloud model, every answer adds to the same spending total as the app and stops at the same `CLOUD_SPENDING_LIMIT`.
 
 ## File name and content
 
 `{date}_{time}_{model}.json`, with the time in UTC. Characters such as `:` and `/` in the model name become `-`; the full name is inside the file. A second run in the same second gets `-2`, and no file is ever overwritten.
 
-Each file holds `startedAt`, `provider`, `model`, `searchModel`, `totalCost` (dollars, `null` with Ollama) and one entry per situation:
+Each file holds `startedAt`, `provider`, `model`, `searchModel`, `totalCost` (the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama) and one entry per situation:
 
 | Field | Meaning |
 |---|---|
@@ -26,6 +26,7 @@ Each file holds `startedAt`, `provider`, `model`, `searchModel`, `totalCost` (do
 | `papersFound` | the 4 papers the search model retrieved, with their score |
 | `papersCited` | the papers the model said it used, as it wrote them |
 | `inputTokens`, `outputTokens`, `cost`, `seconds` | `null` when the provider doesn't report them |
+| `charged` | dollars this situation added to the spending total: its cost, or the high estimate (8,000 tokens read, 4,000 written) when the provider gave no token counts or the answer broke off; `null` with Ollama |
 | `modelRaw` | the model's whole answer |
 
-A failed situation has `error` and `message` instead, and the next situation still runs. The command exits with code 1 when all 3 fail, and with code 2, writing no file, when `.env` is wrong. The cloud key is never written here.
+A failed situation has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next situation still runs. The command exits with code 1 when all 3 fail, and with code 2, writing no file, when `.env` is wrong. The cloud key is never written here.

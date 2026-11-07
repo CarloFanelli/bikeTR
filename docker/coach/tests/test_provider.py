@@ -53,6 +53,16 @@ def test_prices_accept_zero_and_decimals(monkeypatch):
     assert (chat.prices.input, chat.prices.output, chat.prices.limit) == (0, 0.25, 2.5)
 
 
+@pytest.mark.parametrize("url", ["api.anthropic.com/v1/", "https//api.anthropic.com/v1/", "ftp://example.com/v1/",
+                                 "https://", "https://[::1"])
+def test_a_cloud_address_that_is_not_http_or_https_is_refused(monkeypatch, url):
+    with pytest.raises(CoachError) as e:
+        settings(monkeypatch, **{**CLOUD_ENV, "CLOUD_URL": url})
+    assert (e.value.code, e.value.message) == (
+        "invalid_settings", f'CLOUD_URL in .env vale "{url}": serve un indirizzo completo che inizia con https://, '
+                            "per esempio https://api.anthropic.com/v1/")
+
+
 @pytest.mark.parametrize("name,raw", [
     ("CLOUD_PRICE_IN", "-1"), ("CLOUD_PRICE_OUT", "tre"), ("CLOUD_SPENDING_LIMIT", "nan"),
     ("CLOUD_SPENDING_LIMIT", "inf"), ("CLOUD_PRICE_IN", "1e999"), ("CLOUD_PRICE_IN", "3,5"),

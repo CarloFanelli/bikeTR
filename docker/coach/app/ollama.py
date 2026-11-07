@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from app.chat import READ_TIMEOUT, TIMEOUT, ChatEnd, ModelError, token_count
+from app.chat import READ_TIMEOUT, TIMEOUT, Accepted, ChatEnd, ModelError, token_count
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434").rstrip("/")
 DEFAULT_CHAT_MODEL = "qwen2.5:7b"
@@ -58,8 +58,8 @@ def missing_model(model: str) -> str:
 
 
 async def chat_stream(client: httpx.AsyncClient, model: str, messages: list):
-    """Il testo della risposta man mano che arriva, poi ChatEnd. Ollama manda una riga JSON
-    per pezzo; l'ultima ha done: true, i token letti (prompt_eval_count) e scritti
+    """Accepted, il testo della risposta man mano che arriva, poi ChatEnd. Ollama manda una
+    riga JSON per pezzo; l'ultima ha done: true, i token letti (prompt_eval_count) e scritti
     (eval_count) e il motivo della fine (done_reason: "length" se la risposta ha raggiunto
     MAX_ANSWER_TOKENS)."""
     body = {"model": model, "messages": messages, "stream": True,
@@ -75,6 +75,7 @@ async def chat_stream(client: httpx.AsyncClient, model: str, messages: list):
             if res.status_code != 200:
                 text = (await res.aread()).decode("utf-8", "replace")
                 raise OllamaError(f"Chat HTTP {res.status_code}: {text}")
+            yield Accepted()
             async for line in res.aiter_lines():
                 if not line.strip():
                     continue

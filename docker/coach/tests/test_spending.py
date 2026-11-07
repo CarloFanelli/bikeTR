@@ -68,7 +68,8 @@ def test_disconnecting_from_strava_keeps_the_total(cloud_service, cloud_spending
 
 
 @pytest.mark.parametrize("content", [b"non json", b'{"total": "1"}', b'{"total": -1}', b'{"total": NaN}',
-                                     b'{"total": true}', b"[]", b"{}", b"\xff\xfe"])
+                                     b'{"total": true}', b"[]", b"{}", b"\xff\xfe",
+                                     b'{"total": 1' + b"0" * 400 + b"}"])   # troppo grande per un float
 def test_unreadable_total_refuses_and_is_never_reset(tmp_path, content):
     path = tmp_path / "spending.json"
     path.write_bytes(content)
@@ -156,6 +157,15 @@ def test_unreachable_provider_adds_nothing(cloud_service, cloud_spending, error)
     cloud_service.cloud.handle = unreachable
     assert events_of(post(cloud_service, BODY))[-1] == {
         "type": "error", "error": "model", "message": f"Provider cloud non raggiungibile su {CLOUD_URL}"}
+    assert not cloud_spending.path.exists()
+
+
+@pytest.mark.parametrize("error", [httpx.ReadError, httpx.RemoteProtocolError, httpx.WriteError])
+def test_connection_lost_before_the_provider_answers_adds_nothing(cloud_service, cloud_spending, error):
+    def lost(request):
+        raise error("connessione persa prima della risposta")
+    cloud_service.cloud.handle = lost
+    assert events_of(post(cloud_service, BODY))[-1]["type"] == "error"
     assert not cloud_spending.path.exists()
 
 

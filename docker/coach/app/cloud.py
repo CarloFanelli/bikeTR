@@ -7,7 +7,7 @@ from urllib.parse import quote
 
 import httpx
 
-from app.chat import READ_TIMEOUT, TIMEOUT, ChatEnd, ModelError, token_count
+from app.chat import READ_TIMEOUT, TIMEOUT, Accepted, ChatEnd, ModelError, token_count
 
 # Comprende il ragionamento nascosto dei modelli che pensano prima di rispondere: una
 # risposta che arriva qui è tagliata, e il Coach usa la scelta di ripiego.
@@ -44,16 +44,16 @@ def refused(status: int, text: str, key: str) -> CloudError:
     message = provider_message(text, key)
     if status in KEY_REJECTED:
         return CloudError(f"Il provider cloud ha rifiutato la chiave (HTTP {status}): controlla CLOUD_API_KEY "
-                          f"in .env. {message}", billed=False)
+                          f"in .env. {message}")
     if status in LIMITED:
         return CloudError(f"Il provider cloud rifiuta la richiesta per limite di richieste o credito esaurito "
-                          f"(HTTP {status}): {message}", billed=False)
-    return CloudError(f"Il provider cloud ha risposto HTTP {status}: {message}", billed=False)
+                          f"(HTTP {status}): {message}")
+    return CloudError(f"Il provider cloud ha risposto HTTP {status}: {message}")
 
 
 def connection_error(e: httpx.HTTPError, client: httpx.AsyncClient) -> CloudError:
     if isinstance(e, (httpx.ConnectError, httpx.ConnectTimeout)):
-        return CloudError(f"Provider cloud non raggiungibile su {client.base_url}", billed=False)
+        return CloudError(f"Provider cloud non raggiungibile su {client.base_url}")
     return CloudError(f"Connessione con il provider cloud interrotta ({e.__class__.__name__})")
 
 
@@ -78,9 +78,9 @@ async def find_model(client: httpx.AsyncClient, model: str, key: str) -> bool:
 
 
 async def chat_stream(client: httpx.AsyncClient, model: str, messages: list, key: str):
-    """Il testo della risposta man mano che arriva, poi ChatEnd. Il provider manda eventi
-    "data: {json}"; il pezzo con finish_reason dice se la risposta è stata tagliata, l'ultimo
-    (con choices vuoto) porta i token usati, e "data: [DONE]" chiude."""
+    """Accepted, il testo della risposta man mano che arriva, poi ChatEnd. Il provider manda
+    eventi "data: {json}"; il pezzo con finish_reason dice se la risposta è stata tagliata,
+    l'ultimo (con choices vuoto) porta i token usati, e "data: [DONE]" chiude."""
     # Nessuna temperatura: i modelli che ragionano (Claude 5) rifiutano quella bassa.
     body = {"model": model, "messages": messages, "stream": True, "stream_options": {"include_usage": True},
             "max_tokens": MAX_ANSWER_TOKENS}
@@ -91,6 +91,7 @@ async def chat_stream(client: httpx.AsyncClient, model: str, messages: list, key
                                  headers={"Content-Type": "application/json"}) as res:
             if res.status_code != 200:
                 raise refused(res.status_code, (await res.aread()).decode("utf-8", "replace"), key)
+            yield Accepted()
             async for line in res.aiter_lines():
                 # Righe vuote, commenti (": …") ed "event: …" non portano dati.
                 if not line.startswith("data:"):

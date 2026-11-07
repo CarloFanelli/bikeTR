@@ -57,6 +57,16 @@ def js_str(value) -> str:
     return str(value)
 
 
+def is_number(value) -> bool:
+    """Number.isFinite di JavaScript per un valore letto da JSON: true e false non sono numeri."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:   # intero JSON troppo grande per un float
+        return False
+
+
 def js_truthy(value) -> bool:
     """Vero come in JavaScript: [] e {} sono veri; null, false, 0 e "" falsi."""
     return isinstance(value, (list, dict)) or value not in (None, False, 0, "")

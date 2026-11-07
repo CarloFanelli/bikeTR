@@ -43,6 +43,19 @@ def checked_model(name: str, setting: str) -> str:
     return name
 
 
+def checked_url(url: str) -> str:
+    """Senza http:// o https:// ogni richiesta fallirebbe con un errore di connessione che
+    non nomina CLOUD_URL."""
+    try:
+        parsed = httpx.URL(url)
+    except httpx.InvalidURL:
+        parsed = None
+    if parsed is None or parsed.scheme not in ("http", "https") or not parsed.host:
+        raise invalid(f'CLOUD_URL in .env vale "{url}": serve un indirizzo completo che inizia con https://, '
+                      "per esempio https://api.anthropic.com/v1/")
+    return url
+
+
 def dollars(name: str) -> float:
     raw = env(name)
     try:
@@ -68,7 +81,7 @@ def settings() -> ChatSettings:
     if missing:
         raise invalid(f"Con COACH_PROVIDER=cloud manca in .env: {', '.join(missing)}")
     prices = Prices(dollars("CLOUD_PRICE_IN"), dollars("CLOUD_PRICE_OUT"), dollars("CLOUD_SPENDING_LIMIT"))
-    return ChatSettings("cloud", checked_model(env("CLOUD_MODEL"), "CLOUD_MODEL"), env("CLOUD_URL"),
+    return ChatSettings("cloud", checked_model(env("CLOUD_MODEL"), "CLOUD_MODEL"), checked_url(env("CLOUD_URL")),
                         env("CLOUD_API_KEY"), prices)
 
 
@@ -77,7 +90,7 @@ def client(chat: ChatSettings) -> httpx.AsyncClient:
 
 
 def stream(chat: ChatSettings, chat_client: httpx.AsyncClient, messages: list):
-    """Il testo della risposta man mano che arriva, poi ChatEnd (app/chat.py)."""
+    """Accepted, il testo della risposta man mano che arriva, poi ChatEnd (app/chat.py)."""
     if chat.provider == "ollama":
         return ollama.chat_stream(chat_client, chat.model, messages)
     return cloud.chat_stream(chat_client, chat.model, messages, chat.key)

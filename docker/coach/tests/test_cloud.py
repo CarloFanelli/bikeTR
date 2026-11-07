@@ -10,7 +10,7 @@ import httpx
 import pytest
 
 from app import cloud
-from app.chat import ChatEnd, ModelError
+from app.chat import Accepted, ChatEnd, ModelError
 from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, CLOUD_URL, FakeCloud
 from test_workout import BODY, CASE, events_of, make_service, post
 
@@ -91,7 +91,7 @@ def test_stream_ends_at_done_and_reads_usage_from_a_chunk_without_choices():
     assert read([f"data: {json.dumps(chunk)}", "",
                  'data: {"choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]}', "",
                  'data: {"choices": [], "usage": {"prompt_tokens": 10, "completion_tokens": 3}}', "",
-                 "data: [DONE]", "", f"data: {json.dumps(chunk)}"]) == ["ciao", ChatEnd(10, 3, False)]
+                 "data: [DONE]", "", f"data: {json.dumps(chunk)}"]) == [Accepted(), "ciao", ChatEnd(10, 3, False)]
 
 
 def test_error_sent_inside_the_stream_becomes_the_model_error():
