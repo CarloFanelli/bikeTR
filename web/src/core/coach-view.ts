@@ -34,7 +34,11 @@ export function ridesNotes(rides: CoachWorkout['rides']): string[] {
   return notes;
 }
 
-export const metaLine = (w: CoachWorkout) => `⚡ ${w.model} · ${w.seconds.toFixed(1)}s · ${w.evalCount || '?'} tok`;
+// Locale o cloud, modello, secondi e token letti e scritti ("—" se il provider non li dice).
+const tokens = (n: number | null) => (n == null ? '—' : String(n));
+export const metaLine = (w: CoachWorkout) =>
+  `⚡ ${w.provider === 'cloud' ? 'cloud' : 'locale'} · ${w.model} · ${w.seconds.toFixed(1)}s · ` +
+  `token: ${tokens(w.inputTokens)} in, ${tokens(w.outputTokens)} out`;
 
 // Il titolo di un errore che non ha una spiegazione sua (FTP mancante, ricerca dei paper).
 export const errorHeading = (code?: string) => (code === 'model' ? 'Errore chiamata modello' : 'Workout non generato');

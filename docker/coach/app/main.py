@@ -21,7 +21,7 @@ import httpx
 from fastapi import Depends, FastAPI, Header, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app import ollama, papers, search, workout
+from app import ollama, papers, provider, search, workout
 from app.errors import CoachError
 from app.store import RideStore
 from app.strava import StravaRides
@@ -70,12 +70,13 @@ async def generate_workout(request: Request):
     except (ValueError, RecursionError):
         body = None
     req = workout.parse_request(body)
+    chat = provider.settings()
     events: asyncio.Queue = asyncio.Queue()
 
     async def produce():
         try:
-            async with ollama.client() as ollama_client:
-                await workout.run(req, events.put_nowait, rides=rides, ollama_client=ollama_client,
+            async with provider.client(chat) as chat_client:
+                await workout.run(req, events.put_nowait, rides=rides, chat=chat, chat_client=chat_client,
                                   embed=search.encode, load_index=load_index, now_ms=time.time() * 1000)
         except CoachError as e:
             events.put_nowait({"type": "error", "error": e.code, "message": e.message})

@@ -14,7 +14,8 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from app import ollama, papers, prompts
+from app import papers, prompts, provider
+from app.chat import ChatEnd, ModelError
 from app.errors import CoachError
 from app.jscompat import js_str, js_truthy
 from app.metrics import Profile, coach_context
@@ -31,7 +32,6 @@ NO_RATIONALE = "(razionale non fornito)"
 @dataclass(frozen=True)
 class WorkoutRequest:
     duration: int
-    model: str
     tz: ZoneInfo
     profile: Profile
 
@@ -81,11 +81,11 @@ def parse_profile(raw) -> Profile:
 
 
 def parse_request(body) -> WorkoutRequest:
-    """Controlla tutto prima di scaricare corse o chiamare il modello."""
+    """Controlla tutto prima di scaricare corse o chiamare il modello. Il modello lo sceglie
+    .env: quello che manda una scheda aperta prima dell'aggiornamento è ignorato."""
     if not isinstance(body, dict):
         raise CoachError(400, "invalid_request", "Richiesta non valida")
     req = WorkoutRequest(duration=parse_duration(body.get("duration")),
-                         model=ollama.chat_model(body.get("model")),
                          tz=parse_time_zone(body.get("timeZone")),
                          profile=parse_profile(body.get("profile")))
     if not req.profile.ftp:
@@ -160,8 +160,9 @@ def step(name: str, message: str, **extra) -> dict:
 
 
 async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: StravaRides,
-              ollama_client: httpx.AsyncClient, embed: Callable[[str], Awaitable[list]],
-              load_index: Callable[[], Awaitable[dict]], now_ms: float) -> None:
+              chat: provider.ChatSettings, chat_client: httpx.AsyncClient,
+              embed: Callable[[str], Awaitable[list]], load_index: Callable[[], Awaitable[dict]],
+              now_ms: float) -> None:
     emit(step("rides", "Scarico le corse da Strava…"))
     data = await rides.refresh(now_ms, progress=lambda done, total: emit(
         step("details", f"Scarico dettagli corse {done}/{total}", done=done, total=total)))
@@ -180,25 +181,23 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
     emit(step("model", "Il modello sta scegliendo il protocollo…"))
     messages = [{"role": "system", "content": prompts.system_prompt(retrieved)},
                 {"role": "user", "content": prompts.user_prompt(ctx, req.duration)}]
-    answer, eval_count, truncated = [], None, False
+    answer, end = [], ChatEnd(None, None, False)
     try:
-        async for chunk in ollama.chat_stream(ollama_client, req.model, messages):
-            message = chunk.get("message")
-            text = message.get("content") if isinstance(message, dict) else None
-            if isinstance(text, str) and text:
-                answer.append(text)
-                emit({"type": "token", "text": text})
-            if chunk.get("done"):
-                eval_count = chunk.get("eval_count")
-                truncated = chunk.get("done_reason") == "length"
-    except ollama.OllamaError as e:
+        async for piece in provider.stream(chat, chat_client, messages):
+            if isinstance(piece, ChatEnd):
+                end = piece
+            else:
+                answer.append(piece)
+                emit({"type": "token", "text": piece})
+    except ModelError as e:
         raise CoachError(502, "model", str(e)) from e
 
     model_raw = "".join(answer)
-    emit({"type": "result", **decide(model_raw, ctx, req.duration, index, truncated),
+    emit({"type": "result", **decide(model_raw, ctx, req.duration, index, end.truncated),
           "retrievedPapers": [{"pmid": p["pmid"], "title": p["title"], "authors": p["authors"],
                                "year": p["year"], "score": p["score"]} for p in retrieved],
-          "model": req.model, "seconds": round(time.monotonic() - started, 1),
-          "evalCount": eval_count, "modelRaw": model_raw,
+          "provider": chat.provider, "model": chat.model, "seconds": round(time.monotonic() - started, 1),
+          "inputTokens": end.input_tokens, "outputTokens": end.output_tokens, "truncated": end.truncated,
+          "modelRaw": model_raw,
           "rides": {"fromSaved": data.from_saved, "downloadedAt": data.downloaded_at,
                     "missingDetails": data.missing_details}})

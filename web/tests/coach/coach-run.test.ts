@@ -8,13 +8,13 @@ let generateWorkout: Run['generateWorkout'];
 let stopWorkout: Run['stopWorkout'];
 
 const request: WorkoutRequest = {
-  duration: 60, model: 'qwen2.5:7b', timeZone: 'Europe/Rome',
+  duration: 60, timeZone: 'Europe/Rome',
   profile: { ftp: 250, lthr: 165, hrMax: 190, weight: 72, weeklyHours: 6, weeklyDays: 4 },
 };
 const workout = {
   protocolId: 'z2_endurance', title: 'Z2 lungo', targetWatt: '160-190 W', struttura: ['60 min Z2'],
-  razionale: 'TSB negativo', paperRefs: [], retrievedPapers: [], fellBack: false, model: 'qwen2.5:7b',
-  seconds: 12.3, evalCount: 80, modelRaw: '{}', rides: { fromSaved: false, downloadedAt: null, missingDetails: 0 },
+  razionale: 'TSB negativo', paperRefs: [], retrievedPapers: [], fellBack: false, provider: 'ollama',
+  model: 'qwen2.5:7b', seconds: 12.3, inputTokens: 900, outputTokens: 80, truncated: false, modelRaw: '{}', rides: { fromSaved: false, downloadedAt: null, missingDetails: 0 },
 };
 
 // Una richiesta al servizio finto: il test decide quando arriva la risposta e cosa

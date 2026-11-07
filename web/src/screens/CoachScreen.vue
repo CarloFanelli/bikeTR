@@ -3,7 +3,6 @@
 // testo del modello mentre lo scrive, poi il risultato o l'errore. La richiesta sta in
 // app/coach-run.ts: continua anche cambiando sezione, e Stop la interrompe.
 import { computed, ref } from 'vue';
-import { RouterLink } from 'vue-router';
 import {
   VBtn, VCard, VCardText, VCardTitle, VExpansionPanel, VExpansionPanels, VExpansionPanelText, VExpansionPanelTitle,
   VTextField,
@@ -13,11 +12,9 @@ import { hrProfile } from '../app/session.ts';
 import CoachErrorCard from '../components/CoachErrorCard.vue';
 import CoachWorkoutCard from '../components/CoachWorkoutCard.vue';
 import { coachProfile } from '../core/coach-view.ts';
-import { COACH_DEFAULT_MODEL } from '../data/coach.ts';
 import { loadCoachSettings, loadSettings, saveCoachSettings } from '../data/storage.ts';
 
 const duration = ref(String(loadCoachSettings().lastDuration || 60));
-const model = (loadCoachSettings().model || COACH_DEFAULT_MODEL).trim();
 const context = computed(() => (run.context == null ? '' : JSON.stringify(run.context, null, 2)));
 // Il testo del modello resta finché non arriva il risultato o un errore, anche dopo Stop.
 const showLive = computed(() => run.live && !run.result && !run.error);
@@ -27,7 +24,6 @@ function generate() {
   saveCoachSettings({ lastDuration: minutes });
   void generateWorkout({
     duration: minutes,
-    model,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     profile: coachProfile(hrProfile(), loadSettings()),
   });
@@ -56,9 +52,6 @@ function generate() {
         <VBtn color="primary" @click="generate">✨ Genera workout di oggi</VBtn>
         <VBtn v-if="run.running" variant="outlined" color="error" @click="stopWorkout">⏹ Stop</VBtn>
       </div>
-      <p class="text-caption text-medium-emphasis mt-2">
-        Modello {{ model }}: si cambia in <RouterLink :to="{ name: 'impostazioni' }">Impostazioni</RouterLink>.
-      </p>
 
       <div class="mt-4">
         <div v-if="run.running" class="text-medium-emphasis">{{ run.step }}</div>

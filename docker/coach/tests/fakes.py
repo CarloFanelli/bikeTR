@@ -1,9 +1,22 @@
-"""Sostituti di Strava, del modello di ricerca e dell'indice dei paper per i test del workout."""
+"""Sostituti di Strava, del modello di ricerca, dell'indice dei paper e dei due provider del
+modello chat (Ollama e un provider cloud compatibile con OpenAI) per i test del workout."""
 
+import json
+
+import httpx
+
+from app import cloud
+from app.provider import ChatSettings
 from app.strava import RideData
 from fixture_data import DETAILS, NOW_MS, load
 
 INDEX = load("papers_index.json")
+CLOUD_URL = "https://cloud.example/v1/"
+CLOUD_KEY = "sk-test-chiave-segreta"
+CLOUD_MODEL = "claude-di-prova"
+CLOUD_ENV = {"COACH_PROVIDER": "cloud", "CLOUD_URL": CLOUD_URL, "CLOUD_API_KEY": CLOUD_KEY, "CLOUD_MODEL": CLOUD_MODEL}
+# Il client vero, preso prima che un test lo sostituisca con FakeCloud.client.
+REAL_CLOUD_CLIENT = cloud.client
 
 
 class FakeRides:
@@ -38,3 +51,90 @@ class FakeSearch:
     async def encode(self, text: str) -> list:
         self.texts.append(text)
         return self.vector
+
+
+def pieces(answer: str) -> list[str]:
+    return [answer[i:i + 7] for i in range(0, len(answer), 7)]
+
+
+class FakeOllama:
+    """Risponde come Ollama: la risposta del modello a pezzi di 7 caratteri, poi l'ultimo
+    pezzo con done, i token letti e scritti e il motivo della fine."""
+
+    def __init__(self, answer: str, model: str = "qwen2.5:7b"):
+        self.answer = answer
+        self.chat = ChatSettings("ollama", model, "http://ollama:11434")
+        self.done_reason = "stop"
+        self.requests = []
+        self.status = 200
+        self.down = False
+        self.installed = [model]
+
+    def handle(self, request: httpx.Request) -> httpx.Response:
+        if self.down:
+            raise httpx.ConnectError("ollama spento")
+        if request.url.path == "/api/tags":
+            return httpx.Response(200, json={"models": [{"name": m} for m in self.installed]})
+        body = json.loads(request.content)
+        self.requests.append((request.url.path, body))
+        if self.status != 200:
+            return httpx.Response(self.status, json={"error": "qualcosa non va"})
+        lines = [{"message": {"role": "assistant", "content": p}, "done": False} for p in pieces(self.answer)]
+        lines.append({"message": {"role": "assistant", "content": ""}, "done": True,
+                      "done_reason": self.done_reason, "prompt_eval_count": 900, "eval_count": 42})
+        return httpx.Response(200, content="".join(json.dumps(x) + "\n" for x in lines).encode())
+
+    def client(self) -> httpx.AsyncClient:
+        return httpx.AsyncClient(base_url=self.chat.url, transport=httpx.MockTransport(self.handle))
+
+
+class Dropping(httpx.AsyncByteStream):
+    """Un corpo di risposta che si interrompe dopo i pezzi dati, come una connessione caduta."""
+
+    def __init__(self, chunks: list[bytes]):
+        self.chunks = chunks
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            yield chunk
+        raise httpx.ReadError("connessione caduta")
+
+
+class FakeCloud:
+    """Risponde come un provider compatibile con OpenAI: eventi "data:" con il testo a pezzi
+    di 7 caratteri, poi finish_reason, i token usati (con choices vuoto) e [DONE]; in mezzo un
+    commento e una riga "event:", come fanno i provider veri."""
+
+    def __init__(self, answer: str):
+        self.answer = answer
+        self.chat = ChatSettings("cloud", CLOUD_MODEL, CLOUD_URL, CLOUD_KEY)
+        self.finish_reason = "stop"
+        self.usage = {"prompt_tokens": 900, "completion_tokens": 42}
+        self.requests = []
+        self.status, self.error = 200, None
+        self.down = False
+        self.drop_after = None   # pezzi di testo dopo cui la connessione cade
+
+    def handle(self, request: httpx.Request) -> httpx.Response:
+        if self.down:
+            raise httpx.ConnectError("provider spento")
+        self.requests.append((request.url.path, request.headers, json.loads(request.content)))
+        if self.status != 200:
+            return httpx.Response(self.status, json=self.error)
+        events = [{"choices": [{"index": 0, "delta": {"content": p}, "finish_reason": None}]}
+                  for p in pieces(self.answer)]
+        events.append({"choices": [{"index": 0, "delta": {}, "finish_reason": self.finish_reason}]})
+        if self.usage is not None:
+            events.append({"choices": [], "usage": self.usage})
+        lines = [": commento del provider", "event: message", *(f"data: {json.dumps(e)}" for e in events),
+                 "data: [DONE]"]
+        chunks = [(line + "\n\n").encode() for line in lines]
+        if self.drop_after is not None:
+            return httpx.Response(200, stream=Dropping(chunks[:2 + self.drop_after]))
+        return httpx.Response(200, content=b"".join(chunks))
+
+    def client(self, url: str = CLOUD_URL, key: str = CLOUD_KEY) -> httpx.AsyncClient:
+        """Il client del Coach (indirizzo, chiave, attese), con il finto provider al posto della rete."""
+        real = REAL_CLOUD_CLIENT(url, key)
+        return httpx.AsyncClient(base_url=real.base_url, headers=real.headers, timeout=real.timeout,
+                                 transport=httpx.MockTransport(self.handle))
