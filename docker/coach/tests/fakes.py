@@ -1,4 +1,4 @@
-"""Sostituti di Strava e dell'indice dei paper per i test del workout."""
+"""Sostituti di Strava, del modello di ricerca e dell'indice dei paper per i test del workout."""
 
 from app.strava import RideData
 from fixture_data import DETAILS, NOW_MS, load
@@ -26,3 +26,15 @@ class FakeRides:
 
 async def fixture_index() -> dict:
     return INDEX
+
+
+class FakeSearch:
+    """Al posto del modello di ricerca: un vettore fisso per ogni testo; ricorda i testi."""
+
+    def __init__(self, vector: list):
+        self.vector = vector
+        self.texts = []
+
+    async def encode(self, text: str) -> list:
+        self.texts.append(text)
+        return self.vector

@@ -49,8 +49,10 @@ services:
 
   # Servizio Coach: parla con Ollama, all'indirizzo scritto in .env.
   coach:
-    # Solo Python e i pacchetti di docker/coach/requirements.txt; il codice è montato qui sotto.
+    # Python, i pacchetti di docker/coach/requirements.txt e il modello di ricerca dei paper;
+    # il codice è montato qui sotto.
     build: ./docker/coach
+    image: biketr-coach
     init: true
     volumes:
       - ./docker/coach:/app:ro
@@ -66,6 +68,18 @@ services:
         condition: service_started
         required: false
 
+  # Comandi che scrivono nella cartella del progetto, come la ricostruzione dell'indice dei
+  # paper. Parte solo quando lo si nomina: docker compose run --rm coach-tools <comando>.
+  coach-tools:
+    build: ./docker/coach
+    # La stessa immagine del Coach: dopo `docker compose up -d --build` anche questa è nuova.
+    image: biketr-coach
+    profiles: [tools]
+    init: true
+    volumes:
+      - ./docker/coach:/app:ro
+      - ./:/project
+
   ollama:
     image: ollama/ollama:0.12.6
     scale: ${OLLAMA_CONTAINERS:-1}
@@ -77,7 +91,8 @@ services:
       timeout: 5s
       retries: 24
 
-  # Scarica i modelli che mancano, poi termina.
+  # Scarica il modello chat se manca, poi termina. I paper si cercano con il modello di
+  # ricerca dentro il servizio Coach: a Ollama non serve un modello di embedding.
   ollama-pull:
     image: ollama/ollama:0.12.6
     scale: ${OLLAMA_CONTAINERS:-1}
@@ -87,16 +102,9 @@ services:
     environment:
       OLLAMA_HOST: ollama:11434
       CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen2.5:7b}
-      EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-nomic-embed-text}
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - |
-        status=0
-        for model in "$$CHAT_MODEL" "$$EMBED_MODEL"; do
-          ollama show "$$model" > /dev/null 2>&1 && continue
-          ollama pull "$$model" || status=1
-        done
-        exit $$status
+      - ollama show "$$CHAT_MODEL" > /dev/null 2>&1 || ollama pull "$$CHAT_MODEL"
 
 volumes:
   ollama-models:

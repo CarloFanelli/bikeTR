@@ -1,5 +1,5 @@
 {
- "model": "nomic-embed-text",
+ "model": "BAAI/bge-small-en-v1.5",
  "papers": [
   {
    "pmid": "16430681",

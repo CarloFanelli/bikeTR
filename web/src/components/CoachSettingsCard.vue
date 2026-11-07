@@ -49,8 +49,8 @@ async function checkOllama(): Promise<void> {
             <pre class="mb-2">OLLAMA_CONTAINERS=0
 OLLAMA_URL=http://host.docker.internal:11434</pre>
             <p>
-              Scarica i modelli sul computer con <code>ollama pull qwen2.5:7b</code> e
-              <code>ollama pull nomic-embed-text</code>. Se il Ping non risponde, avvia Ollama in ascolto su tutte le
+              Scarica il modello chat sul computer con <code>ollama pull qwen2.5:7b</code>. Se il Ping non
+              risponde, avvia Ollama in ascolto su tutte le
               interfacce: <code>OLLAMA_HOST=0.0.0.0 ollama serve</code>.
             </p>
           </template>

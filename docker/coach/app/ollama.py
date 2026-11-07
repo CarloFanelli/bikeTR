@@ -10,8 +10,6 @@ from app.errors import CoachError
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434").rstrip("/")
 DEFAULT_CHAT_MODEL = "qwen2.5:7b"
-# L'indice dei paper è costruito con questo modello: cambia solo insieme all'indice.
-EMBED_MODEL = "nomic-embed-text"
 MAX_MODEL_NAME = 100
 # Secondi di silenzio concessi a Ollama tra un pezzo di risposta e il successivo,
 # compresa l'attesa della prima parola; il tempo totale non ha limite.
@@ -51,7 +49,7 @@ async def installed_models() -> list[str]:
 
 
 def is_installed(model: str, installed: list[str]) -> bool:
-    # Ollama elenca come "nomic-embed-text:latest" un modello chiesto senza tag.
+    # Ollama elenca come "llama3:latest" un modello chiesto senza tag ("llama3").
     return model in installed or (":" not in model and f"{model}:latest" in installed)
 
 
@@ -71,27 +69,6 @@ def silent(who: str) -> str:
 
 def missing_model(model: str) -> str:
     return f"Modello {model} non installato in Ollama. Scaricalo con: {pull_command(model)}"
-
-
-async def embed(client: httpx.AsyncClient, text: str) -> list:
-    """Embedding della query di ricerca dei paper."""
-    try:
-        res = await client.post("/api/embeddings", json={"model": EMBED_MODEL, "prompt": text})
-    except httpx.ReadTimeout as e:
-        raise OllamaError(silent("Ollama non ha risposto")) from e
-    except httpx.HTTPError as e:
-        raise OllamaError(unreachable()) from e
-    if res.status_code == 404:
-        raise OllamaError(missing_model(EMBED_MODEL))
-    if res.status_code != 200:
-        raise OllamaError(f"Embed HTTP {res.status_code}")
-    try:
-        embedding = res.json()["embedding"]
-        if not embedding or not all(isinstance(x, (int, float)) for x in embedding):
-            raise ValueError("embedding vuoto")
-    except (ValueError, KeyError, TypeError) as e:
-        raise OllamaError("Risposta di Ollama illeggibile (embedding)") from e
-    return embedding
 
 
 async def chat_stream(client: httpx.AsyncClient, model: str, messages: list):

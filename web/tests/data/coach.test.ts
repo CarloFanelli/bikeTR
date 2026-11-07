@@ -18,10 +18,10 @@ afterEach(() => {
 describe('servizio Coach', () => {
   it('"Ping Ollama" chiede al servizio il modello scelto e riporta modelli e mancanti', async () => {
     const seen = fakeCoach(() => Response.json({
-      models: ['qwen2.5:7b'], missing: [{ model: 'nomic-embed-text', command: 'ollama pull nomic-embed-text' }],
+      models: ['llama3:8b'], missing: [{ model: 'qwen2.5:7b', command: 'ollama pull qwen2.5:7b' }],
     }));
     expect(await pingOllama('qwen2.5:7b')).toEqual({
-      ok: true, models: ['qwen2.5:7b'], missing: [{ model: 'nomic-embed-text', command: 'ollama pull nomic-embed-text' }],
+      ok: true, models: ['llama3:8b'], missing: [{ model: 'qwen2.5:7b', command: 'ollama pull qwen2.5:7b' }],
     });
     expect(seen).toEqual(['GET /coach/ping?model=qwen2.5%3A7b']);
   });
