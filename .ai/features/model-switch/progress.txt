@@ -1,0 +1,8 @@
+# Task Progress - model-switch
+
+01-search-model-in-coach: TODO
+02-chat-model-from-env: TODO
+03-cost-and-spending-cap: TODO
+04-impostazioni-model-check: TODO
+05-live-check: TODO
+06-coach-docs: TODO
