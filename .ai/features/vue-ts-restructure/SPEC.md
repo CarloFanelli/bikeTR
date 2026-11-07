@@ -2,7 +2,7 @@
 feature: vue-ts-restructure
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: c6f7bc5e40a02c1cf691bc87631ab8805cf8436d
 ---
 

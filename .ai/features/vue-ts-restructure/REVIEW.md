@@ -1,14 +1,14 @@
 ---
 feature: vue-ts-restructure
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-07
-head: 25fb8a46f94e0906c854f8e6b67299ae7f9c66be
+head: 2bcf60df89d1b9db2f115ba4eb686696f7912be7
 ---
 
 # Review — vue-ts-restructure
 
-**Scope**: 37 files (re-verification — delta since review head `8c739939`; 1 workflow artifact under `.ai/` excluded; 16 addressed findings checked)
-**Findings**: 0 must-fix · 0 should-fix · 2 nit
+**Scope**: 29 files (re-verification — delta since review head `25fb8a46`, 1 file changed plus the unchanged files of addressed findings; 1 workflow artifact under `.ai/` excluded; 18 addressed findings checked)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
