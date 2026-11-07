@@ -6,6 +6,7 @@ import { createAppRouter } from '../../src/app/router.ts';
 vi.mock('../../src/screens/NotYetScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/SettingsScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/HomeScreen.vue', () => ({ default: {} }));
+vi.mock('../../src/screens/TrainingScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/ActivitiesScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/ActivityDetailScreen.vue', () => ({ default: {} }));
 
