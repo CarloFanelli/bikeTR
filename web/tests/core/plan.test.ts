@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { buildFormTrend } from '../../src/core/form.ts';
 import { athleteResponseCheck, nextMesocycle } from '../../src/core/meso.ts';
 import { planHr } from '../../src/core/plan/inputs.ts';
@@ -14,13 +14,9 @@ import {
 } from './plan-reference.ts';
 import { activities, displayed, rides } from './reference.ts';
 
-// Il piano della settimana scrive in console un controllo sui giorni di pioggia.
-beforeAll(() => { vi.spyOn(console, 'log').mockImplementation(() => {}); });
-
 interface RecordedDay {
   offset: number;
   recommend: unknown;
-  synthetic: unknown;
   metrics: unknown;
   restStreak: number;
 }

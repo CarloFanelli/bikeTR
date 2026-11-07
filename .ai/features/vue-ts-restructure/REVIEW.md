@@ -2,13 +2,13 @@
 feature: vue-ts-restructure
 status: DRAFT
 reviewed: 2026-11-07
-head: 8c73993970143ba6ea907a78d1f92e33ec1827d7
+head: 25fb8a46f94e0906c854f8e6b67299ae7f9c66be
 ---
 
 # Review — vue-ts-restructure
 
-**Scope**: 137 files (primary — diff since base `c6f7bc5e`; 23 workflow artifacts under `.ai/` excluded)
-**Findings**: 1 must-fix · 4 should-fix · 11 nit
+**Scope**: 37 files (re-verification — delta since review head `8c739939`; 1 workflow artifact under `.ai/` excluded; 16 addressed findings checked)
+**Findings**: 0 must-fix · 0 should-fix · 2 nit
 
 ## Findings
 
@@ -95,3 +95,13 @@ head: 8c73993970143ba6ea907a78d1f92e33ec1827d7
 **File**: `README.md:254`
 **Issue**: the known-limitations entry says `Click "Refresh with streams"`, while the rest of the README (lines 15, 162, 179) and the button use "Aggiorna con streams".
 **Change**: write `Click "Aggiorna con streams"`, as at `README.md:15`.
+
+### F-17 · nit · convention · plan test still mutes a console message that no longer exists   [ADDRESSED]
+**File**: `web/tests/core/plan.test.ts:17-18`
+**Issue**: the comment says the week plan writes a rainy-day check to the console and `beforeAll` mutes `console.log` for it, but that log was removed from `web/src/core/plan/week.ts` (F-6), so the comment is untrue and the mute would hide any future stray log.
+**Change**: delete both lines and drop `beforeAll` and `vi` from the `vitest` import at line 1.
+
+### F-18 · nit · dead · recorded-day type keeps the removed synthetic field   [ADDRESSED]
+**File**: `web/tests/core/plan.test.ts:23`
+**Issue**: `synthetic: unknown` in `RecordedDay` was read only by the assertion on `synthActivityFromRec`, deleted with that function (F-5).
+**Change**: delete the field.
