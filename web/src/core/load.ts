@@ -5,7 +5,7 @@ import type { Activity } from './strava-types.ts';
 
 // Peso BASE di ciascun tipo sul carico totale (1.0 = bici standard).
 // typeWeight() restituisce un peso dinamico che tiene conto del dislivello per hike/walk.
-export const TYPE_WEIGHTS: Record<string, number> = {
+const TYPE_WEIGHTS: Record<string, number> = {
   Ride: 1.0, VirtualRide: 1.0, EBikeRide: 0.7,
   MountainBikeRide: 1.0, GravelRide: 1.0,
   Run: 1.0, VirtualRun: 1.0, TrailRun: 1.05,

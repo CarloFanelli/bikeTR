@@ -12,6 +12,9 @@ const METRICS_STREAMS = 'time,heartrate,watts,cadence';
 const STARRED_PAGE = 50;
 const STARRED_MAX_PAGES = 10;
 
+// Pausa tra una richiesta e l'altra dei lavori lunghi, per stare nei limiti di Strava.
+export const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
 // Strava ha risposto con un errore: `status` è il codice HTTP (404: attività
 // inesistente o non visibile all'atleta collegato; 429: troppe richieste).
 export class StravaError extends Error {

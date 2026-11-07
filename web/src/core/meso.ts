@@ -7,7 +7,7 @@ import { buildPowerProfile } from './power.ts';
 import type { Activity } from './strava-types.ts';
 
 // Un blocco finito, nello storico del mesociclo.
-export interface MesoBlockRecord {
+interface MesoBlockRecord {
   blockId: string;
   startDate: string;
   endDate: string;
@@ -25,7 +25,7 @@ export interface Mesocycle {
   ftpHistory: { date: string; ftp: number }[];
 }
 
-export interface MesoBlock {
+interface MesoBlock {
   id: string;
   label: string;
   weeks: number;
@@ -269,13 +269,6 @@ export function chooseNextBlock(
   const sequence = ['base', 'threshold', 'vo2max'];
   const currentIdx = sequence.indexOf(meso.blockId);
   return sequence[(currentIdx + 1) % sequence.length];
-}
-
-// Ritorna la fase (0/1/2) consigliata per la settimana corrente del mesociclo
-export function mesoPhaseForWeek(meso: { blockId: string; weekInBlock: number }): number {
-  const block = blockOf(meso.blockId) || MESO_BLOCKS[0];
-  const week = Math.min(meso.weekInBlock, block.phases.length - 1);
-  return block.phases[week];
 }
 
 // Il blocco in corso come lo descrive la card Forma; null senza mesociclo o con un blocco sconosciuto.

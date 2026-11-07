@@ -10,7 +10,7 @@ import type { WeekRole } from '../meso.ts';
 import type { Settings } from '../settings.ts';
 import type { Activity } from '../strava-types.ts';
 import { v2_workoutForCategory } from '../training-v2.ts';
-import { isAvailableDay, isLongRideDay, offsetLabel } from './dates.ts';
+import { currentMondayOffset, isAvailableDay, isLongRideDay, offsetLabel } from './dates.ts';
 import { planHr } from './inputs.ts';
 import type { Advice, PlanInputs, PlanProfile } from './inputs.ts';
 import { buildTrainingModel } from './model.ts';
@@ -26,7 +26,7 @@ export interface FormCtx {
 // Un giorno del piano mentre lo si costruisce. `category`: DONE e PAST_REST per i giorni
 // passati, poi SKIP, REST, LONG, HARD, RECOVERY, EASY, e con la pioggia STRENGTH,
 // MOBILITY o REST_RAIN.
-export interface PlanSlot {
+interface PlanSlot {
   offset: number;
   iso: string;
   dow: number;
@@ -56,7 +56,7 @@ function findPrimaryActivityForDay(activities: Activity[], iso: string): Activit
 //  6) Se lo stato di forma è scadente (TSB < -15), sostituisco 1 HARD con EASY.
 //  7) Volume totale allineato al weeklyDays dichiarato (inclusa lunga).
 
-export function pickHardDays(slotsAll: PlanSlot[], targetHards: number, preferenceOrder: number[]): void {
+function pickHardDays(slotsAll: PlanSlot[], targetHards: number, preferenceOrder: number[]): void {
   // Lavora solo sugli slot futuri/oggi (non tocca i passati)
   const slots = slotsAll.filter(s => !s.isPast);
   const chosen: PlanSlot[] = [];
@@ -92,11 +92,8 @@ export function pickHardDays(slotsAll: PlanSlot[], targetHards: number, preferen
   chosen.forEach((s, i) => { s.category = 'HARD'; s.hardSeq = i; });
 }
 
-// `workoutForCategory` è ora un thin wrapper su `v2_workoutForCategory`
-// (catalogo evidence-based con citazioni Seiler/Rønnestad/Coggan/Hunter Allen).
-// I motivi del passaggio sono in METHODOLOGY.md changelog 2026-05-14.
-// L'unica categoria custom è PAST_REST: rappresenta uno slot calendario passato
-// senza attività registrata, concetto v1-only legato a buildWeekPlan.
+// Il workout di una categoria del piano, dal catalogo di Training v2 (`v2_workoutForCategory`).
+// L'unica categoria propria del piano è PAST_REST: un giorno passato senza attività registrata.
 export function workoutForCategory(
   cat: string, settings: Settings | null | undefined, profile: PlanProfile | null | undefined, hardIndex: number,
   formCtx: FormCtx | null, isRecoveryWeek: boolean, totalHardsInWeek: number, inputs: Pick<PlanInputs, 'now' | 'segmentEstimates' | 'meso'>,
@@ -142,15 +139,11 @@ export function buildWeekPlan(
     tsb: form.tsb[form.DAYS-1],
   } : null);
 
-  const metrics = computeMetrics(activities, hr, plannedRests, 0, now);
+  const metrics = computeMetrics(activities, hr, 0, now);
   const model = buildTrainingModel(activities, hr, now);
   // Deload programmato dal mesociclo OPPURE deload retroattivo dal training model.
   // Il primo prevale: è una decisione di periodizzazione, non reattiva al carico storico.
   const isRecoveryWeek = (weekRole?.isDeload === true) || model.needsRecoveryWeek;
-  // Nelle settimane peak riduce le hard di 1 solo se l'utente è realmente sotto-recuperato
-  // (TSB normalizzato basso). Nelle settimane build1/build2 il piano cresce normalmente.
-  // Nelle settimane deload, riduce sempre la quantità di HARD a 1 (mantieni intensità,
-  // taglia volume) salvo livello 'new' che resta a 0.
 
   // ---- Riconciliazione con attività REALI della settimana calendario (Lun-Dom) ----
   // Rende il piano dinamico: se hai già fatto hard/lunga, i target residui si riducono.
@@ -158,13 +151,8 @@ export function buildWeekPlan(
   let dynReduceHards = 0;
   let dynNote: string | null = null;
   if (startOffset === 0) {
-    const todayDate = new Date(now); todayDate.setHours(0,0,0,0);
-    const dow = todayDate.getDay();
-    const daysFromMonday = (dow + 6) % 7;
-    const monday = new Date(todayDate);
-    monday.setDate(monday.getDate() - daysFromMonday);
-    const mondayIso = isoDay(monday);
-    const todayIsoStr = isoDay(todayDate);
+    const mondayIso = dayOffsetIso(currentMondayOffset(now), now);
+    const todayIsoStr = dayOffsetIso(0, now);
     const doneThisWeek = activities.filter(a => {
       const iso = isoDay(a.start_date_local);
       return iso >= mondayIso && iso <= todayIsoStr;
@@ -312,20 +300,6 @@ export function buildWeekPlan(
     })();
     const prevPlannedStrength = prev && (prev.category === 'STRENGTH' || prev.category === 'MOBILITY');
     const prevRealStrength = recentStrengthIsos.has(prevIso);
-    // Diagnostica: espone il check nella console per debug
-    if (startOffset === 0 && s.offset === 0) {
-      console.log('[BikeTR rainy-check]', {
-        today: s.iso, prevIso,
-        prevPlannedStrength, prevRealStrength,
-        strengthIsosDetected: Array.from(recentStrengthIsos).sort().slice(-7),
-        recentActivities: activities.slice(0,5).map(a => ({
-          date: isoDay(a.start_date_local),
-          type: a.type,
-          name: a.name,
-          isStrengthMatch: isStrengthActivity(a),
-        })),
-      });
-    }
     if (prevPlannedStrength || prevRealStrength) {
       s.category = 'MOBILITY';
     } else {

@@ -6,7 +6,7 @@ import type { SegmentCache, SegmentEntry } from '../core/segments.ts';
 import type { Activity, SegmentEffort } from '../core/strava-types.ts';
 import { AuthError } from './auth.ts';
 import { loadSegmentCache, saveSegmentCache } from './storage.ts';
-import { fetchActivity, fetchSegmentEfforts, fetchStarredSegments, StravaError } from './strava.ts';
+import { fetchActivity, fetchSegmentEfforts, fetchStarredSegments, sleep, StravaError } from './strava.ts';
 
 // Uscite lette da "Completa da dettagli attività": una richiesta per uscita.
 export const MAX_SEGMENTS_HYDRATE = 30;
@@ -15,8 +15,6 @@ const CACHE_TTL_OK = 24 * 60 * 60 * 1000; // 24h per risultati con tentativi
 const CACHE_TTL_EMPTY = 2 * 60 * 60 * 1000; // 2h per risultati vuoti (potrebbe essere stato flaky)
 const PAUSE_MS = 150;
 const RATE_LIMIT_WAIT_MS = 10000;
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export interface SegmentDiag {
   totalStarred: number;

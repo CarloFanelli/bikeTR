@@ -35,7 +35,7 @@ export function dailyAdvice(
   const day = (offset: number, label: string | null): DayAdvice => ({
     label,
     rec: recommend(activities, settings, rests, offset, profile, inputs),
-    metrics: computeMetrics(activities, hr, rests, offset, now),
+    metrics: computeMetrics(activities, hr, offset, now),
   });
   const today = day(0, null);
   const skipped = new Set(rests);
@@ -70,7 +70,7 @@ export function adviceRows(metrics: DayMetrics, fatigue: Fatigue | null, meso: M
 
 // ---- Calendario dei prossimi 28 giorni ----
 
-export type DayState = 'normal' | 'skip' | 'rain';
+type DayState = 'normal' | 'skip' | 'rain';
 
 const DAY_ICONS: Record<DayState, string> = { normal: '🚴', skip: '⏸️', rain: '🌧️' };
 
@@ -155,7 +155,7 @@ export function modelRows(model: ReturnType<typeof buildTrainingModel>): [string
   ];
 }
 
-export interface MesoBanner {
+interface MesoBanner {
   icon: string;
   title: string;
   // Il ruolo della settimana, mostrato come etichetta colorata.

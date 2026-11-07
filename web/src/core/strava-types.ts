@@ -26,7 +26,7 @@ export interface Athlete {
   created_at?: string;
 }
 
-export interface Totals {
+interface Totals {
   count: number;
   distance: number;
   moving_time: number;
@@ -145,7 +145,7 @@ export interface Split {
 }
 
 // Un giro (lap) registrato dal ciclocomputer.
-export interface Lap {
+interface Lap {
   lap_index: number;
   name: string;
   start_index: number;
@@ -165,7 +165,7 @@ export interface Lap {
 }
 
 // Il miglior tempo su una distanza standard (es. "5k") dentro l'attività.
-export interface BestEffort {
+interface BestEffort {
   name: string;
   distance: number;
   elapsed_time: number;

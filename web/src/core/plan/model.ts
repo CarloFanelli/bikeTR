@@ -1,5 +1,6 @@
 // Il modello di allenamento (sezione Allenamento): abitudini e carico delle ultime 6 settimane.
 
+import { buildDateHelpers } from '../dates.ts';
 import type { HrProfile } from '../hr.ts';
 import { activityLoad, isHard, typeWeight } from '../load.ts';
 import type { Activity } from '../strava-types.ts';
@@ -7,11 +8,7 @@ import type { Activity } from '../strava-types.ts';
 // ---- Training model: analizza 42gg per costruire un profilo di allenamento ----
 export function buildTrainingModel(activities: Activity[], hr: Pick<HrProfile, 'hrMax' | 'hrLthr' | 'ftp'>, now: Date) {
   const { hrMax, hrLthr, ftp } = hr;
-  const today = new Date(now); today.setHours(0,0,0,0);
-  const daysFromIso = (iso: string) => {
-    const d = new Date(iso); d.setHours(0,0,0,0);
-    return Math.round((today.getTime() - d.getTime()) / 86400000);
-  };
+  const { ago: daysFromIso } = buildDateHelpers(0, now);
   const WINDOW = 42;
   const acts = activities.filter(a => {
     const da = daysFromIso(a.start_date_local);

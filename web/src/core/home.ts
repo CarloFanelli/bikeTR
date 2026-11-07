@@ -1,7 +1,7 @@
 // Quello che mostra Home: precisione dei dati, profilo, record e totali dell'atleta,
 // con i loro testi e arrotondamenti.
 
-import { fmtKm, fmtTime } from './format.ts';
+import { fmtKm, fmtTime, kmh } from './format.ts';
 import type { HrProfile } from './hr.ts';
 import type { buildProfile, personalRecords } from './profile.ts';
 import type { Activity, AthleteStats } from './strava-types.ts';
@@ -12,7 +12,7 @@ interface ShownValue {
   note: string;
 }
 
-export interface DataPrecision {
+interface DataPrecision {
   // Da dove viene il carico di ogni uscita: icona, parte in grassetto, resto.
   mode: { icon: string; label: string; detail: string };
   ftp: ShownValue;
@@ -81,7 +81,7 @@ export function profileRows(p: ReturnType<typeof buildProfile>): [string, string
   return rows;
 }
 
-export interface RecordRow {
+interface RecordRow {
   label: string;
   activity: Activity;
   value: string;
@@ -93,7 +93,7 @@ export function recordRows(recs: ReturnType<typeof personalRecords>): RecordRow[
   const rows: [string, Activity | null, (a: Activity) => string][] = [
     ['Più lunga', recs.longest, a => `${fmtTime(a.moving_time)} · ${fmtKm(a.distance)}`],
     ['Più dislivello', recs.mostClimb, a => `↑${Math.round(a.total_elevation_gain)} m`],
-    ['Più veloce (>30km)', recs.fastest, a => `${((a.average_speed || 0) * 3.6).toFixed(1)} km/h`],
+    ['Più veloce (>30km)', recs.fastest, a => `${kmh(a.average_speed || 0)} km/h`],
     ['Più dura (Suffer)', recs.mostSuffer, a => `${a.suffer_score || 0} SS`],
   ];
   return rows.flatMap(([label, activity, value]) => activity ? [{ label, activity, value: value(activity) }] : []);

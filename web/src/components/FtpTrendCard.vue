@@ -4,6 +4,7 @@
 import { computed } from 'vue';
 import { VCard, VCardSubtitle, VCardText, VCardTitle } from 'vuetify/components';
 import type { FtpTrend } from '../core/ftp.ts';
+import ChartLegend from './ChartLegend.vue';
 import InsightList from './InsightList.vue';
 import LineChart from './LineChart.vue';
 import MetricGrid from './MetricGrid.vue';
@@ -44,12 +45,10 @@ const tooltip = {
       </p>
       <template v-else>
         <LineChart :data="data" :tooltip="tooltip" :height="160" :begin-at-zero="false" />
-        <div class="d-flex flex-wrap justify-center ga-4 mt-2 text-caption text-medium-emphasis">
-          <span class="d-flex align-center ga-1"><i class="legend-line" style="background: #fc5200" /> FTP</span>
-          <span class="d-flex align-center ga-1">
-            <i class="legend-line" style="background: #ffd700" /> Picco storico ({{ trend.peakFtp }}W)
-          </span>
-        </div>
+        <ChartLegend
+          line
+          :items="[{ color: '#fc5200', label: 'FTP' }, { color: '#ffd700', label: `Picco storico (${trend.peakFtp}W)` }]"
+        />
         <MetricGrid :items="rows" class="my-3" />
         <div v-if="trend.isPlateauDetected" class="plateau my-2">
           <b>⚠️ Plateau rilevato</b> — FTP stabile da diverse settimane. Considera un cambio di protocollo per sbloccare la
@@ -62,13 +61,6 @@ const tooltip = {
 </template>
 
 <style scoped>
-.legend-line {
-  display: inline-block;
-  width: 12px;
-  height: 3px;
-  border-radius: 2px;
-}
-
 .plateau {
   padding: 0.6rem 0.8rem;
   border-left: 4px solid #fc5200;

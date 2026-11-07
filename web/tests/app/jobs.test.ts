@@ -9,7 +9,8 @@ import { downloadJson } from '../../src/data/export.ts';
 import { MAX_STREAMS_FETCH } from '../../src/data/streams.ts';
 import { fetchActivities, fetchActivity, fetchActivityStreams } from '../../src/data/strava.ts';
 
-vi.mock('../../src/data/strava.ts', () => ({
+vi.mock('../../src/data/strava.ts', async (original) => ({
+  ...(await original<typeof import('../../src/data/strava.ts')>()),
   fetchActivities: vi.fn(), fetchActivity: vi.fn(), fetchActivityStreams: vi.fn(),
 }));
 // Il file scaricato dal browser: qui ne conta solo il contenuto (e la dimensione, 1234 byte).

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildFormTrend } from '../../src/core/form.ts';
 import { nextFtpHistory, type FtpPoint } from '../../src/core/ftp.ts';
 import {
-  athleteResponseCheck, chooseNextBlock, deficitToBlock, getTaperPhase, getWeekRoleInBlock, mesoPhaseForWeek,
+  athleteResponseCheck, chooseNextBlock, deficitToBlock, getTaperPhase, getWeekRoleInBlock,
   mesoSummary, nextMesocycle, withFtpPoint, type Mesocycle,
 } from '../../src/core/meso.ts';
 import { mesocycleOf, plan, planExpected, settingsOf, throws } from './plan-reference.ts';
@@ -25,13 +25,11 @@ describe('mesociclo e taper', () => {
       .toEqual(displayed(recorded.weekRoles));
   });
 
-  it('blocco scelto dal deficit, blocco successivo, fase della settimana', () => {
+  it('blocco scelto dal deficit e blocco successivo', () => {
     const p = plan.meso;
     expect(p.deficits.map(deficitToBlock)).toEqual(recorded.deficits);
     expect(p.nextBlock.blocks.flatMap((blockId: string) => p.nextBlock.deficits.map((area: string | null) =>
       chooseNextBlock({ blockId }, area ? { primaryDeficit: { area } } : null)))).toEqual(recorded.nextBlock);
-    expect(p.weekRoles.blocks.flatMap((blockId: string) =>
-      [0, 1, 3, 5].map(w => mesoPhaseForWeek({ blockId, weekInBlock: w })))).toEqual(recorded.phases);
   });
 
   const inits: { now: string; mesocycle: string | null; settings: string; result: unknown; stored: unknown }[] = recorded.inits;

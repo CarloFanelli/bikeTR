@@ -24,10 +24,9 @@ export function buildFormTrend(
   // Usa TUTTE le attività (con peso per tipo via activityLoad)
   const DAYS = 90;
   const daily: number[] = new Array(DAYS).fill(0);
-  const today = new Date(now); today.setHours(0,0,0,0);
+  const { ago } = buildDateHelpers(0, now);
   activities.forEach(a => {
-    const d = new Date(a.start_date_local); d.setHours(0,0,0,0);
-    const delta = Math.round((today.getTime() - d.getTime()) / 86400000);
+    const delta = ago(a.start_date_local);
     if (delta >= 0 && delta < DAYS) daily[DAYS - 1 - delta] += activityLoad(a, hrMax, hrLthr, ftp);
   });
   const ctl: number[] = [], atl: number[] = [];
@@ -44,7 +43,7 @@ export function buildFormTrend(
 }
 
 // Quello che le osservazioni prendono da fuori dai calcoli della forma.
-export interface InsightContext {
+interface InsightContext {
   hrLthr: number | null | undefined;
   ftp: number | null | undefined;
   now: Date;

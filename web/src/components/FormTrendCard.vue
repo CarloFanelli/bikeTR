@@ -5,6 +5,7 @@ import { computed } from 'vue';
 import { VCard, VCardText, VCardTitle } from 'vuetify/components';
 import type { formView } from '../core/analysis-view.ts';
 import type { FormTrend } from '../core/form.ts';
+import ChartLegend from './ChartLegend.vue';
 import InsightList from './InsightList.vue';
 import LineChart from './LineChart.vue';
 import MetricGrid from './MetricGrid.vue';
@@ -20,6 +21,7 @@ const SERIES = [
   { key: 'atl', name: 'ATL', color: '#ff6b6b', legend: 'ATL (fatica, 7gg)', dash: [] },
   { key: 'tsb', name: 'TSB', color: '#fc5200', legend: 'TSB (forma = CTL−ATL)', dash: [4, 3] },
 ] as const;
+const LEGEND = SERIES.map(s => ({ color: s.color, label: s.legend }));
 
 const data = computed(() => ({
   labels: props.view.labels,
@@ -39,11 +41,7 @@ const tooltip = {
     <VCardTitle>📈 Trend forma (CTL / ATL / TSB)</VCardTitle>
     <VCardText>
       <LineChart :data="data" :tooltip="tooltip" :height="200" />
-      <div class="d-flex flex-wrap justify-center ga-4 mt-2 text-caption text-medium-emphasis">
-        <span v-for="s in SERIES" :key="s.key" class="d-flex align-center ga-1">
-          <i class="legend-dot" :style="{ background: s.color }" /> {{ s.legend }}
-        </span>
-      </div>
+      <ChartLegend :items="LEGEND" />
       <MetricGrid :items="view.rows" class="mt-3" />
       <InsightList :items="insights" title="Perché questo stato?" />
       <p class="text-caption text-medium-emphasis mt-2">
@@ -53,12 +51,3 @@ const tooltip = {
     </VCardText>
   </VCard>
 </template>
-
-<style scoped>
-.legend-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-}
-</style>

@@ -26,7 +26,7 @@ export interface PaperRef {
   journal?: string | null;
 }
 
-export interface RetrievedPaper extends PaperRef {
+interface RetrievedPaper extends PaperRef {
   score: number;
 }
 

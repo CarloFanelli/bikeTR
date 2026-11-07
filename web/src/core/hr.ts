@@ -2,7 +2,7 @@
 // stimati, distribuzione nelle zone di frequenza cardiaca.
 
 import { buildDateHelpers } from './dates.ts';
-import type { SegmentEstimates } from './segments.ts';
+import { effortDecay, type SegmentEstimates } from './segments.ts';
 import type { Activity } from './strava-types.ts';
 
 // Le impostazioni dell'atleta che contano per FTP e frequenza cardiaca.
@@ -32,12 +32,32 @@ export interface HrProfile {
 }
 
 // Watt di un'attività: la potenza normalizzata di Strava, se c'è, altrimenti la media.
-const activityWatts = (a: Activity): number => a.weighted_average_watts || a.average_watts || 0;
+export const activityWatts = (a: Activity): number => a.weighted_average_watts || a.average_watts || 0;
+
+// Durate degli sforzi per la stima FTP, dalla più affidabile, e il fattore che porta
+// la loro potenza alla FTP.
+export const FTP_BUCKETS = [
+  { min: 40*60, max: 90*60, factor: 0.98, label: '40-90 min' },
+  { min: 20*60, max: 40*60, factor: 0.95, label: '20-40 min' },
+  { min: 10*60, max: 20*60, factor: 0.90, label: '10-20 min' },
+  { min: 0,     max: 10*60, factor: 0.85, label: '< 10 min' },
+];
+
+// Stima LTHR. M1: FC massima osservata × 0.91 (media Friel/Coggan/Allen 88-92%; vale
+// anche al contrario, HRmax = LTHR / 0.91). M2: miglior FC media di un'uscita di 20-60
+// minuti × 0.98, solo se la sua FC massima arriva al 90% di quella osservata: l'atleta
+// ha spinto davvero, non è un Z2 lungo.
+export const LTHR_OVER_HRMAX = 0.91;
+export const LTHR_TEST_FACTOR = 0.98;
+export const isLthrTestLike = (a: Activity, observedHRmax: number): boolean => !!(
+  a.average_heartrate && a.max_heartrate &&
+  (a.moving_time || 0) >= 20*60 && (a.moving_time || 0) <= 60*60 &&
+  a.max_heartrate >= observedHRmax * 0.9
+);
 
 // ---- Stima FTP ----
-// Stima FTP da attività con power-duration model multi-bucket + decadimento temporale.
-// Bucket: 40-90min (×0.98), 20-40min (×0.95), 10-20min (×0.90), <10min fallback (×0.85).
-// Sforzi recenti pesano di più (half-life 8 settimane).
+// Stima FTP da attività con power-duration model multi-bucket (FTP_BUCKETS) + decadimento
+// temporale: sforzi recenti pesano di più (half-life 8 settimane).
 // Limitazione: senza streams reali, il WAP summary di Strava non è una NP esatta
 // ma una buona approssimazione; per 20-60 min ragionevolmente accurato.
 export function estimateFTP(activities: Activity[] | null | undefined, now: Date): number | null {
@@ -46,28 +66,15 @@ export function estimateFTP(activities: Activity[] | null | undefined, now: Date
   const withPower = bikes.filter(a => activityWatts(a));
   if (!withPower.length) return null;
 
-  const decay = (a: Activity) => {
-    const ageWeeks = (now.getTime() - new Date(a.start_date_local).getTime()) / (7 * 86400000);
-    return Math.exp(-ageWeeks / 12);
-  };
-
-  // Power-duration buckets per attività
-  const buckets = [
-    { min: 40*60, max: 90*60, factor: 0.98 },
-    { min: 20*60, max: 40*60, factor: 0.95 },
-    { min: 10*60, max: 20*60, factor: 0.90 },
-    { min: 0,     max: 10*60, factor: 0.85 },
-  ];
-
   // Priorità: bucket più lunghi sono più affidabili per FTP (già ordinati per durata decrescente):
   // vale il primo con attività, con il best recency-weighted.
-  for (const b of buckets) {
+  for (const b of FTP_BUCKETS) {
     const pool = withPower.filter(a => {
       const t = a.moving_time || 0;
       return t >= b.min && t < b.max;
     });
     if (!pool.length) continue;
-    const best = pool.map(a => ({ watts: activityWatts(a), weighted: activityWatts(a) * decay(a) }))
+    const best = pool.map(a => ({ watts: activityWatts(a), weighted: activityWatts(a) * effortDecay(a.start_date_local, now) }))
       .sort((a, c) => c.weighted - a.weighted)[0];
     return Math.round(best.watts * b.factor);
   }
@@ -78,11 +85,7 @@ export function estimateFTP(activities: Activity[] | null | undefined, now: Date
 }
 
 // ---- Stima LTHR ----
-// Approccio multi-metodo, prende il MAX:
-//   M1) HRmax osservato × 0.91  (midpoint Friel/Coggan/Allen: LTHR ≈ 88-92% HRmax)
-//   M2) Best avg HR su attività 20-60 min × 0.98 (se contiene un vero test allora ≈ LTHR)
-// Filtro: M2 usa solo attività con max_HR ≥ 0.9 × HRmax osservato (garanzia che l'atleta
-// abbia davvero spinto in quell'uscita, non un Z2 mal classificato come "lungo sostenuto").
+// Il maggiore tra M1 e M2 (vedi LTHR_OVER_HRMAX e isLthrTestLike).
 export function estimateLTHR(activities: Activity[] | null | undefined): number | null {
   if (!activities) return null;
   const bikes = activities.filter(a =>
@@ -93,20 +96,12 @@ export function estimateLTHR(activities: Activity[] | null | undefined): number 
   if (!maxHrs.length) return null;
   const observedHRmax = Math.max(...maxHrs);
 
-  // M1: 91% di HRmax osservato (media letteratura Friel/Coggan/Allen 88-92%).
-  // 0.91 è lo standard simmetrico usato anche dalla stima inversa HRmax = LTHR/0.91.
-  const m1 = Math.round(observedHRmax * 0.91);
-
-  // M2: best avg HR in attività 20-60 min dove max HR era vicino al max osservato
-  const testLike = bikes.filter(a =>
-    a.average_heartrate && a.max_heartrate &&
-    (a.moving_time||0) >= 20*60 && (a.moving_time||0) <= 60*60 &&
-    a.max_heartrate >= observedHRmax * 0.9
-  );
+  const m1 = Math.round(observedHRmax * LTHR_OVER_HRMAX);
+  const testLike = bikes.filter(a => isLthrTestLike(a, observedHRmax));
   let m2 = null;
   if (testLike.length) {
     const best = Math.max(...testLike.map(a => a.average_heartrate || 0));
-    m2 = Math.round(best * 0.98);
+    m2 = Math.round(best * LTHR_TEST_FACTOR);
   }
 
   return Math.max(m1, m2 || 0);
@@ -139,7 +134,7 @@ export function resolveHr(
   const ftp = ftpDecl || (ftpSource === 'estimated' ? ftpEst : null);
 
   const hrMax = s.hrMax || (segEst.hrMaxFromSegments)
-    || (hrLthr ? Math.round(hrLthr / 0.91) : undefined);
+    || (hrLthr ? Math.round(hrLthr / LTHR_OVER_HRMAX) : undefined);
   return {
     hrMax, hrLthr, ftp,
     lthrDecl, lthrEst, lthrSource,

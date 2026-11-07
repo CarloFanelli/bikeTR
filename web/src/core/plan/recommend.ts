@@ -14,10 +14,10 @@ import type { Settings } from '../settings.ts';
 import type { Activity } from '../strava-types.ts';
 import { isLongRideDay } from './dates.ts';
 import { planHr } from './inputs.ts';
-import type { Advice, PlanInputs, PlanProfile, SyntheticActivity } from './inputs.ts';
+import type { Advice, PlanInputs, PlanProfile } from './inputs.ts';
 
 // Riposo = nessuna attività (di qualsiasi tipo) in quel giorno.
-export function restStreak(allActs: Activity[], _plannedSet: Set<string> | null, dayOffset: number, now: Date): number {
+export function restStreak(allActs: Activity[], dayOffset: number, now: Date): number {
   const actDays = new Set(allActs.map(a => isoDay(a.start_date_local)));
   const { refIso } = buildDateHelpers(dayOffset, now);
   let streak = 0;
@@ -80,7 +80,7 @@ export function recommend(
   const dow = ref.getDay();
   const longRideDay = isLongRideDay(dow, settings);
 
-  const restDays = restStreak(bikeActs, plannedSet, dayOffset, now);
+  const restDays = restStreak(bikeActs, dayOffset, now);
   const restTomorrow = plannedSet.has(refIso(1));
   const skipThisDay = plannedSet.has(refIso(0));
 
@@ -294,13 +294,11 @@ export function recommend(
 
 // I numeri sotto il consiglio del giorno `dayOffset`: carico 7 e 28 giorni, ore, sessioni dure, giorni di riposo.
 export function computeMetrics(
-  activities: Activity[], hr: Pick<HrProfile, 'hrMax' | 'hrLthr' | 'ftp'>, plannedRests: string[] | null | undefined,
-  dayOffset: number, now: Date,
+  activities: Activity[], hr: Pick<HrProfile, 'hrMax' | 'hrLthr' | 'ftp'>, dayOffset: number, now: Date,
 ) {
   const { hrMax, hrLthr, ftp } = hr;
   const allActs = activities.slice();
   const bikeActs = activities.filter(a => a.type && a.type.includes('Ride'));
-  const plannedSet = new Set(plannedRests || []);
   const { ago } = buildDateHelpers(dayOffset, now);
   const allLast7 = allActs.filter(a => ago(a.start_date_local) >= 0 && ago(a.start_date_local) < 7);
   const allLast28 = allActs.filter(a => ago(a.start_date_local) >= 0 && ago(a.start_date_local) < 28);
@@ -310,38 +308,6 @@ export function computeMetrics(
   const ratio = chronic >= 50 ? acute / chronic : null;
   const hoursThisWeek = allLast7.reduce((s,a) => s + a.moving_time/3600, 0);
   const hardsLast7 = last7Bike.filter(a => isHard(a, hrLthr, ftp)).length;
-  const restDays = restStreak(allActs, plannedSet, dayOffset, now);
+  const restDays = restStreak(allActs, dayOffset, now);
   return { acute, chronic, ratio, hoursThisWeek, hardsLast7, restDays };
-}
-
-// Per proiettare il piano, aggiungo un'"attività sintetica" per ogni giorno pianificato,
-// così il giorno successivo considera il lavoro ipotetico di quello precedente.
-export function synthActivityFromRec(
-  rec: Pick<Advice, 'title'>, dayOffset: number, settings: Settings | null | undefined, inputs: Pick<PlanInputs, 'now' | 'segmentEstimates'>,
-): SyntheticActivity | null {
-  const { hrLthr } = planHr(settings, undefined, inputs);
-  const t = rec.title;
-  const make = (minutes: number, hrFactor: number): SyntheticActivity => {
-    const d = new Date(inputs.now);
-    d.setDate(d.getDate() + dayOffset);
-    d.setHours(9,0,0,0);
-    return {
-      type: 'Ride',
-      start_date_local: d.toISOString(),
-      moving_time: minutes * 60,
-      distance: minutes * 500,
-      total_elevation_gain: 0,
-      has_heartrate: !!hrLthr,
-      average_heartrate: hrLthr ? hrLthr * hrFactor : undefined,
-      _synthetic: true,
-    };
-  };
-  if (t.includes('Riposo') || t.includes('pianificato')) return null;
-  if (t.includes('Recupero')) return make(50, 0.70);
-  if (t.includes('VO2') || t.includes('Soglia') || t.includes('Sweet Spot')) return make(75, 0.93);
-  if (t.includes('lunga')) return make(150, 0.80);
-  if (t.includes('Riattivazione')) return make(60, 0.75);
-  if (t.includes('Fondo') || t.includes('Z2')) return make(75, 0.78);
-  if (t.includes('pedalato')) return null;
-  return null;
 }

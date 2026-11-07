@@ -4,9 +4,12 @@
 import { computed } from 'vue';
 import { VCard, VCardText, VCardTitle } from 'vuetify/components';
 import { LOAD_KINDS, type loadChartView } from '../core/training-view.ts';
+import ChartLegend from './ChartLegend.vue';
 import LineChart from './LineChart.vue';
 
 const props = defineProps<{ chart: ReturnType<typeof loadChartView> }>();
+
+const LEGEND = LOAD_KINDS.map(kind => ({ color: kind.color, label: kind.tag }));
 
 const data = computed(() => {
   const { labels, loads, colors, average } = props.chart;
@@ -35,20 +38,7 @@ const tooltip = {
     <VCardTitle>📊 Carico ultimi 30 giorni</VCardTitle>
     <VCardText>
       <LineChart :data="data" :tooltip="tooltip" :height="180" />
-      <div class="d-flex flex-wrap justify-center ga-4 mt-2 text-caption text-medium-emphasis">
-        <span v-for="kind in LOAD_KINDS" :key="kind.tag" class="d-flex align-center ga-1">
-          <i class="legend-dot" :style="{ background: kind.color }" /> {{ kind.tag }}
-        </span>
-      </div>
+      <ChartLegend :items="LEGEND" />
     </VCardText>
   </VCard>
 </template>
-
-<style scoped>
-.legend-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-}
-</style>
