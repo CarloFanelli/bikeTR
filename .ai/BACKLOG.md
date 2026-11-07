@@ -100,3 +100,7 @@
 ### B-23 · open
 - **What**: Remove or make reachable the "no ride history: start with pure aerobic work" advice. With no bike rides, the "Reactivation" advice always wins first, so this branch never runs.
 - **From**: vue-ts-restructure (dev task 05, 2026-11-06)
+
+### B-24 · open
+- **What**: The Coach can use two chat models at the same time, a small cheap one for simple jobs and a bigger one for writing the plan, which needs .env to name more than one model (model routing).
+- **From**: model-switch (interview, 2026-11-07)

@@ -16,6 +16,22 @@ _Avoid_: "settings" (also covers zones, rest days and the Coach model).
 A ride's second-by-second power and heart-rate data from Strava, downloaded once per ride by the **Coach service** and kept across restarts. Without them, a ride's training load comes from its summary figures.
 _Avoid_: "precision data" (the browser button's label, not the data), "streams" outside code (Strava's API name).
 
+### Chat model
+The model that writes the Coach's answer, picked in `.env`: an Ollama model (`qwen2.5:7b` by default) or a cloud model reached through an OpenAI-compatible endpoint (reference: Claude). The browser never chooses it.
+_Avoid_: "the model" alone (the **Search model** is a model too), "provider" (where the chat model runs, not the model itself), "LLM" (generic).
+
+### Search model
+The small text-embedding model inside the **Coach service** that encodes the search text and the papers to find the 4 closest. It is the same for every **Chat model** and works offline once installed.
+_Avoid_: "embedding model" in user-facing text (too technical), "nomic-embed-text" (the Ollama model it replaces).
+
+### Live check
+One command that runs the Coach on 3 made-up situations with the **Chat model** `.env` names and writes a results file into the repository, so a run made on another computer can be evaluated here.
+_Avoid_: "test" (the automated tests use fake models), "test set" or "eval" (the scored set of situations planned next).
+
+### Spending cap
+The dollar limit in `.env` on cloud **Chat model** spending: the **Coach service** keeps a running total of answer costs and refuses cloud requests once it reaches the limit. Ollama answers never count.
+_Avoid_: "budget" (confused with the token limit per answer), "quota" (the provider's own rate limits).
+
 ## Decisions
 
 - **The browser sends the athlete profile instead of the service estimating it**: FTP and heart-rate values travel with each Coach request. Why: the estimates use segment data only the browser has, and the Coach must use the same numbers the app shows.
