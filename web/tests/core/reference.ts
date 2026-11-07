@@ -1,5 +1,5 @@
 // Le uscite inventate (tests/fixtures/rides.json) e i risultati registrati dal JavaScript
-// di prima della conversione (tests/fixtures/load-expected.json, vedi tests/reference/record.ts).
+// di prima della conversione (tests/fixtures/load-expected.json), che non si possono più registrare.
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -24,7 +24,7 @@ export const streamsOf = (s: Record<string, [number, number][]>): Streams =>
   Object.fromEntries(Object.entries(s).map(([k, blocks]) =>
     [k, { data: blocks.flatMap(([v, n]) => Array<number>(n).fill(v)) }]));
 
-// Le attività con le metriche degli stream già scaricati, come in record.ts.
+// Le attività con le metriche degli stream già scaricati.
 export function activities(): Activity[] {
   const acts: Activity[] = structuredClone(rides.activities);
   for (const [id, s] of Object.entries(rides.streams.byActivity)) {

@@ -37,7 +37,7 @@ beforeEach(() => {
   vi.mocked(recordFtpPoint).mockReset();
 });
 
-describe('apertura della nuova app', () => {
+describe('apertura dell\'app', () => {
   it('collegato: atleta, statistiche e 60 attività con le metriche già scaricate', async () => {
     await startSession();
     expect(session.phase).toBe('ready');
@@ -105,7 +105,7 @@ describe('apertura della nuova app', () => {
     expect([session.phase, session.missing, session.error]).toEqual(['connect', [], null]);
   });
 
-  it('Strava non raggiungibile: il messaggio di oggi', async () => {
+  it('Strava non raggiungibile: il messaggio che lo spiega', async () => {
     vi.mocked(fetchActivities).mockRejectedValue(new Error('API /athlete/activities: 503'));
     await startSession();
     expect([session.phase, session.error]).toEqual(['error', 'API /athlete/activities: 503']);

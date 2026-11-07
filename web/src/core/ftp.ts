@@ -1,5 +1,5 @@
 // Storico della FTP (un punto a settimana), andamento e plateau, e dettaglio del
-// calcolo delle stime di FTP e LTHR per la tab Analisi.
+// calcolo delle stime di FTP e LTHR per Analisi.
 
 import { isoDay } from './format.ts';
 import type { HrProfile } from './hr.ts';
@@ -125,7 +125,7 @@ export function buildFtpInsights(
 }
 
 // =====================================================================
-// Breakdown FTP / LTHR — dettaglio del calcolo nella tab Analisi
+// Breakdown FTP / LTHR — dettaglio del calcolo in Analisi
 // Replica internamente estimateFTP / estimateLTHR (hr.ts) esponendo le attività
 // che hanno determinato la stima.
 // =====================================================================

@@ -1,4 +1,4 @@
-// Il consiglio del giorno nella tab Allenamento ("regole semplici") e i numeri sotto.
+// Il consiglio del giorno in Allenamento ("regole semplici") e i numeri sotto.
 // Focus: miglioramento soglia/FTP, zone basate su FC.
 // Considera: carico 7/28gg, freschezza, sessioni dure recenti, riposi pianificati.
 // Supporta "perspective shift" con dayOffset: 0 = oggi, 1 = domani, ecc.
@@ -274,7 +274,7 @@ export function recommend(
     if (freshBonus) extra.push(`${restDays} gg riposo → qualità alta`);
     if (canPushBecauseTomorrowRest && !freshBonus) extra.push('domani riposo → puoi spingere');
     // Con il deficit scelto dal plateau FTP e nessun deficit nel power profile questa riga
-    // lancia un errore, come prima: la tab Allenamento non mostra il consiglio.
+    // lancia un errore, tenuto finché le formule non si correggono: Allenamento non mostra il consiglio.
     if (deficit) extra.push(`focus: ${powerProfile!.primaryDeficit!.label}`);
     if (isMuscleFatigued) extra.push(`fatica muscolare ${mFatigue}/100`);
     if (extra.length) rec.reason += ' · ' + extra.join(' · ');

@@ -49,8 +49,8 @@ describe('mesociclo e taper', () => {
   });
 });
 
-// La card Forma e il punto FTP di oggi (registrati con i calcoli della tab Analisi).
-describe('mesociclo nella tab Analisi', () => {
+// La card Forma e il punto FTP di oggi, come li calcola Analisi.
+describe('mesociclo in Analisi', () => {
   describe.each(scenarios)('scenario $name', sc => {
     const { acts, profile, expected: exp } = scenario(sc);
     const stored: Mesocycle | null = sc.mesocycle ? rides.mesocycles[sc.mesocycle] : null;

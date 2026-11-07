@@ -61,7 +61,7 @@ describe('storico per l\'export', () => {
     expect(exportRange([])).toEqual({ first: '—', last: '—' });
   });
 
-  it('stima di chiamate e minuti, e dimensione del file, come oggi', () => {
+  it('stima di chiamate e minuti, e dimensione del file', () => {
     expect([estimate('compact', 90), estimate('detailed', 90), estimate('max', 90)])
       .toEqual([{ calls: 0, minutes: 0 }, { calls: 90, minutes: 15 }, { calls: 180, minutes: 30 }]);
     expect([formatBytes(900), formatBytes(2048), formatBytes(5 * 1024 * 1024)]).toEqual(['900 B', '2.0 KB', '5.0 MB']);

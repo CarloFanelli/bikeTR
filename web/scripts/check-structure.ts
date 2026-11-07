@@ -14,11 +14,6 @@ const SOURCE = /\.(ts|vue|js|mjs)$/;
 // che da solo richiede secondi a ogni avvio.
 const IMPORT = /\b(?:import|export)\s+[\w*{}\s,$]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*\(?\s*['"]([^'"]+)['"]/g;
 const RESOLVE_SUFFIXES = ['', '.ts'];
-// Il JavaScript di oggi resta fuori dai controlli finché la nuova app non lo sostituisce.
-const LEGACY = new Set([
-  'activity.js', 'analysis.js', 'app.js', 'coach.js', 'constants.js', 'export.js',
-  'predictions.js', 'strava.js', 'training.js', 'training_v2.js',
-]);
 
 const args = process.argv.slice(2);
 const roots = (args.length ? args : [path.join(import.meta.dirname, '..')]).map((dir) => path.resolve(dir));
@@ -26,13 +21,13 @@ const posix = (from: string, file: string): string => path.relative(from, file).
 const rel = (file: string): string => posix(process.cwd(), file);
 
 // File sorgente sotto la cartella, esclusi pacchetti installati e cartelle nascoste.
-function sourceFiles(root: string, dir: string = root): string[] {
+function sourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      return entry.name === 'node_modules' || entry.name.startsWith('.') ? [] : sourceFiles(root, full);
+      return entry.name === 'node_modules' || entry.name.startsWith('.') ? [] : sourceFiles(full);
     }
-    return SOURCE.test(entry.name) && !LEGACY.has(posix(root, full)) ? [full] : [];
+    return SOURCE.test(entry.name) ? [full] : [];
   });
 }
 

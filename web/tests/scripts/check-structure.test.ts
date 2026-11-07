@@ -73,13 +73,18 @@ describe('controllo della struttura', { timeout: 20_000 }, () => {
     expect(out).not.toContain('src/ok.ts');
   });
 
-  it('non conta pacchetti installati, file dati e il JavaScript di oggi', () => {
+  it('non conta pacchetti installati e file dati', () => {
     const dir = project({
       'node_modules/pkg/index.ts': lines(600),
       'data.json': lines(600),
-      'app.js': lines(600),
       'src/a.ts': 'export const a = 1;\n',
     });
     expect(check(dir).status).toBe(0);
+  });
+
+  it('controlla anche i file JavaScript, ovunque siano', () => {
+    const { status, out } = check(project({ 'app.js': lines(600), 'src/a.ts': 'export const a = 1;\n' }));
+    expect(status).toBe(1);
+    expect(out).toContain('app.js');
   });
 });

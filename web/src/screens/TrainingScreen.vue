@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Allenamento: consiglio di oggi (e anteprima del prossimo se oggi è saltato), calendario
 // dei 28 giorni, grafico del carico e piano del mese. Ogni clic sul calendario salva il
-// giorno e ricalcola tutto, come la tab di oggi.
+// giorno e ricalcola tutto.
 import { computed, ref } from 'vue';
 import { VAlert, VCard, VCardText, VCardTitle } from 'vuetify/components';
 import { planInputs, session } from '../app/session.ts';

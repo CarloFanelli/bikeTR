@@ -195,3 +195,61 @@ Before this feature, the whole Coach ran in the browser: it computed the trainin
 - **Decision**: when the browser leaves a request (new request from the same tab, reload, closed tab, dropped connection) or the silence limit fires, the service cancels that request's work and closes its connection to Ollama, which stops generating. Each request has its own connection, so other tabs carry on. Tests use a real fake Ollama server and a real uvicorn server to measure that the connection closes within 5 seconds.
 - **Why**: an abandoned answer that kept running in Ollama held the Mac's processor at 100%.
 - **Cost**: it relies on uvicorn telling the app that the client left while nothing is being written. The installed uvicorn and Starlette do this; an upgrade of either must keep the cancellation test green.
+
+## vue-ts-restructure — the browser app moves to Vue and TypeScript (2026-11-06)
+
+Before this feature, the browser app was hand-written JavaScript: files of up to 1,900 lines mixed calculations, saved data and HTML strings, nothing checked their types, and only the Coach service had tests. The Auth server was plain JavaScript too.
+
+### 2026-11-06 · The app is Vue and TypeScript, turned into JavaScript by Vite as it is served
+
+- **Decision**: the app is rewritten in Vue 3 and TypeScript under `web/src/`. A new `app` container (the official `node:22-alpine` image with a start script, no Dockerfile) runs Vite's development server behind nginx, which turns each TypeScript and Vue file into JavaScript when the browser asks for it. There is no optimized built version. This revises "Official images and bind mounts, no Dockerfile and no build step" (2026-11-05): the app now has a build step, done live by Vite, and still no Dockerfile.
+- **Why**: types and small tested files catch mistakes the old files let through, and Vue screens replace HTML built by joining strings. Vite keeps the old habit: a saved change shows in the open page within seconds.
+- **Cost**: npm packages to install at the first start (kept in a Docker volume) and to keep up to date; the first start takes about a minute longer.
+
+### 2026-11-06 · The Auth server is TypeScript, run directly by Node, still without packages
+
+- **Decision**: `docker/auth/server.mjs` becomes `server.ts`, which Node 22 runs by removing the types; it still uses only Node's built-in modules. This revises "The auth server is plain Node with no packages" (2026-11-05) in language only.
+- **Why**: the same check command covers it, and nothing needs to be built or installed.
+- **Cost**: only TypeScript that Node can strip is allowed (no `enum`, no parameter properties); its types are checked by the check command, not when it starts.
+
+### 2026-11-06 · Calculations are functions that get everything as input and keep the old numbers
+
+- **Decision**: every calculation moves to `web/src/core/` and receives settings, saved values and the current time as arguments. Results recorded from the JavaScript app before the move are the reference the tests compare with, and the Coach service's reference results are regenerated identically from the new code.
+- **Why**: a rewrite must not change a single number, and a function that reads nothing by itself can be tested with made-up data.
+- **Cost**: known wrong behaviors are kept as they were (formula fixes are their own feature), and the recorded results can no longer be re-recorded once the old app is gone.
+
+### 2026-11-06 · One check command for types, tests, import loops and file length
+
+- **Decision**: `docker compose run --rm --no-deps app npm run check` type-checks the app and the Auth server, runs their tests, and fails on any file that imports a file importing it back or that is longer than 500 lines.
+- **Why**: small files without loops can be read and tested one at a time, and one command is easy to run before every commit.
+- **Cost**: the import check reads imports with a regular expression instead of the TypeScript compiler, which takes seconds to load; long files must be split.
+
+### 2026-11-07 · Vuetify, not PrimeVue
+
+- **Decision**: the screens are built from Vuetify 4 components (MIT licence), with Material Design Icons as SVG paths (`@mdi/js`). PrimeVue, chosen in the plan, is removed.
+- **Why**: since July 2026 PrimeVue 5 needs a licence key renewed every year; without one every page shows a red notice, so anyone running their own copy would see it.
+- **Cost**: Vuetify's components cannot be loaded in the tests, so screens are checked in a browser.
+
+### 2026-11-07 · A sidebar, an Impostazioni screen, and the activity detail inside the app
+
+- **Decision**: a sidebar lists the five sections, with Impostazioni and the Strava connection at its bottom. The settings that sat inside the Training tab, the Coach model with Ping Ollama, and "Disconnetti da Strava" move to Impostazioni. An activity's detail opens inside the app, and nginx sends old `activity.html?id=…` links to it, copying the id only when it is made of digits.
+- **Why**: the settings were hard to find inside the Training tab, and a separate detail page lost the app's state. Old bookmarks keep working.
+- **Cost**: texts that pointed to the old places, such as the Coach's "FTP missing" error, are rewritten to point to Impostazioni.
+
+### 2026-11-07 · Long actions keep running when you change section
+
+- **Decision**: "Aggiorna con streams", the JSON export, "Completa da dettagli attività" and the Coach request live outside the screens, so moving to another section does not stop them; a second click while one runs does nothing, or, for the Coach, replaces the older request. The Coach screen gets a Stop button.
+- **Why**: the old app drew every tab on one page, so nothing stopped when you switched; Vue removes a screen you leave.
+- **Cost**: their state lives in shared modules that every screen must read, not in the screen itself.
+
+### 2026-11-07 · Text from Strava and from the model is shown as text
+
+- **Decision**: activity, segment and athlete names, and the model's answer, reach the page only as text, never as HTML.
+- **Why**: the old app inserted some names as HTML, so a name such as `Errore <i>sempre</i>` was drawn in italics, and a crafted one could have run code.
+- **Cost**: a name written with tags shows the tags.
+
+### 2026-11-07 · The new app grew beside the old one, then replaced it at the same address
+
+- **Decision**: the new app ran at `/nuova/` on the same address, sharing the saved browser data, and each section was compared with the old one in a browser before the next. Once every section existed, `http://localhost:5050` became the new app, and the old JavaScript, `activity.html`, `style.css` and the reference recorder were deleted. The paper-index builder moved to `tools/`, so the project root keeps only documentation, configuration and data.
+- **Why**: the browser keeps saved data per address, so keeping `localhost:5050` keeps settings, caches and the Strava connection, and the side-by-side comparison showed every difference before the switch.
+- **Cost**: `/nuova/` addresses no longer open anything, and the old app can come back only from git history.

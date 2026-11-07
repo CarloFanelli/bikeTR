@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // La piccola linea dei tempi di un segmento, con la riga tratteggiata del PR: ferma, senza
-// valori al passaggio del mouse, come oggi.
+// valori al passaggio del mouse: è troppo piccola per puntarla.
 import { computed } from 'vue';
 import type { Point } from '../core/segments.ts';
 import { sparkline } from '../core/segments-view.ts';

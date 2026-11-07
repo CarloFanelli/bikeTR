@@ -1,5 +1,5 @@
 {
- "_comment": "Ingressi del piano di allenamento (Allenamento e Training v2). Generati a mano; i risultati registrati sono in plan-expected.json (vedi tests/reference/record.ts).",
+ "_comment": "Ingressi del piano di allenamento (Allenamento e Training v2). Generati a mano; i risultati del JavaScript di prima della conversione sono in plan-expected.json.",
  "settings": {
   "declared": {
    "hrMax": 186,

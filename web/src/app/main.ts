@@ -1,4 +1,4 @@
-// Avvio della nuova app: Vue, Vuetify (componenti, colori, icone, testi in italiano) e indirizzi.
+// Avvio dell'app: Vue, Vuetify (componenti, colori, icone, testi in italiano) e indirizzi.
 
 import { createApp } from 'vue';
 import { createVuetify } from 'vuetify';
@@ -12,7 +12,7 @@ import { createAppRouter } from './router.ts';
 import { session, startSession } from './session.ts';
 
 const vuetify = createVuetify({
-  // I colori dell'app di oggi: sfondo scuro, arancione Strava.
+  // Sfondo scuro e arancione Strava.
   theme: {
     defaultTheme: 'biketr',
     themes: {
@@ -34,7 +34,7 @@ session.notice = authCallbackMessage(window.location.search);
 if (session.notice) window.history.replaceState({}, '', window.location.pathname + window.location.hash);
 
 createApp(App).use(vuetify).use(createAppRouter()).mount('#app');
-// Collegati, le previsioni sui segmenti si caricano subito, come oggi: aggiornano anche le
+// Collegati, le previsioni sui segmenti si caricano subito: aggiornano anche le
 // stime di FTP e soglia dai segmenti.
 void startSession().then(() => {
   if (session.phase === 'ready') void loadSegments();

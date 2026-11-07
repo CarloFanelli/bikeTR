@@ -1,4 +1,4 @@
-// Il grafico del carico degli ultimi 30 giorni nella tab Allenamento: un valore per giorno.
+// Il grafico del carico degli ultimi 30 giorni in Allenamento e Analisi: un valore per giorno.
 
 import { dayOffsetIso } from '../dates.ts';
 import { isoDay } from '../format.ts';

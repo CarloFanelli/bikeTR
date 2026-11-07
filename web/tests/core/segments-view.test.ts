@@ -52,7 +52,7 @@ describe('previsioni sui segmenti', () => {
 });
 
 describe('workout mirati', () => {
-  it('titolo con PR e obiettivo, numeri come oggi; i watt solo se ci sono', () => {
+  it('titolo con PR e obiettivo, numeri arrotondati; i watt solo se ci sono', () => {
     const workout = {
       title: 't', detail: 'd', reason: 'r',
       segmentStats: { name: 'x', prTime: 600, targetTime: 590, bestWatts: 280, targetWatts: null, distance: 2346, grade: 6.04, attempts: 4, recentTrend: -2 },

@@ -1,4 +1,4 @@
-// Le impostazioni dell'atleta (tab Impostazioni); un campo lasciato vuoto non viene salvato.
+// Le impostazioni dell'atleta (schermata Impostazioni); un campo lasciato vuoto non viene salvato.
 // I giorni della settimana sono numeri ISO: 1 = lunedì … 7 = domenica.
 export interface Settings {
   hrMax?: number;
@@ -49,7 +49,7 @@ export type SettingsForm = Record<NumberField, string> & {
 const text = (n: number | undefined): string => (n ? String(n) : '');
 const sortedDays = (days: number[]): number[] => [...days].sort((a, b) => a - b);
 
-// I campi della schermata, con i default di oggi dove manca un valore salvato.
+// I campi della schermata, con i default dove manca un valore salvato.
 export function settingsForm(s: Settings): SettingsForm {
   return {
     hrMax: text(s.hrMax),
@@ -84,7 +84,7 @@ export function settingsErrors(form: SettingsForm): Partial<Record<NumberField, 
   return errors;
 }
 
-// Le impostazioni da salvare, con le chiavi, l'ordine e i default che usa l'app di oggi.
+// Le impostazioni da salvare, con le chiavi, l'ordine e i default delle impostazioni già salvate.
 export function settingsFromForm(form: SettingsForm): Settings {
   return {
     hrMax: +form.hrMax || undefined,

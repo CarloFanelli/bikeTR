@@ -7,7 +7,7 @@ describe('ritorno da Strava con un errore', () => {
     expect(authCallbackMessage('?altro=1')).toBeNull();
   });
 
-  it('ogni errore noto ha il suo messaggio di oggi', () => {
+  it('ogni errore noto ha il suo messaggio', () => {
     expect(authCallbackMessage('?auth_error=denied'))
       .toBe('Autorizzazione negata su Strava: BikeTR non è stato collegato.');
     expect(authCallbackMessage('?auth_error=state'))

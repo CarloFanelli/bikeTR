@@ -27,7 +27,7 @@ describe('consiglio del giorno', () => {
     expect(advice.next?.metrics.restDays).toBeGreaterThanOrEqual(0);
   });
 
-  it('i numeri sotto il consiglio, con gli arrotondamenti di oggi', () => {
+  it('i numeri sotto il consiglio, arrotondati', () => {
     const metrics = { acute: 312.6, chronic: 250.4, ratio: 1.2484, hoursThisWeek: 7.25, hardsLast7: 2, restDays: 1 };
     const fatigue = { readiness: 'moderato', composite: 48, muscularFatigue: 35 };
     const meso = { blockId: 'threshold', weekInBlock: 1 } as Mesocycle;
@@ -62,7 +62,7 @@ describe('grafico del carico', () => {
   const day = (iso: string, extra: Partial<LoadChartDay>): LoadChartDay =>
     ({ iso, load: 0, hard: false, long: false, hasActivity: false, nonBike: false, bike: false, ...extra });
 
-  it('colori e testi di oggi, e la media giornaliera', () => {
+  it('colori e testi per tipo di giorno, e la media giornaliera', () => {
     const view = loadChartView([
       day('2026-11-01', { load: 120.4, long: true, bike: true, hasActivity: true }),
       day('2026-11-02', { load: 80, hard: true, bike: true, hasActivity: true }),
@@ -81,13 +81,13 @@ describe('grafico del carico', () => {
 describe('piano del mese', () => {
   const profile = { ftp: 250, ftpDecl: 250, hrLthr: 170, lthrSource: 'estimated', lthrEst: 170 } as HrProfile;
 
-  it('da dove viene il carico, come la riga di oggi', () => {
+  it('da dove viene il carico, in una riga', () => {
     expect(loadSourceLine(profile)).toBe('🔋 Load = TSS (potenza) · FTP dichiarata 250W · LTHR stimata 170 bpm');
     expect(loadSourceLine({ ...profile, ftp: null, ftpDecl: null, ftpSource: 'estimated', ftpEst: null, lthrSource: 'declared' }))
       .toBe('❤️ Load = hrTSS (LTHR) · FTP non usata · LTHR dichiarata 170 bpm');
   });
 
-  it('il modello di allenamento con i testi di oggi', () => {
+  it('il modello di allenamento con i suoi testi', () => {
     const model = {
       preferredDays: [2, 6], hardDowHistorical: [2, 4, 6, 0], avgWeeklyLoad: 402.6, progressionPerWeek: 12.4,
       polarization: { easyPct: 0.78, hardPct: 0.22 }, targetWeeklyLoad: 431.2,

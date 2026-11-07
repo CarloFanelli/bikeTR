@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Guscio della nuova app: senza collegamento a Strava solo "Collega Strava";
+// Guscio dell'app: senza collegamento a Strava solo "Collega Strava";
 // collegati, la barra laterale e la sezione dell'indirizzo.
 import { RouterView } from 'vue-router';
 import { VAlert, VApp, VContainer, VMain, VProgressCircular } from 'vuetify/components';

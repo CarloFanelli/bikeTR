@@ -1,5 +1,5 @@
-// Indirizzi della nuova app. Stanno dopo il # dell'indirizzo, come le sezioni dell'app
-// di oggi: funzionano sotto /nuova/ e poi sotto / senza cambiare nginx.
+// Indirizzi dell'app. Stanno dopo il # dell'indirizzo (per esempio /#/analisi), così
+// nginx e Vite servono sempre la stessa pagina.
 
 import { createRouter, createWebHashHistory, type RouterHistory, type RouteRecordRaw } from 'vue-router';
 

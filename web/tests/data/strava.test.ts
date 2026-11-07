@@ -43,7 +43,7 @@ describe('richieste a Strava', () => {
     ]);
   });
 
-  it('un errore di Strava nomina la richiesta e il codice HTTP, come oggi', async () => {
+  it('un errore di Strava nomina la richiesta e il codice HTTP', async () => {
     fakeNetwork(() => new Response('{}', { status: 404 }));
     await expect(fetchAthlete()).rejects.toThrow('API /athlete: 404');
     await expect(fetchActivityStreams(7)).rejects.toThrow('streams 7: 404');
@@ -93,7 +93,7 @@ describe('richieste a Strava', () => {
     expect(seen).toEqual(['/auth/token']);
   });
 
-  it('server di autenticazione spento: il messaggio di oggi, senza chiamare Strava', async () => {
+  it('server di autenticazione spento: il messaggio che lo spiega, senza chiamare Strava', async () => {
     vi.stubGlobal('fetch', async (url: string) => {
       if (url.startsWith('https')) throw new Error('Strava non andava chiamato');
       return new Response('<html>502 Bad Gateway</html>', { status: 502 });

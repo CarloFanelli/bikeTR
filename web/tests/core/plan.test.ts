@@ -73,7 +73,7 @@ describe.each(planCases)('piano di allenamento, caso $name', c => {
   });
 
   // Prima apertura, settimana nel blocco o blocco successivo; si salva solo se cambia.
-  it('mesociclo aggiornato all\'apertura della tab', () => {
+  it('mesociclo aggiornato all\'apertura dell\'app', () => {
     const stored = mesocycleOf(c.mesocycle);
     if (throws(exp.mesocycle.result)) {
       expect(() => nextMesocycle(stored, acts, settings, now)).toThrow(TypeError);

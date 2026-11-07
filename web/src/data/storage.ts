@@ -119,7 +119,7 @@ export function loadCoachSettings(): CoachSettings {
 export const saveCoachSettings = (changes: CoachSettings): boolean =>
   safeSave(COACH_SETTINGS, { ...loadCoachSettings(), ...changes });
 
-// Barra laterale della nuova app ridotta a icone; senza una scelta leggibile resta espansa.
+// Barra laterale ridotta a icone; senza una scelta leggibile resta espansa.
 export const loadSidebarCollapsed = (): boolean =>
   safeLoad<{ sidebarCollapsed?: unknown }>(UI, {}, isPlainObject).sidebarCollapsed === true;
 export const saveSidebarCollapsed = (collapsed: boolean): boolean => safeSave(UI, { sidebarCollapsed: collapsed });
@@ -128,7 +128,7 @@ export const saveSidebarCollapsed = (collapsed: boolean): boolean => safeSave(UI
 export const loadFtpHistory = (): FtpPoint[] => safeLoad<FtpPoint[]>(FTP_HISTORY, [], Array.isArray);
 export const saveFtpHistory = (history: FtpPoint[]): boolean => safeSave(FTP_HISTORY, history);
 
-// Il mesociclo in corso (vedi nextMesocycle); null prima della prima apertura della tab Allenamento.
+// Il mesociclo in corso (vedi nextMesocycle); null prima della prima apertura dell'app.
 export const loadMesocycle = (): Mesocycle | null =>
   safeLoad<Mesocycle | null>(MESOCYCLE, null, (x) => x === null || (typeof x === 'object' && !Array.isArray(x)));
 export const saveMesocycle = (meso: Mesocycle): boolean => safeSave(MESOCYCLE, meso);
