@@ -1,5 +1,5 @@
 import {
-  loadSettings, saveSettings, getAuthStatus, logout, purgeLegacyStrava,
+  loadSettings, saveSettings, getAuthStatus, authCallbackMessage, logout, purgeLegacyStrava,
   fetchAthlete, fetchAthleteStats, fetchActivities, fetchStarredSegments,
   applyCachedStreams, hydrateWithStreams, loadPlannedRests, loadRainyDays,
   dayOffsetIso, cycleDayState, escapeHtml, fmtKm, fmtTime, fmtDate, TYPE_EMOJI,
@@ -356,14 +356,6 @@ function renderTraining(activities, stats) {
   show('training');
 }
 
-// Il server di autenticazione, al ritorno da Strava, rimanda qui con ?auth_error=…
-const AUTH_CALLBACK_ERRORS = {
-  denied: 'Autorizzazione negata su Strava: BikeTR non è stato collegato.',
-  state: 'Ritorno da Strava non valido o scaduto: riprova con "Collega Strava".',
-  rejected: 'Strava ha rifiutato il collegamento. Controlla STRAVA_CLIENT_ID e STRAVA_CLIENT_SECRET nel file .env, poi esegui di nuovo docker compose up -d.',
-  unreachable: 'Strava non raggiungibile durante il collegamento. Riprova tra poco.',
-};
-
 // Scollegati nel frattempo (per esempio da un'altra scheda): la pagina ricaricata
 // mostra "Collega Strava".
 function showSetupIfDisconnected(e) {
@@ -394,11 +386,9 @@ async function main() {
     window.location.reload();
   });
 
-  const params = new URLSearchParams(window.location.search);
-  const authError = params.get('auth_error');
+  const authError = authCallbackMessage(window.location.search);
   if (authError) {
-    const detail = params.get('detail');
-    showError((AUTH_CALLBACK_ERRORS[authError] || authError) + (detail ? ` Risposta di Strava: ${detail}.` : ''));
+    showError(authError);
     // Una ricarica della pagina non ripete il messaggio.
     window.history.replaceState({}, '', window.location.pathname);
   }

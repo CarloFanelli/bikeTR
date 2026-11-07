@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Activity } from '../../src/core/strava-types.ts';
 import {
-  cycleDayState, loadPlannedRests, loadRainyDays, loadSettings, loadStreamsCache,
-  purgeLegacyStrava, safeLoad, safeSave, saveSettings,
+  applyCachedStreams, cycleDayState, loadPlannedRests, loadRainyDays, loadSettings, loadSidebarCollapsed,
+  loadStreamsCache, purgeLegacyStrava, safeLoad, safeSave, saveSettings, saveSidebarCollapsed,
 } from '../../src/data/storage.ts';
 
 // localStorage simulato, ispezionabile dal test.
@@ -83,5 +84,36 @@ describe('valori salvati nel browser', () => {
     store.set('biketr_settings', '{}');
     purgeLegacyStrava();
     expect([...store.keys()]).toEqual(['biketr_settings']);
+  });
+
+  it('le metriche degli stream già scaricati tornano sulle attività, gli errori no', () => {
+    store.set('biketr_streams_cache', '{"1":{"NP":210,"TSS":80,"_fetched":1},"2":{"_error":"x","_fetched":2}}');
+    const acts = [{ id: 1 }, { id: 2 }, { id: 3 }] as Activity[];
+    applyCachedStreams(acts);
+    expect(acts).toEqual([{ id: 1, _metrics: { NP: 210, TSS: 80, _fetched: 1 } }, { id: 2 }, { id: 3 }]);
+  });
+});
+
+describe('barra laterale ridotta a icone', () => {
+  it('senza scelta salvata è espansa', () => {
+    expect(loadSidebarCollapsed()).toBe(false);
+  });
+
+  it('la scelta si salva sotto biketr_ui e vale alla ricarica', () => {
+    saveSidebarCollapsed(true);
+    expect(store.get('biketr_ui')).toBe('{"sidebarCollapsed":true}');
+    expect(loadSidebarCollapsed()).toBe(true);
+    saveSidebarCollapsed(false);
+    expect(loadSidebarCollapsed()).toBe(false);
+  });
+
+  it('una scelta illeggibile apre la barra espansa', () => {
+    store.set('biketr_ui', '{"sidebarCollapsed":tr');
+    expect(loadSidebarCollapsed()).toBe(false);
+    expect(store.get('biketr_ui.broken')).toBe('{"sidebarCollapsed":tr');
+    store.set('biketr_ui', '[true]');
+    expect(loadSidebarCollapsed()).toBe(false);
+    store.set('biketr_ui', '{"sidebarCollapsed":"sì"}');
+    expect(loadSidebarCollapsed()).toBe(false);
   });
 });

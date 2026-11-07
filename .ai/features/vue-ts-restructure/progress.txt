@@ -5,7 +5,7 @@
 03-strava-data-access: DONE
 04-ride-load-calculations: DONE
 05-training-plan-calculations: DONE
-06-app-shell-navigation: TODO
+06-app-shell-navigation: DONE
 07-settings-screen: TODO
 08-home-and-activities: TODO
 09-training-screen: TODO

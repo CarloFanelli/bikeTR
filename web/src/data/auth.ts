@@ -44,6 +44,23 @@ export async function getAccessToken(): Promise<string> {
   return (await authJson<{ access_token: string }>('/auth/token')).access_token;
 }
 
+// Il server di autenticazione, al ritorno da Strava, rimanda all'app con ?auth_error=…
+const AUTH_CALLBACK_ERRORS: Record<string, string> = {
+  denied: 'Autorizzazione negata su Strava: BikeTR non è stato collegato.',
+  state: 'Ritorno da Strava non valido o scaduto: riprova con "Collega Strava".',
+  rejected: 'Strava ha rifiutato il collegamento. Controlla STRAVA_CLIENT_ID e STRAVA_CLIENT_SECRET nel file .env, poi esegui di nuovo docker compose up -d.',
+  unreachable: 'Strava non raggiungibile durante il collegamento. Riprova tra poco.',
+};
+
+// Messaggio per l'errore nella query dell'indirizzo (`location.search`), null se non c'è.
+export function authCallbackMessage(search: string): string | null {
+  const params = new URLSearchParams(search);
+  const code = params.get('auth_error');
+  if (!code) return null;
+  const detail = params.get('detail');
+  return (AUTH_CALLBACK_ERRORS[code] ?? code) + (detail ? ` Risposta di Strava: ${detail}.` : '');
+}
+
 // Cancella i token Strava tenuti dal server di autenticazione.
 export async function logout(): Promise<void> {
   await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
