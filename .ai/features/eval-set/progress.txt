@@ -1,0 +1,10 @@
+# Task Progress - eval-set
+
+01-supporting-papers: IN_PROGRESS
+02-selection-rules: TODO
+03-evaluation-set: TODO
+04-evaluation-run: TODO
+05-grading: TODO
+06-before-runs: TODO
+07-prompt-rewrite: TODO
+08-after-runs-readme: TODO

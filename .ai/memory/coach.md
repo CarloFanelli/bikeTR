@@ -26,11 +26,27 @@ _Avoid_: "embedding model" in user-facing text (too technical), "nomic-embed-tex
 
 ### Live check
 One command that runs the Coach on 3 made-up situations with the **Chat model** `.env` names and writes a results file into the repository, so a run made on another computer can be evaluated here.
-_Avoid_: "test" (the automated tests use fake models), "test set" or "eval" (the scored set of situations planned next).
+_Avoid_: "test" (the automated tests use fake models), "test set" or "eval" (that is the **Evaluation set**).
 
 ### Spending cap
 The dollar limit in `.env` on cloud **Chat model** spending: the **Coach service** keeps a running total of answer costs and refuses cloud requests once it reaches the limit. Ollama answers never count.
 _Avoid_: "budget" (confused with the token limit per answer), "quota" (the provider's own rate limits).
+
+### Evaluation set
+The fixed list of 25–30 made-up athlete situations, each with the protocols the **Selection rules** allow, used to grade a **Chat model** answer by answer. A run saves every answer, and a grading step that calls no model scores it.
+_Avoid_: "exam" (only a teaching comparison), "test set" (the automated tests use fake models), "live check" (the quick 3-situation run, **Live check**).
+
+### Selection rules
+The ordered rules that give, for an athlete's form, hard share and minutes available, the protocols the Coach may choose. Each names its source: the PMID of a **Supporting paper**, or "practice" when no paper gives the number. The prompt, the **Fallback rules** and the **Evaluation set** all follow them.
+_Avoid_: "prompt rules" (they live outside the prompt too).
+
+### Supporting paper
+The paper in the Coach's index that a protocol comes from, found by a PubMed search. A protocol with no such paper is labeled practice.
+_Avoid_: "source" alone (a selection rule's source may be practice).
+
+### Fallback rules
+The Coach's fixed choice of protocol when the **Chat model**'s answer is unreadable, cut off or names no catalog protocol; it always picks a protocol the **Selection rules** allow.
+_Avoid_: "backup choice" (used once in an interview; the README says fallback).
 
 ## Decisions
 
@@ -41,6 +57,8 @@ _Avoid_: "budget" (confused with the token limit per answer), "quota" (the provi
 
 ## Gotchas
 
+- **The Coach tests cannot read the project's paper index**: the `coach` container mounts only `./docker/coach` (at `/app`), so pytest sees `tests/fixtures/papers_index.json`, never `/project/papers_index.json`. A check on the real index belongs in a `coach-tools` command (which mounts the project at `/project`), such as the index rebuild.
+- **The browser reference cannot learn new Coach rules**: `tests/fixtures/coach_expected.json` is produced by the old browser Coach (`tests/reference/make_reference.mjs`), so a deliberate change to the prompt or the fallback choice can't be regenerated there. Don't hand-edit it: change only the assertions for what changed, and keep the browser comparison for the rest.
 - **Python and JavaScript print values differently**: the browser wrote `null` (not `None`), `42` (not `42.0`), `[1,2]` as `1,2`, and treated `[]` as true. Every value the service puts in a prompt or compares like the browser goes through `js_str` / `js_truthy` in `docker/coach/app/jscompat.py`; the prompt tests fail otherwise.
 - **httpx waits only 5 seconds by default**: on CPU, or with a cloud model reasoning in silence, the first word can take minutes. Talk to the chat model only through `provider.client()`, whose clients share `app/chat.py`'s 180-second read timeout, the Coach's 3-minute silence limit.
 - **Stopping Ollama relies on uvicorn reporting a client that left**: uvicorn 0.54 declares ASGI 2.3, so Starlette watches for the disconnect while a stream is silent and cancels the request, which closes the connection to the chat model (Ollama or cloud). With ASGI 2.4 or later Starlette notices only at the next write, so a silent model would keep running. After upgrading uvicorn or Starlette, `tests/test_cancel.py` must stay green.
