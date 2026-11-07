@@ -15,13 +15,16 @@ const notYet = () => import('../screens/NotYetScreen.vue');
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/home' },
-  { path: '/home', name: 'home', component: notYet, meta: { title: 'Home', legacy: '/#home' } },
+  { path: '/home', name: 'home', component: () => import('../screens/HomeScreen.vue'), meta: { title: 'Home' } },
   { path: '/allenamento', name: 'allenamento', component: notYet, meta: { title: 'Allenamento', legacy: '/#training' } },
   { path: '/analisi', name: 'analisi', component: notYet, meta: { title: 'Analisi', legacy: '/#analysis' } },
-  { path: '/attivita', name: 'attivita', component: notYet, meta: { title: 'Attività', legacy: '/#activities' } },
   {
-    path: '/attivita/:id', name: 'attivita-dettaglio', component: notYet,
-    meta: { title: 'Dettaglio attività', legacy: '/activity.html' },
+    path: '/attivita', name: 'attivita', component: () => import('../screens/ActivitiesScreen.vue'),
+    meta: { title: 'Attività' },
+  },
+  {
+    path: '/attivita/:id', name: 'attivita-dettaglio', component: () => import('../screens/ActivityDetailScreen.vue'),
+    meta: { title: 'Dettaglio attività' },
   },
   { path: '/coach', name: 'coach', component: notYet, meta: { title: 'Coach AI', legacy: '/#coach' } },
   {

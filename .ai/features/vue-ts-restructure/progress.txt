@@ -7,7 +7,7 @@
 05-training-plan-calculations: DONE
 06-app-shell-navigation: DONE
 07-settings-screen: DONE
-08-home-and-activities: TODO
+08-home-and-activities: DONE
 09-training-screen: TODO
 10-analysis-screen: TODO
 11-coach-screen: TODO

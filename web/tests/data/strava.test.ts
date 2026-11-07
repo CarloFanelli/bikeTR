@@ -49,6 +49,11 @@ describe('richieste a Strava', () => {
     await expect(fetchActivityStreams(7)).rejects.toThrow('streams 7: 404');
   });
 
+  it('l\'errore porta il codice HTTP: 404 vuol dire attività inesistente o non visibile', async () => {
+    fakeNetwork(() => new Response('{}', { status: 404 }));
+    await expect(fetchActivity(99)).rejects.toMatchObject({ status: 404, message: 'API /activities/99: 404' });
+  });
+
   it('gli stream chiedono di default le serie per le metriche, oppure quelle indicate', async () => {
     const seen = fakeNetwork(() => Response.json({}));
     await fetchActivityStreams(7);

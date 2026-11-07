@@ -12,6 +12,17 @@ const METRICS_STREAMS = 'time,heartrate,watts,cadence';
 const STARRED_PAGE = 50;
 const STARRED_MAX_PAGES = 10;
 
+// Strava ha risposto con un errore: `status` è il codice HTTP (404: attività
+// inesistente o non visibile all'atleta collegato; 429: troppe richieste).
+export class StravaError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function stravaFetch(path: string): Promise<Response> {
   const token = await getAccessToken();
   return fetch(API + path, { headers: { Authorization: 'Bearer ' + token } });
@@ -19,7 +30,7 @@ async function stravaFetch(path: string): Promise<Response> {
 
 async function stravaGet<T>(path: string): Promise<T> {
   const res = await stravaFetch(path);
-  if (!res.ok) throw new Error('API ' + path + ': ' + res.status);
+  if (!res.ok) throw new StravaError('API ' + path + ': ' + res.status, res.status);
   return res.json();
 }
 
@@ -53,6 +64,6 @@ export const fetchSegmentEfforts = (segmentId: number): Promise<SegmentEffort[]>
 // Serie secondo per secondo di un'attività: di default quelle per le metriche.
 export async function fetchActivityStreams(activityId: number, keys = METRICS_STREAMS): Promise<Streams> {
   const res = await stravaFetch(`/activities/${activityId}/streams?keys=${keys}&key_by_type=true`);
-  if (!res.ok) throw new Error('streams ' + activityId + ': ' + res.status);
+  if (!res.ok) throw new StravaError('streams ' + activityId + ': ' + res.status, res.status);
   return res.json();
 }

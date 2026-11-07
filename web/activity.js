@@ -2,24 +2,9 @@ import {
   fetchActivity, purgeLegacyStrava, escapeHtml,
   fmtKm, fmtTime, fmtDate, TYPE_EMOJI,
 } from './strava.js';
+import { decodePolyline } from './src/core/polyline.ts';
 
 const $ = (id) => document.getElementById(id);
-
-// Google encoded polyline decoder
-function decodePolyline(str) {
-  let index = 0, lat = 0, lng = 0;
-  const coords = [];
-  while (index < str.length) {
-    let b, shift = 0, result = 0;
-    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
-    shift = 0; result = 0;
-    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
-    coords.push([lat * 1e-5, lng * 1e-5]);
-  }
-  return coords;
-}
 
 async function main() {
   purgeLegacyStrava();

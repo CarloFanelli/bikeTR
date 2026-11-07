@@ -1,285 +1,10 @@
-// Export tutti gli allenamenti in JSON (per copia-incolla in Claude).
-// Tre modalità:
-//   - compact   : summary + metriche cached (zero API calls extra)
-//   - detailed  : + /activities/:id (segment_efforts, splits, gear, description)
-//   - max       : + streams grezzi (time, hr, watts, cadence, velocity, altitude, distance)
-//
-// Rate limit Strava: 100 req / 15 min, 1000/giorno. Throttle automatico a ~6.5 req/min.
+// Finestra "Esporta allenamenti" dell'app di oggi. Lo storico, i tre livelli di
+// dettaglio (compatto, dettagliato, massimo), le pause tra le richieste a Strava e il
+// file JSON stanno in src/data/export.ts, condivisi con la nuova app.
+import { loadSettings } from './strava.js';
 import {
-  AuthError, fetchActivities, fetchActivity, fetchActivityStreams, loadSettings,
-  loadStreamsCache, saveStreamsCache, computeStreamsMetrics,
-  fmtKm, fmtTime,
-} from './strava.js';
-
-// Una pausa tra richieste per stare sotto 100/15min con margine.
-// 100 req in 900 s → 9 s/req. Usiamo 10 s per sicurezza.
-const THROTTLE_MS = 10000;
-const PAGE_SIZE = 200; // max consentito da Strava per /athlete/activities
-// Streams completi: più serie di quelle che servono alle metriche.
-const FULL_STREAMS = 'time,heartrate,watts,cadence,velocity_smooth,altitude,distance,temp,grade_smooth';
-
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-// Paginazione completa dello storico.
-async function fetchAllActivities(onProgress) {
-  const all = [];
-  for (let page = 1; page <= 200; page++) {
-    const batch = await fetchActivities(PAGE_SIZE, page);
-    if (!Array.isArray(batch) || batch.length === 0) break;
-    all.push(...batch);
-    onProgress?.(all.length, page);
-    if (batch.length < PAGE_SIZE) break;
-  }
-  return all;
-}
-
-// Snellisce un summary activity rimuovendo campi rumorosi/ridondanti.
-function slimSummary(a) {
-  const m = a._metrics || {};
-  return {
-    id: a.id,
-    external_id: a.external_id,
-    upload_id: a.upload_id,
-    name: a.name,
-    type: a.type,
-    sport_type: a.sport_type,
-    workout_type: a.workout_type,
-    start_date: a.start_date,
-    start_date_local: a.start_date_local,
-    timezone: a.timezone,
-    distance_m: a.distance,
-    distance_km: a.distance != null ? +(a.distance / 1000).toFixed(3) : null,
-    moving_time_s: a.moving_time,
-    elapsed_time_s: a.elapsed_time,
-    total_elevation_gain_m: a.total_elevation_gain,
-    elev_high_m: a.elev_high,
-    elev_low_m: a.elev_low,
-    average_speed_ms: a.average_speed,
-    max_speed_ms: a.max_speed,
-    average_speed_kmh: a.average_speed != null ? +(a.average_speed * 3.6).toFixed(2) : null,
-    max_speed_kmh: a.max_speed != null ? +(a.max_speed * 3.6).toFixed(2) : null,
-    average_cadence: a.average_cadence,
-    average_temp: a.average_temp,
-    has_heartrate: a.has_heartrate,
-    average_heartrate: a.average_heartrate,
-    max_heartrate: a.max_heartrate,
-    average_watts: a.average_watts,
-    max_watts: a.max_watts,
-    weighted_average_watts: a.weighted_average_watts,
-    device_watts: a.device_watts,
-    kilojoules: a.kilojoules,
-    suffer_score: a.suffer_score,
-    calories: a.calories,
-    trainer: a.trainer,
-    commute: a.commute,
-    manual: a.manual,
-    private: a.private,
-    achievement_count: a.achievement_count,
-    kudos_count: a.kudos_count,
-    pr_count: a.pr_count,
-    gear_id: a.gear_id,
-    location_city: a.location_city,
-    location_state: a.location_state,
-    location_country: a.location_country,
-    start_latlng: a.start_latlng,
-    end_latlng: a.end_latlng,
-    map_summary_polyline: a.map?.summary_polyline,
-    computed_metrics: (m && !m._error) ? {
-      np_watts: m.NP ?? null,
-      intensity_factor: m.IF ?? null,
-      tss: m.TSS ?? null,
-      hr_tss: m.hrTSS ?? null,
-      hr_zones_seconds: m.hrZones ?? null, // [Z1, Z2, Z3, Z4, Z5]
-      source: 'streams_cache',
-    } : null,
-  };
-}
-
-// Estrae i campi rilevanti del dettaglio (non duplica quelli già in summary).
-function detailExtra(d) {
-  return {
-    description: d.description || null,
-    device_name: d.device_name || null,
-    embed_token: undefined, // privacy
-    gear: d.gear ? {
-      id: d.gear.id,
-      name: d.gear.name,
-      brand_name: d.gear.brand_name,
-      model_name: d.gear.model_name,
-      frame_type: d.gear.frame_type,
-      distance_m: d.gear.distance,
-    } : null,
-    photos_count: d.total_photo_count ?? null,
-    splits_metric: (d.splits_metric || []).map(s => ({
-      split: s.split,
-      distance_m: s.distance,
-      elapsed_time_s: s.elapsed_time,
-      moving_time_s: s.moving_time,
-      elevation_difference_m: s.elevation_difference,
-      average_speed_ms: s.average_speed,
-      average_heartrate: s.average_heartrate,
-      pace_zone: s.pace_zone,
-    })),
-    laps: (d.laps || []).map(l => ({
-      lap_index: l.lap_index,
-      name: l.name,
-      start_index: l.start_index,
-      end_index: l.end_index,
-      distance_m: l.distance,
-      elapsed_time_s: l.elapsed_time,
-      moving_time_s: l.moving_time,
-      total_elevation_gain_m: l.total_elevation_gain,
-      average_speed_ms: l.average_speed,
-      max_speed_ms: l.max_speed,
-      average_cadence: l.average_cadence,
-      average_watts: l.average_watts,
-      max_watts: l.max_watts,
-      weighted_average_watts: l.weighted_average_watts,
-      average_heartrate: l.average_heartrate,
-      max_heartrate: l.max_heartrate,
-    })),
-    best_efforts: (d.best_efforts || []).map(b => ({
-      name: b.name,
-      distance_m: b.distance,
-      elapsed_time_s: b.elapsed_time,
-      moving_time_s: b.moving_time,
-      start_index: b.start_index,
-      end_index: b.end_index,
-      pr_rank: b.pr_rank,
-    })),
-    segment_efforts: (d.segment_efforts || []).map(s => ({
-      id: s.id,
-      name: s.name,
-      elapsed_time_s: s.elapsed_time,
-      moving_time_s: s.moving_time,
-      distance_m: s.distance,
-      start_index: s.start_index,
-      end_index: s.end_index,
-      average_cadence: s.average_cadence,
-      average_watts: s.average_watts,
-      device_watts: s.device_watts,
-      average_heartrate: s.average_heartrate,
-      max_heartrate: s.max_heartrate,
-      pr_rank: s.pr_rank,
-      kom_rank: s.kom_rank,
-      segment: s.segment ? {
-        id: s.segment.id,
-        name: s.segment.name,
-        distance_m: s.segment.distance,
-        average_grade: s.segment.average_grade,
-        maximum_grade: s.segment.maximum_grade,
-        elevation_high_m: s.segment.elevation_high,
-        elevation_low_m: s.segment.elevation_low,
-        climb_category: s.segment.climb_category,
-        city: s.segment.city,
-        state: s.segment.state,
-        country: s.segment.country,
-        starred: s.segment.starred,
-      } : null,
-    })),
-  };
-}
-
-// Estrae le serie utili dagli streams Strava (formato key_by_type).
-function streamsExtract(streams) {
-  if (!streams || typeof streams !== 'object') return null;
-  const out = {};
-  for (const k of ['time','heartrate','watts','cadence','velocity_smooth','altitude','distance','temp','grade_smooth']) {
-    if (streams[k]?.data) out[k] = streams[k].data;
-  }
-  return out;
-}
-
-// Coda di chiamate API con throttle (rispetta rate limit).
-async function throttledQueue(items, fn, onProgress) {
-  const results = [];
-  for (let i = 0; i < items.length; i++) {
-    const t0 = Date.now();
-    try {
-      results.push({ ok: true, value: await fn(items[i], i) });
-    } catch (e) {
-      // Senza accesso a Strava le richieste successive fallirebbero tutte.
-      if (e instanceof AuthError) throw e;
-      results.push({ ok: false, error: e.message });
-      // Su 429 (rate limit) aspetta più a lungo
-      if (e.message.includes('429')) {
-        onProgress?.(i + 1, items.length, 'rate-limit hit, attendo 60s…');
-        await sleep(60000);
-      }
-    }
-    onProgress?.(i + 1, items.length);
-    // Throttle: solo se non siamo all'ultimo
-    if (i < items.length - 1) {
-      const elapsed = Date.now() - t0;
-      const wait = Math.max(0, THROTTLE_MS - elapsed);
-      if (wait > 0) await sleep(wait);
-    }
-  }
-  return results;
-}
-
-// Costruisce il payload finale.
-function buildPayload({ athlete, stats, settings, activities, version }) {
-  return {
-    biketr_export: {
-      version,
-      generated_at: new Date().toISOString(),
-      generator: 'BikeTR v2 export',
-      schema: 'biketr-export-v1',
-      activity_count: activities.length,
-    },
-    athlete: athlete ? {
-      id: athlete.id,
-      firstname: athlete.firstname,
-      lastname: athlete.lastname,
-      sex: athlete.sex,
-      city: athlete.city,
-      state: athlete.state,
-      country: athlete.country,
-      weight_kg: athlete.weight,
-      ftp: athlete.ftp,
-      premium: athlete.premium,
-      created_at: athlete.created_at,
-    } : null,
-    stats: stats ? {
-      recent_ride_totals: stats.recent_ride_totals,
-      recent_run_totals: stats.recent_run_totals,
-      ytd_ride_totals: stats.ytd_ride_totals,
-      ytd_run_totals: stats.ytd_run_totals,
-      all_ride_totals: stats.all_ride_totals,
-      all_run_totals: stats.all_run_totals,
-      all_swim_totals: stats.all_swim_totals,
-    } : null,
-    settings_biketr: settings,
-    activities,
-  };
-}
-
-function downloadJson(data, filename) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
-
-function formatBytes(n) {
-  if (n < 1024) return n + ' B';
-  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
-  return (n / 1024 / 1024).toFixed(1) + ' MB';
-}
-
-// Estimate API calls + time for the chosen mode
-function estimate(mode, n) {
-  if (mode === 'compact') return { calls: 0, minutes: 0 };
-  if (mode === 'detailed') return { calls: n, minutes: Math.ceil((n * THROTTLE_MS) / 60000) };
-  if (mode === 'max') return { calls: n * 2, minutes: Math.ceil((n * 2 * THROTTLE_MS) / 60000) };
-  return { calls: 0, minutes: 0 };
-}
+  buildExport, downloadJson, estimate, exportRange, fetchAllActivities, filterForExport, formatBytes,
+} from './src/data/export.ts';
 
 // ---------- UI ----------
 
@@ -372,10 +97,8 @@ export async function openExportDialog({ athlete, stats }) {
     allActivities = await fetchAllActivities((done, page) => {
       $('export-stats').textContent = `Caricate ${done} attività (pagina ${page})…`;
     });
-    const dates = allActivities.map(a => a.start_date_local).filter(Boolean).sort();
-    const firstDate = dates[0]?.slice(0,10) || '—';
-    const lastDate = dates[dates.length-1]?.slice(0,10) || '—';
-    $('export-stats').innerHTML = `Trovate <b>${allActivities.length}</b> attività totali. Range: ${firstDate} → ${lastDate}.`;
+    const { first, last } = exportRange(allActivities);
+    $('export-stats').innerHTML = `Trovate <b>${allActivities.length}</b> attività totali. Range: ${first} → ${last}.`;
     const eD = estimate('detailed', allActivities.length);
     const eM = estimate('max', allActivities.length);
     $('est-detailed').textContent = `— ${eD.calls} chiamate API · ~${eD.minutes} min`;
@@ -392,18 +115,7 @@ export async function openExportDialog({ athlete, stats }) {
     const fromStr = $('export-from').value;
     const toStr = $('export-to').value;
     const onlyRides = $('export-only-rides').checked;
-    const from = fromStr ? new Date(fromStr) : null;
-    const to = toStr ? new Date(toStr + 'T23:59:59') : null;
-    const BIKE = new Set(['Ride','VirtualRide','EBikeRide','MountainBikeRide','GravelRide']);
-
-    // Filtro
-    let acts = allActivities.filter(a => {
-      const d = new Date(a.start_date_local);
-      if (from && d < from) return false;
-      if (to && d > to) return false;
-      if (onlyRides && !BIKE.has(a.type)) return false;
-      return true;
-    });
+    const acts = filterForExport(allActivities, { from: fromStr, to: toStr, onlyRides });
 
     // Riconferma se "Massimo" su tante attività
     if (mode === 'max' && acts.length > 30) {
@@ -420,74 +132,14 @@ export async function openExportDialog({ athlete, stats }) {
     $('export-cancel').textContent = 'Chiudi (continua in background)';
     $('export-progress-bar').style.display = 'block';
 
-    // Step 2: arricchimento per attività (ogni richiesta chiede il suo token di accesso).
-    const detailCache = {};       // id → detailExtra
-    const streamsCache = loadStreamsCache(); // mantiene anche metriche
-    const streamsRaw = {};        // id → streamsExtract (solo modalità max)
-
-    if (mode === 'detailed' || mode === 'max') {
-      const needDetail = acts.filter(a => !detailCache[a.id]);
-      $('export-progress').textContent = `Scarico dettagli (${needDetail.length})…`;
-      await throttledQueue(needDetail, async (a) => {
-        const d = await fetchActivity(a.id, { allEfforts: true });
-        detailCache[a.id] = detailExtra(d);
-        return d;
-      }, (done, total, msg) => {
-        $('export-progress').textContent = msg
-          ? `Dettagli ${done}/${total} · ${msg}`
-          : `Dettagli ${done}/${total} (throttle ${THROTTLE_MS/1000}s/req)…`;
-        $('export-progress-fill').style.width = `${(done/total)*50}%`;
-      });
-    }
-
-    if (mode === 'max') {
-      // Per FTP/LTHR usa quelli derivati dai settings (best effort).
-      const ftp = settings.ftpDeclared || 220;
-      const lthr = settings.hrLthr || 170;
-      const needStreams = acts.filter(a => !streamsRaw[a.id]);
-      $('export-progress').textContent = `Scarico streams (${needStreams.length})…`;
-      await throttledQueue(needStreams, async (a) => {
-        const s = await fetchActivityStreams(a.id, FULL_STREAMS);
-        streamsRaw[a.id] = streamsExtract(s);
-        // Aggiorna anche cache metriche derivate
-        try {
-          streamsCache[a.id] = { ...computeStreamsMetrics(s, ftp, lthr), _fetched: Date.now() };
-        } catch { /* ignore */ }
-        return s;
-      }, (done, total, msg) => {
-        $('export-progress').textContent = msg
-          ? `Streams ${done}/${total} · ${msg}`
-          : `Streams ${done}/${total} (throttle ${THROTTLE_MS/1000}s/req)…`;
-        $('export-progress-fill').style.width = `${50 + (done/total)*50}%`;
-      });
-      saveStreamsCache(streamsCache);
-    }
-
-    // Applica cache streams alle attività anche se non eravamo in max
-    acts.forEach(a => {
-      if (streamsCache[a.id] && !streamsCache[a.id]._error) a._metrics = streamsCache[a.id];
+    const { payload, fname } = await buildExport({ mode, activities: acts, athlete, stats, settings }, (text, pct) => {
+      $('export-progress').textContent = text;
+      $('export-progress-fill').style.width = `${pct}%`;
     });
-
-    // Step 3: build payload
-    const enriched = acts.map(a => {
-      const base = slimSummary(a);
-      if (detailCache[a.id]) base.detail = detailCache[a.id];
-      if (streamsRaw[a.id]) base.streams = streamsRaw[a.id];
-      return base;
-    });
-
-    const payload = buildPayload({
-      athlete, stats, settings, activities: enriched, version: mode,
-    });
-
-    const json = JSON.stringify(payload, null, 2);
-    const size = new Blob([json]).size;
-    const today = new Date().toISOString().slice(0, 10);
-    const fname = `biketr-export-${mode}-${today}.json`;
-    downloadJson(payload, fname);
+    const size = downloadJson(payload, fname);
 
     $('export-progress-fill').style.width = '100%';
-    $('export-progress').innerHTML = `✅ Esportato <b>${fname}</b> (${formatBytes(size)}, ${enriched.length} attività)`;
+    $('export-progress').innerHTML = `✅ Esportato <b>${fname}</b> (${formatBytes(size)}, ${acts.length} attività)`;
     $('export-go').disabled = false;
     $('export-go').textContent = 'Esporta di nuovo';
     $('export-cancel').textContent = 'Chiudi';
