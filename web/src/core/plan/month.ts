@@ -1,4 +1,4 @@
-// Il piano delle 4 settimane nella tab Allenamento: ogni settimana parte dalla forma che
+// Il piano delle 4 settimane in Allenamento: ogni settimana parte dalla forma che
 // avresti seguendo i workout proposti nelle settimane prima.
 
 import { dayOffsetIso } from '../dates.ts';

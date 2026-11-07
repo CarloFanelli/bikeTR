@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // Analisi: previsioni sui segmenti, carico, forma, curva di potenza, zone FC, power
-// profile, FTP nel tempo, calcolo di FTP e LTHR e workout sui segmenti, nell'ordine della
-// tab di oggi. Le card Forma e Zone FC usano soglia e FTP senza le stime dalle attività,
-// come oggi; le altre le includono. A fine caricamento dei segmenti tutto si ricalcola:
+// profile, FTP nel tempo, calcolo di FTP e LTHR e workout sui segmenti. Le card Forma e
+// Zone FC usano soglia e FTP senza le stime dalle attività, come i risultati registrati
+// dei test; le altre le includono. A fine caricamento dei segmenti tutto si ricalcola:
 // cambiano le stime dai segmenti.
 import { computed } from 'vue';
 import { segmentsJob } from '../app/jobs.ts';

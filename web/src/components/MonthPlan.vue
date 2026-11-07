@@ -15,7 +15,7 @@ import MetricGrid from './MetricGrid.vue';
 
 const props = defineProps<{ month: WeekPlan[]; hr: HrProfile; meso: Mesocycle | null; raceName?: string }>();
 
-// Colori dei ruoli della settimana, come oggi; il viola è la settimana di scarico decisa dal modello.
+// Colori dei ruoli della settimana; il viola è la settimana di scarico decisa dal modello.
 const ROLE_COLORS: Record<string, string> = {
   build1: '#3b82f6', build2: '#facc15', peak: '#fc5200', deload: '#4ade80', block_load: '#ef4444',
   block_lit1: '#3b82f6', block_lit2: '#3b82f6', taper1: '#ec4899', taper2: '#ec4899', taper3: '#ec4899', race_week: '#ec4899',

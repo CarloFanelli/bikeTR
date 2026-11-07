@@ -63,12 +63,12 @@ describe('zone FC', () => {
     total: mins.reduce((a, b) => a + b, 0),
   });
 
-  it('senza soglia o senza uscite con FC: il messaggio di oggi', () => {
+  it('senza soglia o senza uscite con FC: un messaggio lo spiega', () => {
     expect(hrZonesView(null).message).toBe('Imposta LTHR nelle impostazioni per vedere la distribuzione zone.');
     expect(hrZonesView(zones([0, 0, 0, 0, 0])).message).toBe('Nessuna attività con FC nelle ultime 4 settimane.');
   });
 
-  it('minuti e percentuali come oggi, e il giudizio sulla polarizzazione', () => {
+  it('minuti e percentuali, e il giudizio sulla polarizzazione', () => {
     const view = hrZonesView(zones([100.4, 200, 50, 30, 19.6]));
     expect(view.rows?.map(r => r.text)).toEqual(['100 min · 25%', '200 min · 50%', '50 min · 13%', '30 min · 8%', '20 min · 5%']);
     expect(view.note).toBe('✅ Distribuzione polarizzata (75% easy / 25% hard). Buono per FTP.');
@@ -106,7 +106,7 @@ describe('power profile', () => {
 });
 
 describe('FTP nel tempo', () => {
-  it('i numeri sotto il grafico, con segni e icone di oggi', () => {
+  it('i numeri sotto il grafico, con segni e icone', () => {
     const trend = { currentFtp: 250, peakFtp: 260, pctFromPeak: 96, delta4w: -4, recentSlope: -1.5, history: [{}, {}, {}] };
     expect(ftpTrendRows(trend as FtpTrend)).toEqual([
       ['FTP attuale', '250W'], ['Picco storico', '260W'], ['% del picco', '96%'], ['Delta 4 sett.', '-4W'],
@@ -144,7 +144,7 @@ describe('calcolo FTP / LTHR', () => {
     });
   });
 
-  it('FTP dichiarata: tabella chiusa; senza potenza né FTP, il messaggio di oggi', () => {
+  it('FTP dichiarata: tabella chiusa; senza potenza né FTP, un messaggio lo spiega', () => {
     expect(ftpLthrView(withWinner as never, null, {}, hr({ ftp: 250, ftpDecl: 250, ftpEst: 235 })).ftp)
       .toMatchObject({ kind: 'dichiarata', declared: 250, table: { open: false } });
     expect(ftpLthrView({ rows: [], fallback: false } as never, null, {}, hr({})).ftp)

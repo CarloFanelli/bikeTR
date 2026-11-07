@@ -1,6 +1,5 @@
-// Testi e numeri delle previsioni sui segmenti preferiti e dei workout mirati, come la tab
-// Analisi di oggi. I nomi dei segmenti restano come li ha scritti l'atleta: le schermate
-// li mostrano come testo.
+// Testi e numeri delle previsioni sui segmenti preferiti e dei workout mirati. I nomi
+// dei segmenti restano come li ha scritti l'atleta: le schermate li mostrano come testo.
 
 import { fmtTime } from './format.ts';
 import { computePrediction, type FormContext, type Point, type SegmentEntry, type SegmentWorkout } from './segments.ts';
@@ -76,7 +75,7 @@ export function workoutCards(workouts: { segment: Segment; workout: SegmentWorko
 }
 
 // La linea dei tempi di un segmento in un riquadro W×H, con la riga del PR: più in alto
-// è più lento, come oggi.
+// è più lento.
 export function sparkline(points: Point[], best: number, W = 120, H = 40) {
   if (!points.length) return null;
   const xs = points.map(p => p.x);

@@ -11,7 +11,7 @@ const base = {
 } as Activity;
 
 describe('nomi da Strava', () => {
-  it('così come sono scritti; vuoto diventa il numero, come oggi', () => {
+  it('così come sono scritti; vuoto diventa il numero', () => {
     expect(displayName('<b>Muro</b> & "Salita" 🚀', 1)).toBe('<b>Muro</b> & "Salita" 🚀');
     expect(displayName('', 77)).toBe('#77');
     expect(displayName(undefined, 77)).toBe('#77');
@@ -19,7 +19,7 @@ describe('nomi da Strava', () => {
 });
 
 describe('lista attività', () => {
-  it('una riga con icona, data, tipo, FC e numeri come oggi', () => {
+  it('una riga con icona, data, tipo, FC e numeri', () => {
     expect(activityRow({ ...base, average_heartrate: 141.6 })).toEqual({
       title: '🚴 Giro del lago', meta: `${fmtDate(base.start_date_local)} · Ride · FC 142`,
       distance: '42.2 km', sub: '1h 23m · ↑513m',

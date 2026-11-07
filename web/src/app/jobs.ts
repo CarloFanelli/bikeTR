@@ -53,7 +53,7 @@ export const exportJob = reactive<ExportJob>({
   running: false, progress: '', pct: null, done: null, error: '',
 });
 
-// All'apertura della finestra conta di nuovo lo storico, come oggi; non durante un export.
+// All'apertura della finestra conta di nuovo lo storico; non durante un export.
 export async function countForExport(): Promise<void> {
   if (exportJob.counting || exportJob.running) return;
   Object.assign(exportJob, {
@@ -105,7 +105,7 @@ export const segmentsJob = reactive<SegmentsJob>({
   loading: false, progress: 'Carico segmenti…', list: null, diag: null, error: '', completing: false, completeProgress: '',
 });
 
-// Previsioni sui segmenti preferiti: all'apertura dell'app, come oggi, e di nuovo dopo
+// Previsioni sui segmenti preferiti: all'apertura dell'app, e di nuovo dopo
 // "Completa da dettagli attività" e "Svuota cache e ricarica".
 export async function loadSegments(): Promise<void> {
   if (segmentsJob.loading) return;

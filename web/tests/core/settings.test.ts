@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { settingsErrors, settingsForm, settingsFromForm, type SettingsForm } from '../../src/core/settings.ts';
 
-// Come li salva oggi "Salva impostazioni" (stesse chiavi, stesso ordine, campi vuoti assenti).
+// Come li salva "Salva impostazioni": chiavi e ordine delle impostazioni già salvate, campi vuoti assenti.
 const saved = (form: SettingsForm) => JSON.stringify(settingsFromForm(form));
 
 describe('impostazioni dell\'atleta', () => {
-  it('senza impostazioni salvate: i default di oggi', () => {
+  it('senza impostazioni salvate: i default', () => {
     expect(settingsForm({})).toEqual({
       hrMax: '', hrLthr: '', lthrSource: 'estimated', ftpDeclared: '', ftpSource: 'estimated',
       weeklyHours: '6', weeklyDays: '4', longRides: '1', weight: '', strengthLevel: 2, longRideMaxMin: '',
@@ -19,13 +19,13 @@ describe('impostazioni dell\'atleta', () => {
     expect(settingsForm({ hrLthr: 172, lthrSource: 'estimated' }).lthrSource).toBe('estimated');
   });
 
-  it('salvare senza toccare nulla scrive quello che scriverebbe l\'app di oggi', () => {
+  it('salvare senza toccare nulla scrive solo i default, nel loro ordine', () => {
     expect(saved(settingsForm({}))).toBe('{"weeklyHours":6,"weeklyDays":4,"longRides":1,"strengthLevel":2,'
       + '"lthrSource":"estimated","ftpSource":"estimated","availableDays":[1,2,3,4,5,6,7],"longRideDays":[6],'
       + '"hasCompression":false,"hasMassageGun":false}');
   });
 
-  it('ogni impostazione torna uguale dopo il salvataggio, nell\'ordine di oggi', () => {
+  it('ogni impostazione torna uguale dopo il salvataggio, nello stesso ordine', () => {
     const all = {
       hrMax: 190, hrLthr: 172, weeklyHours: 7.5, weeklyDays: 5, longRides: 2, weight: 72.5, strengthLevel: 3,
       ftpDeclared: 250, lthrSource: 'declared', ftpSource: 'hr', availableDays: [1, 3, 5, 6], longRideDays: [6, 7],
@@ -34,7 +34,7 @@ describe('impostazioni dell\'atleta', () => {
     expect(saved(settingsForm(all))).toBe(JSON.stringify(all));
   });
 
-  it('campi vuoti: assenti, oppure i default di oggi', () => {
+  it('campi vuoti: assenti, oppure i default', () => {
     const form = {
       ...settingsForm({}), weeklyHours: '', weeklyDays: '', longRides: '', raceName: '   ', availableDays: [],
     };

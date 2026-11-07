@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Impostazioni: valori dell'atleta (gli stessi della tab Allenamento di oggi), modello
+// Impostazioni: valori dell'atleta usati da tutte le sezioni, modello
 // del Coach e scollegamento da Strava. Uscire con modifiche non salvate chiede conferma.
 import { computed, ref } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';

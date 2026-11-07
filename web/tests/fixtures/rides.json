@@ -1,5 +1,5 @@
 {
- "_comment": "Uscite, impostazioni e segmenti inventati per i test dei calcoli (web/tests/core). tests/reference/record.ts li passa al JavaScript di prima della conversione e ne scrive i risultati in load-expected.json.",
+ "_comment": "Uscite, impostazioni e segmenti inventati per i test dei calcoli (web/tests/core). I risultati del JavaScript di prima della conversione su questi dati sono in load-expected.json.",
  "now": "2026-11-06T17:45:00Z",
  "timeZone": "Europe/Rome",
  "activities": [

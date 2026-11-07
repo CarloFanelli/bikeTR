@@ -1,5 +1,5 @@
 // Quello che mostra Home: precisione dei dati, profilo, record e totali dell'atleta,
-// con i testi e gli arrotondamenti dell'app di oggi.
+// con i loro testi e arrotondamenti.
 
 import { fmtKm, fmtTime } from './format.ts';
 import type { HrProfile } from './hr.ts';
@@ -30,7 +30,7 @@ const NONE: ShownValue = { value: '—', note: '' };
 // `maxStreams`: quante uscite al massimo scarica "Aggiorna con streams".
 export function dataPrecision(profile: HrProfile, activities: Activity[], maxStreams: number): DataPrecision {
   const bikes = activities.filter(a => a.type?.includes('Ride'));
-  // Un'uscita con lo scaricamento fallito non conta, come oggi.
+  // Un'uscita con lo scaricamento fallito non conta.
   const withStreams = bikes.filter(a => a._metrics && !(a._metrics as { _error?: string })._error).length;
   const withPower = bikes.filter(a => a.weighted_average_watts || a.average_watts).length;
   const withHr = bikes.filter(a => a.has_heartrate).length;

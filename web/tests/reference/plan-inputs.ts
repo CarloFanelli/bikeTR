@@ -1,6 +1,5 @@
 // Ingressi di un caso del piano di allenamento (tests/fixtures/plan-cases.json) che non
 // stanno scritti nel file: quali attività vede il caso e il profilo atleta del livello.
-// Li usano sia la registrazione (record-plan.ts) sia i test, così vedono gli stessi dati.
 
 interface Dated {
   type: string;

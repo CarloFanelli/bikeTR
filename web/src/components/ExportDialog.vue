@@ -43,7 +43,7 @@ const MODES: { value: ExportMode; title: string; text: string; warn?: string }[]
   },
 ];
 
-// Con molte richieste a Strava chiede conferma, come oggi.
+// Con molte richieste a Strava chiede conferma.
 function confirmed(choiceMode: ExportMode, count: number): boolean {
   const { calls, minutes } = estimate(choiceMode, count);
   if (choiceMode === 'max' && count > 30) {

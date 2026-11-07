@@ -1,5 +1,5 @@
 // Quello che mostra Allenamento: consiglio del giorno, calendario dei 28 giorni, grafico
-// del carico e piano del mese, con i testi e gli arrotondamenti della tab di oggi.
+// del carico e piano del mese, con i loro testi e arrotondamenti.
 
 import { dayOffsetIso } from './dates.ts';
 import type { compositeFatigueScore } from './form.ts';

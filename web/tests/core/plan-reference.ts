@@ -1,6 +1,5 @@
 // I casi del piano di allenamento (tests/fixtures/plan-cases.json) e i risultati registrati
-// dal JavaScript di prima della conversione (tests/fixtures/plan-expected.json, vedi
-// tests/reference/record.ts).
+// dal JavaScript di prima della conversione (tests/fixtures/plan-expected.json).
 
 import type { FtpPoint } from '../../src/core/ftp.ts';
 import type { Mesocycle } from '../../src/core/meso.ts';
@@ -31,7 +30,7 @@ export const settingsOf = (name: string): Settings => plan.settings[name];
 export const mesocycleOf = (name: string | null): Mesocycle | null =>
   (name ? structuredClone(plan.mesocycles[name]) : null);
 
-// Valori che le pagine leggono dal browser, come li salva record-plan.ts per ogni caso.
+// Valori che le schermate leggono dal browser, quelli scritti in ogni caso.
 export function planInputs(
   now: string, saved: { segments?: boolean; ftpHistory?: string | null; mesocycle?: string | null; rainyDays?: string[] } = {},
 ): PlanInputs {

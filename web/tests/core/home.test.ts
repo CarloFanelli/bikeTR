@@ -59,7 +59,7 @@ describe('Precisione dati', () => {
     expect(dataPrecision(noProfile, acts, 2).streams).toBe('1/2');
   });
 
-  it('nessuna uscita: zeri e trattini, come oggi', () => {
+  it('nessuna uscita: zeri e trattini', () => {
     expect(dataPrecision(noProfile, [], 40)).toEqual({
       mode: { icon: '⚠️', label: 'Proxy HR-max', detail: '(meno preciso, imposta LTHR per upgrade)' },
       ftp: { value: '—', note: '' }, lthr: { value: '—', note: '' },
@@ -75,7 +75,7 @@ describe('Profilo atleta', () => {
     form: 'buona', weeklyRecent: 5.55,
   } as ReturnType<typeof buildProfile>;
 
-  it('stessi valori e arrotondamenti di oggi', () => {
+  it('valori del profilo, arrotondati', () => {
     expect(profileRows(profile)).toEqual([
       ['Forma', 'buona'], ['Km all-time', '12.346'], ['Uscite all-time', '410'], ['Km ult. 4 sett.', '301'],
       ['Ore/sett recenti', '5.5h'], ['Uscite ult. 4 sett.', '11'], ['Consistenza 8 sett.', '63%'], ['W/kg (best)', '3.12'],
@@ -86,7 +86,7 @@ describe('Profilo atleta', () => {
     expect(profileRows({ ...profile, wPerKg: null }).map(([label]) => label)).not.toContain('W/kg (best)');
   });
 
-  it('record: valori di oggi; senza uscita sopra 30 km o con Suffer Score mancano quelle righe', () => {
+  it('record: valori arrotondati; senza uscita sopra 30 km o con Suffer Score mancano quelle righe', () => {
     const longest = ride(1, { moving_time: 15000, distance: 120400 });
     const mostClimb = ride(2, { total_elevation_gain: 1834.6 });
     expect(recordRows({ longest, mostClimb, fastest: ride(3, { average_speed: 8.47 }), mostSuffer: null })).toEqual([

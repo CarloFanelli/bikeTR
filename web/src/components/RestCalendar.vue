@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // I prossimi 28 giorni, da lunedì: un clic su un giorno passa da normale a "salto" a
 // "pioggia" e torna normale. Vuetify non ha un calendario così: sono pulsanti in griglia,
-// con i colori di oggi.
+// uno per giorno.
 import { VBtn } from 'vuetify/components';
 import type { restCalendar } from '../core/training-view.ts';
 

@@ -35,7 +35,7 @@ beforeEach(() => {
 });
 
 describe('previsioni sui segmenti', () => {
-  it('mostra l\'avanzamento come oggi, poi i segmenti', async () => {
+  it('mostra l\'avanzamento, poi i segmenti', async () => {
     vi.mocked(loadSegmentPredictions).mockImplementation(async (onProgress) => {
       onProgress?.(2, 5, 1);
       expect(segmentsJob.progress).toBe('Carico segmenti 2/5 (errori: 1)…');
@@ -47,7 +47,7 @@ describe('previsioni sui segmenti', () => {
     expect([segmentsJob.loading, segmentsJob.list?.length, segmentsJob.diag]).toEqual([false, 1, diag]);
   });
 
-  it('Strava che fallisce: il messaggio di oggi', async () => {
+  it('Strava che fallisce: il messaggio che lo spiega', async () => {
     vi.mocked(loadSegmentPredictions).mockRejectedValue(new Error('API /segments/starred: 503'));
     await loadSegments();
     expect(segmentsJob.error).toBe('Errore caricamento segmenti: API /segments/starred: 503');
@@ -108,7 +108,7 @@ describe('Completa da dettagli attività', () => {
     expect(completeFromActivities).toHaveBeenCalledTimes(1);
   });
 
-  it('Strava che fallisce: il messaggio di oggi, e si può riprovare', async () => {
+  it('Strava che fallisce: il messaggio che lo spiega, e si può riprovare', async () => {
     vi.mocked(completeFromActivities).mockRejectedValue(new Error('API /segments/starred: 500'));
     await completeSegments();
     expect([segmentsJob.completing, segmentsJob.completeProgress]).toEqual([false, '❌ API /segments/starred: 500']);

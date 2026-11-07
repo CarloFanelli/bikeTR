@@ -1,4 +1,4 @@
-// Il piano della settimana nella tab Allenamento: quali giorni sono duri, lunghi, facili,
+// Il piano della settimana in Allenamento: quali giorni sono duri, lunghi, facili,
 // di recupero o di riposo, con il workout di ciascuno.
 
 import { dayOffsetIso } from '../dates.ts';

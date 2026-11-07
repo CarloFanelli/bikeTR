@@ -18,7 +18,7 @@ async function open(address: string) {
   return router.currentRoute.value;
 }
 
-describe('indirizzi della nuova app', () => {
+describe('indirizzi dell\'app', () => {
   it.each([
     ['/home', 'home'],
     ['/allenamento', 'allenamento'],

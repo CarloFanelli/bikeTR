@@ -31,7 +31,7 @@ describe('servizio Coach', () => {
     expect(await pingOllama('qwen2.5:7b')).toEqual({ ok: false, msg: 'Ollama non raggiungibile' });
   });
 
-  it('servizio Coach spento: come oggi, "Coach non raggiungibile"', async () => {
+  it('servizio Coach spento: "Coach non raggiungibile"', async () => {
     fakeCoach(() => new Response('Bad Gateway', { status: 502 }));
     expect(await pingOllama('qwen2.5:7b')).toEqual({ ok: false, msg: COACH_UNREACHABLE });
     fakeCoach(() => { throw new TypeError('Failed to fetch'); });

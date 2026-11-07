@@ -68,7 +68,7 @@ describe('Aggiorna con streams', () => {
     expect(streamsJob.running).toBe(false);
   });
 
-  it('server di autenticazione spento: il messaggio di oggi', async () => {
+  it('server di autenticazione spento: il messaggio che lo spiega', async () => {
     session.activities = [ride(1)];
     vi.mocked(fetchActivityStreams).mockRejectedValue(new AuthError('unreachable'));
     await refreshStreams();
@@ -113,7 +113,7 @@ describe('Esporta allenamenti', () => {
     );
   });
 
-  it('Strava non risponde mentre conta: il messaggio di oggi', async () => {
+  it('Strava non risponde mentre conta: il messaggio che lo spiega', async () => {
     vi.mocked(fetchActivities).mockRejectedValue(new Error('API /athlete/activities?per_page=200&page=1: 503'));
     await countForExport();
     expect(exportJob).toMatchObject({

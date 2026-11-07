@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe('valori salvati nel browser', () => {
-  it('primo uso, nessun valore salvato: i default di oggi', () => {
+  it('primo uso, nessun valore salvato: i default', () => {
     expect(loadSettings()).toEqual({});
     expect(loadPlannedRests()).toEqual([]);
     expect(loadRainyDays()).toEqual([]);
@@ -34,7 +34,7 @@ describe('valori salvati nel browser', () => {
     expect(store.size).toBe(0);
   });
 
-  it('legge i valori scritti dalla versione di oggi, con le stesse chiavi', () => {
+  it('legge i valori scritti dalla versione JavaScript di prima, con le stesse chiavi', () => {
     store.set('biketr_settings', '{"hrMax":190,"weeklyHours":8,"lthrSource":"declared","availableDays":[1,3,6]}');
     store.set('biketr_planned_rests', '["2026-11-06"]');
     store.set('biketr_rainy_days', '["2026-11-07"]');
@@ -45,7 +45,7 @@ describe('valori salvati nel browser', () => {
     expect(loadStreamsCache()).toEqual({ 123: { NP: 210, TSS: 80, _fetched: 1 }, 124: { _error: 'x', _fetched: 2 } });
   });
 
-  it('scrive JSON sotto le chiavi di oggi', () => {
+  it('scrive JSON sotto le stesse chiavi', () => {
     saveSettings({ hrMax: 185, weeklyDays: 4 });
     expect(store.get('biketr_settings')).toBe('{"hrMax":185,"weeklyDays":4}');
   });
@@ -112,7 +112,7 @@ describe('impostazioni del Coach', () => {
 });
 
 describe('segmenti preferiti già scaricati', () => {
-  it('si leggono, si salvano e si svuotano sotto la chiave di oggi', () => {
+  it('si leggono, si salvano e si svuotano sotto la loro chiave', () => {
     expect(loadSegmentCache()).toEqual({});
     saveSegmentCache({ 12: { efforts: [], _fetched: 1, _segment: { distance: 1200 } } });
     expect(store.get('biketr_segments_cache_v2')).toBe('{"12":{"efforts":[],"_fetched":1,"_segment":{"distance":1200}}}');

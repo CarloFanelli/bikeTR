@@ -7,21 +7,17 @@ Aggiornare questo file **ad ogni modifica** del comportamento dell'algoritmo.
 
 ## 1. Architettura generale
 
-App statica (HTML + JavaScript) servita da nginx in Docker. Legge da **Strava API v3** via OAuth 2.0 (flusso Authorization Code). Login e rinnovo dei token passano dal server di autenticazione, che tiene client ID/secret (dal file `.env`) e refresh token; il browser riceve solo token di accesso temporanei e chiama Strava direttamente.
+App Vue e TypeScript (cartella `web/`), servita in Docker dal server di sviluppo Vite dietro nginx. Legge da **Strava API v3** via OAuth 2.0 (flusso Authorization Code). Login e rinnovo dei token passano dal server di autenticazione, che tiene client ID/secret (dal file `.env`) e refresh token; il browser riceve solo token di accesso temporanei e chiama Strava direttamente.
 
 ### File principali
 | File | Ruolo |
 |---|---|
-| `index.html` | Markup, struttura viste (tab) |
-| `app.js` | Orchestrazione, routing viste, chiamate Strava |
-| `strava.js` | Token dal server di autenticazione, fetch API, cache streams/segmenti, helpers data |
+| `web/index.html` | Pagina unica dell'app: carica `src/app/main.ts` |
+| `web/src/app/` | Avvio, indirizzi delle sezioni (`#/home`, `#/analisi`, …), sessione Strava, lavori lunghi (streams, export, segmenti, Coach) |
+| `web/src/screens/`, `web/src/components/` | Schermate e card Vue: Home, Allenamento, Analisi, Attività e dettaglio (mappa, split, segmenti), Coach AI, Impostazioni |
+| `web/src/data/` | Token dal server di autenticazione, fetch API Strava, cache streams/segmenti, valori salvati nel browser, export JSON, richiesta al servizio Coach |
 | `docker/auth/server.ts` | Server di autenticazione: login OAuth Strava, refresh token, token di accesso al browser |
-| `training.js` | Card della tab Allenamento (consiglio del giorno, calendario riposi, grafico del carico, piano) |
-| `training_v2.js` | Nomi di oggi per il catalogo workout v2 di `web/src/core/training-v2.ts` |
-| `analysis.js` | Card della tab Analisi: form trend, power curve, zone FC, polarizzazione, insight interpretativi |
-| `predictions.js` | Download dei segmenti preferiti, card di previsioni e allenamenti mirati |
-| `web/src/core/` | Calcoli in TypeScript, con tutto come parametro: metriche stream, carico, CTL/ATL/TSB, stime e trend FTP/LTHR, power curve e profilo, previsioni e stime dai segmenti, mesociclo e taper (`meso.ts`), catalogo workout v2 evidence-based con capacity tier (`training-v2.ts`), piano di allenamento (`plan/`: consiglio del giorno, modello utente, settimana, 4 settimane) |
-| `activity.html`, `activity.js` | Pagina dettaglio singola attività (mappa, split, segmenti) |
+| `web/src/core/` | Calcoli in TypeScript, con tutto come parametro: metriche stream, carico, CTL/ATL/TSB, stime e trend FTP/LTHR, power curve e profilo, previsioni e stime dai segmenti, mesociclo e taper (`meso.ts`), catalogo workout v2 evidence-based con capacity tier (`training-v2.ts`), piano di allenamento (`plan/`: consiglio del giorno, modello utente, settimana, 4 settimane), testi e arrotondamenti delle schermate (`*-view.ts`) |
 
 ### Storage locale (localStorage keys)
 | Key | Contenuto | TTL |
@@ -29,7 +25,7 @@ App statica (HTML + JavaScript) servita da nginx in Docker. Legge da **Strava AP
 | `biketr_settings` | impostazioni utente (LTHR, FTP, peso, ore, giorni, ...) | permanente |
 | `biketr_planned_rests` | date ISO marcate come skip | permanente |
 | `biketr_rainy_days` | date ISO marcate come pioggia | permanente |
-| `biketr_streams_cache_v2` | metriche derivate dagli streams per attività | permanente |
+| `biketr_streams_cache` | metriche derivate dagli streams per attività | permanente |
 | `biketr_segments_cache_v2` | efforts per segmento | 24h (2h se vuoto) |
 
 ---

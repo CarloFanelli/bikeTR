@@ -1,4 +1,4 @@
-// Testi e numeri delle card di Analisi, con gli arrotondamenti della tab di oggi: le
+// Testi e numeri delle card di Analisi, già arrotondati: le
 // schermate li mostrano e basta. Tutto arriva come parametro.
 
 import { displayName } from './activity-view.ts';
@@ -65,7 +65,7 @@ export function formView(form: FormTrend, now: Date) {
   return { labels, rows };
 }
 
-// Minuti e percentuale per zona, e il giudizio sulla polarizzazione; il messaggio di oggi
+// Minuti e percentuale per zona, e il giudizio sulla polarizzazione; un messaggio
 // senza soglia o senza uscite con FC.
 export function hrZonesView(data: ReturnType<typeof buildHrZones>) {
   if (!data) return { message: 'Imposta LTHR nelle impostazioni per vedere la distribuzione zone.' } as const;

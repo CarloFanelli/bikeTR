@@ -1,4 +1,4 @@
-// Il modello di allenamento della tab Allenamento: abitudini e carico delle ultime 6 settimane.
+// Il modello di allenamento (sezione Allenamento): abitudini e carico delle ultime 6 settimane.
 
 import type { HrProfile } from '../hr.ts';
 import { activityLoad, isHard, typeWeight } from '../load.ts';

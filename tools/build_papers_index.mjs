@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 // build_papers_index.mjs
 // Cerca paper su PubMed per query (esearch), scarica abstract (efetch),
-// genera embeddings via Ollama nomic-embed-text, salva papers_index.json.
+// genera embeddings via Ollama nomic-embed-text, salva papers_index.json nella
+// cartella del progetto, da qualunque cartella lo si lanci.
 //
 // Usa search queries (non PMID fissi) per evitare di indovinare ID errati.
-// Esecuzione: node build_papers_index.mjs
+// Esecuzione, dalla cartella del progetto: node tools/build_papers_index.mjs
 
 import fs from 'node:fs/promises';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const EMBED_MODEL = 'nomic-embed-text';
 const EUTILS = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+const INDEX_FILE = new URL('../papers_index.json', import.meta.url);
 
 // Ogni voce: query PubMed precisa + filtro autore/anno per disambiguare.
 // Lo script fa esearch, prende il primo hit, efetch dell'abstract.
@@ -143,8 +145,8 @@ async function main() {
     embeddingDim: papers[0]?.embedding?.length || 0,
     papers,
   };
-  await fs.writeFile('papers_index.json', JSON.stringify(out));
-  const sizeKb = ((await fs.stat('papers_index.json')).size / 1024).toFixed(1);
+  await fs.writeFile(INDEX_FILE, JSON.stringify(out));
+  const sizeKb = ((await fs.stat(INDEX_FILE)).size / 1024).toFixed(1);
   console.log(`\n✅ Salvato papers_index.json — ${papers.length}/${SEARCHES.length} paper · ${out.embeddingDim}d · ${sizeKb} KB`);
 }
 

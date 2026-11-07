@@ -1,10 +1,10 @@
-// Le righe della lista Attività e del dettaglio di un'attività, con i testi e gli
-// arrotondamenti dell'app di oggi. I nomi da Strava restano come sono scritti.
+// Le righe della lista Attività e del dettaglio di un'attività, con i loro testi e
+// arrotondamenti. I nomi da Strava restano come sono scritti.
 
 import { fmtDate, fmtKm, fmtTime, TYPE_EMOJI } from './format.ts';
 import type { Activity, ActivityDetail, SegmentEffort, Split } from './strava-types.ts';
 
-// Un nome vuoto mostra il numero, come i link alle attività di oggi.
+// Un nome vuoto mostra il numero dell'attività.
 export const displayName = (name: string | undefined, id: number): string => name || '#' + id;
 
 const kmh = (metersPerSecond: number): string => (metersPerSecond * 3.6).toFixed(1);

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Il carico degli ultimi 30 giorni: una barra per giorno, colorata per tipo, e la media
-// giornaliera tratteggiata. Sta in Allenamento e, come oggi, in Analisi.
+// giornaliera tratteggiata. Sta in Allenamento e in Analisi.
 import { computed } from 'vue';
 import { VCard, VCardText, VCardTitle } from 'vuetify/components';
 import { LOAD_KINDS, type loadChartView } from '../core/training-view.ts';

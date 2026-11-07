@@ -1,4 +1,4 @@
-// Stato condiviso della nuova app: collegamento a Strava, atleta, statistiche e
+// Stato condiviso dell'app: collegamento a Strava, atleta, statistiche e
 // attività, caricati una volta all'apertura e letti da ogni sezione.
 
 import { reactive } from 'vue';
@@ -56,9 +56,9 @@ export async function startSession(): Promise<void> {
   }
 }
 
-// Il mesociclo di oggi, aggiornato a ogni apertura come fa l'app di oggi, così ogni sezione
-// legge lo stesso blocco: si salva solo alla prima apertura e quando un blocco finisce.
-// Un mesociclo salvato rovinato non blocca l'app, come oggi.
+// Il mesociclo di oggi, aggiornato a ogni apertura, così ogni sezione legge lo stesso
+// blocco: si salva solo alla prima apertura e quando un blocco finisce.
+// Un mesociclo salvato rovinato non blocca l'app.
 function updateMesocycle(activities: Activity[]): void {
   try {
     const { meso, changed } = nextMesocycle(loadMesocycle(), activities, loadSettings(), new Date());
@@ -68,8 +68,8 @@ function updateMesocycle(activities: Activity[]): void {
   }
 }
 
-// Il punto FTP di oggi, per il trend in Analisi e per il piano in Allenamento, come
-// l'app di oggi a ogni apertura. Uno storico rovinato non blocca l'app.
+// Il punto FTP di oggi, per il trend in Analisi e per il piano in Allenamento, a ogni
+// apertura. Uno storico rovinato non blocca l'app.
 function updateFtpHistory(activities: Activity[]): void {
   const now = new Date();
   try {
