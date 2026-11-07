@@ -11,10 +11,10 @@ import { fetchActivityStreams } from './src/data/strava.ts';
 
 export { APP_CONFIG, computeStreamsMetrics };
 export { fmtKm, fmtTime, fmtDate, isoDay, TYPE_EMOJI } from './src/core/format.ts';
-export { AuthError, getAuthStatus, logout } from './src/data/auth.ts';
+export { AuthError, authCallbackMessage, getAuthStatus, logout } from './src/data/auth.ts';
 export {
   safeLoad, safeSave, isPlainObject, loadSettings, saveSettings, loadPlannedRests,
-  loadRainyDays, cycleDayState, loadStreamsCache, saveStreamsCache, purgeLegacyStrava,
+  loadRainyDays, cycleDayState, loadStreamsCache, saveStreamsCache, purgeLegacyStrava, applyCachedStreams,
 } from './src/data/storage.ts';
 export {
   fetchAthlete, fetchAthleteStats, fetchActivities, fetchActivity, fetchStarredSegments,
@@ -51,13 +51,6 @@ export async function hydrateWithStreams(activities, ftp, lthr, maxFetch = APP_C
     if (cache[a.id] && !cache[a.id]._error) a._metrics = cache[a.id];
   });
   return { fetched: toFetch.length, totalCached: Object.keys(cache).length };
-}
-
-export function applyCachedStreams(activities) {
-  const cache = loadStreamsCache();
-  activities.forEach(a => {
-    if (cache[a.id] && !cache[a.id]._error) a._metrics = cache[a.id];
-  });
 }
 
 export function escapeHtml(s) {

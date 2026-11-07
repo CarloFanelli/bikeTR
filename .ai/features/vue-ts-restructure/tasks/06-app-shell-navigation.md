@@ -43,3 +43,7 @@ Each later screen task fills one section of this shell. Today's app stays the de
 - Strava access revoked on strava.com → today's reconnect message (REQ-12)
 - N/A — empty, network, concurrent, permission: appearance only (REQ-18)
 - Connecting to Strava from the new app before the switch → returns to today's app; from Task 12 on it returns to the new app (REQ-12 · from code)
+
+## Notes from implementation
+
+- **REQ-18 / AC 5 — divergence**: the plan named PrimeVue as the one component library → the new app uses Vuetify 4 (MIT), with the Material Design Icons as SVG paths (`@mdi/js`, Apache-2.0), and PrimeVue is removed. PrimeVue 5, installed by Task 01, needs a licence key since July 2026: without it every page shows a red "licence cannot be verified" notice, and anyone who runs the project without their own key would see it. `ARCHITECTURE.md` now names Vuetify. Agreed in /dev, 2026-11-07.

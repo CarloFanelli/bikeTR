@@ -4,7 +4,7 @@
 import type { FtpPoint } from '../core/ftp.ts';
 import type { Mesocycle } from '../core/meso.ts';
 import type { Settings } from '../core/settings.ts';
-import type { StreamMetrics } from '../core/strava-types.ts';
+import type { Activity, StreamMetrics } from '../core/strava-types.ts';
 
 export type { Settings };
 
@@ -18,6 +18,7 @@ const RAINY_DAYS = 'biketr_rainy_days';
 const STREAMS_CACHE = 'biketr_streams_cache';
 const FTP_HISTORY = 'biketr_ftp_history';
 const MESOCYCLE = 'biketr_mesocycle';
+const UI = 'biketr_ui';
 
 // Chiave assente: `fallback`, senza log. JSON illeggibile o rifiutato da `validator`:
 // copia in "<chiave>.broken", avviso in console e `fallback`. Non lancia mai.
@@ -79,6 +80,20 @@ export function cycleDayState(iso: string): void {
 
 export const loadStreamsCache = (): StreamsCache => safeLoad<StreamsCache>(STREAMS_CACHE, {}, isPlainObject);
 export const saveStreamsCache = (cache: StreamsCache): boolean => safeSave(STREAMS_CACHE, cache);
+
+// Rimette sulle attività le metriche degli stream già scaricati; i download falliti restano fuori.
+export function applyCachedStreams(activities: Activity[]): void {
+  const cache = loadStreamsCache();
+  for (const a of activities) {
+    const entry = cache[a.id];
+    if (entry && !entry._error) a._metrics = entry as StreamMetrics;
+  }
+}
+
+// Barra laterale della nuova app ridotta a icone; senza una scelta leggibile resta espansa.
+export const loadSidebarCollapsed = (): boolean =>
+  safeLoad<{ sidebarCollapsed?: unknown }>(UI, {}, isPlainObject).sidebarCollapsed === true;
+export const saveSidebarCollapsed = (collapsed: boolean): boolean => safeSave(UI, { sidebarCollapsed: collapsed });
 
 // Un punto alla settimana, al massimo 52 (vedi nextFtpHistory).
 export const loadFtpHistory = (): FtpPoint[] => safeLoad<FtpPoint[]>(FTP_HISTORY, [], Array.isArray);

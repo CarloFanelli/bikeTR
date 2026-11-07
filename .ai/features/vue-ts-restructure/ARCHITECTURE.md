@@ -10,7 +10,7 @@ status: approved
 
 ### Overview
 
-A new `web/` folder holds the browser app: Task 01 moves today's files there unchanged, and a new `app` container (official `node:22-alpine`, no published port) runs Vite's live-reload server behind nginx, which keeps the host guard and serves `/papers_index.json` to the Coach service. Calculations move first into `web/src/core/`, plain TypeScript that Node 22 runs directly (v22.23.4 in `node:22-alpine` strips types by default, checked in this run), so today's screens use them at once and the Coach's reference script keeps proving the Python numbers. The new app (Vue 3, vue-router with hash history, PrimeVue, Chart.js) grows at `/nuova/` beside today's app on the same origin, sharing saved browser data, and Task 12 swaps them. One command, `docker compose run --rm --no-deps app npm run check`, runs `vue-tsc`, the Auth server's type check, Vitest and a structure script.
+A new `web/` folder holds the browser app: Task 01 moves today's files there unchanged, and a new `app` container (official `node:22-alpine`, no published port) runs Vite's live-reload server behind nginx, which keeps the host guard and serves `/papers_index.json` to the Coach service. Calculations move first into `web/src/core/`, plain TypeScript that Node 22 runs directly (v22.23.4 in `node:22-alpine` strips types by default, checked in this run), so today's screens use them at once and the Coach's reference script keeps proving the Python numbers. The new app (Vue 3, vue-router with hash history, Vuetify with Material Design Icons, Chart.js) grows at `/nuova/` beside today's app on the same origin, sharing saved browser data, and Task 12 swaps them. One command, `docker compose run --rm --no-deps app npm run check`, runs `vue-tsc`, the Auth server's type check, Vitest and a structure script.
 
 ### Shared Concerns
 
@@ -31,7 +31,7 @@ A new `web/` folder holds the browser app: Task 01 moves today's files there unc
 
 - **Appears in**: Task 06, Task 07, Task 08, Task 09, Task 10, Task 11
 - **Reference example**: `web/src/screens/ConnectScreen.vue` (Task 06 sets it)
-- **Rule**: one single-file component per section in `web/src/screens/`, built from PrimeVue components; Strava text only through `{{ }}`, never `v-html`; work that must outlive a section change (streams refresh, export, segment completion, Coach request) lives in a module store under `web/src/app/`.
+- **Rule**: one single-file component per section in `web/src/screens/`, built from Vuetify components; Strava text only through `{{ }}`, never `v-html`; work that must outlive a section change (streams refresh, export, segment completion, Coach request) lives in a module store under `web/src/app/`.
 
 #### Coach reference check
 
@@ -51,7 +51,7 @@ A new `web/` folder holds the browser app: Task 01 moves today's files there unc
 
 **Files to create:**
 - `web/` — today's `index.html`, `activity.html`, `style.css` and root `.js` (not `build_papers_index.mjs`), unchanged.
-- `web/package.json`, lockfile — Vue, vue-router, PrimeVue, Chart.js, vue-chartjs, Leaflet; dev: Vite, plugin-vue, TypeScript, vue-tsc, Vitest, `@types/node`, `@types/leaflet`.
+- `web/package.json`, lockfile — Vue, vue-router, Vuetify, `@mdi/js`, Chart.js, vue-chartjs, Leaflet; dev: Vite, plugin-vue, TypeScript, vue-tsc, Vitest, `@types/node`, `@types/leaflet`.
 - `web/vite.config.ts` — `0.0.0.0:5173`, polling watcher, Vitest settings.
 - `web/tsconfig.json` — strict, `noEmit`, `allowImportingTsExtensions`, `erasableSyntaxOnly`.
 - `web/scripts/start.sh` — `npm ci` when the lockfile hash differs from the one stored in `node_modules`, then Vite; shell style as `compose.yaml:74-82`.
@@ -159,7 +159,7 @@ A new `web/` folder holds the browser app: Task 01 moves today's files there unc
 
 **Files to create:**
 - `web/nuova/index.html` — entry loading `src/app/main.ts`.
-- `web/src/app/main.ts` — Vue app, PrimeVue theme, router.
+- `web/src/app/main.ts` — Vue app, Vuetify theme (today's colors), router.
 - `web/src/app/router.ts` — hash routes `/home`, `/allenamento`, `/analisi`, `/attivita`, `/attivita/:id`, `/coach`, `/impostazioni`; anything else to `/home`.
 - `web/src/app/session.ts` — status, athlete, stats, 60 activities loaded once, cached streams, mesocycle and FTP-history updates (as `app.js:396-424`).
 - `web/src/App.vue`, `web/src/components/AppSidebar.vue` — collapse saved under new key `biketr_ui`.
