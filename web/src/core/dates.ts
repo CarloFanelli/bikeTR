@@ -34,3 +34,6 @@ export function dayOffsetIso(n: number, now: Date): string {
   d.setDate(d.getDate() + n);
   return isoDay(d);
 }
+
+// Nomi brevi dei giorni nell'ordine dei numeri ISO (1 = lunedì … 7 = domenica).
+export const WEEKDAYS_ISO = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];

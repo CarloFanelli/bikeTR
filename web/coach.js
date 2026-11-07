@@ -1,5 +1,7 @@
-import { loadSettings, safeLoad, safeSave, isPlainObject, escapeHtml } from './strava.js';
+import { loadSettings, escapeHtml } from './strava.js';
 import { resolveHr } from './training.js';
+import { COACH_DEFAULT_MODEL, COACH_UNREACHABLE, pingOllama } from './src/data/coach.ts';
+import { loadCoachSettings, saveCoachSettings } from './src/data/storage.ts';
 
 // helpers DOM (definiti localmente per evitare dipendenze cicliche con app.js)
 const $ = (id) => document.getElementById(id);
@@ -17,21 +19,7 @@ const show = (id) => { const el = $(id); if (el) el.hidden = false; };
 //     (il testo del modello mentre lo scrive), poi result oppure error.
 // ============================================================================
 
-const COACH_DEFAULT_MODEL = 'qwen2.5:7b';
-const COACH_SETTINGS_KEY = 'biketr_coach_settings';
-const COACH_UNREACHABLE = 'Coach non raggiungibile: avvia BikeTR con docker compose up -d';
 const COACH_INTERRUPTED = 'Connessione col Coach interrotta';
-
-function loadCoachSettings() {
-  const s = safeLoad(COACH_SETTINGS_KEY, {}, isPlainObject);
-  // Le versioni precedenti salvavano anche l'indirizzo di Ollama: non serve più.
-  if ('endpoint' in s) {
-    delete s.endpoint;
-    saveCoachSettings(s);
-  }
-  return s;
-}
-function saveCoachSettings(s) { safeSave(COACH_SETTINGS_KEY, s); }
 
 // Profilo atleta per il servizio: i valori mancanti viaggiano come null e il
 // servizio usa gli stessi default del vecchio Coach del browser.
@@ -232,18 +220,6 @@ async function coach_generate(activities, durataMin) {
 // Bind UI
 // ----------------------------------------------------------------------------
 
-// Il servizio Coach controlla Ollama: risponde {models, missing: [{model, command}]}
-// oppure {error, message}. Senza una risposta del servizio, il Coach non è avviato.
-async function pingOllama(model) {
-  let res;
-  try {
-    res = await fetch('/coach/ping?model=' + encodeURIComponent(model));
-  } catch { return { ok: false, msg: COACH_UNREACHABLE }; }
-  const body = await res.json().catch(() => null);
-  if (!res.ok || !body) return { ok: false, msg: body?.message || COACH_UNREACHABLE };
-  return { ok: true, models: body.models, missing: body.missing };
-}
-
 function initCoach(activities) {
   const sec = $('coach-section');
   if (!sec) return;
@@ -275,7 +251,7 @@ function initCoach(activities) {
 
   $('coach-generate').onclick = () => {
     const dur = +$('coach-duration').value || 60;
-    saveCoachSettings({ ...loadCoachSettings(), lastDuration: dur });
+    saveCoachSettings({ lastDuration: dur });
     coach_generate(activities, dur);
   };
 

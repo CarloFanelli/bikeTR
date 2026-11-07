@@ -1,3 +1,5 @@
+import { WEEKDAYS_ISO } from './src/core/dates.ts';
+import { forgetCoachRides } from './src/data/coach.ts';
 import {
   loadSettings, saveSettings, getAuthStatus, authCallbackMessage, logout, purgeLegacyStrava,
   fetchAthlete, fetchAthleteStats, fetchActivities, fetchStarredSegments,
@@ -184,11 +186,10 @@ function renderActivities(list) {
 
 // DOW: dow ISO con lunedì = 1, domenica = 7. Internamente JS usa 0=Domenica…6=Sabato;
 // per UI/persistenza usiamo ISO (1..7). I helper bridge li convertono.
-const DOW_LABELS_ISO = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
 function _renderDowRow(containerId, selectedIsoSet) {
   const el = $(containerId);
-  el.innerHTML = DOW_LABELS_ISO.map((lbl, i) => {
+  el.innerHTML = WEEKDAYS_ISO.map((lbl, i) => {
     const iso = i + 1;
     const active = selectedIsoSet.has(iso);
     return `<button type="button" class="dow-btn${active ? ' active' : ''}" data-iso="${iso}">${lbl}</button>`;
@@ -380,9 +381,7 @@ async function main() {
   });
   $('logout').addEventListener('click', async () => {
     await logout();
-    // Le corse salvate dal servizio Coach appartengono al collegamento. Dopo il
-    // logout nessuna richiesta del Coach può ottenere un nuovo token.
-    await fetch('/coach/forget', { method: 'POST' }).catch(() => {});
+    await forgetCoachRides();
     window.location.reload();
   });
 

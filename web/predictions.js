@@ -1,20 +1,16 @@
 // Previsioni sui segmenti preferiti: carica segmenti starred, storico tentativi,
 // calcola trend e stima tempo al prossimo tentativo (regressione lineare).
 import {
-  safeLoad, safeSave, isPlainObject, APP_CONFIG, fmtTime, escapeHtml, AuthError,
+  APP_CONFIG, fmtTime, escapeHtml, AuthError,
   fetchStarredSegments, fetchSegmentEfforts, fetchActivity,
 } from './strava.js';
 import {
   isSegmentFTPSuitable, effortDecay as effortDecayFrom, estimatesFromSegments as estimatesFrom,
   linearRegression, formAdjustedTime, computePrediction, segmentTargetedWorkout, generateSegmentWorkouts,
 } from './src/core/segments.ts';
-
-const SEG_CACHE = 'biketr_segments_cache_v2';
-function clearSegCache() { localStorage.removeItem(SEG_CACHE); }
-function loadSegCache() {
-  return safeLoad(SEG_CACHE, {}, isPlainObject);
-}
-function saveSegCache(c) { safeSave(SEG_CACHE, c); }
+import {
+  clearSegmentCache as clearSegCache, loadSegmentCache as loadSegCache, saveSegmentCache as saveSegCache,
+} from './src/data/storage.ts';
 
 // I calcoli stanno in src/core/segments.ts; queste versioni leggono orologio e segmenti salvati.
 const effortDecay = (startDate) => effortDecayFrom(startDate, new Date());

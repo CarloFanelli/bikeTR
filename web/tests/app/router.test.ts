@@ -2,8 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory } from 'vue-router';
 import { createAppRouter } from '../../src/app/router.ts';
 
-// Qui contano gli indirizzi, non le schermate: una schermata vuota al posto di quella vera.
+// Qui contano gli indirizzi, non le schermate: schermate vuote al posto di quelle vere.
 vi.mock('../../src/screens/NotYetScreen.vue', () => ({ default: {} }));
+vi.mock('../../src/screens/SettingsScreen.vue', () => ({ default: {} }));
 
 // Il percorso aperto per un indirizzo, dopo gli eventuali rimandi.
 async function open(address: string) {

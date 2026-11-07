@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Activity } from '../../src/core/strava-types.ts';
 import {
-  applyCachedStreams, cycleDayState, loadPlannedRests, loadRainyDays, loadSettings, loadSidebarCollapsed,
-  loadStreamsCache, purgeLegacyStrava, safeLoad, safeSave, saveSettings, saveSidebarCollapsed,
+  applyCachedStreams, clearSegmentCache, cycleDayState, loadCoachSettings, loadPlannedRests, loadRainyDays,
+  loadSegmentCache, loadSettings, loadSidebarCollapsed, loadStreamsCache, purgeLegacyStrava, safeLoad, safeSave,
+  saveCoachSettings, saveSegmentCache, saveSettings, saveSidebarCollapsed,
 } from '../../src/data/storage.ts';
 
 // localStorage simulato, ispezionabile dal test.
@@ -91,6 +92,32 @@ describe('valori salvati nel browser', () => {
     const acts = [{ id: 1 }, { id: 2 }, { id: 3 }] as Activity[];
     applyCachedStreams(acts);
     expect(acts).toEqual([{ id: 1, _metrics: { NP: 210, TSS: 80, _fetched: 1 } }, { id: 2 }, { id: 3 }]);
+  });
+});
+
+describe('impostazioni del Coach', () => {
+  it('salvare il modello tiene l\'ultima durata scelta', () => {
+    store.set('biketr_coach_settings', '{"model":"qwen2.5:7b","lastDuration":90}');
+    saveCoachSettings({ model: 'llama3.1:8b' });
+    expect(store.get('biketr_coach_settings')).toBe('{"model":"llama3.1:8b","lastDuration":90}');
+    expect(loadCoachSettings()).toEqual({ model: 'llama3.1:8b', lastDuration: 90 });
+  });
+
+  it('l\'indirizzo di Ollama salvato dalle versioni vecchie sparisce alla lettura', () => {
+    store.set('biketr_coach_settings', '{"endpoint":"http://localhost:11434","model":"qwen2.5:7b"}');
+    expect(loadCoachSettings()).toEqual({ model: 'qwen2.5:7b' });
+    expect(store.get('biketr_coach_settings')).toBe('{"model":"qwen2.5:7b"}');
+  });
+});
+
+describe('segmenti preferiti già scaricati', () => {
+  it('si leggono, si salvano e si svuotano sotto la chiave di oggi', () => {
+    expect(loadSegmentCache()).toEqual({});
+    saveSegmentCache({ 12: { efforts: [], _fetched: 1, _segment: { distance: 1200 } } });
+    expect(store.get('biketr_segments_cache_v2')).toBe('{"12":{"efforts":[],"_fetched":1,"_segment":{"distance":1200}}}');
+    expect(loadSegmentCache()).toEqual({ 12: { efforts: [], _fetched: 1, _segment: { distance: 1200 } } });
+    clearSegmentCache();
+    expect(store.has('biketr_segments_cache_v2')).toBe(false);
   });
 });
 
