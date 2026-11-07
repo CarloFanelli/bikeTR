@@ -14,7 +14,8 @@ const request: WorkoutRequest = {
 const workout = {
   protocolId: 'z2_endurance', title: 'Z2 lungo', targetWatt: '160-190 W', struttura: ['60 min Z2'],
   razionale: 'TSB negativo', paperRefs: [], retrievedPapers: [], fellBack: false, provider: 'ollama',
-  model: 'qwen2.5:7b', seconds: 12.3, inputTokens: 900, outputTokens: 80, truncated: false, modelRaw: '{}', rides: { fromSaved: false, downloadedAt: null, missingDetails: 0 },
+  model: 'qwen2.5:7b', seconds: 12.3, inputTokens: 900, outputTokens: 80, truncated: false, cost: null, modelRaw: '{}',
+  rides: { fromSaved: false, downloadedAt: null, missingDetails: 0 },
 };
 
 // Una richiesta al servizio finto: il test decide quando arriva la risposta e cosa

@@ -9,6 +9,9 @@ x-coach-env: &coach-env
   CLOUD_URL: ${CLOUD_URL:-}
   CLOUD_API_KEY: ${CLOUD_API_KEY:-}
   CLOUD_MODEL: ${CLOUD_MODEL:-}
+  CLOUD_PRICE_IN: ${CLOUD_PRICE_IN:-}
+  CLOUD_PRICE_OUT: ${CLOUD_PRICE_OUT:-}
+  CLOUD_SPENDING_LIMIT: ${CLOUD_SPENDING_LIMIT:-}
 
 services:
   web:
@@ -67,7 +70,8 @@ services:
     volumes:
       - ./docker/coach:/app:ro
       # Corse e dettagli corsa scaricati da Strava: restano dopo `docker compose down`,
-      # spariscono con `down -v` o con "Disconnetti da Strava".
+      # spariscono con `down -v` o con "Disconnetti da Strava". Qui anche il totale speso
+      # per il modello cloud, che "Disconnetti da Strava" non tocca.
       - coach-data:/data
     environment: *coach-env
     depends_on:
@@ -88,6 +92,8 @@ services:
     volumes:
       - ./docker/coach:/app:ro
       - ./:/project
+      # Lo stesso totale speso del Coach: il controllo dal vivo rispetta lo stesso tetto.
+      - coach-data:/data
     environment: *coach-env
 
   ollama:

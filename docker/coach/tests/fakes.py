@@ -7,6 +7,7 @@ import httpx
 
 from app import cloud
 from app.provider import ChatSettings
+from app.spending import Prices
 from app.strava import RideData
 from fixture_data import DETAILS, NOW_MS, load
 
@@ -14,7 +15,10 @@ INDEX = load("papers_index.json")
 CLOUD_URL = "https://cloud.example/v1/"
 CLOUD_KEY = "sk-test-chiave-segreta"
 CLOUD_MODEL = "claude-di-prova"
-CLOUD_ENV = {"COACH_PROVIDER": "cloud", "CLOUD_URL": CLOUD_URL, "CLOUD_API_KEY": CLOUD_KEY, "CLOUD_MODEL": CLOUD_MODEL}
+# Dollari per milione di token letti e scritti, e tetto di spesa in dollari.
+CLOUD_PRICES = Prices(input=3.0, output=15.0, limit=1.0)
+CLOUD_ENV = {"COACH_PROVIDER": "cloud", "CLOUD_URL": CLOUD_URL, "CLOUD_API_KEY": CLOUD_KEY, "CLOUD_MODEL": CLOUD_MODEL,
+             "CLOUD_PRICE_IN": "3", "CLOUD_PRICE_OUT": "15", "CLOUD_SPENDING_LIMIT": "1"}
 # Il client vero, preso prima che un test lo sostituisca con FakeCloud.client.
 REAL_CLOUD_CLIENT = cloud.client
 
@@ -107,7 +111,7 @@ class FakeCloud:
 
     def __init__(self, answer: str):
         self.answer = answer
-        self.chat = ChatSettings("cloud", CLOUD_MODEL, CLOUD_URL, CLOUD_KEY)
+        self.chat = ChatSettings("cloud", CLOUD_MODEL, CLOUD_URL, CLOUD_KEY, CLOUD_PRICES)
         self.finish_reason = "stop"
         self.usage = {"prompt_tokens": 900, "completion_tokens": 42}
         self.requests = []

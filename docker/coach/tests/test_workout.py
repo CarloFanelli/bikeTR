@@ -51,7 +51,7 @@ async def run_case(case: dict, fake: FakeOllama | FakeCloud, finder: FakeSearch 
         await workout.run(request_of(case), events.append,
                           rides=FakeRides(activities(scenario(case["scenario"]))),
                           chat=fake.chat, chat_client=client, embed=(finder or fake_search(case)).encode,
-                          load_index=fixture_index, now_ms=NOW_MS)
+                          load_index=fixture_index, now_ms=NOW_MS, spending=main.cloud_spending)
     return events
 
 
@@ -241,7 +241,11 @@ def test_each_request_uses_the_chat_model_named_in_env(service, monkeypatch):
 
 
 @pytest.mark.parametrize("env,message", [
-    ({"COACH_PROVIDER": "cloud"}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_URL, CLOUD_API_KEY, CLOUD_MODEL"),
+    ({"COACH_PROVIDER": "cloud"}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_URL, CLOUD_API_KEY, CLOUD_MODEL, "
+                                  "CLOUD_PRICE_IN, CLOUD_PRICE_OUT, CLOUD_SPENDING_LIMIT"),
+    ({**CLOUD_ENV, "CLOUD_SPENDING_LIMIT": ""}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_SPENDING_LIMIT"),
+    ({**CLOUD_ENV, "CLOUD_PRICE_OUT": "0,5"},
+     'CLOUD_PRICE_OUT in .env vale "0,5": serve un numero di dollari, 0 o più, con il punto per i decimali'),
     ({**CLOUD_ENV, "CLOUD_API_KEY": " "}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_API_KEY"),
     ({**CLOUD_ENV, "CLOUD_URL": ""}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_URL"),
     ({"COACH_PROVIDER": "claud"}, 'COACH_PROVIDER in .env vale "claud": i valori ammessi sono ollama e cloud'),
@@ -249,7 +253,7 @@ def test_each_request_uses_the_chat_model_named_in_env(service, monkeypatch):
      "Il nome del modello deve avere al massimo 100 caratteri (OLLAMA_CHAT_MODEL in .env)"),
     ({**CLOUD_ENV, "CLOUD_MODEL": "x" * 101},
      "Il nome del modello deve avere al massimo 100 caratteri (CLOUD_MODEL in .env)"),
-], ids=["cloud-empty", "no-key", "no-url", "misspelled", "long-ollama-model", "long-cloud-model"])
+], ids=["cloud-empty", "no-limit", "comma-price", "no-key", "no-url", "misspelled", "long-ollama-model", "long-cloud-model"])
 def test_wrong_env_refuses_the_request_before_any_call(monkeypatch, env, message):
     service = make_service(monkeypatch, env)
     res = post(service, BODY)

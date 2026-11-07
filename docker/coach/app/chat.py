@@ -16,7 +16,13 @@ TIMEOUT = httpx.Timeout(10, read=READ_TIMEOUT)
 
 
 class ModelError(Exception):
-    """Il modello non risponde, non c'è o risponde con un errore; il messaggio è per l'utente."""
+    """Il modello non risponde, non c'è o risponde con un errore; il messaggio è per l'utente.
+    billed è False quando il provider non ha accettato la richiesta (l'ha rifiutata o non è
+    stato raggiunto), quindi non fa pagare nulla."""
+
+    def __init__(self, message: str, *, billed: bool = True):
+        super().__init__(message)
+        self.billed = billed
 
 
 @dataclass(frozen=True)
