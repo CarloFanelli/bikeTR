@@ -11,7 +11,6 @@ Il file si sostituisce solo a lavoro finito: se PubMed non risponde, o il comand
 interrompe, l'indice di prima resta com'è."""
 
 import argparse
-import contextlib
 import html
 import json
 import os
@@ -23,6 +22,7 @@ from pathlib import Path
 import httpx
 
 from app import search
+from app.project_files import give_to_folder_owner
 
 INDEX_FILE = Path("/project/papers_index.json")
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -151,11 +151,7 @@ def write_index(path: Path, index: dict) -> None:
     tmp = path.with_name(path.name + ".tmp")
     try:
         tmp.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        # Il container gira come root: il file resta del proprietario della cartella. Dove il
-        # proprietario non si può cambiare, il file resta com'è.
-        owner = path.parent.stat()
-        with contextlib.suppress(OSError):
-            os.chown(tmp, owner.st_uid, owner.st_gid)
+        give_to_folder_owner(tmp)
         os.replace(tmp, path)
     finally:
         tmp.unlink(missing_ok=True)

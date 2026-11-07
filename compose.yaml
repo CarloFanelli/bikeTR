@@ -81,8 +81,9 @@ services:
         condition: service_started
         required: false
 
-  # Comandi che scrivono nella cartella del progetto, come la ricostruzione dell'indice dei
-  # paper. Parte solo quando lo si nomina: docker compose run --rm coach-tools <comando>.
+  # Comandi che scrivono nella cartella del progetto: la ricostruzione dell'indice dei paper
+  # e il controllo dal vivo (python -m app.live_check, risultati in live-checks/). Parte solo
+  # quando lo si nomina: docker compose run --rm coach-tools <comando>.
   coach-tools:
     build: ./docker/coach
     # La stessa immagine del Coach: dopo `docker compose up -d --build` anche questa è nuova.
