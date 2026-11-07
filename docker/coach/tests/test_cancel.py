@@ -16,7 +16,7 @@ import uvicorn
 
 from app import main, ollama, provider, search, workout
 from app.errors import CoachError
-from fakes import FakeRides, FakeSearch, fixture_index
+from fakes import CLOUD_PRICES, FakeRides, FakeSearch, fixture_index
 from fixture_data import NOW_MS, RIDES
 
 ANSWER = '{"protocolId":"z2_endurance","razionale":"Giornata facile.","paperUsati":[]}'
@@ -36,6 +36,9 @@ SILENCE = {
               '"Slow computers".',
     "cloud": "Il modello non ha scritto nulla per 3 minuti.",
 }
+# Una risposta cloud interrotta prima dei token costa quanto la più lunga possibile (8.000
+# token letti, 4.000 scritti, ai prezzi di prova); Ollama non costa nulla.
+CEILING = {"ollama": 0, "cloud": (8000 * 3 + 4000 * 15) / 1_000_000}
 
 
 class FakeModelServer:
@@ -107,7 +110,7 @@ class FakeModelServer:
 def chat(kind: str, model: str, url: str) -> provider.ChatSettings:
     if kind == "ollama":
         return provider.ChatSettings("ollama", model, url)
-    return provider.ChatSettings("cloud", model, f"{url}/v1/", KEY)
+    return provider.ChatSettings("cloud", model, f"{url}/v1/", KEY, CLOUD_PRICES)
 
 
 BODY = {"duration": 60, "timeZone": "Europe/Rome", "profile": RIDES["profiles"]["base"]}
@@ -117,7 +120,7 @@ async def run_workout(settings: provider.ChatSettings, client: httpx.AsyncClient
     events = []
     await workout.run(workout.parse_request(BODY), events.append, rides=FakeRides(RIDES["activities"]),
                       chat=settings, chat_client=client, embed=FakeSearch([1] * 10).encode,
-                      load_index=fixture_index, now_ms=NOW_MS)
+                      load_index=fixture_index, now_ms=NOW_MS, spending=main.cloud_spending)
     return events
 
 
@@ -153,6 +156,7 @@ def test_silence_stops_the_request_and_closes_the_provider(kind):
     error, delay = asyncio.run(go())
     assert (error.code, error.message) == ("model", SILENCE[kind])
     assert delay < 5
+    assert main.cloud_spending.total() == pytest.approx(CEILING[kind])
 
 
 @pytest.mark.parametrize("kind", PROVIDERS)
@@ -178,7 +182,8 @@ class CoachServer:
         monkeypatch.setattr(main, "load_index", fixture_index)
         monkeypatch.setattr(ollama, "OLLAMA_URL", url)
         env = ({"OLLAMA_CHAT_MODEL": model} if kind == "ollama" else
-               {"COACH_PROVIDER": "cloud", "CLOUD_URL": f"{url}/v1/", "CLOUD_API_KEY": KEY, "CLOUD_MODEL": model})
+               {"COACH_PROVIDER": "cloud", "CLOUD_URL": f"{url}/v1/", "CLOUD_API_KEY": KEY, "CLOUD_MODEL": model,
+                "CLOUD_PRICE_IN": "3", "CLOUD_PRICE_OUT": "15", "CLOUD_SPENDING_LIMIT": "1"})
         for name, value in env.items():
             monkeypatch.setenv(name, value)
 
@@ -215,13 +220,24 @@ async def whole_answer(client: httpx.AsyncClient) -> list:
     return [json.loads(line) for line in res.text.splitlines()]
 
 
+async def spent(expected: float, limit: float = 5) -> float:
+    """Il totale della spesa, appena arriva al valore atteso (o dopo `limit` secondi)."""
+    deadline = time.monotonic() + limit
+    while main.cloud_spending.total() != pytest.approx(expected) and time.monotonic() < deadline:
+        await asyncio.sleep(0.01)
+    return main.cloud_spending.total()
+
+
 @pytest.mark.parametrize("kind", PROVIDERS)
 def test_closed_connection_stops_the_provider_within_5_seconds(monkeypatch, kind):
     async def go():
         async with FakeModelServer() as fake, CoachServer(monkeypatch, kind, "forever", fake.url) as client:
             left = await until_first_token(client)
-            return await fake.wait_closed() - left
-    assert asyncio.run(go()) < 5
+            return await fake.wait_closed() - left, await spent(CEILING[kind])
+    closed, total = asyncio.run(go())
+    assert closed < 5
+    # Il provider fa pagare quello che ha già scritto: senza i token, il costo massimo.
+    assert total == pytest.approx(CEILING[kind])
 
 
 @pytest.mark.parametrize("kind", PROVIDERS)

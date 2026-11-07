@@ -20,6 +20,7 @@ from app.errors import CoachError
 from app.jscompat import js_str, js_truthy
 from app.metrics import Profile, coach_context
 from app.protocols import PROTOCOLS, fallback_protocol_id
+from app.spending import Spending, charge, cost
 from app.strava import StravaRides
 
 MIN_DURATION, MAX_DURATION = 20, 240
@@ -162,7 +163,7 @@ def step(name: str, message: str, **extra) -> dict:
 async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: StravaRides,
               chat: provider.ChatSettings, chat_client: httpx.AsyncClient,
               embed: Callable[[str], Awaitable[list]], load_index: Callable[[], Awaitable[dict]],
-              now_ms: float) -> None:
+              now_ms: float, spending: Spending) -> None:
     emit(step("rides", "Scarico le corse da Strava…"))
     data = await rides.refresh(now_ms, progress=lambda done, total: emit(
         step("details", f"Scarico dettagli corse {done}/{total}", done=done, total=total)))
@@ -181,7 +182,7 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
     emit(step("model", "Il modello sta scegliendo il protocollo…"))
     messages = [{"role": "system", "content": prompts.system_prompt(retrieved)},
                 {"role": "user", "content": prompts.user_prompt(ctx, req.duration)}]
-    answer, end = [], ChatEnd(None, None, False)
+    answer, end, billed = [], ChatEnd(None, None, False), True
     try:
         async for piece in provider.stream(chat, chat_client, messages):
             if isinstance(piece, ChatEnd):
@@ -190,7 +191,12 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
                 answer.append(piece)
                 emit({"type": "token", "text": piece})
     except ModelError as e:
+        billed = e.billed
         raise CoachError(502, "model", str(e)) from e
+    finally:
+        # Anche quando Stop annulla la richiesta: il provider fa pagare ciò che ha già scritto.
+        if chat.prices and billed:
+            spending.add(charge(chat.prices, end.input_tokens, end.output_tokens))
 
     model_raw = "".join(answer)
     emit({"type": "result", **decide(model_raw, ctx, req.duration, index, end.truncated),
@@ -198,6 +204,7 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
                                "year": p["year"], "score": p["score"]} for p in retrieved],
           "provider": chat.provider, "model": chat.model, "seconds": round(time.monotonic() - started, 1),
           "inputTokens": end.input_tokens, "outputTokens": end.output_tokens, "truncated": end.truncated,
+          "cost": cost(chat.prices, end.input_tokens, end.output_tokens),
           "modelRaw": model_raw,
           "rides": {"fromSaved": data.from_saved, "downloadedAt": data.downloaded_at,
                     "missingDetails": data.missing_details}})

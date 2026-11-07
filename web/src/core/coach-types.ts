@@ -47,6 +47,9 @@ export interface CoachWorkout {
   outputTokens: number | null;
   // La risposta si è fermata al limite di token: il servizio ha usato la scelta di ripiego.
   truncated: boolean;
+  // Dollari spesi per la risposta cloud, dai token e dai prezzi di .env; null con Ollama
+  // o se il provider non ha detto i token.
+  cost: number | null;
   modelRaw: string;
   // Da dove vengono le corse: salvate (Strava non raggiungibile) e quante senza dettagli.
   rides: { fromSaved: boolean; downloadedAt: string | number | null; missingDetails: number };

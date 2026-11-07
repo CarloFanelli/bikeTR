@@ -41,11 +41,11 @@ def refused(status: int, text: str, key: str) -> CloudError:
     message = provider_message(text, key)
     if status in KEY_REJECTED:
         return CloudError(f"Il provider cloud ha rifiutato la chiave (HTTP {status}): controlla CLOUD_API_KEY "
-                          f"in .env. {message}")
+                          f"in .env. {message}", billed=False)
     if status in LIMITED:
         return CloudError(f"Il provider cloud rifiuta la richiesta per limite di richieste o credito esaurito "
-                          f"(HTTP {status}): {message}")
-    return CloudError(f"Il provider cloud ha risposto HTTP {status}: {message}")
+                          f"(HTTP {status}): {message}", billed=False)
+    return CloudError(f"Il provider cloud ha risposto HTTP {status}: {message}", billed=False)
 
 
 async def chat_stream(client: httpx.AsyncClient, model: str, messages: list, key: str):
@@ -89,8 +89,8 @@ async def chat_stream(client: httpx.AsyncClient, model: str, messages: list, key
                     usage = chunk["usage"]
     except httpx.ReadTimeout as e:
         raise CloudError(f"Il modello non ha scritto nulla per {READ_TIMEOUT // 60} minuti.") from e
-    except httpx.ConnectError as e:
-        raise CloudError(f"Provider cloud non raggiungibile su {client.base_url}") from e
+    except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+        raise CloudError(f"Provider cloud non raggiungibile su {client.base_url}", billed=False) from e
     except httpx.HTTPError as e:
         raise CloudError(f"Connessione con il provider cloud interrotta ({e.__class__.__name__})") from e
     yield ChatEnd(token_count(usage.get("prompt_tokens")), token_count(usage.get("completion_tokens")), truncated)

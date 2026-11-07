@@ -34,11 +34,14 @@ export function ridesNotes(rides: CoachWorkout['rides']): string[] {
   return notes;
 }
 
-// Locale o cloud, modello, secondi e token letti e scritti ("—" se il provider non li dice).
+// Locale o cloud, modello, secondi, token letti e scritti e, per il cloud, il costo in dollari
+// con 4 decimali ("—" per ciò che il provider non dice). Ollama non costa nulla: nessun costo.
 const tokens = (n: number | null) => (n == null ? '—' : String(n));
+const cost = (w: CoachWorkout) =>
+  w.provider === 'cloud' ? ` · costo: ${w.cost == null ? '—' : `$${w.cost.toFixed(4)}`}` : '';
 export const metaLine = (w: CoachWorkout) =>
   `⚡ ${w.provider === 'cloud' ? 'cloud' : 'locale'} · ${w.model} · ${w.seconds.toFixed(1)}s · ` +
-  `token: ${tokens(w.inputTokens)} in, ${tokens(w.outputTokens)} out`;
+  `token: ${tokens(w.inputTokens)} in, ${tokens(w.outputTokens)} out${cost(w)}`;
 
 // Il titolo di un errore che non ha una spiegazione sua (FTP mancante, ricerca dei paper).
 export const errorHeading = (code?: string) => (code === 'model' ? 'Errore chiamata modello' : 'Workout non generato');

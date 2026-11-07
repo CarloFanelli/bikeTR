@@ -25,16 +25,20 @@ describe('testi del Coach', () => {
     ]);
   });
 
-  it('riga finale con locale o cloud, modello, secondi e token letti e scritti', () => {
-    const w = { provider: 'ollama', model: 'qwen2.5:7b', seconds: 12, inputTokens: 1820, outputTokens: 812 } as CoachWorkout;
+  it('riga finale con locale o cloud, modello, secondi, token letti e scritti e costo del cloud', () => {
+    const w = {
+      provider: 'ollama', model: 'qwen2.5:7b', seconds: 12, inputTokens: 1820, outputTokens: 812, cost: null,
+    } as CoachWorkout;
     expect(metaLine(w)).toBe('⚡ locale · qwen2.5:7b · 12.0s · token: 1820 in, 812 out');
-    expect(metaLine({ ...w, provider: 'cloud', model: 'claude-opus-5-5' }))
-      .toBe('⚡ cloud · claude-opus-5-5 · 12.0s · token: 1820 in, 812 out');
+    expect(metaLine({ ...w, provider: 'cloud', model: 'claude-opus-5-5', cost: 0.01764 }))
+      .toBe('⚡ cloud · claude-opus-5-5 · 12.0s · token: 1820 in, 812 out · costo: $0.0176');
   });
 
-  it('token mostrati come — quando il provider non li dice, anche 0 resta 0', () => {
-    const w = { provider: 'cloud', model: 'm', seconds: 3, inputTokens: null, outputTokens: 0 } as CoachWorkout;
-    expect(metaLine(w)).toBe('⚡ cloud · m · 3.0s · token: — in, 0 out');
+  it('token e costo mostrati come — quando il provider non li dice; anche 0 resta 0', () => {
+    const w = { provider: 'cloud', model: 'm', seconds: 3, inputTokens: null, outputTokens: 0, cost: null } as CoachWorkout;
+    expect(metaLine(w)).toBe('⚡ cloud · m · 3.0s · token: — in, 0 out · costo: —');
+    expect(metaLine({ ...w, inputTokens: 100, cost: 0.0004 })).toBe('⚡ cloud · m · 3.0s · token: 100 in, 0 out · costo: $0.0004');
+    expect(metaLine({ ...w, cost: 0 })).toContain('· costo: $0.0000');
   });
 
   it('titolo degli errori senza spiegazione propria', () => {

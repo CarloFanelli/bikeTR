@@ -23,10 +23,12 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from app import ollama, papers, provider, search, workout
 from app.errors import CoachError
+from app.spending import SPENDING_FILE, Spending
 from app.store import RideStore
 from app.strava import StravaRides
 
 store = RideStore(Path("/data/rides.json"))
+cloud_spending = Spending(SPENDING_FILE)
 http = httpx.AsyncClient(timeout=15)
 rides = StravaRides(store, http)
 
@@ -71,13 +73,16 @@ async def generate_workout(request: Request):
         body = None
     req = workout.parse_request(body)
     chat = provider.settings()
+    if chat.prices:
+        cloud_spending.check(chat.prices.limit)
     events: asyncio.Queue = asyncio.Queue()
 
     async def produce():
         try:
             async with provider.client(chat) as chat_client:
                 await workout.run(req, events.put_nowait, rides=rides, chat=chat, chat_client=chat_client,
-                                  embed=search.encode, load_index=load_index, now_ms=time.time() * 1000)
+                                  embed=search.encode, load_index=load_index, now_ms=time.time() * 1000,
+                                  spending=cloud_spending)
         except CoachError as e:
             events.put_nowait({"type": "error", "error": e.code, "message": e.message})
         except Exception:
