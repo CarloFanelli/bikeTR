@@ -13,7 +13,6 @@ export interface AthleteProfile {
 
 export interface WorkoutRequest {
   duration: number;
-  model: string;
   timeZone: string;
   profile: AthleteProfile;
 }
@@ -39,9 +38,15 @@ export interface CoachWorkout {
   paperRefs: PaperRef[];
   retrievedPapers: RetrievedPaper[];
   fellBack: boolean;
+  // Il modello chat scelto in .env del servizio: Ollama (locale) o un provider cloud.
+  provider: 'ollama' | 'cloud';
   model: string;
   seconds: number;
-  evalCount: number | null;
+  // Token letti e scritti dal modello; null se il provider non li dice.
+  inputTokens: number | null;
+  outputTokens: number | null;
+  // La risposta si è fermata al limite di token: il servizio ha usato la scelta di ripiego.
+  truncated: boolean;
   modelRaw: string;
   // Da dove vengono le corse: salvate (Strava non raggiungibile) e quante senza dettagli.
   rides: { fromSaved: boolean; downloadedAt: string | number | null; missingDetails: number };

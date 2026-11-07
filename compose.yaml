@@ -1,5 +1,15 @@
 name: biketr
 
+# Impostazioni del Coach da .env, uguali per il servizio e per i suoi comandi (coach-tools).
+# La chiave del provider cloud resta qui e nel servizio Coach: il browser non la vede mai.
+x-coach-env: &coach-env
+  OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+  OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-}
+  COACH_PROVIDER: ${COACH_PROVIDER:-}
+  CLOUD_URL: ${CLOUD_URL:-}
+  CLOUD_API_KEY: ${CLOUD_API_KEY:-}
+  CLOUD_MODEL: ${CLOUD_MODEL:-}
+
 services:
   web:
     image: nginx:1.27-alpine
@@ -47,7 +57,7 @@ services:
       STRAVA_CLIENT_SECRET: ${STRAVA_CLIENT_SECRET:-}
       WEB_PORT: ${WEB_PORT:-5050}
 
-  # Servizio Coach: parla con Ollama, all'indirizzo scritto in .env.
+  # Servizio Coach: parla con il modello chat scelto in .env (Ollama o un provider cloud).
   coach:
     # Python, i pacchetti di docker/coach/requirements.txt e il modello di ricerca dei paper;
     # il codice è montato qui sotto.
@@ -59,8 +69,7 @@ services:
       # Corse e dettagli corsa scaricati da Strava: restano dopo `docker compose down`,
       # spariscono con `down -v` o con "Disconnetti da Strava".
       - coach-data:/data
-    environment:
-      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+    environment: *coach-env
     depends_on:
       # Non aspetta i modelli: il Coach parte anche durante il primo download,
       # e anche quando Ollama è spento (OLLAMA_CONTAINERS=0).
@@ -79,6 +88,7 @@ services:
     volumes:
       - ./docker/coach:/app:ro
       - ./:/project
+    environment: *coach-env
 
   ollama:
     image: ollama/ollama:0.12.6

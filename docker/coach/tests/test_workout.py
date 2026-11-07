@@ -1,7 +1,8 @@
 """Il workout completo dal servizio: per le stesse risposte del modello, lo stesso
-risultato del Coach del browser (fixtures/coach_expected.json); gli eventi passo per
-passo; le richieste rifiutate prima di scaricare corse o chiamare il modello.
-Ollama, il modello di ricerca, Strava e l'indice dei paper sono simulati."""
+risultato del Coach del browser (fixtures/coach_expected.json), con Ollama o con un modello
+cloud; gli eventi passo per passo; il modello scelto in .env; le richieste rifiutate prima
+di scaricare corse o chiamare il modello. Ollama, il provider cloud, il modello di ricerca,
+Strava e l'indice dei paper sono simulati."""
 
 import asyncio
 import dataclasses
@@ -12,11 +13,11 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app import main, ollama, papers, search, workout
+from app import cloud, main, ollama, papers, search, workout
 from app.errors import CoachError
 from app.jscompat import js_str
 from app.papers import PaperIndexError
-from fakes import INDEX, FakeRides, FakeSearch, fixture_index
+from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, INDEX, FakeCloud, FakeOllama, FakeRides, FakeSearch, fixture_index
 from fixture_data import NOW_MS, RIDES, activities, load, scenario
 
 CASES = load("coach_cases.json")
@@ -24,42 +25,14 @@ EXPECTED = load("coach_expected.json")
 CASE = {c["name"]: c for c in CASES["cases"]}
 WORKOUT_CASES = [c for c in CASES["cases"] if "built" in EXPECTED["cases"][c["name"]]]
 SAME_ORIGIN = {"Sec-Fetch-Site": "same-origin"}
-BODY = {"duration": 60, "model": CASES["model"], "timeZone": "Europe/Rome", "profile": RIDES["profiles"]["base"]}
+BODY = {"duration": 60, "timeZone": "Europe/Rome", "profile": RIDES["profiles"]["base"]}
 
 
-class FakeOllama:
-    """Risponde come Ollama: la risposta del modello a pezzi di 7 caratteri, poi l'ultimo
-    pezzo con done e il numero di token."""
-
-    def __init__(self, answer: str):
-        self.answer = answer
-        self.done_reason = "stop"
-        self.requests = []
-        self.chat_status = 200
-        self.down = False
-        self.installed = [CASES["model"]]
-
-    def handle(self, request: httpx.Request) -> httpx.Response:
-        if self.down:
-            raise httpx.ConnectError("ollama spento")
-        if request.url.path == "/api/tags":
-            return httpx.Response(200, json={"models": [{"name": m} for m in self.installed]})
-        body = json.loads(request.content)
-        self.requests.append((request.url.path, body))
-        if self.chat_status != 200:
-            return httpx.Response(self.chat_status, json={"error": "qualcosa non va"})
-        pieces = [self.answer[i:i + 7] for i in range(0, len(self.answer), 7)]
-        lines = [{"message": {"role": "assistant", "content": p}, "done": False} for p in pieces]
-        lines.append({"message": {"role": "assistant", "content": ""}, "done": True,
-                      "done_reason": self.done_reason, "eval_count": 42})
-        return httpx.Response(200, content="".join(json.dumps(x) + "\n" for x in lines).encode())
-
-    def client(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(base_url="http://ollama:11434", transport=httpx.MockTransport(self.handle))
+FAKES = {"ollama": FakeOllama, "cloud": FakeCloud}
 
 
-def fake_ollama(case: dict) -> FakeOllama:
-    return FakeOllama(case["answer"])
+def fake_model(provider: str, case: dict) -> FakeOllama | FakeCloud:
+    return FAKES[provider](case["answer"])
 
 
 def fake_search(case: dict) -> FakeSearch:
@@ -69,24 +42,37 @@ def fake_search(case: dict) -> FakeSearch:
 
 def request_of(case: dict) -> workout.WorkoutRequest:
     profile = RIDES["profiles"][scenario(case["scenario"])["profile"]]
-    return workout.parse_request({"duration": case["duration"], "model": CASES["model"],
-                                  "timeZone": case["timeZone"], "profile": profile})
+    return workout.parse_request({"duration": case["duration"], "timeZone": case["timeZone"], "profile": profile})
 
 
-async def run_case(case: dict, fake: FakeOllama, req: workout.WorkoutRequest | None = None,
-                   finder: FakeSearch | None = None) -> list:
+async def run_case(case: dict, fake: FakeOllama | FakeCloud, finder: FakeSearch | None = None) -> list:
     events = []
     async with fake.client() as client:
-        await workout.run(req or request_of(case), events.append,
+        await workout.run(request_of(case), events.append,
                           rides=FakeRides(activities(scenario(case["scenario"]))),
-                          ollama_client=client, embed=(finder or fake_search(case)).encode,
+                          chat=fake.chat, chat_client=client, embed=(finder or fake_search(case)).encode,
                           load_index=fixture_index, now_ms=NOW_MS)
     return events
 
 
+def chat_request(fake: FakeOllama | FakeCloud, messages: list) -> None:
+    """L'unica richiesta arrivata al provider è la chat, con le regole di ciascuno: per Ollama
+    temperatura 0,2 e 1.000 token; per il cloud chiave, nessuna temperatura e 4.000 token."""
+    if isinstance(fake, FakeOllama):
+        [(path, body)] = fake.requests
+        assert (path, body) == ("/api/chat", {"model": "qwen2.5:7b", "messages": messages, "stream": True,
+                                              "options": {"temperature": 0.2, "num_predict": 1000}})
+    else:
+        [(path, headers, body)] = fake.requests
+        assert (path, headers["authorization"]) == ("/v1/chat/completions", f"Bearer {CLOUD_KEY}")
+        assert body == {"model": CLOUD_MODEL, "messages": messages, "stream": True,
+                        "stream_options": {"include_usage": True}, "max_tokens": 4000}
+
+
+@pytest.mark.parametrize("provider", FAKES)
 @pytest.mark.parametrize("case", WORKOUT_CASES, ids=lambda c: c["name"])
-def test_model_answer_gives_the_browser_workout(case):
-    exp, fake, finder = EXPECTED["cases"][case["name"]], fake_ollama(case), fake_search(case)
+def test_model_answer_gives_the_browser_workout(case, provider):
+    exp, fake, finder = EXPECTED["cases"][case["name"]], fake_model(provider, case), fake_search(case)
     result = asyncio.run(run_case(case, fake, finder=finder))[-1]
     assert result["type"] == "result"
     assert {k: result[k] for k in ("title", "targetWatt", "struttura")} == exp["built"]
@@ -95,35 +81,41 @@ def test_model_answer_gives_the_browser_workout(case):
     assert [{"pmid": p["pmid"], "score": p["score"]} for p in result["retrievedPapers"]] == exp["retrieved"]
     assert result["fellBack"] == exp["fellBack"]
     assert finder.texts == [exp["query"]]
-    # A Ollama arriva solo la chat: la query è codificata dal modello di ricerca del servizio.
-    [(chat_path, chat)] = fake.requests
-    assert (chat_path, chat["model"], chat["messages"]) == ("/api/chat", exp["model"], exp["messages"])
-    assert (chat["stream"], chat["options"]) == (True, {"temperature": 0.2, "num_predict": 1000})
+    # Al provider arriva solo la chat: la query è codificata dal modello di ricerca del servizio.
+    chat_request(fake, exp["messages"])
 
 
-def test_answer_stopped_at_1000_tokens_uses_the_fallback_rules():
+@pytest.mark.parametrize("provider", FAKES)
+def test_answer_stopped_at_the_token_limit_uses_the_fallback_rules(provider):
     case = CASE["valid-answer"]
-    fake = fake_ollama(case)
-    fake.done_reason = "length"   # Ollama si è fermato a num_predict
+    fake = fake_model(provider, case)
+    # Ollama si è fermato a num_predict (1.000 token), il cloud a max_tokens (4.000).
+    fake.done_reason = fake.finish_reason = "length"
     result = asyncio.run(run_case(case, fake))[-1]
     assert result["fellBack"] is True and result["razionale"].startswith("Decisione fallback: TSB ")
-    assert result["modelRaw"] == case["answer"]
+    assert (result["modelRaw"], result["truncated"]) == (case["answer"], True)
 
 
-def test_result_carries_everything_the_card_shows():
+@pytest.mark.parametrize("provider", FAKES)
+def test_result_carries_everything_the_card_shows(provider):
     case = CASE["valid-answer"]
-    result = asyncio.run(run_case(case, fake_ollama(case)))[-1]
+    fake = fake_model(provider, case)
+    result = asyncio.run(run_case(case, fake))[-1]
     paper = next(p for p in INDEX["papers"] if p["pmid"] == "20861519")
     assert result["paperRefs"][0] == {k: paper[k] for k in ("pmid", "title", "authors", "year", "journal")}
     assert set(result["retrievedPapers"][0]) == {"pmid", "title", "authors", "year", "score"}
-    assert (result["model"], result["evalCount"], result["modelRaw"]) == (CASES["model"], 42, case["answer"])
+    assert {k: result[k] for k in ("provider", "model", "inputTokens", "outputTokens", "truncated", "modelRaw")} == {
+        "provider": provider, "model": fake.chat.model, "inputTokens": 900, "outputTokens": 42,
+        "truncated": False, "modelRaw": case["answer"]}
+    assert "evalCount" not in result
     assert isinstance(result["seconds"], float)
     assert result["rides"] == {"fromSaved": False, "downloadedAt": NOW_MS, "missingDetails": 0}
 
 
-def test_events_name_each_step_and_stream_the_model_text():
+@pytest.mark.parametrize("provider", FAKES)
+def test_events_name_each_step_and_stream_the_model_text(provider):
     case = CASE["valid-answer"]
-    events = asyncio.run(run_case(case, fake_ollama(case)))
+    events = asyncio.run(run_case(case, fake_model(provider, case)))
     names = [e.get("step", e["type"]) for e in events]
     assert names[:6] == ["rides", "details", "details", "context", "papers", "model"]
     assert set(names[6:-1]) == {"token"} and names[-1] == "result"
@@ -134,38 +126,52 @@ def test_events_name_each_step_and_stream_the_model_text():
     assert events[3]["context"]["oggi"] == "sabato"
 
 
-def test_two_tabs_at_the_same_time_are_both_served():
+@pytest.mark.parametrize("provider", FAKES)
+def test_two_tabs_at_the_same_time_are_both_served(provider):
     case = CASE["valid-answer"]
-    fake = fake_ollama(case)
+    fake = fake_model(provider, case)
 
     async def both():
         return await asyncio.gather(run_case(case, fake), run_case(case, fake))
     first, second = asyncio.run(both())
     assert first[-1]["type"] == second[-1]["type"] == "result"
     assert first[-1]["title"] == second[-1]["title"]
+    assert len(fake.requests) == 2
 
 
-def test_half_a_surrogate_pair_reaches_the_model_escaped_as_from_the_browser():
+@pytest.mark.parametrize("provider", FAKES)
+def test_half_a_surrogate_pair_reaches_the_model_escaped_as_from_the_browser(provider):
     # Un abstract tagliato a 1200 unità UTF-16 in mezzo a un carattere oltre U+FFFF lascia
     # mezza coppia surrogata nel prompt; JSON.stringify la mandava come \ud835.
     case = CASE["valid-answer"]
-    fake = fake_ollama(case)
-    req = dataclasses.replace(request_of(case), model="qwen\ud835")
-    assert asyncio.run(run_case(case, fake, req))[-1]["type"] == "result"
-    assert fake.requests[-1][1]["model"] == "qwen\ud835"
+    fake = fake_model(provider, case)
+    fake.chat = dataclasses.replace(fake.chat, model="qwen\ud835")
+    assert asyncio.run(run_case(case, fake))[-1]["type"] == "result"
+    assert fake.requests[-1][-1]["model"] == "qwen\ud835"
 
 
 # --- Attraverso la rotta HTTP -------------------------------------------------------------
 
+def make_service(monkeypatch, env: dict) -> SimpleNamespace:
+    """Il servizio Coach con .env, Strava, indice, modello di ricerca e i due provider finti."""
+    case = CASE["valid-answer"]
+    fakes = SimpleNamespace(ollama=FakeOllama(case["answer"]), cloud=FakeCloud(case["answer"]),
+                            search=fake_search(case), rides=FakeRides(RIDES["activities"]))
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setattr(main, "rides", fakes.rides)
+    monkeypatch.setattr(main, "load_index", fixture_index)
+    monkeypatch.setattr(ollama, "client", fakes.ollama.client)
+    monkeypatch.setattr(cloud, "client", fakes.cloud.client)
+    monkeypatch.setattr(search, "encode", fakes.search.encode)
+    fakes.client = TestClient(main.app)
+    return fakes
+
+
 @pytest.fixture
 def service(monkeypatch):
-    case = CASE["valid-answer"]
-    fake, finder, rides = fake_ollama(case), fake_search(case), FakeRides(RIDES["activities"])
-    monkeypatch.setattr(main, "rides", rides)
-    monkeypatch.setattr(main, "load_index", fixture_index)
-    monkeypatch.setattr(ollama, "client", fake.client)
-    monkeypatch.setattr(search, "encode", finder.encode)
-    return SimpleNamespace(client=TestClient(main.app), ollama=fake, search=finder, rides=rides)
+    return make_service(monkeypatch, {})
+
 
 
 def post(service, body, headers=SAME_ORIGIN):
@@ -207,7 +213,6 @@ def with_profile(**values) -> dict:
     (with_profile(weeklyDays=True), SAME_ORIGIN, 400, "invalid_profile", "Valore non valido per giorni settimanali: serve un numero maggiore di zero"),
     ({**BODY, "profile": RIDES["profiles"]["noFtp"]}, SAME_ORIGIN, 400, "no_ftp", "FTP non disponibile"),
     ({**BODY, "timeZone": "Marte/Olympus"}, SAME_ORIGIN, 400, "invalid_time_zone", "Fuso orario del browser non valido"),
-    ({**BODY, "model": "x" * 101}, SAME_ORIGIN, 400, "invalid_model", "Il nome del modello deve avere al massimo 100 caratteri"),
     (b"{non json", SAME_ORIGIN, 400, "invalid_request", "Richiesta non valida"),
     (b"[" * 100_000 + b"]" * 100_000, SAME_ORIGIN, 400, "invalid_request", "Richiesta non valida"),
     (json.dumps(BODY).replace('"duration": 60', '"duration": 1' + "0" * 400).encode(), SAME_ORIGIN, 400,
@@ -218,6 +223,39 @@ def test_refused_requests_download_nothing_and_call_no_model(service, body, head
     res = post(service, body, headers)
     assert (res.status_code, res.json()) == (status, {"error": code, "message": message})
     assert service.rides.calls == 0 and service.ollama.requests == [] and service.search.texts == []
+
+
+def test_model_sent_by_a_tab_opened_before_the_update_is_ignored(service):
+    result = events_of(post(service, {**BODY, "model": "x" * 101}))[-1]
+    assert (result["type"], result["provider"], result["model"]) == ("result", "ollama", "qwen2.5:7b")
+    assert service.ollama.requests[-1][1]["model"] == "qwen2.5:7b"
+
+
+def test_each_request_uses_the_chat_model_named_in_env(service, monkeypatch):
+    # Un .env vecchio, con il solo OLLAMA_CHAT_MODEL: basta quello.
+    monkeypatch.setenv("OLLAMA_CHAT_MODEL", "qwen2.5:3b")
+    assert events_of(post(service, BODY))[-1]["model"] == "qwen2.5:3b"
+    monkeypatch.setenv("OLLAMA_CHAT_MODEL", "llama3:8b")
+    assert events_of(post(service, BODY))[-1]["model"] == "llama3:8b"
+    assert [body["model"] for _, body in service.ollama.requests] == ["qwen2.5:3b", "llama3:8b"]
+
+
+@pytest.mark.parametrize("env,message", [
+    ({"COACH_PROVIDER": "cloud"}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_URL, CLOUD_API_KEY, CLOUD_MODEL"),
+    ({**CLOUD_ENV, "CLOUD_API_KEY": " "}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_API_KEY"),
+    ({**CLOUD_ENV, "CLOUD_URL": ""}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_URL"),
+    ({"COACH_PROVIDER": "claud"}, 'COACH_PROVIDER in .env vale "claud": i valori ammessi sono ollama e cloud'),
+    ({"OLLAMA_CHAT_MODEL": "x" * 101},
+     "Il nome del modello deve avere al massimo 100 caratteri (OLLAMA_CHAT_MODEL in .env)"),
+    ({**CLOUD_ENV, "CLOUD_MODEL": "x" * 101},
+     "Il nome del modello deve avere al massimo 100 caratteri (CLOUD_MODEL in .env)"),
+], ids=["cloud-empty", "no-key", "no-url", "misspelled", "long-ollama-model", "long-cloud-model"])
+def test_wrong_env_refuses_the_request_before_any_call(monkeypatch, env, message):
+    service = make_service(monkeypatch, env)
+    res = post(service, BODY)
+    assert (res.status_code, res.json()) == (500, {"error": "invalid_settings", "message": message})
+    assert service.rides.calls == 0 and service.search.texts == []
+    assert service.ollama.requests == [] and service.cloud.requests == []
 
 
 def test_browser_reference_also_stopped_before_any_call_without_ftp():
@@ -237,10 +275,10 @@ def bug(service):
 
 
 BREAKAGES = {
-    "chat model missing": (lambda s: setattr(s.ollama, "chat_status", 404), "model",
+    "chat model missing": (lambda s: setattr(s.ollama, "status", 404), "model",
                            f"Modello {CASES['model']} non installato in Ollama. Scaricalo con: "
                            + ollama.pull_command(CASES["model"])),
-    "chat error": (lambda s: setattr(s.ollama, "chat_status", 500), "model",
+    "chat error": (lambda s: setattr(s.ollama, "status", 500), "model",
                    'Chat HTTP 500: {"error":"qualcosa non va"}'),
     "ollama down": (lambda s: setattr(s.ollama, "down", True), "model",
                     f"Ollama non raggiungibile su {ollama.OLLAMA_URL}"),

@@ -36,9 +36,9 @@ export async function forgetCoachRides(): Promise<void> {
 }
 
 // ----------------------------------------------------------------------------
-// Workout di oggi: il browser invia durata, modello, fuso orario e profilo atleta;
-// il servizio risponde con un flusso di eventi, una riga JSON l'uno: step, context,
-// token (il testo del modello mentre lo scrive), poi result oppure error.
+// Workout di oggi: il browser invia durata, fuso orario e profilo atleta (il modello lo
+// sceglie .env del servizio); il servizio risponde con un flusso di eventi, una riga JSON
+// l'uno: step, context, token (il testo del modello mentre lo scrive), poi result oppure error.
 // ----------------------------------------------------------------------------
 
 export const COACH_INTERRUPTED = 'Connessione col Coach interrotta';

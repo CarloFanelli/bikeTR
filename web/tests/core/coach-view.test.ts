@@ -25,10 +25,16 @@ describe('testi del Coach', () => {
     ]);
   });
 
-  it('riga finale con modello, secondi e token', () => {
-    const w = { model: 'qwen2.5:7b', seconds: 12, evalCount: null } as CoachWorkout;
-    expect(metaLine(w)).toBe('⚡ qwen2.5:7b · 12.0s · ? tok');
-    expect(metaLine({ ...w, evalCount: 812 })).toBe('⚡ qwen2.5:7b · 12.0s · 812 tok');
+  it('riga finale con locale o cloud, modello, secondi e token letti e scritti', () => {
+    const w = { provider: 'ollama', model: 'qwen2.5:7b', seconds: 12, inputTokens: 1820, outputTokens: 812 } as CoachWorkout;
+    expect(metaLine(w)).toBe('⚡ locale · qwen2.5:7b · 12.0s · token: 1820 in, 812 out');
+    expect(metaLine({ ...w, provider: 'cloud', model: 'claude-opus-5-5' }))
+      .toBe('⚡ cloud · claude-opus-5-5 · 12.0s · token: 1820 in, 812 out');
+  });
+
+  it('token mostrati come — quando il provider non li dice, anche 0 resta 0', () => {
+    const w = { provider: 'cloud', model: 'm', seconds: 3, inputTokens: null, outputTokens: 0 } as CoachWorkout;
+    expect(metaLine(w)).toBe('⚡ cloud · m · 3.0s · token: — in, 0 out');
   });
 
   it('titolo degli errori senza spiegazione propria', () => {

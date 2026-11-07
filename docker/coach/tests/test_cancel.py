@@ -1,6 +1,7 @@
-"""Limite di silenzio e richieste abbandonate, con connessioni vere: un finto Ollama in
-ascolto su una porta registra quando il servizio chiude la connessione (è così che il
-vero Ollama smette di generare), e il servizio gira in un vero uvicorn."""
+"""Limite di silenzio e richieste abbandonate, con connessioni vere, per Ollama e per un
+provider cloud: un finto provider in ascolto su una porta registra quando il servizio chiude
+la connessione (è così che il modello smette di generare), e il servizio gira in un vero
+uvicorn."""
 
 import asyncio
 import itertools
@@ -13,7 +14,7 @@ import httpx
 import pytest
 import uvicorn
 
-from app import main, ollama, search, workout
+from app import main, ollama, provider, search, workout
 from app.errors import CoachError
 from fakes import FakeRides, FakeSearch, fixture_index
 from fixture_data import NOW_MS, RIDES
@@ -21,21 +22,29 @@ from fixture_data import NOW_MS, RIDES
 ANSWER = '{"protocolId":"z2_endurance","razionale":"Giornata facile.","paperUsati":[]}'
 PIECES = [ANSWER[i:i + 4] for i in range(0, len(ANSWER), 4)]
 SAME_ORIGIN = {"Sec-Fetch-Site": "same-origin"}
-# Come risponde il finto Ollama per ogni nome di modello: (attesa in secondi, pezzo di testo).
+PROVIDERS = ("ollama", "cloud")
+KEY = "sk-test-chiave"
+# Come risponde il finto provider per ogni nome di modello: (attesa in secondi, pezzo di testo).
 PLANS = {
     "steady": lambda: [(0.1, p) for p in PIECES],                   # un pezzo ogni 0,1 s
     "late": lambda: [(5.5, PIECES[0])] + [(0, p) for p in PIECES[1:]],  # prima parola dopo 5,5 s
     "silent": lambda: [(3600, None)],                               # non scrive mai
     "forever": lambda: itertools.repeat((0.05, "bla ")),            # scrive senza fine
 }
+SILENCE = {
+    "ollama": 'Il modello non ha scritto nulla per 3 minuti. Su un computer lento vedi il README, sezione 5, '
+              '"Slow computers".',
+    "cloud": "Il modello non ha scritto nulla per 3 minuti.",
+}
 
 
-class FakeOllamaServer:
-    """Risponde come Ollama su una vera porta; per ogni modello registra se la risposta
-    è finita o se il client ha chiuso la connessione prima, e quando."""
+class FakeModelServer:
+    """Risponde su una vera porta come Ollama (POST /api/chat, una riga JSON per pezzo) o come
+    un provider cloud (POST …/chat/completions, eventi "data:"); il nome del modello sceglie il
+    piano. Ricorda le risposte finite e quando il client ha chiuso prima della fine."""
 
     def __init__(self):
-        self.finished, self.closed = set(), {}
+        self.finished, self.closed = [], []
 
     async def __aenter__(self):
         self.server = await asyncio.start_server(self.handle, "127.0.0.1", 0)
@@ -49,87 +58,111 @@ class FakeOllamaServer:
         head = await reader.readuntil(b"\r\n\r\n")
         length = int(re.search(rb"content-length: *(\d+)", head, re.I).group(1))
         model = json.loads(await reader.readexactly(length))["model"]
-        writer.write(b"HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nTransfer-Encoding: chunked\r\n\r\n")
+        cloud = b"/chat/completions" in head.split(b"\r\n", 1)[0]
+        kind = b"text/event-stream" if cloud else b"application/x-ndjson"
+        writer.write(b"HTTP/1.1 200 OK\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n\r\n" % kind)
         client_gone = asyncio.ensure_future(reader.read())  # b"" quando il client chiude
         try:
             for delay, piece in PLANS[model]():
                 await asyncio.wait({client_gone}, timeout=delay)
                 if client_gone.done():
-                    self.closed[model] = time.monotonic()
+                    self.closed.append(time.monotonic())
                     return
-                self.send(writer, {"message": {"role": "assistant", "content": piece}, "done": False})
-            self.send(writer, {"message": {"role": "assistant", "content": ""}, "done": True,
-                               "done_reason": "stop", "eval_count": len(PIECES)})
+                self.send(writer, self.text(cloud, piece))
+            for data in self.end(cloud):
+                self.send(writer, data)
             writer.write(b"0\r\n\r\n")
             await writer.drain()
-            self.finished.add(model)
+            self.finished.append(model)
         finally:
             client_gone.cancel()
             writer.close()
 
     @staticmethod
-    def send(writer, chunk: dict):
-        data = json.dumps(chunk).encode() + b"\n"
+    def text(cloud: bool, piece: str) -> bytes:
+        if cloud:
+            chunk = {"choices": [{"index": 0, "delta": {"content": piece}, "finish_reason": None}]}
+            return b"data: %s\n\n" % json.dumps(chunk).encode()
+        return json.dumps({"message": {"role": "assistant", "content": piece}, "done": False}).encode() + b"\n"
+
+    @staticmethod
+    def end(cloud: bool) -> list[bytes]:
+        if cloud:
+            return [b'data: {"choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]}\n\n',
+                    b"data: [DONE]\n\n"]
+        return [json.dumps({"message": {"role": "assistant", "content": ""}, "done": True,
+                            "done_reason": "stop", "eval_count": len(PIECES)}).encode() + b"\n"]
+
+    @staticmethod
+    def send(writer, data: bytes):
         writer.write(b"%x\r\n%s\r\n" % (len(data), data))
 
-    async def wait_closed(self, model: str, limit: float = 5) -> float:
+    async def wait_closed(self, limit: float = 5) -> float:
         deadline = time.monotonic() + limit
-        while model not in self.closed and time.monotonic() < deadline:
+        while not self.closed and time.monotonic() < deadline:
             await asyncio.sleep(0.01)
-        return self.closed[model]
+        return self.closed[0]
 
 
-def body(model: str) -> dict:
-    return {"duration": 60, "model": model, "timeZone": "Europe/Rome", "profile": RIDES["profiles"]["base"]}
+def chat(kind: str, model: str, url: str) -> provider.ChatSettings:
+    if kind == "ollama":
+        return provider.ChatSettings("ollama", model, url)
+    return provider.ChatSettings("cloud", model, f"{url}/v1/", KEY)
 
 
-def request(model: str) -> workout.WorkoutRequest:
-    return workout.parse_request(body(model))
+BODY = {"duration": 60, "timeZone": "Europe/Rome", "profile": RIDES["profiles"]["base"]}
 
 
-async def run_workout(model: str, client: httpx.AsyncClient) -> list:
+async def run_workout(settings: provider.ChatSettings, client: httpx.AsyncClient) -> list:
     events = []
-    await workout.run(request(model), events.append, rides=FakeRides(RIDES["activities"]),
-                      ollama_client=client, embed=FakeSearch([1] * 10).encode,
+    await workout.run(workout.parse_request(BODY), events.append, rides=FakeRides(RIDES["activities"]),
+                      chat=settings, chat_client=client, embed=FakeSearch([1] * 10).encode,
                       load_index=fixture_index, now_ms=NOW_MS)
     return events
 
 
-def short_silence_client(url: str) -> httpx.AsyncClient:
-    """Il client di Ollama, ma con 0,5 secondi di silenzio concessi invece di 180."""
-    return httpx.AsyncClient(base_url=url, timeout=httpx.Timeout(10, read=0.5))
+def short_silence_client(settings: provider.ChatSettings) -> httpx.AsyncClient:
+    """Il client del provider, ma con 0,5 secondi di silenzio concessi invece di 180."""
+    return httpx.AsyncClient(base_url=settings.url, timeout=httpx.Timeout(10, read=0.5))
 
 
-def test_text_arriving_steadily_is_never_cut_whatever_the_total_time():
+@pytest.mark.parametrize("kind", PROVIDERS)
+def test_text_arriving_steadily_is_never_cut_whatever_the_total_time(kind):
     async def go():
-        async with FakeOllamaServer() as fake, short_silence_client(fake.url) as client:
-            started = time.monotonic()
-            events = await run_workout("steady", client)
-            return events, time.monotonic() - started
+        async with FakeModelServer() as fake:
+            settings = chat(kind, "steady", fake.url)
+            async with short_silence_client(settings) as client:
+                started = time.monotonic()
+                events = await run_workout(settings, client)
+                return events, time.monotonic() - started
     events, seconds = asyncio.run(go())
     assert events[-1]["type"] == "result" and not events[-1]["fellBack"]
     assert seconds > 3 * 0.5   # ben oltre il silenzio concesso
 
 
-def test_silence_stops_with_the_slow_computer_hint_and_closes_ollama():
+@pytest.mark.parametrize("kind", PROVIDERS)
+def test_silence_stops_the_request_and_closes_the_provider(kind):
     async def go():
-        async with FakeOllamaServer() as fake, short_silence_client(fake.url) as client:
-            with pytest.raises(CoachError) as e:
-                await run_workout("silent", client)
-            stopped = time.monotonic()
-            return e.value, await fake.wait_closed("silent") - stopped
+        async with FakeModelServer() as fake:
+            settings = chat(kind, "silent", fake.url)
+            async with short_silence_client(settings) as client:
+                with pytest.raises(CoachError) as e:
+                    await run_workout(settings, client)
+                stopped = time.monotonic()
+                return e.value, await fake.wait_closed() - stopped
     error, delay = asyncio.run(go())
-    assert (error.code, error.message) == ("model", 'Il modello non ha scritto nulla per 3 minuti. Su un '
-                                                    'computer lento vedi il README, sezione 5, "Slow computers".')
+    assert (error.code, error.message) == ("model", SILENCE[kind])
     assert delay < 5
 
 
-def test_first_word_after_more_than_httpx_default_5_seconds_is_waited_for(monkeypatch):
+@pytest.mark.parametrize("kind", PROVIDERS)
+def test_first_word_after_more_than_httpx_default_5_seconds_is_waited_for(monkeypatch, kind):
     async def go():
-        async with FakeOllamaServer() as fake:
+        async with FakeModelServer() as fake:
             monkeypatch.setattr(ollama, "OLLAMA_URL", fake.url)
-            async with ollama.client() as client:
-                return await run_workout("late", client)
+            settings = chat(kind, "late", fake.url)
+            async with provider.client(settings) as client:
+                return await run_workout(settings, client)
     assert asyncio.run(go())[-1]["type"] == "result"
 
 
@@ -137,13 +170,17 @@ def test_first_word_after_more_than_httpx_default_5_seconds_is_waited_for(monkey
 
 class CoachServer:
     """Il servizio Coach in un vero uvicorn, su una porta libera, con Strava, modello di ricerca
-    e indice finti."""
+    e indice finti, e il modello chat di .env sul finto provider."""
 
-    def __init__(self, monkeypatch, ollama_url: str):
+    def __init__(self, monkeypatch, kind: str, model: str, url: str):
         monkeypatch.setattr(main, "rides", FakeRides(RIDES["activities"]))
         monkeypatch.setattr(search, "encode", FakeSearch([1] * 10).encode)
         monkeypatch.setattr(main, "load_index", fixture_index)
-        monkeypatch.setattr(ollama, "OLLAMA_URL", ollama_url)
+        monkeypatch.setattr(ollama, "OLLAMA_URL", url)
+        env = ({"OLLAMA_CHAT_MODEL": model} if kind == "ollama" else
+               {"COACH_PROVIDER": "cloud", "CLOUD_URL": f"{url}/v1/", "CLOUD_API_KEY": KEY, "CLOUD_MODEL": model})
+        for name, value in env.items():
+            monkeypatch.setenv(name, value)
 
     async def __aenter__(self):
         self.sock = socket.socket()
@@ -163,37 +200,39 @@ class CoachServer:
         await self.task
 
 
-async def until_first_token(client: httpx.AsyncClient, model: str) -> float:
+async def until_first_token(client: httpx.AsyncClient) -> float:
     """Chiede un workout, legge fino al primo pezzo di testo del modello e chiude la
     connessione, come una scheda chiusa o ricaricata; ritorna l'istante della chiusura."""
-    async with client.stream("POST", "/coach/workout", json=body(model), headers=SAME_ORIGIN) as res:
+    async with client.stream("POST", "/coach/workout", json=BODY, headers=SAME_ORIGIN) as res:
         async for line in res.aiter_lines():
             if json.loads(line)["type"] == "token":
                 break
     return time.monotonic()
 
 
-async def whole_answer(client: httpx.AsyncClient, model: str) -> list:
-    res = await client.post("/coach/workout", json=body(model), headers=SAME_ORIGIN)
+async def whole_answer(client: httpx.AsyncClient) -> list:
+    res = await client.post("/coach/workout", json=BODY, headers=SAME_ORIGIN)
     return [json.loads(line) for line in res.text.splitlines()]
 
 
-def test_closed_connection_stops_ollama_within_5_seconds(monkeypatch):
+@pytest.mark.parametrize("kind", PROVIDERS)
+def test_closed_connection_stops_the_provider_within_5_seconds(monkeypatch, kind):
     async def go():
-        async with FakeOllamaServer() as fake, CoachServer(monkeypatch, fake.url) as client:
-            left = await until_first_token(client, "forever")
-            return await fake.wait_closed("forever") - left
+        async with FakeModelServer() as fake, CoachServer(monkeypatch, kind, "forever", fake.url) as client:
+            left = await until_first_token(client)
+            return await fake.wait_closed() - left
     assert asyncio.run(go()) < 5
 
 
-def test_closing_one_of_two_requests_stops_only_that_one(monkeypatch):
+@pytest.mark.parametrize("kind", PROVIDERS)
+def test_closing_one_of_two_requests_stops_only_that_one(monkeypatch, kind):
     async def go():
-        async with FakeOllamaServer() as fake, CoachServer(monkeypatch, fake.url) as client:
-            other = asyncio.create_task(whole_answer(client, "steady"))
-            left = await until_first_token(client, "forever")
-            closed = await fake.wait_closed("forever") - left
+        async with FakeModelServer() as fake, CoachServer(monkeypatch, kind, "steady", fake.url) as client:
+            other = asyncio.create_task(whole_answer(client))
+            left = await until_first_token(client)
+            closed = await fake.wait_closed() - left
             return closed, await other, fake
     closed, other_events, fake = asyncio.run(go())
     assert closed < 5
     assert other_events[-1]["type"] == "result"
-    assert "steady" in fake.finished and "steady" not in fake.closed
+    assert fake.finished == ["steady"] and len(fake.closed) == 1
