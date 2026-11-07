@@ -40,3 +40,7 @@ This is the fixed list every chat model and both prompt versions are graded on. 
 - A threshold with no situation exactly on it → automated tests fail, naming the threshold (REQ-10)
 - A rule tested by only one situation → automated tests fail, naming the rule (REQ-10)
 - Hard share unknown → at least one situation tests it (REQ-3, REQ-10)
+
+## Notes from implementation
+
+- **Impacts Task 03**: the selection rules cover 30–240 minutes, not 20–240 (user decision of 2026-11-07, recorded in the task 02 notes): no situation has fewer than 30 minutes, and the shortest-time edge case uses 30. /dev, 2026-11-07.

@@ -40,3 +40,7 @@ Today's eight prompt rules leave gaps (form -12 with 10% hard matches none) and 
 - Form -20 with 150 minutes → recovery wins over the long ride (REQ-5)
 - Form -30 with 120 minutes → rest (REQ-5)
 - Almost no hard riding, form 0, 40 minutes → the under-50-minutes list wins over the quality-session rule (REQ-5)
+
+## Notes from implementation
+
+- **REQ-3 / AC 1 — divergence**: the spec gives the rules 20–240 minutes → they cover 30–240 minutes, because the user set 30 minutes as the shortest valid workout (the app can also be used only for analysis, so a 20-minute Coach workout is not needed). The app and the Coach service still accept 20–29 minutes until the spec records the 30-minute minimum through /po. Agreed in /dev, 2026-11-07.

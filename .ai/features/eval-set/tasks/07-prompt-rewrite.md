@@ -35,3 +35,7 @@ This is the change the evaluation set measures. It lands only after the "before"
 - Hard share unknown → the fallback rules still choose an allowed protocol (REQ-6)
 - A placeholder word inside a paper's abstract → papers are still inserted last, as today (REQ-23)
 - The app's Coach and the live check after the rewrite → both use the new prompt and fallback rules (REQ-23)
+
+## Notes from implementation
+
+- **Impacts Task 07**: the selection rules cover 30–240 minutes (user decision of 2026-11-07, task 02 notes). Before the app follows them, the 30-minute minimum must be in the spec and in the app (Coach screen, Coach service, a saved shorter duration), through /po and /prep; otherwise a 20–29-minute request would get rules no test covers. /dev, 2026-11-07.
