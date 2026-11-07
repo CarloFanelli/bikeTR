@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from app.jscompat import instant_ms
+from app.live_check import strava_streams
 from app.metrics import Profile, ride_details
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -24,12 +25,7 @@ def profile(name: str) -> Profile:
                    weekly_hours=p["weeklyHours"], weekly_days=p["weeklyDays"])
 
 
-def streams(blocks: dict) -> dict:
-    """Stream in formato Strava dai blocchi [valore, secondi] delle fixtures."""
-    return {k: {"data": [v for v, n in b for _ in range(n)]} for k, b in blocks.items()}
-
-
-DETAILS = {int(i): ride_details(streams(s)) for i, s in RIDES["streams"].items()}
+DETAILS = {int(i): ride_details(strava_streams(s)) for i, s in RIDES["streams"].items()}
 
 
 def activities(sc: dict) -> list:
