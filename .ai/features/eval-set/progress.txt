@@ -1,6 +1,6 @@
 # Task Progress - eval-set
 
-01-supporting-papers: IN_PROGRESS
+01-supporting-papers: DONE
 02-selection-rules: TODO
 03-evaluation-set: TODO
 04-evaluation-run: TODO
