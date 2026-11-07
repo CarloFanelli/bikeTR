@@ -7,8 +7,8 @@ ricerca del servizio Coach: non serve Ollama. Dalla cartella del progetto:
   docker compose run --rm coach-tools python -m app.build_index
       rifà la lista dei paper da PubMed, poi la codifica.
 
-Il file si sostituisce solo a lavoro finito: se PubMed non risponde, o il comando si
-interrompe, l'indice di prima resta com'è."""
+Il file si sostituisce solo a lavoro finito: se PubMed non risponde, una ricerca trova per
+primo un altro paper, o il comando si interrompe, l'indice di prima resta com'è."""
 
 import argparse
 import html
@@ -31,25 +31,42 @@ HEADERS = {"User-Agent": "BikeTR-Coach/1.0"}
 PAUSE = 0.35
 MIN_ABSTRACT = 100
 
-# Ogni voce: una ricerca PubMed precisa (non PMID fissi, per non indovinare ID sbagliati);
-# si tiene il primo risultato.
+# Ogni voce: un nome, una ricerca PubMed precisa e il PMID che deve trovare per primo. Il paper
+# si scarica dalla ricerca; il PMID serve solo a controllare che la ricerca trovi ancora quello.
+# I paper di supporto dei protocolli (protocols.py) devono essere tutti qui.
 SEARCHES = [
-    ("Seiler-Kjerland-2006", "Seiler Kjerland quantifying training intensity distribution elite endurance athletes"),
-    ("Seiler-2010-bestpractice", "Seiler 2010 best practice training intensity duration distribution endurance"),
-    ("Ronnestad-2014-block", "Ronnestad Hansen Ellefsen block periodization high-intensity aerobic intervals cyclists"),
-    ("Ronnestad-2020-short", "Ronnestad short intervals superior training adaptations cyclists"),
-    ("Ronnestad-2010-strength", "Ronnestad Hansen Raastad strength training improves 5-min all-out 185 min cycling"),
-    ("Vikmoen-2016-strength", "Vikmoen heavy strength training improves cycling performance well-trained"),
-    ("Mujika-2018-periodization", "Mujika Halson Burke integrated multifactorial periodization optimal performance"),
-    ("Laursen-Jenkins-2002-HIIT", "Laursen Jenkins scientific basis high-intensity interval training"),
-    ("Buchheit-Laursen-2013-HIIT-I", "Buchheit Laursen high-intensity interval training solutions programming puzzle Part I cardiopulmonary"),
-    ("Buchheit-Laursen-2013-HIIT-II", "Buchheit Laursen high-intensity interval training solutions programming puzzle Part II anaerobic"),
-    ("Stoggl-Sperlich-2014-polarized", "Stoggl Sperlich polarized training endurance athletes"),
-    ("Almquist-2020-block", "Almquist block periodization endurance training high-intensity well-trained"),
-    ("Casado-2019-marathon", "Casado world-class marathon training intensity distribution"),
-    ("Stepto-1999-intervals", "Stepto Hawley effects different interval training cycling performance"),
-    ("Seiler-2013-4x8", "Seiler Joranger 4x8 interval training cyclists VO2max FTP"),
-    ("Allen-Coggan-NP", "normalized power training stress score cycling Coggan"),
+    ("Seiler-Kjerland-2006", "Seiler Kjerland quantifying training intensity distribution elite endurance athletes",
+     "16430681"),
+    ("Seiler-2010-bestpractice", "Seiler 2010 best practice training intensity duration distribution endurance",
+     "20861519"),
+    ("Stoggl-Sperlich-2014-polarized", "Stoggl Sperlich polarized training greater impact key endurance variables "
+     "threshold high intensity high volume", "24550842"),
+    ("Sitko-2025-zone2", "Sitko zone 2 training experts viewpoint definition training methods expected adaptations",
+     "40010355"),
+    ("Spragg-2023-durability", "Spragg training characteristics durability professional cyclists competitive season",
+     "35239466"),
+    ("Seiler-2013-4x8", "Seiler adaptations aerobic interval training interactive effects exercise intensity "
+     "total work duration", "21812820"),
+    ("Ronnestad-2020-short", "Ronnestad superior performance improvements elite cyclists short-interval "
+     "effort-matched long-interval", "31977120"),
+    ("Ronnestad-2021-microcycle", "Ronnestad microcycle short intervals versus long intervals cyclists superior "
+     "physiological adaptations", "33735833"),
+    ("Ronnestad-2014-block", "Ronnestad Hansen Ellefsen block periodization high-intensity aerobic intervals cyclists",
+     "22646668"),
+    ("Whitty-2016-cadence", "Whitty low high cadence interval training freely chosen cadence endurance-trained "
+     "cyclists", "27175601"),
+    ("Hansen-2012-strength", "Hansen Ronnestad cyclists improvement pedaling efficacy performance heavy strength "
+     "training", "23197584"),
+    ("Vikmoen-2017-strength", "Vikmoen heavy strength training improves cycling performance well-trained",
+     "28292885"),
+    ("Mujika-2018-periodization", "Mujika Halson Burke integrated multifactorial periodization optimal performance",
+     "29848161"),
+    ("Laursen-Jenkins-2002-HIIT", "Laursen Jenkins scientific basis high-intensity interval training", "11772161"),
+    ("Buchheit-Laursen-2013-HIIT-I", "Buchheit Laursen high-intensity interval training solutions programming "
+     "puzzle Part I cardiopulmonary emphasis", "23539308"),
+    ("Buchheit-Laursen-2013-HIIT-II", "Buchheit Laursen high-intensity interval training solutions programming "
+     "puzzle Part II anaerobic", "23832851"),
+    ("Stepto-1999-intervals", "Stepto Hawley effects different interval training cycling performance", "10331896"),
 ]
 
 
@@ -109,25 +126,22 @@ def parse_article(xml: str) -> dict:
 
 
 def fetch_papers(client: httpx.Client) -> list[dict]:
-    """I paper delle SEARCHES, senza vettori. Una ricerca senza risultati, un PMID già preso o
-    un abstract troppo corto saltano quel paper; PubMed che non risponde ferma tutto."""
-    papers, seen = [], set()
-    for tag, query in SEARCHES:
+    """I paper delle SEARCHES, senza vettori. Una ricerca che non trova per primo il paper atteso,
+    o un abstract troppo corto, ferma tutto, come PubMed che non risponde: un indice senza quel
+    paper toglierebbe al Coach la fonte di un protocollo senza accorgersene."""
+    papers = []
+    for tag, query, expected in SEARCHES:
         pmid = first_pmid(client, query)
         time.sleep(PAUSE)
-        if pmid is None:
-            print(f"⚠️  {tag}: nessun risultato su PubMed, salto")
-            continue
-        if pmid in seen:
-            print(f"⚠️  {tag}: PMID {pmid} già nell'indice, salto")
-            continue
-        seen.add(pmid)
+        if pmid != expected:
+            raise BuildError(f"{tag}: la ricerca trova per primo {f'il PMID {pmid}' if pmid else 'nessun paper'} "
+                             f"invece del PMID {expected}; correggi il testo della ricerca in build_index.py")
         meta = parse_article(pubmed(client, "efetch.fcgi",
                                     {"db": "pubmed", "id": pmid, "rettype": "abstract", "retmode": "xml"}).text)
         time.sleep(PAUSE)
         if len(meta["abstract"]) < MIN_ABSTRACT:
-            print(f"⚠️  {tag} (PMID {pmid}): abstract corto ({len(meta['abstract'])} caratteri), salto")
-            continue
+            raise BuildError(f"{tag} (PMID {pmid}): abstract di {len(meta['abstract'])} caratteri, troppo corto "
+                             "perché il modello di ricerca lo trovi")
         papers.append({"pmid": pmid, **meta})
         print(f"✓ [{tag}] PMID {pmid} ({meta['year']}) {meta['authors']}")
     return papers
@@ -174,8 +188,6 @@ def reencode(path: Path) -> dict:
 def rebuild(client: httpx.Client) -> dict:
     print(f"Cerco {len(SEARCHES)} paper su PubMed…")
     papers = fetch_papers(client)
-    if not papers:
-        raise BuildError("Nessun paper trovato su PubMed")
     print(f"Codifico {len(papers)} paper con {search.SEARCH_MODEL}…")
     return finished(time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), papers)
 

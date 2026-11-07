@@ -15,6 +15,8 @@ def round5(w: float) -> int:
 @dataclass(frozen=True)
 class Protocol:
     name: str
+    # Il paper di supporto, nell'indice: il suo titolo o abstract descrive il protocollo.
+    # None = pratica di allenamento, nessuno studio lo descrive.
     source_pmid: str | None
     build: Callable[[float, int], dict | None]
 
@@ -202,20 +204,26 @@ def rest(ftp, dur):
     ])
 
 
-# L'ordine è quello del catalogo nel prompt.
+# L'ordine è quello del catalogo nel prompt. Accanto a ogni paper di supporto, cosa descrive.
 PROTOCOLS = {
-    "z1_recovery": Protocol("Recupero attivo Z1", "32432383", z1_recovery),
-    "z2_endurance": Protocol("Z2 Aerobico", "16573837", z2_endurance),
-    "z2_long_intervals": Protocol("Long ride Z2 + ride-at-the-end", "20030780", z2_long_intervals),
-    "sweet_spot_3x15": Protocol("Sweet Spot 3×15'", None, sweet_spot_3x15),  # Coggan & Allen 2010, libro
+    "z1_recovery": Protocol("Recupero attivo Z1", None, z1_recovery),
+    # Sitko 2025: Z2 appena sotto la prima soglia, anche in sedute continue.
+    "z2_endurance": Protocol("Z2 Aerobico", "40010355", z2_endurance),
+    # Spragg 2023: tempo sotto la prima soglia e potenza dopo 2000 kJ di lavoro (durability).
+    "z2_long_intervals": Protocol("Long ride Z2 + ride-at-the-end", "35239466", z2_long_intervals),
+    "sweet_spot_3x15": Protocol("Sweet Spot 3×15'", None, sweet_spot_3x15),
     "threshold_3x10": Protocol("Soglia 3×10'", None, threshold_3x10),
-    "seiler_4x8": Protocol("Seiler 4×8' (FTP/VO2)", "23539309", seiler_4x8),
-    "seiler_4x4": Protocol("Seiler 4×4' (VO2max)", "23539308", seiler_4x4),
-    "ronnestad_30_15": Protocol("Rønnestad 30/15", "32432383", ronnestad_30_15),
+    # Seiler 2013: 4 × 8' meglio di 4 × 4' e 4 × 16' a sforzo massimo sostenibile.
+    "seiler_4x8": Protocol("Seiler 4×8' (FTP/VO2)", "21812820", seiler_4x8),
+    # Seiler 2013, lo stesso studio: il gruppo 4 × 4'.
+    "seiler_4x4": Protocol("Seiler 4×4' (VO2max)", "21812820", seiler_4x4),
+    # Rønnestad 2020: 3 serie di 13 × 30" di lavoro e 15" di recupero, 3' tra le serie.
+    "ronnestad_30_15": Protocol("Rønnestad 30/15", "31977120", ronnestad_30_15),
     "over_under": Protocol("Over-Under", None, over_under),
-    "z2_cadence_drills": Protocol("Z2 + cadence drills", "23197584", z2_cadence_drills),
+    # Whitty 2016: intervalli a cadenza alta, cadenza spontanea ed efficienza più alte.
+    "z2_cadence_drills": Protocol("Z2 + cadence drills", "27175601", z2_cadence_drills),
     "tempo_2x20": Protocol("Tempo 2×20'", None, tempo_2x20),
-    "z2_progressive": Protocol("Z2 progressivo", "20861519", z2_progressive),
+    "z2_progressive": Protocol("Z2 progressivo", None, z2_progressive),
     "rest": Protocol("Riposo", None, rest),
 }
 

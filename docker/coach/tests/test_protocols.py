@@ -1,6 +1,7 @@
-"""Catalogo dei protocolli e scelta di ripiego: watt, passi e scelte uguali a quelli del
+"""Catalogo dei protocolli e scelta di ripiego: nomi, watt, passi e scelte uguali a quelli del
 codice del browser (fixtures/coach_expected.json), a più FTP e durate, anche alla durata
-minima di ogni protocollo e un minuto sotto."""
+minima di ogni protocollo e un minuto sotto. Le fonti no: il browser citava paper su altro, il
+catalogo ora cita i paper di supporto."""
 
 import itertools
 
@@ -20,7 +21,7 @@ def test_catalog_has_the_browser_protocols_in_the_same_order():
 @pytest.mark.parametrize("protocol_id", list(EXPECTED["catalog"]))
 def test_protocol_builds_the_browser_workout(protocol_id):
     exp, proto = EXPECTED["catalog"][protocol_id], PROTOCOLS[protocol_id]
-    assert (proto.name, proto.source_pmid) == (exp["name"], exp["fontePMID"])
+    assert proto.name == exp["name"]
     for b in exp["builds"]:
         assert proto.build(b["ftp"], b["duration"]) == b["built"], (b["ftp"], b["duration"])
 

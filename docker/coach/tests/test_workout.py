@@ -17,6 +17,7 @@ from app import cloud, main, ollama, papers, search, workout
 from app.errors import CoachError
 from app.jscompat import js_str
 from app.papers import PaperIndexError
+from app.protocols import PROTOCOLS
 from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, INDEX, FakeCloud, FakeOllama, FakeRides, FakeSearch, fixture_index
 from fixture_data import NOW_MS, RIDES, activities, load, scenario
 
@@ -24,6 +25,9 @@ CASES = load("coach_cases.json")
 EXPECTED = load("coach_expected.json")
 CASE = {c["name"]: c for c in CASES["cases"]}
 WORKOUT_CASES = [c for c in CASES["cases"] if "built" in EXPECTED["cases"][c["name"]]]
+# Il browser aggiungeva ai paper citati la fonte del protocollo, che qui era un paper su altro
+# (23197584, 20861519); il paper di supporto che la sostituisce non è nell'indice di prova.
+SUPPORTING_PAPER_REFS = {"too-short-keeps-source": [], "json-in-text": []}
 SAME_ORIGIN = {"Sec-Fetch-Site": "same-origin"}
 BODY = {"duration": 60, "timeZone": "Europe/Rome", "profile": RIDES["profiles"]["base"]}
 
@@ -77,12 +81,35 @@ def test_model_answer_gives_the_browser_workout(case, provider):
     assert result["type"] == "result"
     assert {k: result[k] for k in ("title", "targetWatt", "struttura")} == exp["built"]
     assert result["razionale"] == js_str(exp["razionale"])
-    assert [p["pmid"] for p in result["paperRefs"]] == exp["paperRefs"]
+    assert [p["pmid"] for p in result["paperRefs"]] == SUPPORTING_PAPER_REFS.get(case["name"], exp["paperRefs"])
     assert [{"pmid": p["pmid"], "score": p["score"]} for p in result["retrievedPapers"]] == exp["retrieved"]
     assert result["fellBack"] == exp["fellBack"]
     assert finder.texts == [exp["query"]]
     # Al provider arriva solo la chat: la query è codificata dal modello di ricerca del servizio.
     chat_request(fake, exp["messages"])
+
+
+# Quanto basta a decide: FTP per i watt, forma e quota dura per la scelta di ripiego.
+CONTEXT = {"ftp": 250, "tsb": 0, "polarizzazione": {"hardPct": 20}}
+
+
+def index_with_supporting_paper(protocol_id: str) -> tuple[dict, str]:
+    pmid = PROTOCOLS[protocol_id].source_pmid
+    return {**INDEX, "papers": [*INDEX["papers"], {**INDEX["papers"][0], "pmid": pmid}]}, pmid
+
+
+def test_too_short_duration_still_cites_the_supporting_paper_of_the_chosen_protocol():
+    index, pmid = index_with_supporting_paper("z2_cadence_drills")
+    answer = '{"protocolId":"z2_cadence_drills","razionale":"Cadenza.","paperUsati":[]}'
+    result = workout.decide(answer, CONTEXT, 45, index)
+    assert (result["protocolId"], [p["pmid"] for p in result["paperRefs"]]) == ("z2_endurance", [pmid])
+
+
+def test_supporting_paper_already_cited_by_the_model_is_not_repeated():
+    index, pmid = index_with_supporting_paper("seiler_4x8")
+    answer = f'{{"protocolId":"seiler_4x8","razionale":"Forma buona [PMID:{pmid}].","paperUsati":["{pmid}"]}}'
+    result = workout.decide(answer, CONTEXT, 60, index)
+    assert (result["protocolId"], [p["pmid"] for p in result["paperRefs"]]) == ("seiler_4x8", [pmid])
 
 
 @pytest.mark.parametrize("provider", FAKES)
