@@ -1,14 +1,16 @@
-// Lavori lunghi che continuano anche cambiando sezione: "Aggiorna con streams" e
-// l'export JSON. Lo stato sta qui, fuori dalle schermate, e le schermate lo leggono:
+// Lavori lunghi che continuano anche cambiando sezione: "Aggiorna con streams",
+// l'export JSON, le previsioni sui segmenti e "Completa da dettagli attività". Lo stato sta qui, fuori dalle schermate, e le schermate lo leggono:
 // tornando su Home si vede l'avanzamento o il risultato. Un secondo avvio mentre uno
 // è in corso non fa niente.
 
 import { markRaw, reactive } from 'vue';
+import type { SegmentEntry } from '../core/segments.ts';
 import type { Activity } from '../core/strava-types.ts';
 import {
   buildExport, downloadJson, type ExportFilter, type ExportMode, fetchAllActivities, filterForExport, formatBytes,
 } from '../data/export.ts';
-import { loadSettings } from '../data/storage.ts';
+import { completeFromActivities, loadSegmentPredictions, MAX_SEGMENTS_HYDRATE, type SegmentDiag } from '../data/segments.ts';
+import { clearSegmentCache, loadSettings } from '../data/storage.ts';
 import { hydrateWithStreams, MAX_STREAMS_FETCH } from '../data/streams.ts';
 import { connectIfDisconnected, hrProfile, session } from './session.ts';
 
@@ -85,5 +87,62 @@ export async function runExport(choice: ExportFilter & { mode: ExportMode }): Pr
     if (!connectIfDisconnected(e)) exportJob.error = '❌ ' + (e as Error).message;
   } finally {
     exportJob.running = false;
+  }
+}
+
+interface SegmentsJob {
+  loading: boolean;
+  progress: string;
+  // I preferiti con tentativi e il riepilogo; null finché il primo caricamento non è finito.
+  list: SegmentEntry[] | null;
+  diag: SegmentDiag | null;
+  error: string;
+  completing: boolean;
+  completeProgress: string;
+}
+
+export const segmentsJob = reactive<SegmentsJob>({
+  loading: false, progress: 'Carico segmenti…', list: null, diag: null, error: '', completing: false, completeProgress: '',
+});
+
+// Previsioni sui segmenti preferiti: all'apertura dell'app, come oggi, e di nuovo dopo
+// "Completa da dettagli attività" e "Svuota cache e ricarica".
+export async function loadSegments(): Promise<void> {
+  if (segmentsJob.loading) return;
+  Object.assign(segmentsJob, { loading: true, progress: 'Carico segmenti…', error: '' });
+  try {
+    const { list, diag } = await loadSegmentPredictions((done, total, errors) => {
+      segmentsJob.progress = `Carico segmenti ${done}/${total}${errors ? ' (errori: ' + errors + ')' : ''}…`;
+    });
+    Object.assign(segmentsJob, { list: markRaw(list), diag: markRaw(diag) });
+  } catch (e) {
+    if (!connectIfDisconnected(e)) segmentsJob.error = 'Errore caricamento segmenti: ' + (e as Error).message;
+  } finally {
+    segmentsJob.loading = false;
+  }
+}
+
+export function clearSegmentsAndReload(): void {
+  if (segmentsJob.loading || segmentsJob.completing) return;
+  clearSegmentCache();
+  void loadSegments();
+}
+
+// Non parte mentre le previsioni caricano: scrivono gli stessi segmenti salvati.
+export async function completeSegments(): Promise<void> {
+  if (segmentsJob.completing || segmentsJob.loading) return;
+  Object.assign(segmentsJob, { completing: true, completeProgress: 'Scarico dettagli attività…' });
+  try {
+    const result = await completeFromActivities(session.activities, MAX_SEGMENTS_HYDRATE, (done, total) => {
+      segmentsJob.completeProgress = `Attività ${done}/${total}…`;
+    });
+    const done = `✅ Scaricate ${result.fetched} attività, aggiunti ${result.addedEfforts} efforts.`;
+    segmentsJob.completeProgress = done + ' Ricarico…';
+    await loadSegments();
+    segmentsJob.completeProgress = done;
+  } catch (e) {
+    if (!connectIfDisconnected(e)) segmentsJob.completeProgress = '❌ ' + (e as Error).message;
+  } finally {
+    segmentsJob.completing = false;
   }
 }

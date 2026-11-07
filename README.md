@@ -201,7 +201,7 @@ ES modules in `web/`, served as they are by Vite's development server. Module fl
 ```
 constants.js    ← APP_CONFIG network limits only
 src/data/       ← Strava API (one access token per request), auth server, values saved in the browser,
-                  streams download and JSON export
+                  streams and starred segments download, JSON export
 src/core/       ← calculations, which get everything as input (no page, saved data or clock):
                   stream metrics, training load, CTL/ATL/TSB, FTP and LTHR estimates and trend,
                   power curve and profile, segment predictions; formatting of distances, times and dates;
@@ -213,7 +213,7 @@ training.js     ← Training tab cards (recommendation, rest calendar, load char
                   for the plan in src/core, which read the clock and the values saved in the browser
 training_v2.js  ← today's names for the workout catalog in src/core (reads the saved mesocycle)
 analysis.js     ← cards: power curve, CTL/ATL/TSB, HR zones, power profile, FTP trend
-predictions.js  ← starred segments download, prediction and segment workout cards
+predictions.js  ← segment prediction and segment workout cards (the download is in src/data)
 coach.js        ← AI Coach tab: request to the Coach service, live steps, workout card
 export.js       ← JSON export window (the export itself is in src/data)
 app.js          ← entry point: view routing, UI rendering, fetch orchestration

@@ -7,13 +7,13 @@ import {
 } from './training.js';
 import { estimatesFromSegments } from './predictions.js';
 import { formInsights as formInsightsFrom, crossTrainingInsights as crossTrainingFrom } from './src/core/form.ts';
-import {
-  buildFtpBreakdown as ftpBreakdownFrom, buildFtpInsights, buildLthrBreakdown, nextFtpHistory,
-} from './src/core/ftp.ts';
+import { buildFtpBreakdown as ftpBreakdownFrom, buildFtpInsights, buildLthrBreakdown } from './src/core/ftp.ts';
 import { buildHrZones as hrZonesFrom } from './src/core/hr.ts';
-import { mesoSummary, withFtpPoint } from './src/core/meso.ts';
+import { mesoSummary } from './src/core/meso.ts';
 import { buildPowerCurve, buildPowerProfile } from './src/core/power.ts';
-import { loadFtpHistory, saveFtpHistory, loadMesocycle, saveMesocycle } from './src/data/storage.ts';
+import {
+  loadFtpHistory, saveFtpHistory, loadMesocycle, recordFtpPoint as recordFtpPointFrom,
+} from './src/data/storage.ts';
 
 // Le card Forma e Zone FC usano soglia e FTP senza le stime dalle attività: contano
 // solo i valori dichiarati e i segmenti (resolveHr senza attività).
@@ -30,18 +30,8 @@ const buildHrZones = (activities, settings) => hrZonesFrom(activities, resolveHr
 const crossTrainingInsights = (activities) => crossTrainingFrom(activities, new Date());
 const buildFtpBreakdown = (activities) => ftpBreakdownFrom(activities, new Date());
 
-// Registra il punto FTP di oggi (chiamato su ogni renderTraining): un salvataggio per
-// caricamento, e lo stesso punto negli ultimi 20 del mesociclo.
-function recordFtpPoint(settings, activities) {
-  const history = nextFtpHistory(loadFtpHistory(), resolveHr(settings, activities), new Date());
-  if (!history) return;
-  saveFtpHistory(history);
-  const meso = loadMesocycle();
-  if (meso) {
-    const { date, ftp } = history[history.length - 1];
-    saveMesocycle(withFtpPoint(meso, date, ftp));
-  }
-}
+// Registra il punto FTP di oggi (chiamato su ogni renderTraining).
+const recordFtpPoint = (settings, activities) => recordFtpPointFrom(resolveHr(settings, activities), new Date());
 
 function renderPowerCurve(data, profile, settings) {
   if (!data) return '<p class="muted">Nessuna attività con dati di potenza. Serve un misuratore di potenza sulla bici.</p>';

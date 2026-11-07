@@ -2,7 +2,7 @@ import { WEEKDAYS_ISO } from './src/core/dates.ts';
 import { forgetCoachRides } from './src/data/coach.ts';
 import {
   loadSettings, saveSettings, getAuthStatus, authCallbackMessage, logout, purgeLegacyStrava,
-  fetchAthlete, fetchAthleteStats, fetchActivities, fetchStarredSegments,
+  fetchAthlete, fetchAthleteStats, fetchActivities,
   applyCachedStreams, hydrateWithStreams, loadPlannedRests, loadRainyDays,
   dayOffsetIso, cycleDayState, escapeHtml, fmtKm, fmtTime, fmtDate, TYPE_EMOJI,
   APP_CONFIG,
@@ -433,9 +433,7 @@ async function main() {
         $('hydrate-segments-btn').disabled = true;
         $('hydrate-segments-progress').textContent = 'Scarico dettagli attività…';
         try {
-          // Tutti gli ID dei preferiti, per il filtro
-          const allStarred = (await fetchStarredSegments()).map(s => s.id);
-          const result = await hydrateSegmentsFromActivities(activities, APP_CONFIG.maxSegmentsHydrate, allStarred, (d, t) => {
+          const result = await hydrateSegmentsFromActivities(activities, APP_CONFIG.maxSegmentsHydrate, (d, t) => {
             $('hydrate-segments-progress').textContent = `Attività ${d}/${t}…`;
           });
           $('hydrate-segments-progress').textContent = `✅ Scaricate ${result.fetched} attività, aggiunti ${result.addedEfforts} efforts. Ricarico…`;

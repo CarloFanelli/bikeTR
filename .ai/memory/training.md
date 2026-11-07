@@ -10,7 +10,7 @@ _Avoid_: "Training v2 tab" (the navigation never had one; an old README describe
 
 ## Decisions
 
-- **The load chart moves to Allenamento in the new app**: today it sits in the Analysis tab, the new app shows it in the Allenamento screen as bars by ride kind plus a dashed daily-average line. Why: the task plan puts it with the training plan it explains, and Analisi (Task 10) does not list it.
+- **The load chart shows in both Allenamento and Analisi in the new app**: today it sits only in the Analysis tab; the new app shows the same card (bars by ride kind plus a dashed daily-average line) in both sections. Why: the task plan puts it with the training plan it explains, and the spec asks every section to keep today's content, so Analisi keeps it too.
 
 ## Gotchas
 

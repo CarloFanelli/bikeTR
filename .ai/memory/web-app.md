@@ -11,6 +11,7 @@ _Avoid_: "settings" alone for the screen (also means the saved values), "Coach s
 ## Decisions
 
 - **Vuetify, not PrimeVue**: the new app's components come from Vuetify (MIT), with icons from `@mdi/js`. Why: PrimeVue 5 needs a licence key renewed every year, and without one it shows a red notice on every page, so anyone running the project without their own key would see it.
+- **Segment predictions load when the app opens, not when Analisi opens**: `main.ts` starts the segment job once the session is ready, and Home and Analisi recompute when it ends. Why: today's page does the same at every load, and the downloaded segments change the FTP and threshold estimates that Home's precision card shows; starting it from `startSession` would create an import loop (`jobs.ts` imports `session.ts`).
 
 ## Gotchas
 
@@ -21,3 +22,5 @@ _Avoid_: "settings" alone for the screen (also means the saved values), "Coach s
 - **The router ignores address changes until the first screen has loaded**: vue-router starts listening for `#/…` changes only after its first navigation finishes, which includes downloading that screen's code. A script or browser test that changes the address right after opening the page stays on Home: wait for the first screen to appear first.
 - **TypeScript 6 checks CSS imports too**: `import 'leaflet/dist/leaflet.css'` fails `vue-tsc` unless `web/tsconfig.json` lists `vite/client` in `types`, which declares `.css` files.
 - **Chart.js orders the tooltip by drawing order**: a dataset's `order` (used to draw the average line above the bars) also decides the order of the tooltip lines, so the average came before the day's load. `LineChart.vue` sets `itemSort` by dataset index, so the lines follow the order the screen gives the series.
+- **Vue drops the space between elements on separate lines**: `<span>250 W</span>` on one line and `<span>(dichiarata)</span>` on the next render as "250 W(dichiarata)". Write the space explicitly (`{{ ' ' }}`), and compare screens with the rendered text (`innerText`), not `textContent` with spaces removed, which hides the missing space.
+- **Today's JavaScript files feed the reference recorder**: `web/tests/reference/record.ts` calls functions exported by `strava.js`, `training.js`, `analysis.js` and `predictions.js`. An export that no screen uses can still be needed there: after changing those files, run the recorder and `git diff --exit-code web/tests/fixtures` (README §10).

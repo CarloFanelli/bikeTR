@@ -16,6 +16,8 @@ export {
   fetchAthlete, fetchAthleteStats, fetchActivities, fetchActivity, fetchStarredSegments, fetchSegmentEfforts,
 } from './src/data/strava.ts';
 export { hydrateWithStreams } from './src/data/streams.ts';
+// Lo usa il controllo dei risultati di riferimento (tests/reference/record.ts).
+export { computeStreamsMetrics } from './src/core/streams.ts';
 
 export function todayIso() { return isoDay(new Date()); }
 export const dayOffsetIso = (n) => dayOffsetFrom(n, new Date());
