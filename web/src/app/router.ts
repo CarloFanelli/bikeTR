@@ -20,7 +20,10 @@ const routes: RouteRecordRaw[] = [
     path: '/allenamento', name: 'allenamento', component: () => import('../screens/TrainingScreen.vue'),
     meta: { title: 'Allenamento' },
   },
-  { path: '/analisi', name: 'analisi', component: notYet, meta: { title: 'Analisi', legacy: '/#analysis' } },
+  {
+    path: '/analisi', name: 'analisi', component: () => import('../screens/AnalysisScreen.vue'),
+    meta: { title: 'Analisi' },
+  },
   {
     path: '/attivita', name: 'attivita', component: () => import('../screens/ActivitiesScreen.vue'),
     meta: { title: 'Attività' },

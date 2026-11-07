@@ -9,6 +9,6 @@
 07-settings-screen: DONE
 08-home-and-activities: DONE
 09-training-screen: DONE
-10-analysis-screen: TODO
+10-analysis-screen: DONE
 11-coach-screen: TODO
 12-switch-to-new-app: TODO

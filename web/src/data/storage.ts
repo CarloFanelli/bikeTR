@@ -1,8 +1,9 @@
 // Valori salvati nel browser (localStorage), con i nomi e i formati di sempre
 // (README, sezione 7). Un valore illeggibile non blocca l'app: vale il default.
 
-import type { FtpPoint } from '../core/ftp.ts';
-import type { Mesocycle } from '../core/meso.ts';
+import { type FtpPoint, nextFtpHistory } from '../core/ftp.ts';
+import type { HrProfile } from '../core/hr.ts';
+import { type Mesocycle, withFtpPoint } from '../core/meso.ts';
 import type { SegmentCache } from '../core/segments.ts';
 import type { Settings } from '../core/settings.ts';
 import type { Activity, StreamMetrics } from '../core/strava-types.ts';
@@ -131,6 +132,19 @@ export const saveFtpHistory = (history: FtpPoint[]): boolean => safeSave(FTP_HIS
 export const loadMesocycle = (): Mesocycle | null =>
   safeLoad<Mesocycle | null>(MESOCYCLE, null, (x) => x === null || (typeof x === 'object' && !Array.isArray(x)));
 export const saveMesocycle = (meso: Mesocycle): boolean => safeSave(MESOCYCLE, meso);
+
+// Il punto FTP di oggi, dato FTP e soglia di adesso: nello storico (al massimo uno ogni
+// 5 giorni) e, se c'è un mesociclo, in fondo ai suoi ultimi 20.
+export function recordFtpPoint(profile: HrProfile, now: Date): void {
+  const history = nextFtpHistory(loadFtpHistory(), profile, now);
+  if (!history) return;
+  saveFtpHistory(history);
+  const meso = loadMesocycle();
+  if (meso) {
+    const { date, ftp } = history[history.length - 1];
+    saveMesocycle(withFtpPoint(meso, date, ftp));
+  }
+}
 
 // Le versioni prima di Docker salvavano nel browser client secret e token Strava
 // (e, se il JSON era rotto, una copia ".broken"): vanno cancellati.

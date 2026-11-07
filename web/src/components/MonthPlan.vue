@@ -38,7 +38,7 @@ const open = ref([0]);
   </div>
   <div v-if="banner" class="plan-banner mb-3" :style="{ '--role': '#3b82f6' }">
     {{ banner.icon }} <b class="meso-title">{{ banner.title }}</b>
-    <VChip v-if="banner.role" size="x-small" label :color="roleColor(banner.role.role)" class="ml-2">{{ banner.role.label }}</VChip>
+    <VChip v-if="banner.role" size="x-small" label :color="roleColor(banner.role.role)" class="ml-2 text-uppercase">{{ banner.role.label }}</VChip>
     <div v-for="line in banner.lines" :key="line" class="text-caption text-medium-emphasis mt-1">{{ line }}</div>
   </div>
 

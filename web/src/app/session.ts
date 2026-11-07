@@ -11,7 +11,7 @@ import { AuthError, getAuthStatus, logout } from '../data/auth.ts';
 import { forgetCoachRides } from '../data/coach.ts';
 import {
   applyCachedStreams, loadFtpHistory, loadMesocycle, loadRainyDays, loadSegmentCache, loadSettings, purgeLegacyStrava,
-  saveMesocycle,
+  recordFtpPoint, saveMesocycle,
 } from '../data/storage.ts';
 import { fetchActivities, fetchAthlete, fetchAthleteStats } from '../data/strava.ts';
 
@@ -49,6 +49,7 @@ export async function startSession(): Promise<void> {
     const activities = await fetchActivities(ACTIVITY_COUNT);
     applyCachedStreams(activities);
     updateMesocycle(activities);
+    updateFtpHistory(activities);
     Object.assign(session, { phase: 'ready', athlete, stats, activities });
   } catch (e) {
     if (!connectIfDisconnected(e)) Object.assign(session, { phase: 'error', error: (e as Error).message });
@@ -64,6 +65,17 @@ function updateMesocycle(activities: Activity[]): void {
     if (changed) saveMesocycle(meso);
   } catch (e) {
     console.warn('[BikeTR] mesociclo non aggiornato:', e);
+  }
+}
+
+// Il punto FTP di oggi, per il trend in Analisi e per il piano in Allenamento, come
+// l'app di oggi a ogni apertura. Uno storico rovinato non blocca l'app.
+function updateFtpHistory(activities: Activity[]): void {
+  const now = new Date();
+  try {
+    recordFtpPoint(resolveHr(loadSettings(), activities, estimatesFromSegments(loadSegmentCache(), now), now), now);
+  } catch (e) {
+    console.warn('[BikeTR] punto FTP non registrato:', e);
   }
 }
 

@@ -8,7 +8,7 @@ import {
   VAvatar, VBtn, VCard, VCardText, VCardTitle, VCol, VExpansionPanel, VExpansionPanels, VExpansionPanelText,
   VExpansionPanelTitle, VRow,
 } from 'vuetify/components';
-import { exportJob, refreshStreams, streamsJob } from '../app/jobs.ts';
+import { exportJob, refreshStreams, segmentsJob, streamsJob } from '../app/jobs.ts';
 import { hrProfile, session } from '../app/session.ts';
 import ExportDialog from '../components/ExportDialog.vue';
 import MetricGrid from '../components/MetricGrid.vue';
@@ -25,7 +25,11 @@ const location = computed(() => [athlete.value?.city, athlete.value?.country].fi
 const totals = computed(() => athleteTotals(session.stats));
 
 // Si ricalcola quando "Aggiorna con streams" aggiunge le metriche alle attività.
-const precision = computed(() => dataPrecision(hrProfile(), session.activities, MAX_STREAMS_FETCH));
+// Si ricalcola anche a fine caricamento dei segmenti: cambiano le stime dai segmenti.
+const precision = computed(() => {
+  void segmentsJob.list;
+  return dataPrecision(hrProfile(), session.activities, MAX_STREAMS_FETCH);
+});
 const precisionItems = computed<[string, string, string?][]>(() => [
   ['FTP', precision.value.ftp.value, precision.value.ftp.note],
   ['LTHR', precision.value.lthr.value, precision.value.lthr.note],

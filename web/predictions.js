@@ -1,13 +1,13 @@
-// Previsioni sui segmenti preferiti: carica segmenti starred, storico tentativi,
-// calcola trend e stima tempo al prossimo tentativo (regressione lineare).
-import {
-  APP_CONFIG, fmtTime, escapeHtml, AuthError,
-  fetchStarredSegments, fetchSegmentEfforts, fetchActivity,
-} from './strava.js';
+// Previsioni sui segmenti preferiti: card con trend e tempo stimato al prossimo tentativo.
+// Il caricamento dei tentativi sta in src/data/segments.ts, i calcoli in src/core/segments.ts.
+import { fmtTime, escapeHtml } from './strava.js';
 import {
   isSegmentFTPSuitable, effortDecay as effortDecayFrom, estimatesFromSegments as estimatesFrom,
   linearRegression, formAdjustedTime, computePrediction, segmentTargetedWorkout, generateSegmentWorkouts,
 } from './src/core/segments.ts';
+import {
+  completeFromActivities as hydrateSegmentsFromActivities, loadSegmentPredictions,
+} from './src/data/segments.ts';
 import {
   clearSegmentCache as clearSegCache, loadSegmentCache as loadSegCache, saveSegmentCache as saveSegCache,
 } from './src/data/storage.ts';
@@ -15,126 +15,6 @@ import {
 // I calcoli stanno in src/core/segments.ts; queste versioni leggono orologio e segmenti salvati.
 const effortDecay = (startDate) => effortDecayFrom(startDate, new Date());
 const estimatesFromSegments = () => estimatesFrom(loadSegCache(), new Date());
-
-// Senza accesso a Strava (non collegato, server di autenticazione spento) salva
-// quanto scaricato, si ferma e lancia l'errore, invece di segnarlo su ogni segmento.
-async function loadSegmentPredictions(onProgress) {
-  const starred = await fetchStarredSegments();
-  const cache = loadSegCache();
-  const CACHE_TTL_OK = 24 * 60 * 60 * 1000; // 24h per risultati con tentativi
-  const CACHE_TTL_EMPTY = 2 * 60 * 60 * 1000; // 2h per risultati vuoti (potrebbe essere stato flaky)
-  const now = Date.now();
-  const out = [];
-  const diag = {
-    totalStarred: starred.length,
-    withEfforts: 0,
-    noEfforts: 0,
-    errors: [],
-    fromCache: 0,
-    fetched: 0,
-  };
-  for (let i = 0; i < starred.length; i++) {
-    const seg = starred[i];
-    if (onProgress) onProgress(i + 1, starred.length, diag.errors.length);
-    const cached = cache[seg.id];
-    const ttl = cached && cached.efforts && cached.efforts.length > 0 ? CACHE_TTL_OK : CACHE_TTL_EMPTY;
-    if (cached && cached.efforts && (now - cached._fetched) < ttl) {
-      diag.fromCache++;
-      if (cached.efforts.length > 0) {
-        out.push({ segment: seg, efforts: cached.efforts });
-        diag.withEfforts++;
-      } else {
-        diag.noEfforts++;
-      }
-      continue;
-    }
-    try {
-      const efforts = await fetchSegmentEfforts(seg.id);
-      cache[seg.id] = { efforts, _fetched: now, _segment: {
-        average_grade: seg.average_grade, elevation_difference: seg.elevation_high - seg.elevation_low,
-        total_elevation_gain: seg.total_elevation_gain, distance: seg.distance,
-      }};
-      diag.fetched++;
-      if (efforts.length >= 1) {
-        out.push({ segment: seg, efforts });
-        diag.withEfforts++;
-      } else {
-        diag.noEfforts++;
-      }
-      if (i < starred.length - 1) await new Promise(r => setTimeout(r, 150));
-    } catch (e) {
-      if (e instanceof AuthError) {
-        saveSegCache(cache);
-        throw e;
-      }
-      diag.errors.push({ name: seg.name, id: seg.id, msg: e.message });
-      // NON cache-o errori: così ri-tento alla prossima visita
-      if (String(e.message).includes('429')) {
-        await new Promise(r => setTimeout(r, 10000));
-      }
-    }
-  }
-  saveSegCache(cache);
-  return { list: out, diag };
-}
-
-// Arricchisce la cache segmenti estraendo segment_efforts dai dettagli attività.
-// Costoso: 1 API call per attività. Ma bypassa i limiti di /all_efforts.
-// Come sopra, un errore di accesso a Strava ferma il lavoro.
-async function hydrateSegmentsFromActivities(activities, maxFetch = APP_CONFIG.maxSegmentsHydrate, starredIds = null, onProgress) {
-  const bikes = activities.filter(a => a.type?.includes('Ride')).slice(0, maxFetch);
-  const cache = loadSegCache();
-  const now = Date.now();
-  const starredSet = starredIds ? new Set(starredIds.map(String)) : null;
-  let fetched = 0;
-  let addedEfforts = 0;
-  for (let i = 0; i < bikes.length; i++) {
-    const a = bikes[i];
-    if (onProgress) onProgress(i + 1, bikes.length);
-    // Evita rifetch se abbiamo già memorizzato (attributo _detailFetched sull'attività stessa)
-    if (a._detailFetched) continue;
-    try {
-      const detail = await fetchActivity(a.id);
-      a._detailFetched = true;
-      fetched++;
-      if (Array.isArray(detail.segment_efforts)) {
-        for (const eff of detail.segment_efforts) {
-          const segId = String(eff.segment?.id);
-          if (!segId) continue;
-          if (starredSet && !starredSet.has(segId)) continue; // interessano solo preferiti
-          if (!cache[segId]) cache[segId] = { efforts: [], _fetched: now, _segment: {
-            average_grade: eff.segment?.average_grade, distance: eff.segment?.distance,
-            elevation_difference: (eff.segment?.elevation_high || 0) - (eff.segment?.elevation_low || 0),
-            total_elevation_gain: eff.segment?.total_elevation_gain,
-          }};
-          if (!cache[segId].efforts) cache[segId].efforts = [];
-          if (!cache[segId].efforts.find(e => e.id === eff.id)) {
-            cache[segId].efforts.push({
-              id: eff.id,
-              elapsed_time: eff.elapsed_time,
-              moving_time: eff.moving_time,
-              start_date: eff.start_date,
-              distance: eff.distance,
-              average_heartrate: eff.average_heartrate,
-              max_heartrate: eff.max_heartrate,
-              average_watts: eff.average_watts,
-            });
-            addedEfforts++;
-            cache[segId]._fetched = now;
-          }
-        }
-      }
-      if (i < bikes.length - 1) await new Promise(r => setTimeout(r, 150));
-    } catch (e) {
-      if (e instanceof AuthError) {
-        saveSegCache(cache);
-        throw e;
-      }
-    }
-  }
-  saveSegCache(cache);
-  return { fetched, addedEfforts };
-}
 
 function renderSparkline(points, best, W = 120, H = 40) {
   if (!points.length) return '';

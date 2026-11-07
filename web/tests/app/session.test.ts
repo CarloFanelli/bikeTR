@@ -3,7 +3,9 @@ import { disconnect, session, startSession } from '../../src/app/session.ts';
 import type { Activity } from '../../src/core/strava-types.ts';
 import { AuthError, getAuthStatus, logout } from '../../src/data/auth.ts';
 import { forgetCoachRides } from '../../src/data/coach.ts';
-import { applyCachedStreams, loadMesocycle, purgeLegacyStrava, saveMesocycle } from '../../src/data/storage.ts';
+import {
+  applyCachedStreams, loadMesocycle, loadSettings, purgeLegacyStrava, recordFtpPoint, saveMesocycle,
+} from '../../src/data/storage.ts';
 import { fetchActivities, fetchAthlete, fetchAthleteStats } from '../../src/data/strava.ts';
 
 vi.mock('../../src/data/auth.ts', async (original) => ({
@@ -14,7 +16,7 @@ vi.mock('../../src/data/auth.ts', async (original) => ({
 vi.mock('../../src/data/coach.ts', () => ({ forgetCoachRides: vi.fn() }));
 vi.mock('../../src/data/storage.ts', () => ({
   applyCachedStreams: vi.fn(), purgeLegacyStrava: vi.fn(), loadSettings: vi.fn(() => ({})),
-  loadMesocycle: vi.fn(), saveMesocycle: vi.fn(),
+  loadMesocycle: vi.fn(), saveMesocycle: vi.fn(), loadSegmentCache: vi.fn(() => ({})), recordFtpPoint: vi.fn(),
 }));
 vi.mock('../../src/data/strava.ts', () => ({
   fetchActivities: vi.fn(), fetchAthlete: vi.fn(), fetchAthleteStats: vi.fn(),
@@ -31,6 +33,8 @@ beforeEach(() => {
   vi.mocked(fetchAthleteStats).mockResolvedValue(stats as never);
   vi.mocked(fetchActivities).mockResolvedValue(activities);
   vi.mocked(loadMesocycle).mockReturnValue(null);
+  vi.mocked(loadSettings).mockReturnValue({});
+  vi.mocked(recordFtpPoint).mockReset();
 });
 
 describe('apertura della nuova app', () => {
@@ -56,6 +60,22 @@ describe('apertura della nuova app', () => {
     await startSession();
     expect(saveMesocycle).not.toHaveBeenCalled();
     expect(session.phase).toBe('ready');
+  });
+
+  it('registra il punto FTP di oggi con FTP e soglia di adesso, dopo il mesociclo', async () => {
+    vi.mocked(loadSettings).mockReturnValue({ ftpDeclared: 250 });
+    await startSession();
+    expect(recordFtpPoint).toHaveBeenCalledWith(expect.objectContaining({ ftp: 250, ftpDecl: 250 }), expect.any(Date));
+    expect(vi.mocked(recordFtpPoint).mock.invocationCallOrder[0])
+      .toBeGreaterThan(vi.mocked(saveMesocycle).mock.invocationCallOrder[0]);
+  });
+
+  it('un punto FTP che non si salva non blocca l\'apertura', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.mocked(recordFtpPoint).mockImplementation(() => { throw new Error('storico rovinato'); });
+    await startSession();
+    expect(session.phase).toBe('ready');
+    expect(console.warn).toHaveBeenCalled();
   });
 
   it('un mesociclo salvato rovinato non blocca l\'apertura', async () => {

@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Activity } from '../../src/core/strava-types.ts';
 import {
   applyCachedStreams, clearSegmentCache, cycleDayState, loadCoachSettings, loadPlannedRests, loadRainyDays,
-  loadSegmentCache, loadSettings, loadSidebarCollapsed, loadStreamsCache, purgeLegacyStrava, safeLoad, safeSave,
+  loadSegmentCache, loadSettings, loadSidebarCollapsed, loadStreamsCache, purgeLegacyStrava, recordFtpPoint, safeLoad,
+  safeSave,
   saveCoachSettings, saveSegmentCache, saveSettings, saveSidebarCollapsed,
 } from '../../src/data/storage.ts';
 
@@ -142,5 +143,29 @@ describe('barra laterale ridotta a icone', () => {
     expect(loadSidebarCollapsed()).toBe(false);
     store.set('biketr_ui', '{"sidebarCollapsed":"sì"}');
     expect(loadSidebarCollapsed()).toBe(false);
+  });
+});
+
+describe('punto FTP di oggi', () => {
+  const now = new Date(2026, 10, 7, 10);
+  const profile = { ftp: 250, ftpDecl: 250, ftpEst: 240, ftpSource: 'declared' } as never;
+
+  it('si aggiunge allo storico e in fondo agli ultimi 20 del mesociclo', () => {
+    store.set('biketr_ftp_history', JSON.stringify([{ date: '2026-10-30', ftp: 245, source: 'declared' }]));
+    store.set('biketr_mesocycle', JSON.stringify({ blockId: 'base', ftpHistory: [{ date: '2026-10-30', ftp: 245 }] }));
+    recordFtpPoint(profile, now);
+    expect(JSON.parse(store.get('biketr_ftp_history')!)).toEqual([
+      { date: '2026-10-30', ftp: 245, source: 'declared' }, { date: '2026-11-07', ftp: 250, source: 'declared' },
+    ]);
+    expect(JSON.parse(store.get('biketr_mesocycle')!).ftpHistory).toEqual([
+      { date: '2026-10-30', ftp: 245 }, { date: '2026-11-07', ftp: 250 },
+    ]);
+  });
+
+  it('meno di 5 giorni dall\'ultimo punto: non si salva niente', () => {
+    store.set('biketr_ftp_history', JSON.stringify([{ date: '2026-11-04', ftp: 245, source: 'declared' }]));
+    recordFtpPoint(profile, now);
+    expect(JSON.parse(store.get('biketr_ftp_history')!)).toHaveLength(1);
+    expect(store.has('biketr_mesocycle')).toBe(false);
   });
 });
