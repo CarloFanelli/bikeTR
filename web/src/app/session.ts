@@ -3,7 +3,8 @@
 
 import { reactive } from 'vue';
 import type { Activity, Athlete, AthleteStats } from '../core/strava-types.ts';
-import { AuthError, getAuthStatus } from '../data/auth.ts';
+import { AuthError, getAuthStatus, logout } from '../data/auth.ts';
+import { forgetCoachRides } from '../data/coach.ts';
 import { applyCachedStreams, purgeLegacyStrava } from '../data/storage.ts';
 import { fetchActivities, fetchAthlete, fetchAthleteStats } from '../data/strava.ts';
 
@@ -29,7 +30,7 @@ export const session = reactive<Session>({
 
 export async function startSession(): Promise<void> {
   purgeLegacyStrava();
-  Object.assign(session, { phase: 'loading', missing: [], error: null });
+  Object.assign(session, { phase: 'loading', missing: [], error: null, athlete: null, stats: null, activities: [] });
   try {
     const status = await getAuthStatus();
     if (status.missing.length || !status.connected) {
@@ -46,4 +47,12 @@ export async function startSession(): Promise<void> {
     if (e instanceof AuthError && e.code === 'not_connected') Object.assign(session, { phase: 'connect' });
     else Object.assign(session, { phase: 'error', error: (e as Error).message });
   }
+}
+
+// "Disconnetti da Strava": il server di autenticazione cancella i token, il servizio
+// Coach dimentica le corse, e resta solo "Collega Strava".
+export async function disconnect(): Promise<void> {
+  await logout();
+  await forgetCoachRides();
+  await startSession();
 }

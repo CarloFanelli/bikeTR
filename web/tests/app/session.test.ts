@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { session, startSession } from '../../src/app/session.ts';
+import { disconnect, session, startSession } from '../../src/app/session.ts';
 import type { Activity } from '../../src/core/strava-types.ts';
-import { AuthError, getAuthStatus } from '../../src/data/auth.ts';
+import { AuthError, getAuthStatus, logout } from '../../src/data/auth.ts';
+import { forgetCoachRides } from '../../src/data/coach.ts';
 import { applyCachedStreams, purgeLegacyStrava } from '../../src/data/storage.ts';
 import { fetchActivities, fetchAthlete, fetchAthleteStats } from '../../src/data/strava.ts';
 
 vi.mock('../../src/data/auth.ts', async (original) => ({
   ...await original<typeof import('../../src/data/auth.ts')>(),
   getAuthStatus: vi.fn(),
+  logout: vi.fn(),
 }));
+vi.mock('../../src/data/coach.ts', () => ({ forgetCoachRides: vi.fn() }));
 vi.mock('../../src/data/storage.ts', () => ({ applyCachedStreams: vi.fn(), purgeLegacyStrava: vi.fn() }));
 vi.mock('../../src/data/strava.ts', () => ({
   fetchActivities: vi.fn(), fetchAthlete: vi.fn(), fetchAthleteStats: vi.fn(),
@@ -67,5 +70,16 @@ describe('apertura della nuova app', () => {
     await startSession();
     expect(session.phase).toBe('error');
     expect(session.error).toContain('docker compose logs auth');
+  });
+});
+
+describe('Disconnetti da Strava', () => {
+  it('cancella i token, fa dimenticare le corse al Coach e torna a "Collega Strava"', async () => {
+    await startSession();
+    vi.mocked(getAuthStatus).mockResolvedValue({ missing: [], connected: false });
+    await disconnect();
+    expect(logout).toHaveBeenCalled();
+    expect(forgetCoachRides).toHaveBeenCalled();
+    expect([session.phase, session.athlete, session.stats, session.activities]).toEqual(['connect', null, null, []]);
   });
 });

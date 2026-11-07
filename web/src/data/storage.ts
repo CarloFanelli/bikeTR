@@ -3,6 +3,7 @@
 
 import type { FtpPoint } from '../core/ftp.ts';
 import type { Mesocycle } from '../core/meso.ts';
+import type { SegmentCache } from '../core/segments.ts';
 import type { Settings } from '../core/settings.ts';
 import type { Activity, StreamMetrics } from '../core/strava-types.ts';
 
@@ -19,6 +20,8 @@ const STREAMS_CACHE = 'biketr_streams_cache';
 const FTP_HISTORY = 'biketr_ftp_history';
 const MESOCYCLE = 'biketr_mesocycle';
 const UI = 'biketr_ui';
+const SEGMENTS_CACHE = 'biketr_segments_cache_v2';
+const COACH_SETTINGS = 'biketr_coach_settings';
 
 // Chiave assente: `fallback`, senza log. JSON illeggibile o rifiutato da `validator`:
 // copia in "<chiave>.broken", avviso in console e `fallback`. Non lancia mai.
@@ -89,6 +92,31 @@ export function applyCachedStreams(activities: Activity[]): void {
     if (entry && !entry._error) a._metrics = entry as StreamMetrics;
   }
 }
+
+// Segmenti preferiti con i tentativi già scaricati, per segmento.
+export const loadSegmentCache = (): SegmentCache => safeLoad<SegmentCache>(SEGMENTS_CACHE, {}, isPlainObject);
+export const saveSegmentCache = (cache: SegmentCache): boolean => safeSave(SEGMENTS_CACHE, cache);
+export const clearSegmentCache = (): void => localStorage.removeItem(SEGMENTS_CACHE);
+
+// Modello del Coach e durata dell'ultimo workout chiesto.
+interface CoachSettings {
+  model?: string;
+  lastDuration?: number;
+}
+
+export function loadCoachSettings(): CoachSettings {
+  const s = safeLoad<CoachSettings & { endpoint?: unknown }>(COACH_SETTINGS, {}, isPlainObject);
+  // Le versioni precedenti salvavano anche l'indirizzo di Ollama: non serve più.
+  if ('endpoint' in s) {
+    delete s.endpoint;
+    safeSave(COACH_SETTINGS, s);
+  }
+  return s;
+}
+
+// Aggiorna solo i valori passati: salvare il modello non cancella l'ultima durata, e viceversa.
+export const saveCoachSettings = (changes: CoachSettings): boolean =>
+  safeSave(COACH_SETTINGS, { ...loadCoachSettings(), ...changes });
 
 // Barra laterale della nuova app ridotta a icone; senza una scelta leggibile resta espansa.
 export const loadSidebarCollapsed = (): boolean =>

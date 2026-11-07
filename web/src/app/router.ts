@@ -7,7 +7,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     title: string;
     // La stessa sezione nell'app di oggi, finché questa non è rifatta.
-    legacy: string;
+    legacy?: string;
   }
 }
 
@@ -24,8 +24,10 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Dettaglio attività', legacy: '/activity.html' },
   },
   { path: '/coach', name: 'coach', component: notYet, meta: { title: 'Coach AI', legacy: '/#coach' } },
-  // Oggi le impostazioni stanno nella tab Allenamento.
-  { path: '/impostazioni', name: 'impostazioni', component: notYet, meta: { title: 'Impostazioni', legacy: '/#training' } },
+  {
+    path: '/impostazioni', name: 'impostazioni', component: () => import('../screens/SettingsScreen.vue'),
+    meta: { title: 'Impostazioni' },
+  },
   // Un indirizzo sconosciuto, per esempio con un errore di battitura, apre Home.
   { path: '/:unknown(.*)*', redirect: '/home' },
 ];
