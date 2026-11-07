@@ -1,9 +1,10 @@
 """Servizio Coach: il lavoro del Coach AI lato server. Raggiunto da nginx su /coach/.
 
 Rotte:
-  GET  /coach/ping?model=  → Ollama risponde? il modello chat manca?
-  POST /coach/workout      → il workout di oggi, come flusso di eventi (una riga JSON l'uno)
-  POST /coach/forget       → cancella corse e dettagli corsa salvati (Disconnetti da Strava)
+  GET  /coach/status   → il modello chat di .env e, per il cloud, spesa e tetto (nessuna chiamata)
+  GET  /coach/ping     → il provider risponde, accetta la chiave e ha il modello? (nessun token)
+  POST /coach/workout  → il workout di oggi, come flusso di eventi (una riga JSON l'uno)
+  POST /coach/forget   → cancella corse e dettagli corsa salvati (Disconnetti da Strava)
 
 Gli errori sono {error: codice, message: testo in italiano da mostrare}: come risposta
 JSON se la richiesta è rifiutata subito, come evento {type: "error", ...} se il flusso
@@ -21,7 +22,7 @@ import httpx
 from fastapi import Depends, FastAPI, Header, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app import ollama, papers, provider, search, workout
+from app import cloud, ollama, papers, provider, search, workout
 from app.errors import CoachError
 from app.spending import SPENDING_FILE, Spending
 from app.store import RideStore
@@ -51,18 +52,37 @@ async def load_index() -> dict:
     return await papers.load_index(http)
 
 
+@app.get("/coach/status")
+async def status():
+    """Il modello chat di .env e, per il cloud, quanto si è speso e il tetto. Legge solo .env e
+    il file della spesa: Impostazioni e il Coach lo chiedono a ogni apertura."""
+    chat = provider.settings()
+    if chat.prices is None:
+        return {"provider": chat.provider, "model": chat.model}
+    return {"provider": chat.provider, "model": chat.model, "spent": cloud_spending.total(),
+            "limit": chat.prices.limit}
+
+
 @app.get("/coach/ping")
-async def ping(model: str = ""):
-    model = ollama.chat_model(model)
+async def ping():
+    """Il controllo della connessione di Impostazioni: il provider risponde, accetta la chiave e
+    ha il modello di .env? Chiede l'elenco o la scheda del modello, mai una risposta: nessun
+    token speso."""
+    chat = provider.settings()
+    if chat.provider == "ollama":
+        try:
+            installed = await ollama.installed_models()
+        except (httpx.HTTPError, ValueError):
+            raise CoachError(503, "ollama_unreachable", f"Coach ok, {ollama.unreachable()}")
+        found = ollama.is_installed(chat.model, installed)
+        return {"provider": "ollama", "model": chat.model, "found": found,
+                "command": None if found else ollama.pull_command(chat.model)}
     try:
-        installed = await ollama.installed_models()
-    except (httpx.HTTPError, ValueError):
-        raise CoachError(503, "ollama_unreachable", f"Coach ok, {ollama.unreachable()}")
-    missing = [] if ollama.is_installed(model, installed) else [model]
-    return {
-        "models": installed,
-        "missing": [{"model": m, "command": ollama.pull_command(m)} for m in missing],
-    }
+        async with provider.client(chat) as chat_client:
+            found = await cloud.find_model(chat_client, chat.model, chat.key)
+    except cloud.CloudError as e:
+        raise CoachError(502, "provider", str(e)) from e
+    return {"provider": "cloud", "model": chat.model, "found": found, "command": None}
 
 
 @app.post("/coach/workout")

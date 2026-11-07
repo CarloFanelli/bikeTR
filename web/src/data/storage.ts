@@ -97,23 +97,24 @@ export const loadSegmentCache = (): SegmentCache => safeLoad<SegmentCache>(SEGME
 export const saveSegmentCache = (cache: SegmentCache): boolean => safeSave(SEGMENTS_CACHE, cache);
 export const clearSegmentCache = (): void => localStorage.removeItem(SEGMENTS_CACHE);
 
-// Modello del Coach e durata dell'ultimo workout chiesto.
+// Durata dell'ultimo workout chiesto al Coach.
 interface CoachSettings {
-  model?: string;
   lastDuration?: number;
 }
 
 export function loadCoachSettings(): CoachSettings {
-  const s = safeLoad<CoachSettings & { endpoint?: unknown }>(COACH_SETTINGS, {}, isPlainObject);
-  // Le versioni precedenti salvavano anche l'indirizzo di Ollama: non serve più.
-  if ('endpoint' in s) {
+  const s = safeLoad<CoachSettings & { endpoint?: unknown; model?: unknown }>(COACH_SETTINGS, {}, isPlainObject);
+  // Le versioni precedenti salvavano anche l'indirizzo di Ollama e il modello: ora li
+  // sceglie il .env del servizio Coach, e un nome rimasto qui non deve comparire da nessuna parte.
+  if ('endpoint' in s || 'model' in s) {
     delete s.endpoint;
+    delete s.model;
     safeSave(COACH_SETTINGS, s);
   }
   return s;
 }
 
-// Aggiorna solo i valori passati: salvare il modello non cancella l'ultima durata, e viceversa.
+// Aggiorna solo i valori passati, senza cancellare gli altri.
 export const saveCoachSettings = (changes: CoachSettings): boolean =>
   safeSave(COACH_SETTINGS, { ...loadCoachSettings(), ...changes });
 

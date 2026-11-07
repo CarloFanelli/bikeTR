@@ -97,17 +97,16 @@ describe('valori salvati nel browser', () => {
 });
 
 describe('impostazioni del Coach', () => {
-  it('salvare il modello tiene l\'ultima durata scelta', () => {
-    store.set('biketr_coach_settings', '{"model":"qwen2.5:7b","lastDuration":90}');
-    saveCoachSettings({ model: 'llama3.1:8b' });
-    expect(store.get('biketr_coach_settings')).toBe('{"model":"llama3.1:8b","lastDuration":90}');
-    expect(loadCoachSettings()).toEqual({ model: 'llama3.1:8b', lastDuration: 90 });
+  it('salvare la durata la ricorda per la prossima volta', () => {
+    saveCoachSettings({ lastDuration: 90 });
+    expect(store.get('biketr_coach_settings')).toBe('{"lastDuration":90}');
+    expect(loadCoachSettings()).toEqual({ lastDuration: 90 });
   });
 
-  it('l\'indirizzo di Ollama salvato dalle versioni vecchie sparisce alla lettura', () => {
-    store.set('biketr_coach_settings', '{"endpoint":"http://localhost:11434","model":"qwen2.5:7b"}');
-    expect(loadCoachSettings()).toEqual({ model: 'qwen2.5:7b' });
-    expect(store.get('biketr_coach_settings')).toBe('{"model":"qwen2.5:7b"}');
+  it('indirizzo di Ollama e modello salvati dalle versioni vecchie spariscono alla lettura: li sceglie .env', () => {
+    store.set('biketr_coach_settings', '{"endpoint":"http://localhost:11434","model":"llama3.1:8b","lastDuration":90}');
+    expect(loadCoachSettings()).toEqual({ lastDuration: 90 });
+    expect(store.get('biketr_coach_settings')).toBe('{"lastDuration":90}');
   });
 });
 

@@ -3,6 +3,7 @@
 vengono solo da .env; la chiave non compare mai nei messaggi."""
 
 import json
+from urllib.parse import quote
 
 import httpx
 
@@ -14,6 +15,8 @@ MAX_ANSWER_TOKENS = 4000
 # Codici HTTP con cui il provider rifiuta la chiave, o la richiesta per limite o credito.
 KEY_REJECTED = {401, 403}
 LIMITED = {402, 429}
+# La ricerca del modello nel controllo della connessione: risponde subito, nessun token.
+CHECK_TIMEOUT = 10
 
 
 class CloudError(ModelError):
@@ -46,6 +49,32 @@ def refused(status: int, text: str, key: str) -> CloudError:
         return CloudError(f"Il provider cloud rifiuta la richiesta per limite di richieste o credito esaurito "
                           f"(HTTP {status}): {message}", billed=False)
     return CloudError(f"Il provider cloud ha risposto HTTP {status}: {message}", billed=False)
+
+
+def connection_error(e: httpx.HTTPError, client: httpx.AsyncClient) -> CloudError:
+    if isinstance(e, (httpx.ConnectError, httpx.ConnectTimeout)):
+        return CloudError(f"Provider cloud non raggiungibile su {client.base_url}", billed=False)
+    return CloudError(f"Connessione con il provider cloud interrotta ({e.__class__.__name__})")
+
+
+async def find_model(client: httpx.AsyncClient, model: str, key: str) -> bool:
+    """Il controllo della connessione, senza spendere token: GET {CLOUD_URL}models/{model}.
+    True se il provider ha il modello, False se non lo conosce (404); un rifiuto o un provider
+    irraggiungibile alzano CloudError con il motivo."""
+    # Claude non ha l'elenco dei modelli nel formato OpenAI: la sua ricerca, allo stesso
+    # indirizzo, vuole la chiave in x-api-key e la versione dell'API. Gli altri provider
+    # ignorano le due intestazioni, e la chiave va comunque allo stesso indirizzo.
+    headers = {"x-api-key": key, "anthropic-version": "2023-06-01"}
+    try:
+        # Un nome come "org/modello" resta un solo pezzo dell'indirizzo.
+        res = await client.get(f"models/{quote(model, safe='')}", headers=headers, timeout=CHECK_TIMEOUT)
+    except httpx.HTTPError as e:
+        raise connection_error(e, client) from e
+    if res.status_code == 404:
+        return False
+    if res.status_code != 200:
+        raise refused(res.status_code, res.text, key)
+    return True
 
 
 async def chat_stream(client: httpx.AsyncClient, model: str, messages: list, key: str):
@@ -89,8 +118,6 @@ async def chat_stream(client: httpx.AsyncClient, model: str, messages: list, key
                     usage = chunk["usage"]
     except httpx.ReadTimeout as e:
         raise CloudError(f"Il modello non ha scritto nulla per {READ_TIMEOUT // 60} minuti.") from e
-    except (httpx.ConnectError, httpx.ConnectTimeout) as e:
-        raise CloudError(f"Provider cloud non raggiungibile su {client.base_url}", billed=False) from e
     except httpx.HTTPError as e:
-        raise CloudError(f"Connessione con il provider cloud interrotta ({e.__class__.__name__})") from e
+        raise connection_error(e, client) from e
     yield ChatEnd(token_count(usage.get("prompt_tokens")), token_count(usage.get("completion_tokens")), truncated)

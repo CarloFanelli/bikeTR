@@ -44,3 +44,7 @@ With the model chosen in `.env` (Task 02), the browser can only show what the se
 - No cloud request made yet → the total shows "$0.00" (REQ-26)
 - Provider is Ollama → no total or limit shown (REQ-26)
 - Coach screen with a cloud provider → it names the provider and model the **Coach service** uses, and says no data leaves the computer only when the provider is Ollama (REQ-8 · from code)
+
+## Notes from implementation
+
+- **Known limitation**: the connection check's model lookup (`GET {CLOUD_URL}models/{model}`) is proven only against a fake provider. Claude's OpenAI-compatible layer documents chat completions only, so the lookup also sends `x-api-key` and `anthropic-version: 2023-06-01`, which Claude's own model lookup at the same address expects; other providers ignore the two headers, and the key goes to the same address either way. The user's first check on the Mac (no tokens spent) settles it; any unexpected answer shows the provider's HTTP status and message.

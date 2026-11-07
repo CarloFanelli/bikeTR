@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// Impostazioni: valori dell'atleta usati da tutte le sezioni, modello
-// del Coach e scollegamento da Strava. Uscire con modifiche non salvate chiede conferma.
+// Impostazioni: valori dell'atleta usati da tutte le sezioni, il modello che il Coach
+// usa e scollegamento da Strava. Uscire con modifiche non salvate chiede conferma.
 import { computed, ref } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import {
@@ -11,8 +11,7 @@ import CoachSettingsCard from '../components/CoachSettingsCard.vue';
 import DayToggle from '../components/DayToggle.vue';
 import NumberField from '../components/NumberField.vue';
 import { settingsErrors, settingsForm, settingsFromForm } from '../core/settings.ts';
-import { COACH_DEFAULT_MODEL } from '../data/coach.ts';
-import { loadCoachSettings, loadSettings, saveCoachSettings, saveSettings } from '../data/storage.ts';
+import { loadSettings, saveSettings } from '../data/storage.ts';
 
 const LTHR_SOURCES = [{ title: 'Dichiarata', value: 'declared' }, { title: 'Stimata', value: 'estimated' }];
 const FTP_SOURCES = [{ title: 'Stimata (TSS potenza)', value: 'estimated' }, { title: 'HR-based (hrTSS)', value: 'hr' }];
@@ -26,12 +25,11 @@ const STRENGTH_LEVELS = [
 const estimates = hrProfile();
 
 const form = ref(settingsForm(loadSettings()));
-const model = ref(loadCoachSettings().model || COACH_DEFAULT_MODEL);
 const errors = computed(() => settingsErrors(form.value));
 const status = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 
 // Quello che "Salva impostazioni" scriverebbe adesso: diverso dall'ultimo salvato = modifiche in sospeso.
-const pending = () => JSON.stringify([settingsFromForm(form.value), model.value.trim() || COACH_DEFAULT_MODEL]);
+const pending = () => JSON.stringify(settingsFromForm(form.value));
 const lastSaved = ref(pending());
 
 function save(): void {
@@ -41,7 +39,6 @@ function save(): void {
     return;
   }
   saveSettings(settingsFromForm(form.value));
-  saveCoachSettings({ model: model.value.trim() || COACH_DEFAULT_MODEL });
   lastSaved.value = pending();
   status.value = { type: 'success', text: 'Impostazioni salvate.' };
 }
@@ -171,7 +168,7 @@ async function disconnectStrava(): Promise<void> {
       </VCardText>
     </VCard>
 
-    <CoachSettingsCard v-model="model" />
+    <CoachSettingsCard />
 
     <div>
       <VBtn color="primary" variant="flat" @click="save">Salva impostazioni</VBtn>

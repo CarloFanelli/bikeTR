@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Errore del Coach: FTP mancante e ricerca dei paper hanno la loro spiegazione, gli
-// altri mostrano il messaggio del servizio. Modello e "Ping Ollama" stanno in Impostazioni.
+// altri mostrano il messaggio del servizio. Il modello in uso e la verifica della connessione
+// stanno in Impostazioni.
 import { RouterLink } from 'vue-router';
 import type { CoachRefusal } from '../core/coach-types.ts';
 import { errorHeading } from '../core/coach-view.ts';

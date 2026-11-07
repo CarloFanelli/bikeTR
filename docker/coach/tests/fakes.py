@@ -118,13 +118,20 @@ class FakeCloud:
         self.status, self.error = 200, None
         self.down = False
         self.drop_after = None   # pezzi di testo dopo cui la connessione cade
+        self.listed = True       # il modello compare nell'elenco del provider
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         if self.down:
             raise httpx.ConnectError("provider spento")
-        self.requests.append((request.url.path, request.headers, json.loads(request.content)))
+        # Il percorso come è stato scritto, con %2F e simili ancora codificati.
+        path = request.url.raw_path.decode()
+        self.requests.append((path, request.headers, json.loads(request.content) if request.content else None))
         if self.status != 200:
             return httpx.Response(self.status, json=self.error)
+        if request.method == "GET":
+            if not self.listed:
+                return httpx.Response(404, json={"error": {"message": "model not found"}})
+            return httpx.Response(200, json={"id": CLOUD_MODEL, "object": "model"})
         events = [{"choices": [{"index": 0, "delta": {"content": p}, "finish_reason": None}]}
                   for p in pieces(self.answer)]
         events.append({"choices": [{"index": 0, "delta": {}, "finish_reason": self.finish_reason}]})

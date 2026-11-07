@@ -17,7 +17,7 @@ The sidebar lists five sections: **Home**, **Allenamento** (Training), **Analisi
 - **Analisi** — predictions for your starred Strava segments, the load chart, fitness trends (CTL/ATL/TSB over the last 90 days), the Power-Duration Curve, heart-rate zone distribution for the last month, **Power Profile** (weaknesses and strengths), weekly **FTP trend**, **FTP/LTHR breakdown** (showing the exact activities and formulas used to determine the values used in calculations), and targeted workouts for your segments. Charts show their values on hover.
 - **Attività** — list of the 15 most recent activities. Click one to open its detail inside the app, with a Leaflet map, per-kilometer splits, and a segment list with KOM/PR badges.
 - **Coach AI** — a workout suggested by a **locally running** LLM via [Ollama](https://ollama.com). The Coach service (Python, in Docker) downloads your rides from Strava, calculates all the context (FTP, LTHR, CTL/ATL/TSB, polarization, recent activities) and performs RAG retrieval from `papers_index.json` (10 endurance-science papers). The model selects a `protocolId` from the deterministic catalog; all calculations (power targets, durations) are performed by the code, never by the model. The screen shows each step and the model's text as it is written, and **Stop** ends a request. Your rides go only to the Ollama you configured.
-- **Impostazioni** — heart-rate zones and thresholds, weekly volume and available days, an optional race, recovery tools, the Coach's chat model with **Ping Ollama**, and "Disconnetti da Strava".
+- **Impostazioni** — heart-rate zones and thresholds, weekly volume and available days, an optional race, recovery tools, the chat model the Coach uses with **Verifica connessione**, and "Disconnetti da Strava".
 
 **Training v2** is the engine behind the plan and the Coach, not a section of its own: an "evidence-based" workout catalog with explicit citations (Seiler 4×8, Rønnestad 30/15, Coggan/Allen Sweet Spot, Hunter Allen Over-Unders) that fills Allenamento's plan, and the capacity tier the Coach uses.
 
@@ -106,11 +106,11 @@ docker compose down -v
 
 ## 5. AI Coach
 
-The Coach works without any setup: Docker runs Ollama and downloads the chat model, and the Coach service finds the papers with its own small search model, installed with it. Where Ollama runs is set only in `.env` (`OLLAMA_URL`); the "Coach AI (Ollama)" card in Impostazioni holds just the chat model name, and **Ping Ollama** asks the Coach service whether Ollama answers and whether the chat model is missing, with the command that downloads it.
+The Coach works without any setup: Docker runs Ollama and downloads the chat model, and the Coach service finds the papers with its own small search model, installed with it. Where Ollama runs and which chat model the Coach uses are set only in `.env` (`OLLAMA_URL`, `OLLAMA_CHAT_MODEL`). The "Coach AI" card in Impostazioni shows the chat model the Coach service uses, and **Verifica connessione** asks the Coach service whether the provider answers and has that model, with the command that downloads it when Ollama lacks it. The check asks for no answer, so it spends no tokens.
 
-**Changing the chat model.** Set `OLLAMA_CHAT_MODEL` in `.env`, run `docker compose up -d`, and write the same model name in the "Coach AI (Ollama)" card in Impostazioni. The card decides which model the Coach requests; `.env` decides which model Docker downloads.
+**Changing the chat model.** Set `OLLAMA_CHAT_MODEL` in `.env` and run `docker compose up -d`: Docker downloads that model, and the Coach uses it from the next request.
 
-**Slow computers.** In Docker, Ollama runs on the CPU only (Docker cannot use a Mac's GPU). On a laptop without a GPU, one Coach generation with `qwen2.5:7b` can take over 5 minutes (measured on an Intel i5-1240P under WSL). There is no limit on the total time: the Coach AI screen shows the model's text as it arrives, and the Coach gives up only when the model writes nothing for 3 minutes, including the wait before its first word ("Il modello non ha scritto nulla per 3 minuti"). An answer longer than 1,000 tokens is cut, and the Coach then picks the protocol with its fallback rules. Pick a smaller model such as `qwen2.5:3b`, in `.env` and in Impostazioni, or use the Ollama installed on your computer (below).
+**Slow computers.** In Docker, Ollama runs on the CPU only (Docker cannot use a Mac's GPU). On a laptop without a GPU, one Coach generation with `qwen2.5:7b` can take over 5 minutes (measured on an Intel i5-1240P under WSL). There is no limit on the total time: the Coach AI screen shows the model's text as it arrives, and the Coach gives up only when the model writes nothing for 3 minutes, including the wait before its first word ("Il modello non ha scritto nulla per 3 minuti"). An answer longer than 1,000 tokens is cut, and the Coach then picks the protocol with its fallback rules. Pick a smaller model such as `qwen2.5:3b` in `.env`, or use the Ollama installed on your computer (below).
 
 **Using the Ollama installed on your computer** (for example to use the GPU of a Mac). This option needs Docker Desktop.
 
@@ -128,7 +128,7 @@ The Coach works without any setup: Docker runs Ollama and downloads the chat mod
    ```
 
 3. Run `docker compose up -d`. No Ollama container starts any more.
-4. Click **Ping Ollama** in Impostazioni. If it fails, your Ollama listens only on its own computer's loopback (the default on Linux and WSL) and Docker cannot reach it: start it listening on all interfaces with `OLLAMA_HOST=0.0.0.0 ollama serve`. Other devices on your network can then reach that Ollama too.
+4. Click **Verifica connessione** in Impostazioni. If it fails, your Ollama listens only on its own computer's loopback (the default on Linux and WSL) and Docker cannot reach it: start it listening on all interfaces with `OLLAMA_HOST=0.0.0.0 ollama serve`. Other devices on your network can then reach that Ollama too.
 
 **Paper index.** The Coach searches `papers_index.json`, which is part of the repository. Its papers are encoded by the search model inside the Coach service (`BAAI/bge-small-en-v1.5`, downloaded once when the Coach image is built, so the search then works without internet), and the index records that model's name. The Coach service reads it through nginx, so an edited index counts from the next request. If the file is missing, restore it with `git restore papers_index.json`. Two commands rebuild it, and neither needs Ollama:
 
