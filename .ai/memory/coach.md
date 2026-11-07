@@ -54,6 +54,7 @@ _Avoid_: "backup choice" (used once in an interview; the README says fallback).
 - **Disconnecting from Strava deletes the rides the Coach service saved**: Why: data belongs to a connection, and Strava's terms ask apps to delete data when access is withdrawn.
 - **The Coach request lives in `web/src/app/coach-run.ts`, not in the screen**: the screen only reads its state and calls `generateWorkout` / `stopWorkout`. Why: switching section unmounts the screen, and the answer must keep arriving and be there on return.
 - **Stop only closes the connection**: it aborts the browser's request, with no new service endpoint. Why: the service already stops Ollama when the client leaves (`docker/coach/tests/test_cancel.py`), the same path a new request or a closed tab takes.
+- **The shortest Coach workout is 30 minutes**: the **Selection rules** cover 30–240 minutes (user decision of 2026-11-07); the Coach screen and service still accept 20 until the eval-set spec records the new minimum. Why: 20 minutes is not a valid workout, and a rider who only wants analysis (for example while following another app's plan in winter) does not ask the Coach.
 
 ## Gotchas
 
