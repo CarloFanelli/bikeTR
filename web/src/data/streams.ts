@@ -2,9 +2,9 @@
 // e ne salva le metriche nel browser (una richiesta a Strava per uscita).
 
 import { computeStreamsMetrics } from '../core/streams.ts';
-import type { Activity, StreamMetrics } from '../core/strava-types.ts';
+import type { Activity } from '../core/strava-types.ts';
 import { AuthError } from './auth.ts';
-import { loadStreamsCache, saveStreamsCache } from './storage.ts';
+import { applyCachedStreams, loadStreamsCache, saveStreamsCache } from './storage.ts';
 import { fetchActivityStreams } from './strava.ts';
 
 // Uscite più recenti considerate: Strava concede 100 richieste ogni 15 minuti.
@@ -36,9 +36,6 @@ export async function hydrateWithStreams(
     onProgress?.(done, toFetch.length);
   }
   saveStreamsCache(cache);
-  activities.forEach(a => {
-    const entry = cache[a.id];
-    if (entry && !entry._error) a._metrics = entry as StreamMetrics;
-  });
+  applyCachedStreams(activities, cache);
   return { fetched: toFetch.length, totalCached: Object.keys(cache).length };
 }

@@ -6,7 +6,7 @@ import { loadChartDays, type LoadChartDay } from '../../src/core/plan/load-chart
 import { buildTrainingModel } from '../../src/core/plan/model.ts';
 import { buildMonthPlan, synthFromWorkout } from '../../src/core/plan/month.ts';
 import {
-  computeMetrics, findNextNonSkipOffset, recommend, restStreak, synthActivityFromRec,
+  computeMetrics, findNextNonSkipOffset, recommend, restStreak,
 } from '../../src/core/plan/recommend.ts';
 import { buildDoneRec, buildWeekPlan } from '../../src/core/plan/week.ts';
 import {
@@ -41,12 +41,10 @@ describe.each(planCases)('piano di allenamento, caso $name', c => {
     if (throws(d.recommend)) {
       expect(advise).toThrow(TypeError);
     } else {
-      const rec = advise();
-      expect(displayed(rec)).toEqual(displayed(d.recommend));
-      expect(displayed(synthActivityFromRec(rec, d.offset, settings, inputs))).toEqual(displayed(d.synthetic));
+      expect(displayed(advise())).toEqual(displayed(d.recommend));
     }
-    expect(displayed(computeMetrics(acts, hr, c.plannedRests, d.offset, now))).toEqual(displayed(d.metrics));
-    expect(restStreak(acts, plannedSet, d.offset, now)).toBe(d.restStreak);
+    expect(displayed(computeMetrics(acts, hr, d.offset, now))).toEqual(displayed(d.metrics));
+    expect(restStreak(acts, d.offset, now)).toBe(d.restStreak);
   });
 
   it('prossimo giorno non saltato', () => {

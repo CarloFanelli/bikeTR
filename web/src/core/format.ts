@@ -1,10 +1,13 @@
-// Formattazione di distanze, durate e date per le schermate, e giorno locale di una data.
+// Formattazione di distanze, velocità, durate e date per le schermate, e giorno locale di una data.
 
 type DateInput = string | number | Date;
 
 export function fmtKm(meters: number): string {
   return (meters / 1000).toFixed(1) + ' km';
 }
+
+// Velocità di Strava (metri al secondo) in km/h, con un decimale.
+export const kmh = (metersPerSecond: number): string => (metersPerSecond * 3.6).toFixed(1);
 
 export function fmtTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);

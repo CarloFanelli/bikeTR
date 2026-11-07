@@ -2,8 +2,10 @@
 // calcolo delle stime di FTP e LTHR per Analisi.
 
 import { isoDay } from './format.ts';
-import type { HrProfile } from './hr.ts';
-import { linearRegression } from './segments.ts';
+import {
+  activityWatts, FTP_BUCKETS, type HrProfile, isLthrTestLike, LTHR_OVER_HRMAX, LTHR_TEST_FACTOR,
+} from './hr.ts';
+import { effortDecay, linearRegression } from './segments.ts';
 import type { Activity } from './strava-types.ts';
 
 export interface FtpPoint {
@@ -83,7 +85,7 @@ export function buildFtpTrend(history: FtpPoint[]) {
 }
 export type FtpTrend = NonNullable<ReturnType<typeof buildFtpTrend>>;
 
-export function buildFtpInsights(
+function buildFtpInsights(
   current: number, peak: number, delta4w: number, isPlateau: boolean, recentSlope: number,
 ): Insight[] {
   const out: Insight[] = [];
@@ -137,22 +139,11 @@ type FtpBreakdownRow =
 export function buildFtpBreakdown(activities: Activity[] | null | undefined, now: Date) {
   if (!activities) return null;
   const bikes = activities.filter(a => a.type && a.type.includes('Ride'));
-  const withPower = bikes.filter(a => a.weighted_average_watts || a.average_watts);
-
-  const decay = (a: Activity) => {
-    const ageWeeks = (now.getTime() - new Date(a.start_date_local).getTime()) / (7 * 86400000);
-    return Math.exp(-ageWeeks / 12);
-  };
-
-  const buckets = [
-    { min: 40 * 60, max: 90 * 60, factor: 0.98, label: '40-90 min' },
-    { min: 20 * 60, max: 40 * 60, factor: 0.95, label: '20-40 min' },
-    { min: 10 * 60, max: 20 * 60, factor: 0.90, label: '10-20 min' },
-    { min: 0,       max: 10 * 60, factor: 0.85, label: '< 10 min' },
-  ];
+  const withPower = bikes.filter(activityWatts);
+  const decay = (a: Activity) => effortDecay(a.start_date_local, now);
 
   const rows: FtpBreakdownRow[] = [];
-  for (const b of buckets) {
+  for (const b of FTP_BUCKETS) {
     const pool = withPower.filter(a => {
       const t = a.moving_time || 0;
       return t >= b.min && t < b.max;
@@ -162,7 +153,7 @@ export function buildFtpBreakdown(activities: Activity[] | null | undefined, now
       continue;
     }
     const scored = pool.map(a => {
-      const w = a.weighted_average_watts || a.average_watts || 0;
+      const w = activityWatts(a);
       return { watts: w, weighted: w * decay(a), act: a };
     }).sort((a, c) => c.weighted - a.weighted);
     const best = scored[0];
@@ -188,22 +179,18 @@ export function buildLthrBreakdown(activities: Activity[] | null | undefined) {
   if (!maxHrs.length) return null;
   maxHrs.sort((a, b) => b.hr - a.hr);
   const observedHRmax = maxHrs[0].hr;
-  const m1 = Math.round(observedHRmax * 0.91);
+  const m1 = Math.round(observedHRmax * LTHR_OVER_HRMAX);
 
-  const testLike = bikes.filter(a =>
-    a.average_heartrate && a.max_heartrate &&
-    (a.moving_time || 0) >= 20 * 60 && (a.moving_time || 0) <= 60 * 60 &&
-    a.max_heartrate >= observedHRmax * 0.9
-  ).sort((a, b) => (b.average_heartrate || 0) - (a.average_heartrate || 0));
+  const testLike = bikes.filter(a => isLthrTestLike(a, observedHRmax)).sort((a, b) => (b.average_heartrate || 0) - (a.average_heartrate || 0));
 
   let m2Row = null;
   if (testLike.length) {
     const rawHr = testLike[0].average_heartrate || 0;
-    m2Row = { act: testLike[0], rawHr, factor: 0.98, value: Math.round(rawHr * 0.98) };
+    m2Row = { act: testLike[0], rawHr, factor: LTHR_TEST_FACTOR, value: Math.round(rawHr * LTHR_TEST_FACTOR) };
   }
 
   return {
-    m1Row: { act: maxHrs[0].act, observedHRmax, factor: 0.91, value: m1 },
+    m1Row: { act: maxHrs[0].act, observedHRmax, factor: LTHR_OVER_HRMAX, value: m1 },
     m2Row,
     final: Math.max(m1, m2Row?.value || 0),
   };

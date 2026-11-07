@@ -8,17 +8,17 @@
 import { computeStreamsMetrics } from '../core/streams.ts';
 import type { Settings } from '../core/settings.ts';
 import type {
-  Activity, ActivityDetail, Athlete, AthleteStats, StreamKey, StreamMetrics, Streams,
+  Activity, ActivityDetail, Athlete, AthleteStats, StreamKey, Streams,
 } from '../core/strava-types.ts';
 import { AuthError } from './auth.ts';
-import { loadStreamsCache, saveStreamsCache } from './storage.ts';
-import { fetchActivities, fetchActivity, fetchActivityStreams } from './strava.ts';
+import { applyCachedStreams, loadStreamsCache, saveStreamsCache } from './storage.ts';
+import { fetchActivities, fetchActivity, fetchActivityStreams, sleep, StravaError } from './strava.ts';
 
 export type ExportMode = 'compact' | 'detailed' | 'max';
 
 // Una pausa tra richieste per stare sotto 100/15min con margine.
 // 100 richieste in 900 s → 9 s a richiesta. Usiamo 10 s per sicurezza.
-export const THROTTLE_MS = 10000;
+const THROTTLE_MS = 10000;
 const RATE_LIMIT_WAIT_MS = 60000;
 const PAGE_SIZE = 200; // il massimo che Strava concede per /athlete/activities
 const MAX_PAGES = 200;
@@ -27,8 +27,6 @@ const FULL_STREAM_KEYS: StreamKey[] = [
   'time', 'heartrate', 'watts', 'cadence', 'velocity_smooth', 'altitude', 'distance', 'temp', 'grade_smooth',
 ];
 const BIKE_TYPES = new Set(['Ride', 'VirtualRide', 'EBikeRide', 'MountainBikeRide', 'GravelRide']);
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Tutto lo storico, a pagine da 200.
 export async function fetchAllActivities(onProgress?: (count: number, page: number) => void): Promise<Activity[]> {
@@ -177,7 +175,7 @@ async function throttledQueue(items: Activity[], fn: (a: Activity) => Promise<vo
       await fn(items[i]);
     } catch (e) {
       if (e instanceof AuthError) throw e;
-      if ((e as Error).message.includes('429')) {
+      if (e instanceof StravaError && e.status === 429) {
         onProgress(i + 1, items.length, 'rate-limit hit, attendo 60s…');
         await sleep(RATE_LIMIT_WAIT_MS);
       }
@@ -190,7 +188,7 @@ async function throttledQueue(items: Activity[], fn: (a: Activity) => Promise<vo
   }
 }
 
-export interface ExportInput {
+interface ExportInput {
   mode: ExportMode;
   activities: Activity[];
   athlete: Athlete | null;
@@ -222,18 +220,19 @@ export async function buildExport(
     const ftp = settings.ftpDeclared || 220;
     const lthr = settings.hrLthr || 170;
     onProgress(`Scarico streams (${activities.length})…`, 50);
-    await throttledQueue(activities, async (a) => {
-      const s = await fetchActivityStreams(a.id, FULL_STREAM_KEYS.join(','));
-      rawStreams[a.id] = streamsExtract(s);
-      streamsCache[a.id] = { ...computeStreamsMetrics(s, ftp, lthr), _fetched: Date.now() };
-    }, queueProgress('Streams', 50));
-    saveStreamsCache(streamsCache);
+    try {
+      await throttledQueue(activities, async (a) => {
+        const s = await fetchActivityStreams(a.id, FULL_STREAM_KEYS.join(','));
+        rawStreams[a.id] = streamsExtract(s);
+        streamsCache[a.id] = { ...computeStreamsMetrics(s, ftp, lthr), _fetched: Date.now() };
+      }, queueProgress('Streams', 50));
+    } finally {
+      // Anche quando l'accesso a Strava si perde a metà: gli stream già scaricati restano.
+      saveStreamsCache(streamsCache);
+    }
   }
 
-  activities.forEach(a => {
-    const entry = streamsCache[a.id];
-    if (entry && !entry._error) a._metrics = entry as StreamMetrics;
-  });
+  applyCachedStreams(activities, streamsCache);
   const enriched = activities.map(a => ({
     ...slimSummary(a),
     ...(details[a.id] ? { detail: details[a.id] } : {}),

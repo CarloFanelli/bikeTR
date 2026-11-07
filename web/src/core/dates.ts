@@ -2,7 +2,7 @@
 
 import { isoDay } from './format.ts';
 
-export interface DateHelpers {
+interface DateHelpers {
   // Mezzanotte del giorno di riferimento.
   ref: Date;
   // Giorni tra il giorno di riferimento e una data (0 = stesso giorno, 1 = il giorno prima).

@@ -251,6 +251,6 @@ docker run --rm -v "${PWD}:/src:ro" -v "${PWD}/docker/coach/tests:/tests" node:2
 ## 11. Known limitations
 
 - **Local, single-user only**: no cross-device sync or multi-user support. Settings and caches live in the browser, per address.
-- **Without Strava streams**, TSS and time in zones are approximated from the summary's `weighted_average_watts` or from hrTSS calculated using average heart rate (e.g. a long Z2 ride with 20 minutes at threshold averages out to Z2). Click "Refresh with streams" for precise calculations: one API call per activity (Strava rate limit: 100 per 15 minutes).
+- **Without Strava streams**, TSS and time in zones are approximated from the summary's `weighted_average_watts` or from hrTSS calculated using average heart rate (e.g. a long Z2 ride with 20 minutes at threshold averages out to Z2). Click "Aggiorna con streams" for precise calculations: one API call per activity (Strava rate limit: 100 per 15 minutes).
 - **An FTP from a dedicated test is always more reliable** than estimates. The four `estimatesFromSegments` methods mitigate but do not eliminate estimation error (±5–10% compared with the true value). A 20-minute all-out test every 4–6 weeks is recommended.
 - **The AI Coach depends on Ollama**: while the models download, or if Ollama is unavailable, the Coach AI screen shows an error. On a CPU-only computer the default model is slow (section 5).

@@ -5,13 +5,13 @@ import { fmtTime } from './format.ts';
 import type { Segment, SegmentEffort } from './strava-types.ts';
 
 // I dati del segmento salvati con i suoi tentativi.
-export interface SegmentShape {
+interface SegmentShape {
   average_grade?: number;
   elevation_difference?: number;
   total_elevation_gain?: number;
   distance?: number;
 }
-export interface SegmentCacheEntry {
+interface SegmentCacheEntry {
   efforts?: SegmentEffort[];
   _fetched?: number;
   _segment?: SegmentShape;
@@ -64,7 +64,7 @@ interface DurationBucket {
   efforts: RatedEffort[];
   factor: number;
 }
-export interface FtpEstimate {
+interface FtpEstimate {
   ftp: number;
   source: string;
   confidence: number;

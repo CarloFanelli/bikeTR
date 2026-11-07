@@ -31,7 +31,7 @@ async function authJson<T>(path: string): Promise<T> {
   return body as T;
 }
 
-export interface AuthStatus {
+interface AuthStatus {
   missing: string[];
   connected: boolean;
 }

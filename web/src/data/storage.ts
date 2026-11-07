@@ -8,11 +8,9 @@ import type { SegmentCache } from '../core/segments.ts';
 import type { Settings } from '../core/settings.ts';
 import type { Activity, StreamMetrics } from '../core/strava-types.ts';
 
-export type { Settings };
-
 // Metriche di un'attività calcolate dai suoi stream, o l'errore del download.
-export type StreamsCacheEntry = (StreamMetrics & { _fetched: number; _error?: undefined }) | { _error: string; _fetched: number };
-export type StreamsCache = Record<string, StreamsCacheEntry>;
+type StreamsCacheEntry = (StreamMetrics & { _fetched: number; _error?: undefined }) | { _error: string; _fetched: number };
+type StreamsCache = Record<string, StreamsCacheEntry>;
 
 const SETTINGS = 'biketr_settings';
 const PLANNED_RESTS = 'biketr_planned_rests';
@@ -50,7 +48,7 @@ export function safeSave(key: string, value: unknown): boolean {
   }
 }
 
-export const isPlainObject = (x: unknown): x is Record<string, unknown> =>
+const isPlainObject = (x: unknown): x is Record<string, unknown> =>
   x !== null && typeof x === 'object' && !Array.isArray(x);
 
 export const loadSettings = (): Settings => safeLoad<Settings>(SETTINGS, {}, isPlainObject);
@@ -85,9 +83,9 @@ export function cycleDayState(iso: string): void {
 export const loadStreamsCache = (): StreamsCache => safeLoad<StreamsCache>(STREAMS_CACHE, {}, isPlainObject);
 export const saveStreamsCache = (cache: StreamsCache): boolean => safeSave(STREAMS_CACHE, cache);
 
-// Rimette sulle attività le metriche degli stream già scaricati; i download falliti restano fuori.
-export function applyCachedStreams(activities: Activity[]): void {
-  const cache = loadStreamsCache();
+// Rimette sulle attività le metriche degli stream già scaricati (di default quelli salvati);
+// i download falliti restano fuori.
+export function applyCachedStreams(activities: Activity[], cache: StreamsCache = loadStreamsCache()): void {
   for (const a of activities) {
     const entry = cache[a.id];
     if (entry && !entry._error) a._metrics = entry as StreamMetrics;
@@ -126,7 +124,7 @@ export const saveSidebarCollapsed = (collapsed: boolean): boolean => safeSave(UI
 
 // Un punto alla settimana, al massimo 52 (vedi nextFtpHistory).
 export const loadFtpHistory = (): FtpPoint[] => safeLoad<FtpPoint[]>(FTP_HISTORY, [], Array.isArray);
-export const saveFtpHistory = (history: FtpPoint[]): boolean => safeSave(FTP_HISTORY, history);
+const saveFtpHistory = (history: FtpPoint[]): boolean => safeSave(FTP_HISTORY, history);
 
 // Il mesociclo in corso (vedi nextMesocycle); null prima della prima apertura dell'app.
 export const loadMesocycle = (): Mesocycle | null =>

@@ -9,7 +9,7 @@
 //  • Hunter Allen — Over-Unders (lactate clearance)
 //  • Tabata 8×(20/10) — anaerobic + VO2
 //
-// Differenze chiave vs V1:
+// Scelte del catalogo:
 //  1) Intervalli principali basati su studi pubblicati (non su "senso comune coaching")
 //  2) Parametri precisi in % FTP (se disponibile) invece di FC soglia
 //  3) Variazione protocolli nella rotazione (non solo SST/Soglia/VO2 generici)
@@ -21,7 +21,7 @@ import { MESO_BLOCKS } from './meso.ts';
 import type { Mesocycle } from './meso.ts';
 import type { Settings } from './settings.ts';
 
-export interface CapacityTier {
+interface CapacityTier {
   tier: string;
   label: string;
   reps: number;
@@ -40,13 +40,13 @@ export interface Workout {
 }
 
 // Soglia e FTP con cui il workout indica frequenza cardiaca e watt.
-export interface WorkoutAthlete {
+interface WorkoutAthlete {
   hrLthr?: number | null;
   ftp?: number | null;
 }
 
 // Stato di forma (fitness CTL, freschezza TSB) che scala volume e protocollo.
-export interface FormState {
+interface FormState {
   ctl?: number;
   tsb?: number;
 }

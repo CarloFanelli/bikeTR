@@ -5,9 +5,10 @@ import {
   buildExport, estimate, exportRange, fetchAllActivities, filterForExport, formatBytes,
 } from '../../src/data/export.ts';
 import { loadStreamsCache } from '../../src/data/storage.ts';
-import { fetchActivities, fetchActivity, fetchActivityStreams } from '../../src/data/strava.ts';
+import { fetchActivities, fetchActivity, fetchActivityStreams, StravaError } from '../../src/data/strava.ts';
 
-vi.mock('../../src/data/strava.ts', () => ({
+vi.mock('../../src/data/strava.ts', async (original) => ({
+  ...(await original<typeof import('../../src/data/strava.ts')>()),
   fetchActivities: vi.fn(), fetchActivity: vi.fn(), fetchActivityStreams: vi.fn(),
 }));
 
@@ -112,7 +113,7 @@ describe('contenuto dell\'export', () => {
   });
 
   it('limite di richieste di Strava: aspetta un minuto, segna l\'errore e va avanti', async () => {
-    vi.mocked(fetchActivity).mockRejectedValueOnce(new Error('API /activities/1: 429'));
+    vi.mocked(fetchActivity).mockRejectedValueOnce(new StravaError('API /activities/1: 429', 429));
     const progress: string[] = [];
     const done = buildExport({
       mode: 'detailed', activities: [ride(1), ride(2)], athlete: null, stats: null, settings: {},
@@ -121,6 +122,16 @@ describe('contenuto dell\'export', () => {
     expect(progress).toContain('Dettagli 1/2 · rate-limit hit, attendo 60s…');
     const { payload } = await done;
     expect([payload.activities[0].detail, payload.activities[1].detail?.description]).toEqual([undefined, 'd2']);
+  });
+
+  it('un altro errore non fa aspettare, anche se il numero dell\'attività contiene 429', async () => {
+    vi.mocked(fetchActivity).mockRejectedValueOnce(new StravaError('API /activities/14290: 404', 404));
+    const done = buildExport({
+      mode: 'detailed', activities: [ride(14290), ride(2)], athlete: null, stats: null, settings: {},
+    }, () => {});
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(fetchActivity).toHaveBeenCalledTimes(2);
+    expect((await done).payload.activities[1].detail?.description).toBe('d2');
   });
 
   it('Massimo: stream completi nel file e metriche salvate per la prossima volta', async () => {
@@ -141,5 +152,18 @@ describe('contenuto dell\'export', () => {
       mode: 'detailed', activities: [ride(1), ride(2)], athlete: null, stats: null, settings: {},
     }, () => {})).rejects.toMatchObject({ code: 'not_connected' });
     expect(fetchActivity).toHaveBeenCalledTimes(1);
+  });
+
+  it('Massimo, accesso perso a metà: le metriche già scaricate restano salvate', async () => {
+    vi.mocked(fetchActivityStreams)
+      .mockResolvedValueOnce({ watts: { data: Array(3600).fill(250) } })
+      .mockRejectedValueOnce(new AuthError('strava_unreachable'));
+    const failed = buildExport({
+      mode: 'max', activities: [ride(1), ride(2)], athlete: null, stats: null, settings: { ftpDeclared: 250 },
+    }, () => {}).catch((e: unknown) => e);
+    // Dettagli delle due uscite, poi gli stream: una richiesta ogni 10 secondi.
+    await vi.advanceTimersByTimeAsync(20000);
+    expect(await failed).toMatchObject({ code: 'strava_unreachable' });
+    expect(loadStreamsCache()[1]).toMatchObject({ NP: 250, TSS: 100 });
   });
 });

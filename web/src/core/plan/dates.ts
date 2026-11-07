@@ -4,7 +4,7 @@
 import type { Settings } from '../settings.ts';
 
 // Conversioni dow ISO (1=Lun … 7=Dom) ↔ JS (0=Dom … 6=Sab) e helper calendario.
-export function jsDowToIso(jsDow: number): number { return jsDow === 0 ? 7 : jsDow; }
+function jsDowToIso(jsDow: number): number { return jsDow === 0 ? 7 : jsDow; }
 
 // Offset (giorni rispetto a oggi) di lunedì della settimana corrente. Sempre ≤ 0.
 // Es. oggi mercoledì → -2. Oggi domenica → -6.

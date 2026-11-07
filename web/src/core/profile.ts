@@ -3,7 +3,7 @@
 import { buildDateHelpers } from './dates.ts';
 import type { Activity, AthleteStats } from './strava-types.ts';
 
-export interface Level {
+interface Level {
   key: string;
   label: string;
   note: string;

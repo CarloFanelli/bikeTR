@@ -5,7 +5,7 @@ import { fmtTime } from './format.ts';
 import { computePrediction, type FormContext, type Point, type SegmentEntry, type SegmentWorkout } from './segments.ts';
 import type { Segment } from './strava-types.ts';
 
-export interface SegmentDiagSummary {
+interface SegmentDiagSummary {
   totalStarred: number;
   withEfforts: number;
   noEfforts: number;
