@@ -5,7 +5,7 @@ volume /data del Coach, e le tracce restano in memoria, mai in Phoenix."""
 
 import pytest
 
-from app import main, provider
+from app import main, provider, tracing
 from app.spending import Spending
 from fakes import FakePhoenix
 
@@ -24,7 +24,9 @@ def cloud_spending(monkeypatch, tmp_path) -> Spending:
 
 
 @pytest.fixture(autouse=True)
-def phoenix():
+def phoenix(monkeypatch):
     fake = FakePhoenix()
+    # Anche le tracce dei comandi, che scelgono il loro progetto, arrivano al finto Phoenix.
+    monkeypatch.setattr(tracing, "phoenix", lambda: fake.received)
     yield fake
     fake.provider.shutdown()

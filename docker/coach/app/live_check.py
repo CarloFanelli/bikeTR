@@ -5,9 +5,10 @@ live-checks/, da portare in git e valutare su un altro computer. Dalla cartella 
   docker compose run --rm coach-tools python -m app.live_check
 
 Ogni situazione passa dagli stessi passi di una richiesta del Coach (contesto, paper,
-modello, scelta del protocollo). Con un modello cloud la spesa va nello stesso totale
-dell'app e si ferma allo stesso tetto. Le corse salvate dal servizio Coach restano intatte:
-questo modulo non importa app.main, che all'avvio prepara l'accesso a Strava e a /data."""
+modello, scelta del protocollo) e lascia la sua traccia nel progetto live-check di Phoenix.
+Con un modello cloud la spesa va nello stesso totale dell'app e si ferma allo stesso tetto.
+Le corse salvate dal servizio Coach restano intatte: questo modulo non importa app.main, che
+all'avvio prepara l'accesso a Strava e a /data."""
 
 import argparse
 import asyncio
@@ -21,7 +22,7 @@ from typing import Awaitable, Callable
 
 import httpx
 
-from app import papers, provider, search, workout
+from app import papers, provider, search, tracing, workout
 from app.errors import CoachError
 from app.jscompat import instant_ms, js_str
 from app.metrics import ride_details
@@ -53,6 +54,7 @@ class MadeUpRides:
                                "downloaded_at": self.now_ms}, from_saved=False)
 
     async def refresh(self, now_ms: float, progress=None) -> RideData:
+        tracing.note_made_up_rides()
         return self.data
 
 
@@ -103,14 +105,16 @@ async def coach_answer(base: dict, chat: provider.ChatSettings, spending: Spendi
                        ask: Callable[[httpx.AsyncClient, Spending], Awaitable[dict]], command: str) -> dict:
     """Una risposta del Coach per il file dei risultati: `ask` la chiede con il client del modello
     e il totale della spesa, dopo il controllo del tetto. Un errore diventa la riga del file;
-    `command` lo nomina nel messaggio di un errore inatteso ("del controllo dal vivo")."""
+    `command` lo nomina nel messaggio di un errore inatteso ("del controllo dal vivo"). Ogni
+    risposta lascia la sua traccia, con la situazione e la ripetizione di `base`."""
     counted = SituationSpending(spending.path)
     result, failure = None, None
     try:
-        if chat.prices:
-            counted.check(chat.prices.limit)
-        async with provider.client(chat) as chat_client:
-            result = await ask(chat_client, counted)
+        with tracing.request(base["duration"], situation=base["situation"], repeat=base.get("repeat")):
+            if chat.prices:
+                counted.check(chat.prices.limit)
+            async with provider.client(chat) as chat_client:
+                result = await ask(chat_client, counted)
     except CoachError as e:
         failure = {"error": e.code, "message": e.message}
     except Exception as e:
@@ -204,7 +208,12 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
         print(f"✗ {e.message}", file=sys.stderr)
         return 2
     started = clock()
-    records = asyncio.run(run_situations(chat, spending or Spending(SPENDING_FILE), index_from(index_file)))
+    traces = tracing.setup("live-check")
+    try:
+        records = asyncio.run(run_situations(chat, spending or Spending(SPENDING_FILE), index_from(index_file)))
+    finally:
+        # Le ultime tracce partono prima dell'uscita: con Phoenix spento, al massimo un secondo in più.
+        traces.shutdown()
     # Quanto il controllo ha aggiunto al totale della spesa, stime alte comprese.
     total = sum(r["charged"] for r in records) if chat.prices else None
     run = {"startedAt": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "provider": chat.provider, "model": chat.model,

@@ -11,8 +11,8 @@ from pathlib import Path
 import httpx
 import pytest
 
-from app import cloud, evaluation, ollama, prompts, search
-from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, FakeCloud, FakeOllama, FakeSearch
+from app import cloud, evaluation, ollama, prompts, search, tracing
+from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, DownPhoenix, FakeCloud, FakeOllama, FakeSearch
 from fixture_data import FIXTURES, load
 
 CASES = load("coach_cases.json")
@@ -104,6 +104,31 @@ def test_repeat_3_answers_every_situation_three_times(fakes, tmp_path, cloud_spe
     names = [s["name"] for s in SITUATIONS[:2]]
     assert run["repeat"] == 3 and run["complete"]
     assert [(a["situation"], a["repeat"]) for a in run["answers"]] == [(n, k) for k in (1, 2, 3) for n in names]
+
+
+def test_every_answer_leaves_its_trace_with_situation_and_repeat_and_no_rides_step(fakes, tmp_path, cloud_spending,
+                                                                                   two_situations, phoenix):
+    evaluate(tmp_path, cloud_spending, two_situations, ["--repeat", "2"])
+    # Senza mandare le tracce in coda: il comando le ha già mandate prima di finire.
+    traces = phoenix.traces()
+    expected = [(s, k) for k in (1, 2) for s in SITUATIONS[:2]]
+    assert [root.name for root, _ in traces] == [f"evaluation · {s['name']} #{k}" for s, k in expected]
+    for (root, steps), (s, k) in zip(traces, expected):
+        assert root.resource.attributes["openinference.project.name"] == "evaluation"
+        assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "evaluation",
+                                         "coach.minutes": s["minutes"], "coach.situation": s["name"],
+                                         "coach.repeat": k, "coach.prompt_version": prompts.prompt_version()}
+        # Si parte dai numeri dell'atleta già pronti: nessun passo delle corse.
+        assert [step.name for step in steps] == ["papers", "model", "decision"]
+
+
+def test_with_phoenix_not_started_the_run_completes_and_one_line_says_traces_are_lost(fakes, tmp_path, cloud_spending,
+                                                                                     two_situations, monkeypatch,
+                                                                                     capsys):
+    monkeypatch.setattr(tracing, "phoenix", DownPhoenix)
+    code, [file] = evaluate(tmp_path, cloud_spending, two_situations, ["--repeat", "2"])
+    assert code == 0 and read(file)["complete"] is True and len(read(file)["answers"]) == 4
+    assert capsys.readouterr().out.count("[coach] Phoenix non risponde") == 1
 
 
 @pytest.mark.parametrize("repeat", ["0", "-1", "1.5", "tre", ""])
@@ -218,7 +243,8 @@ def test_the_file_is_rewritten_after_every_answer_and_marked_incomplete_until_th
     assert read(file)["complete"] is True
 
 
-def test_a_run_stopped_halfway_keeps_the_finished_answers(fakes, tmp_path, cloud_spending, two_situations, capsys):
+def test_a_run_stopped_halfway_keeps_the_finished_answers_and_their_traces(fakes, tmp_path, cloud_spending,
+                                                                           two_situations, capsys, phoenix):
     handle, calls = fakes["ollama"].handle, []
 
     def stop_at_the_second(request):
@@ -232,6 +258,9 @@ def test_a_run_stopped_halfway_keeps_the_finished_answers(fakes, tmp_path, cloud
     run = read(file)
     assert code == 130 and len(run["answers"]) == 1 and run["complete"] is False
     assert f"Corsa interrotta: le risposte finite sono in eval-runs/{file.name}" in capsys.readouterr().err
+    (root, steps), *_ = phoenix.traces()
+    assert root.name == f"evaluation · {SITUATIONS[0]['name']} #1"
+    assert [step.name for step in steps] == ["papers", "model", "decision"]
 
 
 def test_answers_without_token_counts_record_null_cost_and_charge_the_high_estimate(fakes, tmp_path, cloud_spending,

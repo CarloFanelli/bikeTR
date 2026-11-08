@@ -68,12 +68,17 @@ class _Sender(SpanExporter):
         self.exporter.shutdown()
 
 
+def phoenix() -> SpanExporter:
+    """Chi manda le tracce a Phoenix, al massimo SEND_TIMEOUT secondi per invio."""
+    return OTLPSpanExporter(endpoint=f"{PHOENIX_URL}/v1/traces", timeout=SEND_TIMEOUT)
+
+
 def setup(project: str, exporter: SpanExporter | None = None) -> TracerProvider:
     """Manda a Phoenix, nel progetto `project`, le tracce di questo processo; nei test `exporter`
     prende il posto di Phoenix. Il fornitore di tracce è di questo modulo, non quello globale di
     OpenTelemetry, che si imposta una volta sola: ogni test ne vuole uno nuovo."""
     global _tracer, _project
-    exporter = exporter or OTLPSpanExporter(endpoint=f"{PHOENIX_URL}/v1/traces", timeout=SEND_TIMEOUT)
+    exporter = exporter or phoenix()
     provider = TracerProvider(resource=Resource.create({ResourceAttributes.PROJECT_NAME: project}))
     provider.add_span_processor(BatchSpanProcessor(_Sender(exporter)))
     _tracer, _project = provider.get_tracer(__name__), project
@@ -101,11 +106,15 @@ def _span(name: str, attributes: dict):
 
 
 @contextmanager
-def request(minutes: int):
-    """La traccia di una richiesta del Coach: da dove viene (il progetto), i minuti chiesti e la
-    versione del prompt. I passi aperti dentro il blocco le appartengono."""
-    with _span(_project, {KIND: OpenInferenceSpanKindValues.CHAIN.value, "coach.source": _project,
-                          "coach.minutes": minutes, "coach.prompt_version": prompts.prompt_version()}):
+def request(minutes: int, situation: str | None = None, repeat: int | None = None):
+    """La traccia di una richiesta del Coach: da dove viene (il progetto), i minuti chiesti, la
+    versione del prompt e, per le corse di prova, la situazione e la ripetizione. Il nome dice
+    provenienza e situazione ("evaluation · recupero-mezz-ora #2"), così una risposta di un file dei
+    risultati si ritrova in Phoenix. I passi aperti dentro il blocco le appartengono."""
+    name = _project if situation is None else f"{_project} · {situation}" + (f" #{repeat}" if repeat else "")
+    with _span(name, _known({KIND: OpenInferenceSpanKindValues.CHAIN.value, "coach.source": _project,
+                             "coach.minutes": minutes, "coach.prompt_version": prompts.prompt_version(),
+                             "coach.situation": situation, "coach.repeat": repeat})):
         yield
 
 
@@ -116,15 +125,25 @@ def step(name: str):
         yield
 
 
+def _known(attributes: dict) -> dict:
+    """Senza i valori None: un valore che manca resta senza valore, cioè sconosciuto."""
+    return {k: v for k, v in attributes.items() if v is not None}
+
+
 def _note(attributes: dict) -> None:
-    """Valori sul passo in corso. Un valore None resta senza valore, cioè sconosciuto."""
-    trace.get_current_span().set_attributes({k: v for k, v in attributes.items() if v is not None})
+    """Valori sul passo in corso."""
+    trace.get_current_span().set_attributes(_known(attributes))
 
 
 def note_rides(from_saved: bool, ctx: dict) -> None:
     """Se le corse sono quelle salvate (Strava non raggiungibile) e i numeri dell'atleta che ne vengono."""
     _note({"coach.rides.from_saved": from_saved, SpanAttributes.OUTPUT_VALUE: json.dumps(ctx, ensure_ascii=False),
           SpanAttributes.OUTPUT_MIME_TYPE: JSON})
+
+
+def note_made_up_rides() -> None:
+    """Le corse sono quelle inventate del controllo dal vivo, non un download da Strava."""
+    _note({"coach.rides.made_up": True})
 
 
 def note_papers(query: str, found: list) -> None:
