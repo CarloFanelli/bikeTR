@@ -53,7 +53,7 @@ The file is rewritten after every answer, so a run stopped halfway (Ctrl+C, the 
 | `promptVersion` | 8 characters that change whenever the Coach's system prompt text changes |
 | `repeat` | how many times each situation was asked |
 | `complete` | `true` only when every answer arrived without an error; a run stopped halfway, or with a failed answer, stays `false` and is not used for a table row |
-| `totalCost` | the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama |
+| `totalCost` | the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama. A run stopped with Ctrl+C during an answer leaves that answer out of the file, but the spending total still counts it, so `totalCost` is a little lower than what the run spent |
 | `answers` | one entry per answer, in the order they ran |
 
 Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds` and `modelRaw` (the whole answer).
