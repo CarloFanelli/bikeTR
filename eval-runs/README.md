@@ -32,7 +32,7 @@ It prints each run's scores, then one row per file for the README table. Every a
 |---|---|
 | Rules followed | answers whose protocol, as the model wrote it, is in the situation's allowed list |
 | Readable JSON | answers the Coach could read as a JSON object, not cut at the token limit |
-| Invented citations | answers citing a PMID, in `paperUsati` or anywhere in the text, that was not among the papers given |
+| Invented citations | answers citing a PMID, in `paperUsati` or anywhere in the text, that was neither among the papers given nor the source of a selection rule, which the prompt shows beside the rule |
 | Support cited | among answers given the supporting paper of the protocol they chose, those citing it |
 | Support found | among answers choosing a protocol with a supporting paper, those whose search found it |
 | Fallback | answers where the Coach's fallback rules chose instead of the model |

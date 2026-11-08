@@ -77,6 +77,18 @@ def test_a_pmid_not_given_in_the_list_or_in_the_text_is_an_invented_citation():
     assert scores.invented == (2, 5)
 
 
+def test_the_source_paper_of_a_selection_rule_is_shown_by_the_prompt_and_not_invented():
+    # Le fonti delle regole: Seiler 2010 (20861519) e Stöggl 2014 (24550842).
+    scores = grade([
+        answer(cited=["20861519", "24550842"]),
+        answer(rationale="Poco lavoro duro, come in [PMID:24550842]."),
+        answer(cited=["24550842", "99999999"]),
+    ])
+    assert scores.invented == (1, 3)
+    # Per il paper trovato dalla ricerca contano solo i paper dati, non le fonti delle regole.
+    assert grade([answer("seiler_4x8", cited=["20861519"], given=(OTHER,))]).support_found == (0, 1)
+
+
 def test_support_counts_only_answers_given_the_paper_of_the_chosen_protocol():
     scores = grade([
         answer(cited=[SEILER]),

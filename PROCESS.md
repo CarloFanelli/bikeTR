@@ -293,3 +293,49 @@ Before this feature, the Coach's answer could come only from Ollama, the browser
 - **Decision**: `docker compose run --rm coach-tools python -m app.live_check` runs the Coach's steps with the chat model of `.env` on 3 made-up situations, the rides of the tests, and writes a new JSON file to `live-checks/`, never overwriting one and never writing the key. The files are committed.
 - **Why**: development happens on a laptop where Ollama must not run and no paid model is called, so runs happen on the Mac and travel through git to be evaluated. Made-up rides keep runs comparable, and send no real ride to a provider while it is unclear whether Strava's terms allow it.
 - **Cost**: 3 situations do not show how a model does on real, varied rides; a cloud run costs money and counts toward the same cap as the app.
+
+## eval-set — the Coach is measured on 27 made-up athletes, before and after its rules are rewritten (2026-11-08)
+
+Before this feature, the Coach's prompt held eight hand-written selection rules with gaps (form -12 with 10% hard riding matched none) and clashes (time rules came last), six of the eight papers the catalog cited were missing from the paper index and some described other training, and only 3 situations were ever checked.
+
+### 2026-11-07 · The selection rules come from the papers, or say they are practice
+
+- **Decision**: the selection rules are data in the Coach service, in a fixed order (rest and recovery, then the time rules, then the others), each naming its source: the PMID of a paper in the index, or practice when no paper gives its number. The prompt prints them, the fallback rules follow them, and the tests check that every situation gets at least one allowed protocol that fits its minutes.
+- **Why**: one written copy cannot disagree with itself, and a source per rule shows which numbers rest on a study and which on coaching habit.
+- **Cost**: most numbers are practice (the form cut-offs, the time rules), and saying so makes it visible.
+
+### 2026-11-07 · Each workout names a paper that describes it, found by a PubMed search
+
+- **Decision**: every catalog protocol names a supporting paper whose PubMed title or abstract describes it, or is labeled practice; the index rebuild finds each through a PubMed search that must return it first, never through a typed PMID.
+- **Why**: several cited papers described other training (Z2 with cadence drills cited a heavy strength study), and a search that must find the paper keeps the choice checkable.
+- **Cost**: seven protocols, sweet spot among them, have no paper and say so.
+
+### 2026-11-08 · An evaluation set graded by fixed checks, not by another model
+
+- **Decision**: 27 made-up athletes, each listing the protocols the selection rules allow and naming the rule it tests, with every rule tested twice and every threshold exactly on it. `python -m app.evaluation` runs the chat model of `.env` on all of them and writes a results file to `eval-runs/`, committed like the live check; `python -m app.grading` scores saved files with fixed checks on what the model wrote (rules followed, readable JSON, invented citations, supporting paper cited and found, fallback, seconds, cost), and calls no model.
+- **Why**: a fixed check repeats identically and costs nothing, a corrected set re-grades old runs without running them again, and judging the model's own text keeps the Coach's corrections from passing as the model's merit.
+- **Cost**: the scores say whether the choice is allowed, not whether the explanation is good; 27 answers make a difference of a few answers uncertain.
+
+### 2026-11-08 · The shortest Coach workout is 30 minutes
+
+- **Decision**: the Coach service refuses durations outside 30–240 minutes, the Coach screen's field stops there, and a saved shorter or longer duration opens at the nearest limit. This revises the 20–240 minutes of the coach-service feature.
+- **Why**: 20 minutes is not a workout, and the selection rules are tested on 30–240 only.
+- **Cost**: a tab opened before the update gets the refusal until it is reloaded.
+
+### 2026-11-08 · The prompt rewrite changes the rules section only
+
+- **Decision**: today's prompt was graded with qwen2.5:3b and qwen2.5:7b before the rewrite; the rewrite replaced only the eight rules and the "negative rule" with the selection rules, a line of minimum minutes per protocol, and a sentence saying the sources are not papers to cite. The fallback rules now take the first protocol the athlete's rule allows.
+- **Why**: changing one thing lets the before and after rows measure that thing; the minimum minutes are part of the rules, since the allowed list drops a protocol that does not fit.
+- **Cost**: the browser's prompt is no longer the reference for the rules section.
+
+### 2026-11-08 · A rule's source paper counts as given, not invented
+
+- **Decision**: the grading counts a citation of a selection rule's source paper (Seiler 2010, Stöggl 2014) as given, because the prompt shows it beside the rule; "supporting paper found" still counts only the papers the search returned.
+- **Why**: after the rewrite the models copied those two numbers into their cited papers in 8 and 10 of 27 answers; they are real papers in the index, and calling them invented would read as made-up citations.
+- **Cost**: an answer to the old prompt that cited one of those two papers without being given it would also pass; none did.
+
+### 2026-11-08 · The rewritten prompt stays, though it did not raise rule-following
+
+- **Decision**: the app keeps the rewritten prompt and the README shows the after rows as measured: qwen2.5:3b followed the rules in 9 of 27 situations (8 before), qwen2.5:7b in 12 (15 before). The next step is to show the model only the protocols its athlete's rule allows.
+- **Why**: the new rules are complete and match the fallback rules and the tests, which the old ones did not; the drop is a few answers on one run, and the remedy is a different design, not the old rules.
+- **Cost**: until that step, qwen2.5:7b follows the rules less often than with the old prompt on this set.

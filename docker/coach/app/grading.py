@@ -21,12 +21,16 @@ from pathlib import Path
 from app.jscompat import js_round, js_str
 from app.live_check import money
 from app.protocols import PROTOCOLS
+from app.selection_rules import RULES
 from app.workout import parse_model_json
 
 PROJECT_DIR = Path("/project")
 SITUATIONS_FILE = Path(__file__).resolve().parents[1] / "evaluation" / "situations.json"
 # Un PMID nel testo della risposta: il prompt chiede [PMID:n], i modelli scrivono anche "PMID n".
 PMID_IN_TEXT = re.compile(r"PMID\W{0,3}(\d+)", re.IGNORECASE)
+# Le fonti delle regole di selezione: il prompt le mostra accanto alle regole, quindi citarle non è
+# inventare. Il paper trovato dalla ricerca resta contato solo tra i paper dati.
+RULE_SOURCES = {rule.source_pmid for rule in RULES if rule.source_pmid}
 TABLE_HEADER = ("| Model | Prompt | Rules followed | Readable JSON | Invented citations | Support cited "
                 "| Support found | Fallback | Median seconds | Cost per answer | Results file |",
                 "|---|---|---|---|---|---|---|---|---|---|---|")
@@ -82,7 +86,7 @@ def grade(run: dict, situations: list[dict]) -> Scores:
         cited = cited_pmids(parsed, a["modelRaw"])
         count["followed"] += choice in allowed[a["situation"]]
         count["readable"] += parsed is not None
-        count["invented"] += bool(cited - given)
+        count["invented"] += bool(cited - given - RULE_SOURCES)
         count["fallback"] += a["fellBack"]
         # Il paper di supporto del protocollo scelto dal modello; i protocolli di pratica non ne hanno.
         source = PROTOCOLS[choice].source_pmid if choice in PROTOCOLS else None
