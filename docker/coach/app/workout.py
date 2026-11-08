@@ -217,9 +217,12 @@ async def from_context(ctx: dict, duration: int, emit: Callable[[dict], None], *
             model_raw, answer_cost = "".join(answer), cost(chat.prices, end.input_tokens, end.output_tokens)
             # Anche quando Stop annulla la richiesta: accettata la richiesta, il provider fa pagare
             # ciò che ha già scritto. Una richiesta rifiutata o mai arrivata non costa nulla.
-            if chat.prices and accepted:
-                spending.add(charge(chat.prices, end.input_tokens, end.output_tokens))
-            tracing.note_model(chat, messages, model_raw, end, answer_cost)
+            charged = None   # Ollama non costa nulla
+            if chat.prices:
+                charged = charge(chat.prices, end.input_tokens, end.output_tokens) if accepted else 0.0
+                if accepted:
+                    spending.add(charged)
+            tracing.note_model(chat, messages, model_raw, end, answer_cost, charged)
 
     with tracing.step("decision"):
         decision = decide(model_raw, ctx, duration, index, end.truncated)
