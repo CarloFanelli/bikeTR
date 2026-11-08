@@ -4,7 +4,8 @@ Rotte:
   GET  /coach/status   → il modello chat di .env e, per il cloud, spesa e tetto (nessuna chiamata)
   GET  /coach/ping     → il provider risponde, accetta la chiave e ha il modello? (nessun token)
   POST /coach/workout  → il workout di oggi, come flusso di eventi (una riga JSON l'uno)
-  POST /coach/forget   → cancella corse e dettagli corsa salvati (Disconnetti da Strava)
+  POST /coach/forget   → cancella corse e dettagli corsa salvati e, in Phoenix, le tracce della
+                         schermata Coach partite prima (Disconnetti da Strava)
 
 Gli errori sono {error: codice, message: testo in italiano da mostrare}: come risposta
 JSON se la richiesta è rifiutata subito, come evento {type: "error", ...} se il flusso
@@ -15,6 +16,8 @@ import asyncio
 import json
 import time
 import traceback
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
 
@@ -27,12 +30,14 @@ from app.errors import CoachError
 from app.spending import SPENDING_FILE, Spending
 from app.store import RideStore
 from app.strava import StravaRides
+from app.trace_deletion import DELETION_FILE, TraceDeletion
 
 store = RideStore(Path("/data/rides.json"))
 cloud_spending = Spending(SPENDING_FILE)
 http = httpx.AsyncClient(timeout=15)
 rides = StravaRides(store, http)
 tracing.setup(tracing.COACH_SCREEN)
+trace_deletion = TraceDeletion(DELETION_FILE, http)
 
 
 def same_origin_only(sec_fetch_site: Annotated[str | None, Header()] = None):
@@ -41,7 +46,14 @@ def same_origin_only(sec_fetch_site: Annotated[str | None, Header()] = None):
         raise CoachError(403, "forbidden", "Richiesta rifiutata: arriva da un altro sito")
 
 
-app = FastAPI(dependencies=[Depends(same_origin_only)])
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Una cancellazione delle tracce rimasta in sospeso (Phoenix spento, poi il Coach riavviato) riparte.
+    trace_deletion.resume()
+    yield
+
+
+app = FastAPI(dependencies=[Depends(same_origin_only)], lifespan=lifespan)
 
 
 @app.exception_handler(CoachError)
@@ -127,5 +139,10 @@ async def generate_workout(request: Request):
 
 @app.post("/coach/forget", status_code=204)
 async def forget():
+    # Le tracce della schermata Coach contengono i numeri delle corse: vanno via con loro, senza
+    # che il clic aspetti Phoenix.
+    disconnected = datetime.now(timezone.utc)
+    tracing.forget(disconnected)
     await store.forget()
+    trace_deletion.schedule(disconnected)
     return Response(status_code=204)

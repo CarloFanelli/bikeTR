@@ -13,6 +13,7 @@ import json
 import logging
 import os
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 
 from openinference.semconv.resource import ResourceAttributes
 from openinference.semconv.trace import (DocumentAttributes, MessageAttributes, OpenInferenceMimeTypeValues,
@@ -38,6 +39,7 @@ KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
 # Il tipo di passo per Phoenix: la ricerca dei paper e la chiamata al modello hanno una vista loro.
 KINDS = {"papers": OpenInferenceSpanKindValues.RETRIEVER, "model": OpenInferenceSpanKindValues.LLM}
 JSON = OpenInferenceMimeTypeValues.JSON.value
+EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 # Le righe di OpenTelemetry per ogni invio fallito restano spente: il log riceve la riga di _Sender.
 logging.getLogger("opentelemetry.exporter").setLevel(logging.CRITICAL)
@@ -45,17 +47,31 @@ logging.getLogger("opentelemetry.exporter").setLevel(logging.CRITICAL)
 # Prima di setup nessuna traccia: le richieste funzionano lo stesso.
 _tracer: trace.Tracer = trace.NoOpTracer()
 _project = ""
+_sender: "_Sender | None" = None
+# Le tracce delle richieste in corso: Disconnetti lascia fuori anche i loro passi successivi.
+_running: set[int] = set()
 
 
 class _Sender(SpanExporter):
     """Manda le tracce con `exporter`. Quando non arrivano, il log riceve una riga sola, e la
-    successiva solo dopo che un invio è riuscito di nuovo."""
+    successiva solo dopo che un invio è riuscito di nuovo. Dopo Disconnetti lascia fuori i passi
+    delle richieste partite prima del clic, anche di quelle ancora in corso."""
 
     def __init__(self, exporter: SpanExporter):
         self.exporter = exporter
         self.losing = False
+        self.forgotten_before = 0
+        self.forgotten_traces: frozenset[int] = frozenset()
+
+    def forget(self, before_ns: int, running: frozenset[int]) -> None:
+        self.forgotten_before = max(self.forgotten_before, before_ns)
+        self.forgotten_traces = self.forgotten_traces | running
 
     def export(self, spans) -> SpanExportResult:
+        spans = [s for s in spans if s.start_time >= self.forgotten_before
+                 and s.context.trace_id not in self.forgotten_traces]
+        if not spans:
+            return SpanExportResult.SUCCESS
         result = self.exporter.export(spans)
         if result is SpanExportResult.SUCCESS:
             self.losing = False
@@ -77,12 +93,19 @@ def setup(project: str, exporter: SpanExporter | None = None) -> TracerProvider:
     """Manda a Phoenix, nel progetto `project`, le tracce di questo processo; nei test `exporter`
     prende il posto di Phoenix. Il fornitore di tracce è di questo modulo, non quello globale di
     OpenTelemetry, che si imposta una volta sola: ogni test ne vuole uno nuovo."""
-    global _tracer, _project
-    exporter = exporter or phoenix()
+    global _tracer, _project, _sender
+    _sender = _Sender(exporter or phoenix())
     provider = TracerProvider(resource=Resource.create({ResourceAttributes.PROJECT_NAME: project}))
-    provider.add_span_processor(BatchSpanProcessor(_Sender(exporter)))
+    provider.add_span_processor(BatchSpanProcessor(_sender))
     _tracer, _project = provider.get_tracer(__name__), project
     return provider
+
+
+def forget(before: datetime) -> None:
+    """Dopo Disconnetti: i passi delle richieste partite prima di `before`, anche di quelle ancora in
+    corso, non partono più per Phoenix. Quelli già arrivati li cancella app/trace_deletion.py."""
+    if _sender:
+        _sender.forget((before - EPOCH) // timedelta(microseconds=1) * 1000, frozenset(_running))
 
 
 @contextmanager
@@ -115,7 +138,12 @@ def request(minutes: int, situation: str | None = None, repeat: int | None = Non
     with _span(name, _known({KIND: OpenInferenceSpanKindValues.CHAIN.value, "coach.source": _project,
                              "coach.minutes": minutes, "coach.prompt_version": prompts.prompt_version(),
                              "coach.situation": situation, "coach.repeat": repeat})):
-        yield
+        trace_id = trace.get_current_span().get_span_context().trace_id
+        _running.add(trace_id)
+        try:
+            yield
+        finally:
+            _running.discard(trace_id)
 
 
 @contextmanager

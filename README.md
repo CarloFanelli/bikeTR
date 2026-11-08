@@ -2,7 +2,7 @@
 
 Started on **May 7, 2026**.
 
-A browser app (Vue and TypeScript in `web/`, served by a live-reload development server) for cycling analysis and training recommendations based on the user's Strava data. Designed for **personal, local use**: each person runs their own copy on their own computer, connected to their own Strava app. One Docker command starts everything: a web server, the app's development server, a small auth server that holds the Strava secret, the Coach service (Python), and the local AI model used by the Coach (a cloud model such as Claude can be chosen instead). Settings and caches stay in the browser's `localStorage`.
+A browser app (Vue and TypeScript in `web/`, served by a live-reload development server) for cycling analysis and training recommendations based on the user's Strava data. Designed for **personal, local use**: each person runs their own copy on their own computer, connected to their own Strava app. One Docker command starts everything: a web server, the app's development server, a small auth server that holds the Strava secret, the Coach service (Python), the local AI model used by the Coach (a cloud model such as Claude can be chosen instead), and Phoenix, which shows what the Coach did in each request. Settings and caches stay in the browser's `localStorage`.
 
 > ⚠️ The app is reachable only from your own computer (`127.0.0.1`), not from other devices on your network. **Do not deploy it to a public website.** The Strava Client ID and client secret live in the `.env` file, which Git ignores: never commit it.
 
@@ -63,6 +63,7 @@ Every other setting is optional and already has a default; `.env.example` descri
 | Setting | Default | What it changes |
 |---|---|---|
 | `WEB_PORT` | `5050` | The port of the app's address |
+| `PHOENIX_PORT` | `6006` | The port of Phoenix's address, where the Coach's traces are shown (section 5) |
 | `OLLAMA_CHAT_MODEL` | `qwen2.5:7b` | The Ollama chat model the Coach uses, downloaded at start |
 | `COACH_PROVIDER` | `ollama` | `cloud` makes the Coach use a cloud model such as Claude (section 5) |
 | `CLOUD_URL`, `CLOUD_API_KEY`, `CLOUD_MODEL` | none | The cloud provider's address, your key and the model's name; all required with `cloud` |
@@ -73,7 +74,7 @@ Settings are read when the services start: after changing `.env`, run `docker co
 
 ## 4. Start, open, stop
 
-Start everything (web app, auth server, Coach service, AI Coach model):
+Start everything (web app, auth server, Coach service, AI Coach model, Phoenix):
 
 ```bash
 docker compose up -d
@@ -83,7 +84,7 @@ Open <http://localhost:5050> and click **Collega Strava** (Connect to Strava). S
 
 **Always open `localhost`, never `127.0.0.1`.** The browser keeps saved data per address, so under `127.0.0.1` your settings and caches are not visible, and Strava always sends you back to `localhost`.
 
-**First start.** Docker downloads about 2 GB of images, installs the app's npm packages and builds the Coach service's image with its paper search model (each takes a minute or two), and then downloads the Coach's chat model, about 5 GB. The app opens once its packages are installed, within about a minute; the Coach works once the chat model is downloaded, which takes several minutes. To watch the download:
+**First start.** Docker downloads about 2.3 GB of images (Phoenix's is about 330 MB), installs the app's npm packages and builds the Coach service's image with its paper search model (each takes a minute or two), and then downloads the Coach's chat model, about 5 GB. The app opens once its packages are installed, within about a minute; the Coach works once the chat model is downloaded, which takes several minutes. To watch the download:
 
 ```bash
 docker compose logs -f ollama-pull
@@ -93,19 +94,19 @@ The download is complete when `docker compose ps -a` shows `ollama-pull` as exit
 
 **Live reload.** A saved change to a file under `web/` shows in the open page within a few seconds, with no command and no manual reload.
 
-**Stop** everything (models, Strava connection, the rides the Coach saved and the money spent on a cloud model are kept):
+**Stop** everything (models, Strava connection, the rides the Coach saved, the money spent on a cloud model and the traces in Phoenix are kept):
 
 ```bash
 docker compose down
 ```
 
-**Full cleanup** — removes the containers, the downloaded models, the stored Strava connection, the rides the Coach service saved and the total spent on a cloud model; the next start downloads about 5 GB again and asks you to connect to Strava again:
+**Full cleanup** — removes the containers, the downloaded models, the stored Strava connection, the rides the Coach service saved, the total spent on a cloud model and every trace in Phoenix; the next start downloads about 5 GB again and asks you to connect to Strava again:
 
 ```bash
 docker compose down -v
 ```
 
-**Disconnect** with the "Disconnetti da Strava" button in Impostazioni: it deletes the Strava tokens held by the auth server and the rides and ride details the Coach service saved; the total spent on a cloud model stays. A tab that was already open loses access too: its next Strava download sends it back to the **Collega Strava** screen.
+**Disconnect** with the "Disconnetti da Strava" button in Impostazioni: it deletes the Strava tokens held by the auth server, the rides and ride details the Coach service saved, and the Coach screen's traces in Phoenix (section 5); the total spent on a cloud model stays. A tab that was already open loses access too: its next Strava download sends it back to the **Collega Strava** screen.
 
 ## 5. AI Coach
 
@@ -236,6 +237,17 @@ The rebuild takes each paper from a PubMed search listed in `docker/coach/app/bu
 
 **Stopping.** **Stop** ends the request and keeps the text written so far, marked "Richiesta interrotta". Stop, a new request from the same tab, a reload, a closed tab, a dropped connection or the 3-minute silence limit closes the connection to the chat model: Ollama stops working on that answer within seconds, and a stopped cloud request still counts toward the spending total; requests from other tabs carry on. Moving to another section does not stop it: back on Coach AI, the answer is still arriving or already there. If the connection to the Coach drops mid-answer, the screen shows "Connessione col Coach interrotta".
 
+**Traces in Phoenix.** Every Coach request leaves a trace in Phoenix, a tracing tool that runs in its own container next to BikeTR: open <http://localhost:6006> (another port with `PHOENIX_PORT` in `.env`). Like the app, it answers only on this computer, and it calls nothing on the internet. A trace shows each step of the request with its duration:
+
+- **rides**: whether the rides were just downloaded, saved earlier (Strava unreachable) or made up (live check), and the athlete numbers computed from them;
+- **papers**: the search sentence and the 4 papers found, with PMID, title and score;
+- **model**: the chat model, the exact messages sent, the raw answer (also the part written before **Stop**), the tokens, the cost and the dollars added to the spending total;
+- **decision**: the protocol the model chose, the one given and the fallback reason.
+
+A failed step shows the message the screen showed, and a stopped request is marked stopped. Each source has its own project in Phoenix: `coach-screen` for the Coach AI screen, `live-check` and `evaluation` for the two commands. A command's trace is named by its situation and repeat, for example `evaluation · recupero-mezz-ora #2`, so a surprising line in a results file can be opened step by step. The cloud key, the Strava tokens and request headers never enter a trace. When Phoenix is not running, the Coach answers as usual and its log says once that traces are being lost.
+
+**Rider data in traces.** The Coach screen's traces store, in Phoenix's Docker volume on this computer, the same data a cloud provider receives (listed above): the athlete numbers, the bike rides of the last 7 days with date, type, minutes, kilometres, average watts and average heart rate, and the minutes asked. Activity names, places and maps are not stored. **Disconnetti da Strava** deletes the Coach screen's traces started before the click, within about 10 seconds; a request still running at the click leaves no trace. If Phoenix is not running, the Coach service remembers the deletion, also across its own restarts, and runs it as soon as Phoenix answers again. Live check and evaluation traces stay: their athletes are made up. Traces survive `docker compose down`; `docker compose down -v` deletes them all.
+
 ## 6. Common problems
 
 - **Port 5050 is already in use** (for example an old `python3 -m http.server 5050` from the previous setup is still running): stop that program, or set another `WEB_PORT` in `.env`. Browser data is kept per address, so after changing the port the data saved under the old one is not visible.
@@ -282,7 +294,7 @@ Two download limits are constants in the code; with live reload, a saved change 
 
 ## 9. Architecture
 
-Docker Compose services (`compose.yaml`); only the web port is published, on `127.0.0.1`:
+Docker Compose services (`compose.yaml`); only the web port and Phoenix's are published, on `127.0.0.1`:
 
 ```
 browser ──► web (nginx, http://localhost:5050)
@@ -294,6 +306,9 @@ browser ──► web (nginx, http://localhost:5050)
                             in a Docker volume
                             └─► the chat model chosen in .env: ollama, kept in a Docker volume
                                 (or the Ollama on your computer), or a cloud provider such as Claude
+browser ──► phoenix (http://localhost:6006): the traces of each Coach request, kept in a Docker volume;
+             the Coach service and coach-tools send them, and the Coach service deletes the Coach
+             screen's ones at "Disconnetti da Strava"
 ollama-pull: downloads the Ollama chat model at start if it is missing, then exits
 coach-tools: starts only when named (docker compose run --rm coach-tools …); rebuilds the paper index,
              runs the live check and the evaluation set and grades its runs, writing into the project folder
