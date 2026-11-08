@@ -1,4 +1,4 @@
-# Task 08: after-runs-readme
+# Task 09: after-runs-readme
 
 ## Objective
 
@@ -12,7 +12,7 @@ The rewritten prompt is graded on the Mac like the "before" runs, and the README
 
 ## Depends on
 
-- Task 07
+- Task 08
 
 ## Expected Behavior
 

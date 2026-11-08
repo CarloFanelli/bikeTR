@@ -1,4 +1,4 @@
-# Task 07: prompt-rewrite
+# Task 08: prompt-rewrite
 
 ## Objective
 
@@ -8,11 +8,12 @@ The Coach's prompt states the selection rules in order, each with its supporting
 
 **Satisfies**: REQ-23, REQ-6
 
-This is the change the evaluation set measures. It lands only after the "before" rows of Task 06, so today's prompt has its score. Everything else in the prompt (catalog, papers, output format, athlete numbers) stays as it is, so the comparison isolates the rules.
+This is the change the evaluation set measures. It lands only after the "before" rows of Task 06, so today's prompt has its score, and after Task 07, so the app never sends the new rules a duration they were not tested for. Everything else in the prompt (catalog, papers, output format, athlete numbers) stays as it is, so the comparison isolates the rules.
 
 ## Depends on
 
 - Task 06
+- Task 07
 
 ## Expected Behavior
 

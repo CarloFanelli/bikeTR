@@ -1,6 +1,6 @@
 ---
 feature: eval-set
-version: 1.0
+version: 1.1
 status: approved
 completed: false
 base: 9c5244744da217cf0021031f662153d2150fe8bc
@@ -10,7 +10,7 @@ base: 9c5244744da217cf0021031f662153d2150fe8bc
 
 ## Overview
 
-BikeTR gets an evaluation set: 25–30 made-up athlete situations, each listing the protocols that the scientific papers, or labeled coaching practice, allow. One command runs them with the chat model `.env` names and saves every answer. A grading command that calls no model scores rule-following, invented or missing citations, fallback use, time and cost. The selection rules are rewritten from the papers: complete, ordered, each naming its paper or "practice", and the missing supporting papers join the paper index. Today's prompt is graded before the rewrite and again after it, the Coach in the app then follows the new rules, and the README gains a Coach section with the before-and-after table.
+BikeTR gets an evaluation set: 25–30 made-up athlete situations, each listing the protocols that the scientific papers, or labeled coaching practice, allow. One command runs them with the chat model `.env` names and saves every answer. A grading command that calls no model scores rule-following, invented or missing citations, fallback use, time and cost. The selection rules are rewritten from the papers: complete, ordered, each naming its paper or "practice", and the missing supporting papers join the paper index. Today's prompt is graded before the rewrite and again after it, the Coach in the app then follows the new rules, and the README gains a Coach section with the before-and-after table. The Coach's shortest workout becomes 30 minutes.
 
 ## Project Context
 
@@ -21,7 +21,7 @@ BikeTR gets an evaluation set: 25–30 made-up athlete situations, each listing 
 - The live check stays as the quick 3-situation check before a 25–30-situation run.
 - Cloud answers add to the app's spending total and stop at the same spending cap.
 - The search model runs inside the Coach service: free, the same for every chat model, the same papers for the same query.
-- Minutes available go from 20 to 240; the hard share is unknown when no ride falls in the last 28 days.
+- Minutes available go from 30 to 240; the hard share is unknown when no ride falls in the last 28 days.
 
 ## Functional Requirements
 
@@ -29,7 +29,7 @@ BikeTR gets an evaluation set: 25–30 made-up athlete situations, each listing 
 
 - REQ-1: Each catalog protocol names a supporting paper whose PubMed title or abstract describes it, or is labeled practice with no paper.
 - REQ-2: Every supporting paper is in the Coach's paper index, found through a PubMed search rather than a typed-in ID.
-- REQ-3: The selection rules give a non-empty list of allowed protocols for any form, any hard share (unknown included) and 20–240 minutes.
+- REQ-3: The selection rules give a non-empty list of allowed protocols for any form, any hard share (unknown included) and 30–240 minutes.
 - REQ-4: Each selection rule names its source: the PMID of a paper in the index, or "practice".
 - REQ-5: When rules overlap, rest and recovery win first, then the time rules (120 minutes or more, under 50), then the others.
 - REQ-6: The fallback rules choose a protocol the selection rules allow, for every situation in the evaluation set.
@@ -63,6 +63,12 @@ BikeTR gets an evaluation set: 25–30 made-up athlete situations, each listing 
 
 - REQ-23: The Coach's prompt states the selection rules in order, each with its PMID or "practice", replacing today's eight rules.
 - REQ-24: qwen2.5:3b and qwen2.5:7b are graded with today's prompt before the rewrite, and with the rewritten prompt after it.
+
+### Workout length
+
+- REQ-28: The Coach service refuses a duration outside 30–240 minutes with "La durata deve essere tra 30 e 240 minuti".
+- REQ-29: The Coach screen's duration field steps by 5 from 30 to 240 minutes, and shows the service's refusal for any other typed value.
+- REQ-30: The Coach screen opens with the saved duration, raised to 30 when lower and lowered to 240 when higher; with none saved, 60.
 
 ### README
 
@@ -103,7 +109,7 @@ BikeTR gets an evaluation set: 25–30 made-up athlete situations, each listing 
 | Two protocols share one supporting paper | The paper is in the index once | REQ-2 |
 | Form exactly on a cut-off (-25, -15, -10, +5, +10) | Belongs to exactly one rule, stated with "below" or "or more" | REQ-3 |
 | Hard share unknown (no ride in 28 days) | A rule covers it; at least one situation tests it | REQ-3 |
-| 20 or 240 minutes available | The allowed list is non-empty | REQ-3 |
+| 30 or 240 minutes available | The allowed list is non-empty | REQ-3 |
 | An allowed protocol does not fit the minutes (the Coach would switch to Z2) | Never in an allowed list; the automated tests check it | REQ-3 |
 | A rule names a PMID not in the index | Automated tests fail, naming the rule | REQ-4 |
 | N/A — empty: "practice" is the explicit source when no paper exists | — | REQ-4 |
@@ -154,6 +160,18 @@ BikeTR gets an evaluation set: 25–30 made-up athlete situations, each listing 
 | The app's Coach and the live check after the rewrite | Both use the new prompt and fallback rules | REQ-23 |
 | A Mac run stops halfway | Its file is kept but not used for a table row; the run is repeated | REQ-24 |
 | N/A — concurrent: the user starts each run by hand, one at a time | — | REQ-24 |
+| 29 or 241 minutes | Refused with "La durata deve essere tra 30 e 240 minuti" before any paper search or model call, so nothing is spent | REQ-28 |
+| 30 or 240 minutes | Accepted | REQ-28 |
+| A tab opened before the update sends 20 | Refused with the same message; reloading the page brings the new field | REQ-28 |
+| Duration missing, or not a whole number (45.5) | Refused with "La durata deve essere un numero intero di minuti", as today | REQ-28 |
+| The live check and the evaluation set | Already use 45–90 and 30–240 minutes; unchanged | REQ-28 |
+| Arrows on the field at 30 or 240 | Stop there; each click moves 5 minutes | REQ-29 |
+| Rider types 25 | The refusal appears in the error card; the field keeps 25 until changed | REQ-29 |
+| Field left empty | Sends 60, as today | REQ-29 |
+| Saved 20 or 29 | Opens at 30 | REQ-30 |
+| Saved 30 or 45 | Opens as saved | REQ-30 |
+| Saved 300 (typed before this change) | Opens at 240 | REQ-30 |
+| Nothing saved, 0, or a saved value that is not a number | Opens at 60 | REQ-30 |
 | Rules whose source is practice | The decisions list them, each with why no paper is used | REQ-25 |
 | N/A — concurrent/network: the README is static text | — | REQ-25 |
 | A row without a results file in git | Not allowed: every row names its file | REQ-26 |
