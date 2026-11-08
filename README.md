@@ -153,6 +153,23 @@ docker compose run --rm coach-tools python -m app.live_check
 
 The Coach picks a workout in 3 made-up situations, prints one line per situation, and writes everything (protocol chosen, papers, tokens, cost, the whole answer) to a new file in `live-checks/`, named by date, time and model. Commit that file to compare models, or to look at a run made on another computer. With Ollama, start BikeTR first so Ollama is running; with a cloud model, the 3 answers cost money and count toward the same total and limit as the app. `live-checks/README.md` describes the file.
 
+**Evaluation set.** To measure a chat model on many situations, the evaluation set holds 27 made-up athletes, each with the workouts the selection rules allow. The first command runs the chat model in `.env` on every situation and writes each answer to a new file in `eval-runs/`; the second grades saved files without calling any model:
+
+```bash
+docker compose run --rm coach-tools python -m app.evaluation
+docker compose run --rm coach-tools python -m app.grading eval-runs/FILE.json
+```
+
+`eval-runs/README.md` explains each score. Results so far, one answer per situation, run with Ollama on a Mac; "before" is the prompt in use before the selection rules are rewritten:
+
+| Model | Prompt | Rules followed | Readable JSON | Invented citations | Support cited | Support found | Fallback | Median seconds | Cost per answer | Results file |
+|---|---|---|---|---|---|---|---|---|---|---|
+| qwen2.5:3b | 07cc6501 (before) | 30% (8/27) | 100% (27/27) | 0% (0/27) | — | 0% (0/4) | 7% (2/27) | 6.3 | — | [2026-11-08_13-47-36_qwen2.5-3b.json](eval-runs/2026-11-08_13-47-36_qwen2.5-3b.json) |
+| qwen2.5:7b | 07cc6501 (before) | 56% (15/27) | 96% (26/27) | 0% (0/27) | — | 0% (0/10) | 7% (2/27) | 11.9 | — | [2026-11-08_13-50-49_qwen2.5-7b.json](eval-runs/2026-11-08_13-50-49_qwen2.5-7b.json) |
+
+- qwen2.5:3b chooses sweet spot in 21 of the 27 situations, rest days and recovery days included. qwen2.5:7b follows the rules in 15, and once names a protocol that does not exist (`z2_recovery`), so the fallback rules choose.
+- Neither model cites a paper it was not given. When a model chose a workout with a supporting paper, the search had not found that paper: the models mostly chose Z2 days, and the search rarely returns the Z2 papers (Sitko 2025 in 1 of 27 situations, Spragg 2023 in none). "Support cited" is therefore "—": no answer had its workout's paper to cite.
+
 **Slow computers.** In Docker, Ollama runs on the CPU only (Docker cannot use a Mac's GPU). On a laptop without a GPU, one Coach generation with `qwen2.5:7b` can take over 5 minutes (measured on an Intel i5-1240P under WSL). There is no limit on the total time: the Coach AI screen shows the model's text as it arrives, and the Coach gives up only when the model writes nothing for 3 minutes, including the wait before its first word ("Il modello non ha scritto nulla per 3 minuti"). An answer longer than 1,000 tokens is cut, and the Coach then picks the protocol with its fallback rules. Pick a smaller model such as `qwen2.5:3b` in `.env`, or use the Ollama installed on your computer (below).
 
 **Using the Ollama installed on your computer** (for example to use the GPU of a Mac). This option needs Docker Desktop.

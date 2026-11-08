@@ -5,6 +5,6 @@
 03-evaluation-set: DONE
 04-evaluation-run: DONE
 05-grading: DONE
-06-before-runs: TODO
+06-before-runs: DONE
 07-prompt-rewrite: TODO
 08-after-runs-readme: TODO
