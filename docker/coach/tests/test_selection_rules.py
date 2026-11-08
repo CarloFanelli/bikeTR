@@ -1,16 +1,21 @@
 """Regole di selezione: per ogni forma, quota dura (anche sconosciuta) e durata da 30 a 240
 minuti, almeno un protocollo ammesso, e ognuno entra nei minuti; la prima regola che vale vince,
 riposo e recupero prima della durata, la durata prima delle altre; ogni soglia sta in una sola
-regola; ogni regola dice la sua fonte, e un PMID è un paper che la ricostruzione dell'indice scarica."""
+regola; ogni regola dice la sua fonte, e un PMID è un paper che la ricostruzione dell'indice scarica.
+La scelta di ripiego prende il primo protocollo che la regola ammette."""
 
 import itertools
+import json
 
 import pytest
 
-from app import selection_rules
+from app import grading, selection_rules
 from app.build_index import SEARCHES
 from app.protocols import PROTOCOLS
 from app.selection_rules import RULES
+from fixture_data import load
+
+CASES = load("coach_cases.json")
 
 TSB = range(-60, 41)
 HARD = [None, *range(0, 101)]
@@ -93,3 +98,23 @@ def test_rule_sentences_state_conditions_and_protocols():
 def test_rule_papers_are_fetched_by_the_index_rebuild():
     fetched = {pmid for _, _, pmid in SEARCHES}
     assert {r.name: r.source_pmid for r in RULES if r.source_pmid and r.source_pmid not in fetched} == {}
+
+
+def test_fallback_chooses_the_first_protocol_the_rules_allow():
+    grid = CASES["fallback"]
+    for tsb, hard, minutes in itertools.product(grid["tsb"], grid["hardPct"], grid["durations"]):
+        ctx = {"tsb": tsb, "polarizzazione": {"hardPct": hard}}
+        assert selection_rules.fallback_protocol_id(ctx, minutes) == select(tsb, hard, minutes)[1][0]
+
+
+def test_fallback_chooses_an_allowed_protocol_in_every_evaluation_situation():
+    situations = json.loads(grading.SITUATIONS_FILE.read_text(encoding="utf-8"))
+    for s in situations:
+        chosen = selection_rules.fallback_protocol_id(s["context"], s["minutes"])
+        assert chosen in s["allowed"], f"{s['name']}: il ripiego sceglie {chosen}, ammessi {s['allowed']}"
+
+
+def test_each_protocol_fits_every_duration_from_its_minimum():
+    for pid in PROTOCOLS:
+        shortest = selection_rules.minimum_minutes(pid)
+        assert all(selection_rules.fits(pid, m) for m in range(shortest, MINUTES.stop)), pid

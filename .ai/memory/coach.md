@@ -45,7 +45,7 @@ The paper in the Coach's index that a protocol comes from, found by a PubMed sea
 _Avoid_: "source" alone (a selection rule's source may be practice).
 
 ### Fallback rules
-The Coach's fixed choice of protocol when the **Chat model**'s answer is unreadable, cut off or names no catalog protocol; it always picks a protocol the **Selection rules** allow.
+The Coach's fixed choice of protocol when the **Chat model**'s answer is unreadable, cut off or names no catalog protocol: the first protocol the athlete's **Selection rules** rule allows for those minutes.
 _Avoid_: "backup choice" (used once in an interview; the README says fallback).
 
 ## Decisions

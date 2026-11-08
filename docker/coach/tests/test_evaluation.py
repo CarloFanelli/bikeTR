@@ -271,5 +271,5 @@ def test_wrong_env_stops_before_any_call_and_writes_nothing(fakes, tmp_path, clo
 def test_the_prompt_version_changes_with_the_prompt_text_and_only_with_it(monkeypatch):
     version = prompts.prompt_version()
     assert len(version) == 8 and prompts.prompt_version() == version
-    monkeypatch.setattr(prompts, "SYSTEM_TEMPLATE", prompts.SYSTEM_TEMPLATE.replace("SEMPRE rest", "rest"))
+    monkeypatch.setattr(prompts, "SYSTEM_TEMPLATE", prompts.SYSTEM_TEMPLATE.replace("evidence-based", "basato sulle prove"))
     assert prompts.prompt_version() != version

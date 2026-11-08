@@ -18,7 +18,8 @@ from app.chat import Accepted, ChatEnd, ModelError
 from app.errors import CoachError
 from app.jscompat import is_number, js_str, js_truthy
 from app.metrics import Profile, coach_context
-from app.protocols import PROTOCOLS, fallback_protocol_id
+from app.protocols import PROTOCOLS
+from app.selection_rules import fallback_protocol_id
 from app.spending import Spending, charge, cost
 from app.strava import StravaRides
 
@@ -108,8 +109,8 @@ def paper_ref(p: dict) -> dict:
 
 
 def decide(model_raw: str, ctx: dict, duration: int, index: dict, truncated: bool = False) -> dict:
-    """Dal testo del modello al workout, con i ripieghi del browser: risposta illeggibile,
-    troncata o con un protocollo sconosciuto → scelta deterministica; durata troppo corta → Z2."""
+    """Dal testo del modello al workout, con i ripieghi: risposta illeggibile, troncata o con un
+    protocollo sconosciuto → il primo protocollo che le regole ammettono; durata troppo corta → Z2."""
     parsed = None if truncated else parse_model_json(model_raw)
     chosen = js_str(parsed.get("protocolId")) if isinstance(parsed, dict) else None
     if chosen in PROTOCOLS:

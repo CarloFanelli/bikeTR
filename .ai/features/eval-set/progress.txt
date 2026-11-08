@@ -7,5 +7,5 @@
 05-grading: DONE
 06-before-runs: DONE
 07-minimum-duration: DONE
-08-prompt-rewrite: TODO
+08-prompt-rewrite: DONE
 09-after-runs-readme: TODO

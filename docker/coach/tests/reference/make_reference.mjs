@@ -76,7 +76,7 @@ async function loadBrowserModules() {
   patch('coach.js', 'function renderCoachWorkout(',
     'function renderCoachWorkout(args) { globalThis.__rendered = args; return renderCoachWorkoutHtml(args); }\nfunction renderCoachWorkoutHtml(');
   fs.appendFileSync(path.join(dir, 'coach.js'),
-    '\nexport { buildCoachContext, COACH_PROTOCOLS, fallbackProtocolId };\n');
+    '\nexport { buildCoachContext, COACH_PROTOCOLS };\n');
   const load = (f) => import(pathToFileURL(path.join(dir, f)).href);
   return { ...(await load('strava.js')), ...(await load('training.js')), ...(await load('analysis.js')),
     ...(await load('training_v2.js')), ...(await load('coach.js')) };
@@ -154,10 +154,7 @@ function catalogReference(m) {
         ({ ftp, duration, built: proto.build(ftp, duration) }))),
     };
   }
-  const { tsb, hardPct, durations } = coachCases.fallback;
-  const fallback = tsb.flatMap(t => hardPct.flatMap(h => durations.map(d =>
-    m.fallbackProtocolId({ tsb: t, polarizzazione: { hardPct: h } }, d))));
-  return { catalog, fallback };
+  return catalog;
 }
 
 // Il Coach del browser completo (coach_generate), con Ollama e indice dei paper simulati.
@@ -208,7 +205,7 @@ if (process.env.REFERENCE_TZ) {
   const m = await loadBrowserModules();
   process.stdout.write(JSON.stringify({
     metrics: metricsReference(m),
-    coach: { ...catalogReference(m), cases: await casesReference(m, process.env.REFERENCE_TZ) },
+    coach: { catalog: catalogReference(m), cases: await casesReference(m, process.env.REFERENCE_TZ) },
   }));
 } else {
   // Il container gira come root: i file restano del proprietario della cartella.
@@ -240,7 +237,7 @@ if (process.env.REFERENCE_TZ) {
     }
     const result = JSON.parse(run.stdout);
     metrics[tz] = result.metrics;
-    Object.assign(coach, { catalog: result.coach.catalog, fallback: result.coach.fallback });
+    coach.catalog = result.coach.catalog;
     Object.assign(coach.cases, result.coach.cases);
   }
   write('metrics_expected.json', metrics);

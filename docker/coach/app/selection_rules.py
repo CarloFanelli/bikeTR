@@ -5,6 +5,7 @@ dell'indice che ne dà il numero, o la pratica di allenamento quando nessun pape
 
 from dataclasses import dataclass
 from functools import cache
+from itertools import count
 
 from app.protocols import PROTOCOLS
 
@@ -91,3 +92,14 @@ def select(ctx: dict, minutes: int) -> tuple[Rule, list[str]]:
     tsb, hard = ctx["tsb"], ctx["polarizzazione"]["hardPct"]
     rule = next(r for r in RULES if r.applies(tsb, hard, minutes))
     return rule, [pid for pid in rule.protocols if fits(pid, minutes)]
+
+
+def minimum_minutes(protocol_id: str) -> int:
+    """I minuti più corti in cui il protocollo entra: da lì in su entra sempre."""
+    return next(m for m in count() if fits(protocol_id, m))
+
+
+def fallback_protocol_id(ctx: dict, duration: int) -> str:
+    """Scelta deterministica quando il modello non dà una risposta utilizzabile: il primo
+    protocollo che la regola dell'atleta ammette."""
+    return select(ctx, duration)[1][0]
