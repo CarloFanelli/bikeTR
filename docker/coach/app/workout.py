@@ -109,37 +109,32 @@ def paper_ref(p: dict) -> dict:
 
 
 def decide(model_raw: str, ctx: dict, duration: int, index: dict, truncated: bool = False) -> dict:
-    """Dal testo del modello al workout, con i ripieghi: risposta illeggibile, troncata o con un
-    protocollo sconosciuto → il primo protocollo che le regole ammettono; durata troppo corta → Z2."""
+    """Dal testo del modello al workout. Una risposta che non si può usare (troncata, illeggibile,
+    senza un protocollo del catalogo o con un protocollo che non entra nei minuti) lascia la scelta
+    al primo protocollo che le regole ammettono, con il razionale di ripiego e senza i paper del modello."""
     parsed = None if truncated else parse_model_json(model_raw)
     chosen = js_str(parsed.get("protocolId")) if isinstance(parsed, dict) else None
-    if chosen in PROTOCOLS:
+    built = PROTOCOLS[chosen].build(ctx["ftp"], duration) if chosen in PROTOCOLS else None
+    if built is not None:
         protocol_id = chosen
         razionale = js_str(parsed.get("razionale")) if js_truthy(parsed.get("razionale")) else NO_RATIONALE
         cited = parsed["paperUsati"] if isinstance(parsed.get("paperUsati"), list) else []
         fell_back = False
     else:
         protocol_id = fallback_protocol_id(ctx, duration)
+        built = PROTOCOLS[protocol_id].build(ctx["ftp"], duration)
         hard = ctx["polarizzazione"]["hardPct"]
         razionale = (f"Decisione fallback: TSB {js_str(ctx['tsb'])}, polarizzazione hard "
                      f"{'—' if hard is None else js_str(hard)}% → {PROTOCOLS[protocol_id].name}")
         cited, fell_back = [], True
 
-    proto = PROTOCOLS[protocol_id]
-    built = proto.build(ctx["ftp"], duration)
-    if built is None:
-        protocol_id = "z2_endurance"
-        razionale += f" · (Durata {duration}min insufficiente per il protocollo scelto, ripiego su Z2.)"
-        built = PROTOCOLS[protocol_id].build(ctx["ftp"], duration)
-        fell_back = True
-
     # Paper citati: solo quelli dell'indice, nell'ordine e con i doppioni della risposta;
-    # poi la fonte del protocollo scelto, se non c'è già (anche dopo il ripiego su Z2).
+    # poi la fonte del protocollo dato, se non c'è già.
     by_pmid = {}
     for p in index["papers"]:
         by_pmid.setdefault(p["pmid"], p)
     refs = [by_pmid[js_str(pmid)] for pmid in cited if js_str(pmid) in by_pmid]
-    source = proto.source_pmid
+    source = PROTOCOLS[protocol_id].source_pmid
     if source and source in by_pmid and all(p["pmid"] != source for p in refs):
         refs.append(by_pmid[source])
 

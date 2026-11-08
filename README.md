@@ -122,8 +122,8 @@ Coach AI: "Genera workout di oggi" sends the minutes (30–240), the time zone a
                        in papers_index.json
         4. chat model  reads the catalog, the selection rules, the 4 papers and the numbers, and answers
                        {"protocolId": …, "razionale": …, "paperUsati": […]}
-        5. decision    a catalog protocol is kept; an unreadable answer, a cut answer or an unknown
-                       protocol goes to the fallback rules; a protocol longer than the minutes becomes Z2
+        5. decision    a catalog protocol that fits the minutes is kept; an unreadable answer, a cut
+                       answer, an unknown protocol or one longer than the minutes goes to the fallback rules
         6. workout     the code turns the protocol into steps and watts from your FTP and the minutes
   ◄── each step, the model's text as it is written, then the workout card
 ```
@@ -336,7 +336,7 @@ The Coach tests (`web/tests/coach/`) feed made-up answers to the browser's answe
 
 The calculation tests (`web/tests/core/`) run on made-up rides, settings and segments (`web/tests/fixtures/rides.json`) and, for the training plan, on made-up days, weeks of rides, settings and saved values (`plan-cases.json`). They compare every result, at two decimals, with the one the JavaScript app gave before it was rewritten in TypeScript (`load-expected.json` and `plan-expected.json` in the same folder). Those files were recorded once from that app and are not regenerated: a test that fails against them means a calculation changed.
 
-**Coach service.** The Coach service's tests check that its numbers (normalized power, training load, fitness, fatigue, form, intensity split, capacity tier) equal those of the browser code, and that for the same model answers it builds the same prompts, papers and workout as the browser Coach did, except where the Coach changed on purpose: the system prompt prints the selection rules instead of the browser's eight, the fallback rules follow the selection rules, and each workout names a supporting paper found on PubMed, or none for coaching practice, because the browser's often described other training. They need only Docker: no Ollama, no cloud provider (made-up ones answer instead), no Strava connection, and they can run while BikeTR is running. From the project folder (the same command works in PowerShell):
+**Coach service.** The Coach service's tests check that its numbers (normalized power, training load, fitness, fatigue, form, intensity split, capacity tier) equal those of the browser code, and that for the same model answers it builds the same prompts, papers and workout as the browser Coach did, except where the Coach changed on purpose: the system prompt prints the selection rules instead of the browser's eight, the fallback rules follow the selection rules and also replace a protocol longer than the minutes (the browser gave Z2 with the model's rationale), and each workout names a supporting paper found on PubMed, or none for coaching practice, because the browser's often described other training. They need only Docker: no Ollama, no cloud provider (made-up ones answer instead), no Strava connection, and they can run while BikeTR is running. From the project folder (the same command works in PowerShell):
 
 ```bash
 docker compose run --rm --no-deps coach pytest

@@ -54,8 +54,8 @@ def grade(answers) -> grading.Scores:
 def test_rules_followed_counts_only_the_model_choice_inside_the_allowed_list():
     scores = grade([
         answer("seiler_4x8"),
-        # Fuori lista e troppo lungo per 60 minuti: il Coach lo sostituisce con Z2, ma il voto
-        # guarda la scelta del modello.
+        # Fuori lista e troppo lungo per 60 minuti: il Coach lascia la scelta alle regole di
+        # ripiego, ma il voto guarda la scelta del modello.
         answer("over_under", protocolId="z2_endurance", fellBack=True),
         answer("sprint_9x9", protocolId="z2_endurance", fellBack=True),
         answer(raw="Scelgo il 4x8, mi sembra giusto.", protocolId="seiler_4x8", fellBack=True),

@@ -339,3 +339,13 @@ Before this feature, the Coach's prompt held eight hand-written selection rules 
 - **Decision**: the app keeps the rewritten prompt and the README shows the after rows as measured: qwen2.5:3b followed the rules in 9 of 27 situations (8 before), qwen2.5:7b in 12 (15 before). The next step is to show the model only the protocols its athlete's rule allows.
 - **Why**: the new rules are complete and match the fallback rules and the tests, which the old ones did not; the drop is a few answers on one run, and the remedy is a different design, not the old rules.
 - **Cost**: until that step, qwen2.5:7b follows the rules less often than with the old prompt on this set.
+
+## fallback-reason — the workout card says why the Coach chose by itself (2026-11-08)
+
+Before this feature, a protocol too long for the minutes became a Z2 ride whatever the athlete's selection rule said, with the model's rationale and papers on a workout the athlete did not get, and the card always blamed invalid JSON.
+
+### 2026-11-08 · A protocol too long for the minutes goes to the fallback rules
+
+- **Decision**: when the model picks a catalog protocol that does not fit the minutes, the Coach gives the first protocol the athlete's selection rule allows, with the fallback rationale and no papers from the model, as for an unreadable answer.
+- **Why**: a tired rider with 45 minutes whose model picked Over-Under got Z2 endurance, which the recovery rule does not allow; one fallback path follows one set of rules.
+- **Cost**: the model's explanation is dropped even when it was sensible; it explained a workout the rider does not get.
