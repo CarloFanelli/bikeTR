@@ -227,23 +227,3 @@ PROTOCOLS = {
     "rest": Protocol("Riposo", None, rest),
 }
 
-
-def fallback_protocol_id(ctx: dict, duration: int) -> str:
-    """Scelta deterministica quando il modello non dà una risposta utilizzabile."""
-    tsb = ctx["tsb"]
-    hard = ctx["polarizzazione"]["hardPct"]
-    if tsb < -25:
-        return "rest"
-    if tsb < -15:
-        return "z1_recovery"
-    if duration >= 120:
-        return "z2_long_intervals"
-    if hard is not None and hard > 30:
-        return "z2_progressive" if duration <= 70 else "z2_cadence_drills"
-    if hard is not None and hard < 15:
-        return "seiler_4x8" if tsb > 5 else "sweet_spot_3x15"
-    if tsb > 10:
-        return "seiler_4x4"
-    if tsb > 0:
-        return "threshold_3x10"
-    return "sweet_spot_3x15"

@@ -19,7 +19,7 @@ from app.jscompat import js_str
 from app.papers import PaperIndexError
 from app.protocols import PROTOCOLS
 from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, INDEX, FakeCloud, FakeOllama, FakeRides, FakeSearch, fixture_index
-from fixture_data import NOW_MS, RIDES, activities, load, scenario
+from fixture_data import NOW_MS, RIDES, activities, load, scenario, with_service_rules
 
 CASES = load("coach_cases.json")
 EXPECTED = load("coach_expected.json")
@@ -86,7 +86,8 @@ def test_model_answer_gives_the_browser_workout(case, provider):
     assert result["fellBack"] == exp["fellBack"]
     assert finder.texts == [exp["query"]]
     # Al provider arriva solo la chat: la query è codificata dal modello di ricerca del servizio.
-    chat_request(fake, exp["messages"])
+    system, user = exp["messages"]
+    chat_request(fake, [{**system, "content": with_service_rules(system["content"])}, user])
 
 
 # Quanto basta a decide: FTP per i watt, forma e quota dura per la scelta di ripiego.

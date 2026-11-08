@@ -1,5 +1,6 @@
 """Prompt e query di ricerca: carattere per carattere quelli del codice del browser, per
-lo stesso contesto atleta e gli stessi paper (fixtures/coach_expected.json)."""
+lo stesso contesto atleta e gli stessi paper (fixtures/coach_expected.json), tranne la sezione
+delle regole di selezione, che viene dalle regole del servizio."""
 
 from zoneinfo import ZoneInfo
 
@@ -7,8 +8,9 @@ import pytest
 
 from app.metrics import coach_context
 from app.papers import top_papers
-from app.prompts import retrieval_query, system_prompt, user_prompt
-from fixture_data import DETAILS, NOW_MS, RIDES, activities, load, profile, scenario
+from app.prompts import prompt_version, retrieval_query, system_prompt, user_prompt
+from app.selection_rules import RULES
+from fixture_data import DETAILS, NOW_MS, RIDES, activities, load, profile, rules_section, scenario, with_service_rules
 
 INDEX = load("papers_index.json")
 CASES = load("coach_cases.json")
@@ -27,7 +29,7 @@ def test_prompts_and_query_match_the_browser(case):
     ctx = context(case)
     papers = top_papers(INDEX, CASES["queries"][case["query"]])
     assert retrieval_query(ctx, case["duration"]) == exp["query"]
-    assert system_prompt(papers) == exp["messages"][0]["content"]
+    assert system_prompt(papers) == with_service_rules(exp["messages"][0]["content"])
     assert user_prompt(ctx, case["duration"]) == exp["messages"][1]["content"]
 
 
@@ -39,6 +41,27 @@ def test_prompt_cases_cover_every_paper_and_the_tricky_values():
     assert any("LTHR: — bpm · Peso: — kg" in u for u in users)                      # valori mancanti
     assert any("Nessuna attività bici negli ultimi 7 giorni." in u for u in users)
     assert any("OGGI: sabato" in u for u in users) and any("OGGI: venerdì" in u for u in users)
+
+
+def test_rules_section_lists_every_selection_rule_in_order_with_its_source():
+    section = rules_section(system_prompt([]))
+    assert "\n".join(f"{n}. {r.sentence()}" for n, r in enumerate(RULES, 1)) in section
+    assert ("Durata minima: sweet_spot_3x15 50', threshold_3x10 55', seiler_4x8 60', seiler_4x4 48', "
+            "ronnestad_30_15 55', over_under 64', z2_cadence_drills 46', tempo_2x20 60'.") in section
+    # Le fonti dicono da dove viene la regola: si citano solo i paper recuperati.
+    assert "cita solo i PMID dei paper recuperati" in section
+    for old in ("la prima che matcha vince", "Caso default", "REGOLA NEGATIVA"):
+        assert old not in system_prompt([])
+
+
+def test_the_prompt_version_differs_from_the_before_runs():
+    # La versione del prompt delle corse «prima» in eval-runs/.
+    assert prompt_version() != "07cc6501"
+
+
+def test_a_placeholder_inside_an_abstract_stays_as_written():
+    paper = {**INDEX["papers"][0], "abstract": "<PROTOCOL_LIST> <SELECTION_RULES> <PAPERS_BLOCK>"}
+    assert system_prompt([paper]).count("Abstract: <PROTOCOL_LIST> <SELECTION_RULES> <PAPERS_BLOCK>") == 1
 
 
 def test_prompts_hold_no_activity_name_or_place():

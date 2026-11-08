@@ -1,36 +1,37 @@
 """Prompt del Coach e query per la ricerca dei paper, carattere per carattere come
-li scriveva il browser: i test li confrontano con il vecchio codice."""
+li scriveva il browser, tranne le regole di selezione, che vengono da selection_rules: i test
+li confrontano con il vecchio codice."""
 
 import hashlib
 
 from app.jscompat import js_length, js_slice, js_str
 from app.protocols import PROTOCOLS
+from app.selection_rules import RULES, minimum_minutes
 
 ABSTRACT_CHARS = 1200
 
-# Testo fisso del prompt di sistema; i due segnaposto si sostituiscono con .replace
+# Le regole di selezione nell'ordine in cui valgono, poi i minuti che servono ai protocolli che non
+# entrano in ogni durata: la lista ammessa toglie quelli che non ci stanno.
+RULES_SECTION = (
+    "\n".join(f"{n}. {rule.sentence()}" for n, rule in enumerate(RULES, 1))
+    + "\nScegli solo un protocollo che entra nella durata disponibile. Durata minima: "
+    + ", ".join(f"{pid} {m}'" for pid in PROTOCOLS if (m := minimum_minutes(pid)) > 0) + "."
+)
+
+# Testo fisso del prompt di sistema; i segnaposto si sostituiscono con .replace
 # (con un f-string le graffe dell'esempio JSON andrebbero raddoppiate).
 SYSTEM_TEMPLATE = """Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.
 
 CATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):
 <PROTOCOL_LIST>
 
-REGOLE DI SELEZIONE (applica in ordine di priorità, la prima che matcha vince):
-1. TSB < -25: SEMPRE rest.
-2. TSB tra -25 e -15: z1_recovery.
-3. Hard% < 15% E TSB ≥ -10: DEVI scegliere protocollo qualitativo: sweet_spot_3x15, threshold_3x10, o tempo_2x20 (alternativa più dolce di SS). Se TSB > +5 puoi salire a seiler_4x8. NON scegliere z2_endurance/z2_cadence_drills qui — l'atleta è sotto-stimolato, serve qualità.
-4. Hard% > 30%: atleta già stressato — preferire z2_endurance, z2_cadence_drills (se durata ≥ 60'), o z2_progressive (se durata 45-70'). MAI seiler_4x4/ronnestad_30_15/over_under.
-5. TSB > +10 e hard% tra 15 e 30%: considera seiler_4x8, seiler_4x4, ronnestad_30_15 o over_under (atleta fresco, sfrutta la forma).
-6. Caso default (TSB tra -15 e +5, hard% 15-30%): sweet_spot_3x15, threshold_3x10, tempo_2x20, oppure z2_cadence_drills se vuoi giornata Z2 con stimolo neuromuscolare invece di soglia.
-7. Durata ≥ 120 min: z2_long_intervals prevale come long ride.
-8. Durata < 50 min: solo protocolli che entrano nella durata (z2_endurance, z2_progressive, sweet_spot_3x15 a 2 reps).
+REGOLE DI SELEZIONE (applica in ordine, vale la prima che si applica). Tra parentesi quadre la fonte della regola: il paper che ne dà il numero, o [pratica] quando nessun paper lo dà. È solo un'informazione: nel razionale cita solo i PMID dei paper recuperati qui sotto.
+<SELECTION_RULES>
 
 DIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):
 - z2_endurance: piatto e costante, base pura, scelta neutra.
 - z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.
 - z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.
-
-REGOLA NEGATIVA: z2_endurance puro è ammesso SOLO se TSB ≤ -15, hard% > 30%, o durata < 50 min. Negli altri casi scegli un protocollo qualitativo o uno dei Z2 "ricchi" (cadence_drills, progressive).
 
 PAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):
 <PAPERS_BLOCK>
@@ -55,7 +56,8 @@ def system_prompt(papers: list) -> str:
     protocol_list = "\n".join(f"- {pid}: {proto.name}" for pid, proto in PROTOCOLS.items())
     papers_block = "\n\n".join(paper_entry(p) for p in papers)
     # I paper vanno inseriti per ultimi: un abstract potrebbe contenere "<PROTOCOL_LIST>".
-    return SYSTEM_TEMPLATE.replace("<PROTOCOL_LIST>", protocol_list).replace("<PAPERS_BLOCK>", papers_block)
+    return (SYSTEM_TEMPLATE.replace("<PROTOCOL_LIST>", protocol_list).replace("<SELECTION_RULES>", RULES_SECTION)
+            .replace("<PAPERS_BLOCK>", papers_block))
 
 
 def prompt_version() -> str:
