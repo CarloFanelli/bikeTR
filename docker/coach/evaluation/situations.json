@@ -1,0 +1,672 @@
+[
+  {
+    "name": "riposo-dopo-blocco",
+    "description": "Dopo una settimana di carico molto pesante la forma è a -32: oggi solo riposo.",
+    "rule": "riposo",
+    "allowed": ["rest"],
+    "minutes": 60,
+    "context": {
+      "ftp": 265,
+      "lthr": 168,
+      "weight": 72,
+      "ctl": 68,
+      "atl": 100,
+      "tsb": -32,
+      "tier": "Elite volume",
+      "polarizzazione": {"easyPct": 75, "hardPct": 25, "totalMin": 2280},
+      "weeklyHours": 10,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 150, "distanzaKm": 68.4, "avgWatts": 205, "avgHr": 142},
+        {"data": "2026-10-29", "tipo": "VirtualRide", "durataMin": 75, "distanzaKm": 38.2, "avgWatts": 245, "avgHr": 158},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 180, "distanzaKm": 82.0, "avgWatts": 198, "avgHr": 139},
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.5, "avgWatts": 238, "avgHr": 155},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 120, "distanzaKm": 55.3, "avgWatts": 210, "avgHr": 145}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "riposo-anche-con-tre-ore",
+    "description": "Forma a -28 dopo più giorni di fila in bici: anche con 3 ore libere oggi è riposo.",
+    "rule": "riposo",
+    "allowed": ["rest"],
+    "minutes": 180,
+    "context": {
+      "ftp": 290,
+      "lthr": 172,
+      "weight": 68,
+      "ctl": 85,
+      "atl": 113,
+      "tsb": -28,
+      "tier": "Elite volume",
+      "polarizzazione": {"easyPct": 65, "hardPct": 35, "totalMin": 3120},
+      "weeklyHours": 12,
+      "weeklyDays": 6,
+      "recentDays": [
+        {"data": "2026-10-31", "tipo": "Ride", "durataMin": 240, "distanzaKm": 112.6, "avgWatts": 215, "avgHr": 148},
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 210, "distanzaKm": 98.1, "avgWatts": 225, "avgHr": 152},
+        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 180, "distanzaKm": 85.0, "avgWatts": 230, "avgHr": 155},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 150, "distanzaKm": 70.2, "avgWatts": 240, "avgHr": 158},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 90, "distanzaKm": 46.8, "avgWatts": 260, "avgHr": 165}
+      ],
+      "oggi": "domenica"
+    }
+  },
+  {
+    "name": "forma-esattamente-meno-25",
+    "description": "La forma è esattamente -25: è il primo valore che non vuol dire riposo ma recupero.",
+    "rule": "recupero",
+    "allowed": ["z1_recovery", "rest"],
+    "minutes": 60,
+    "context": {
+      "ftp": 240,
+      "lthr": 162,
+      "weight": 75,
+      "ctl": 52,
+      "atl": 77,
+      "tsb": -25,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 80, "hardPct": 20, "totalMin": 1560},
+      "weeklyHours": 8,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.4, "avgWatts": 195, "avgHr": 140},
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 150, "distanzaKm": 64.0, "avgWatts": 190, "avgHr": 138},
+        {"data": "2026-10-22", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.5, "avgWatts": 235, "avgHr": 152},
+        {"data": "2026-10-20", "tipo": "Ride", "durataMin": 90, "distanzaKm": 41.2, "avgWatts": 200, "avgHr": 143}
+      ],
+      "oggi": "lunedì"
+    }
+  },
+  {
+    "name": "recupero-con-due-ore-e-mezza",
+    "description": "Stanco (forma -18) ma con 2 ore e mezza libere: il recupero viene prima dell'uscita lunga.",
+    "rule": "recupero",
+    "allowed": ["z1_recovery", "rest"],
+    "minutes": 150,
+    "context": {
+      "ftp": 255,
+      "lthr": 166,
+      "weight": 70,
+      "ctl": 60,
+      "atl": 78,
+      "tsb": -18,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 78, "hardPct": 22, "totalMin": 2040},
+      "weeklyHours": 9,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 180, "distanzaKm": 80.5, "avgWatts": 200, "avgHr": 142},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 120, "distanzaKm": 55.0, "avgWatts": 215, "avgHr": 148},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 31.0, "avgWatts": 250, "avgHr": 160},
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 205, "avgHr": 144}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "recupero-mezz-ora",
+    "description": "Stanco (forma -20) con solo mezz'ora: recupero o riposo, anche se le uscite dure sono poche.",
+    "rule": "recupero",
+    "allowed": ["z1_recovery", "rest"],
+    "minutes": 30,
+    "context": {
+      "ftp": 220,
+      "lthr": 158,
+      "weight": 78,
+      "ctl": 42,
+      "atl": 62,
+      "tsb": -20,
+      "tier": "Mid volume",
+      "polarizzazione": {"easyPct": 90, "hardPct": 10, "totalMin": 1320},
+      "weeklyHours": 6,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 50.2, "avgWatts": 175, "avgHr": 135},
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.5, "avgWatts": 180, "avgHr": 137},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 150, "distanzaKm": 61.0, "avgWatts": 170, "avgHr": 133},
+        {"data": "2026-10-23", "tipo": "Ride", "durataMin": 60, "distanzaKm": 26.0, "avgWatts": 185, "avgHr": 139}
+      ],
+      "oggi": "mercoledì"
+    }
+  },
+  {
+    "name": "due-ore-esatte",
+    "description": "Forma neutra e 2 ore esatte: è il primo valore che dà l'uscita lunga.",
+    "rule": "uscita_lunga",
+    "allowed": ["z2_long_intervals"],
+    "minutes": 120,
+    "context": {
+      "ftp": 245,
+      "lthr": 164,
+      "weight": 71,
+      "ctl": 48,
+      "atl": 46,
+      "tsb": 2,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 80, "hardPct": 20, "totalMin": 1620},
+      "weeklyHours": 7,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 90, "distanzaKm": 41.0, "avgWatts": 205, "avgHr": 146},
+        {"data": "2026-10-28", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.2, "avgWatts": 240, "avgHr": 158},
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 120, "distanzaKm": 54.5, "avgWatts": 200, "avgHr": 144}
+      ],
+      "oggi": "domenica"
+    }
+  },
+  {
+    "name": "quattro-ore-da-fresco",
+    "description": "Fresco (forma +15) e già molte uscite dure, con 4 ore: la durata conta più di tutto il resto.",
+    "rule": "uscita_lunga",
+    "allowed": ["z2_long_intervals"],
+    "minutes": 240,
+    "context": {
+      "ftp": 300,
+      "lthr": 170,
+      "weight": 66,
+      "ctl": 75,
+      "atl": 60,
+      "tsb": 15,
+      "tier": "Elite volume",
+      "polarizzazione": {"easyPct": 60, "hardPct": 40, "totalMin": 2400},
+      "weeklyHours": 11,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 90, "distanzaKm": 45.0, "avgWatts": 255, "avgHr": 160},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 32.0, "avgWatts": 280, "avgHr": 166},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 150, "distanzaKm": 72.0, "avgWatts": 240, "avgHr": 152}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "poco-tempo-poche-uscite-dure",
+    "description": "Quasi nessuna uscita dura e solo 40 minuti: non bastano per il sweet spot, solo Z2.",
+    "rule": "poco_tempo",
+    "allowed": ["z2_endurance", "z2_progressive"],
+    "minutes": 40,
+    "context": {
+      "ftp": 230,
+      "lthr": 160,
+      "weight": 74,
+      "ctl": 35,
+      "atl": 35,
+      "tsb": 0,
+      "tier": "Mid volume",
+      "polarizzazione": {"easyPct": 92, "hardPct": 8, "totalMin": 1080},
+      "weeklyHours": 6,
+      "weeklyDays": 3,
+      "recentDays": [
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.0, "avgWatts": 170, "avgHr": 134},
+        {"data": "2026-10-23", "tipo": "Ride", "durataMin": 120, "distanzaKm": 50.5, "avgWatts": 165, "avgHr": 132},
+        {"data": "2026-10-21", "tipo": "Ride", "durataMin": 60, "distanzaKm": 25.5, "avgWatts": 175, "avgHr": 136}
+      ],
+      "oggi": "martedì"
+    }
+  },
+  {
+    "name": "mezz-ora-da-fresco",
+    "description": "Fresco (forma +12) ma con solo mezz'ora: niente intervalli, solo Z2.",
+    "rule": "poco_tempo",
+    "allowed": ["z2_endurance", "z2_progressive"],
+    "minutes": 30,
+    "context": {
+      "ftp": 260,
+      "lthr": 167,
+      "weight": 69,
+      "ctl": 55,
+      "atl": 43,
+      "tsb": 12,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 80, "hardPct": 20, "totalMin": 1680},
+      "weeklyHours": 8,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 215, "avgHr": 147},
+        {"data": "2026-10-25", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 31.5, "avgWatts": 250, "avgHr": 159}
+      ],
+      "oggi": "venerdì"
+    }
+  },
+  {
+    "name": "poco-tempo-un-po-stanco",
+    "description": "Un po' stanco (forma -12) con 45 minuti: vale la regola del poco tempo.",
+    "rule": "poco_tempo",
+    "allowed": ["z2_endurance", "z2_progressive"],
+    "minutes": 45,
+    "context": {
+      "ftp": 235,
+      "lthr": 161,
+      "weight": 73,
+      "ctl": 45,
+      "atl": 57,
+      "tsb": -12,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 75, "hardPct": 25, "totalMin": 1560},
+      "weeklyHours": 7,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.0, "avgWatts": 200, "avgHr": 145},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.0, "avgWatts": 235, "avgHr": 156},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.0, "avgWatts": 195, "avgHr": 141}
+      ],
+      "oggi": "giovedì"
+    }
+  },
+  {
+    "name": "cinquanta-minuti-esatti",
+    "description": "Poche uscite dure e 50 minuti esatti: è il primo valore che ammette il sweet spot, l'unico lavoro che ci sta.",
+    "rule": "sotto_stimolato",
+    "allowed": ["sweet_spot_3x15"],
+    "minutes": 50,
+    "context": {
+      "ftp": 225,
+      "lthr": 159,
+      "weight": 76,
+      "ctl": 38,
+      "atl": 38,
+      "tsb": 0,
+      "tier": "Mid volume",
+      "polarizzazione": {"easyPct": 90, "hardPct": 10, "totalMin": 1260},
+      "weeklyHours": 6,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.0, "avgWatts": 170, "avgHr": 135},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 120, "distanzaKm": 49.0, "avgWatts": 165, "avgHr": 133},
+        {"data": "2026-10-20", "tipo": "Ride", "durataMin": 75, "distanzaKm": 32.0, "avgWatts": 175, "avgHr": 137}
+      ],
+      "oggi": "lunedì"
+    }
+  },
+  {
+    "name": "poche-uscite-dure-forma-piu-4",
+    "description": "Poche uscite dure (10%) e forma +4, appena sotto la soglia del fresco: sweet spot, soglia o tempo.",
+    "rule": "sotto_stimolato",
+    "allowed": ["sweet_spot_3x15", "threshold_3x10", "tempo_2x20"],
+    "minutes": 60,
+    "context": {
+      "ftp": 250,
+      "lthr": 165,
+      "weight": 71,
+      "ctl": 52,
+      "atl": 48,
+      "tsb": 4,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 90, "hardPct": 10, "totalMin": 1680},
+      "weeklyHours": 8,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.0, "avgWatts": 190, "avgHr": 140},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.0, "avgWatts": 195, "avgHr": 142},
+        {"data": "2026-10-20", "tipo": "Ride", "durataMin": 90, "distanzaKm": 39.5, "avgWatts": 185, "avgHr": 139}
+      ],
+      "oggi": "lunedì"
+    }
+  },
+  {
+    "name": "ripresa-dopo-una-pausa",
+    "description": "Nessuna uscita in bici da più di 28 giorni: si riparte dalla Z2 anche se la forma è alta (+22).",
+    "rule": "ripresa",
+    "allowed": ["z2_endurance", "z2_cadence_drills", "z2_progressive"],
+    "minutes": 60,
+    "context": {
+      "ftp": 250,
+      "lthr": 165,
+      "weight": 72,
+      "ctl": 23,
+      "atl": 1,
+      "tsb": 22,
+      "tier": "Mid volume",
+      "polarizzazione": {"easyPct": null, "hardPct": null, "totalMin": 0},
+      "weeklyHours": 6,
+      "weeklyDays": 3,
+      "recentDays": [],
+      "oggi": "domenica"
+    }
+  },
+  {
+    "name": "ripresa-dopo-la-corsa",
+    "description": "Nessuna uscita in bici da 28 giorni ma molta corsa a piedi (forma -12): si riparte dalla Z2.",
+    "rule": "ripresa",
+    "allowed": ["z2_endurance", "z2_cadence_drills", "z2_progressive"],
+    "minutes": 75,
+    "context": {
+      "ftp": 210,
+      "lthr": 160,
+      "weight": 64,
+      "ctl": 40,
+      "atl": 52,
+      "tsb": -12,
+      "tier": "Mid volume",
+      "polarizzazione": {"easyPct": null, "hardPct": null, "totalMin": 0},
+      "weeklyHours": 5,
+      "weeklyDays": 3,
+      "recentDays": [],
+      "oggi": "mercoledì"
+    }
+  },
+  {
+    "name": "quota-dura-esattamente-30",
+    "description": "Le uscite dure sono esattamente il 30%: è il primo valore che vuol dire già abbastanza lavoro duro.",
+    "rule": "gia_stressato",
+    "allowed": ["z2_endurance", "z2_cadence_drills", "z2_progressive"],
+    "minutes": 60,
+    "context": {
+      "ftp": 270,
+      "lthr": 169,
+      "weight": 70,
+      "ctl": 58,
+      "atl": 58,
+      "tsb": 0,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 70, "hardPct": 30, "totalMin": 1800},
+      "weeklyHours": 8,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-25", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 32.0, "avgWatts": 270, "avgHr": 165},
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 90, "distanzaKm": 43.0, "avgWatts": 235, "avgHr": 156},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 75, "distanzaKm": 36.0, "avgWatts": 255, "avgHr": 161}
+      ],
+      "oggi": "martedì"
+    }
+  },
+  {
+    "name": "fresco-ma-tanto-lavoro-duro",
+    "description": "Fresco (forma +14) ma il 45% delle uscite è duro: oggi Z2, non intervalli.",
+    "rule": "gia_stressato",
+    "allowed": ["z2_endurance", "z2_cadence_drills", "z2_progressive"],
+    "minutes": 90,
+    "context": {
+      "ftp": 280,
+      "lthr": 171,
+      "weight": 67,
+      "ctl": 62,
+      "atl": 48,
+      "tsb": 14,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 55, "hardPct": 45, "totalMin": 1920},
+      "weeklyHours": 9,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 75, "distanzaKm": 37.0, "avgWatts": 265, "avgHr": 165},
+        {"data": "2026-10-26", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 33.0, "avgWatts": 285, "avgHr": 168}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "forma-esattamente-meno-15",
+    "description": "La forma è esattamente -15: non è più recupero, ma una giornata di Z2.",
+    "rule": "un_po_stanco",
+    "allowed": ["z2_endurance", "z2_cadence_drills", "z2_progressive"],
+    "minutes": 60,
+    "context": {
+      "ftp": 250,
+      "lthr": 165,
+      "weight": 71,
+      "ctl": 50,
+      "atl": 65,
+      "tsb": -15,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 80, "hardPct": 20, "totalMin": 1620},
+      "weeklyHours": 8,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 120, "distanzaKm": 53.0, "avgWatts": 205, "avgHr": 146},
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.5, "avgWatts": 215, "avgHr": 149},
+        {"data": "2026-10-25", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.5, "avgWatts": 245, "avgHr": 158}
+      ],
+      "oggi": "giovedì"
+    }
+  },
+  {
+    "name": "un-po-stanco-poche-uscite-dure",
+    "description": "Poche uscite dure (10%) ma un po' stanco (forma -12): prima la stanchezza, quindi Z2.",
+    "rule": "un_po_stanco",
+    "allowed": ["z2_endurance", "z2_cadence_drills", "z2_progressive"],
+    "minutes": 60,
+    "context": {
+      "ftp": 230,
+      "lthr": 160,
+      "weight": 77,
+      "ctl": 44,
+      "atl": 56,
+      "tsb": -12,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 90, "hardPct": 10, "totalMin": 1500},
+      "weeklyHours": 7,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 100, "distanzaKm": 43.0, "avgWatts": 180, "avgHr": 138},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 39.0, "avgWatts": 175, "avgHr": 136},
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 51.0, "avgWatts": 170, "avgHr": 134},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 60, "distanzaKm": 26.0, "avgWatts": 185, "avgHr": 140}
+      ],
+      "oggi": "venerdì"
+    }
+  },
+  {
+    "name": "forma-esattamente-meno-10",
+    "description": "La forma è esattamente -10: non è più stanchezza, si può fare una seduta di qualità.",
+    "rule": "base",
+    "allowed": ["sweet_spot_3x15", "threshold_3x10", "tempo_2x20", "z2_cadence_drills"],
+    "minutes": 60,
+    "context": {
+      "ftp": 245,
+      "lthr": 163,
+      "weight": 72,
+      "ctl": 50,
+      "atl": 60,
+      "tsb": -10,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 80, "hardPct": 20, "totalMin": 1680},
+      "weeklyHours": 8,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 90, "distanzaKm": 41.0, "avgWatts": 210, "avgHr": 147},
+        {"data": "2026-10-28", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.5, "avgWatts": 245, "avgHr": 158},
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.0, "avgWatts": 200, "avgHr": 143}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "quota-dura-esattamente-15",
+    "description": "Le uscite dure sono esattamente il 15%: non è più poco lavoro duro, vale la regola di base.",
+    "rule": "base",
+    "allowed": ["sweet_spot_3x15", "threshold_3x10", "tempo_2x20", "z2_cadence_drills"],
+    "minutes": 75,
+    "context": {
+      "ftp": 235,
+      "lthr": 162,
+      "weight": 74,
+      "ctl": 46,
+      "atl": 46,
+      "tsb": 0,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 85, "hardPct": 15, "totalMin": 1500},
+      "weeklyHours": 7,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 120, "distanzaKm": 51.0, "avgWatts": 185, "avgHr": 140},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 39.5, "avgWatts": 190, "avgHr": 142},
+        {"data": "2026-10-26", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.0, "avgWatts": 230, "avgHr": 156}
+      ],
+      "oggi": "domenica"
+    }
+  },
+  {
+    "name": "forma-piu-8",
+    "description": "Forma +8 e il 20% di uscite dure: né fresco né stanco, vale la regola di base.",
+    "rule": "base",
+    "allowed": ["sweet_spot_3x15", "threshold_3x10", "tempo_2x20", "z2_cadence_drills"],
+    "minutes": 60,
+    "context": {
+      "ftp": 255,
+      "lthr": 166,
+      "weight": 70,
+      "ctl": 54,
+      "atl": 46,
+      "tsb": 8,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 80, "hardPct": 20, "totalMin": 1680},
+      "weeklyHours": 8,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 215, "avgHr": 148},
+        {"data": "2026-10-24", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 31.0, "avgWatts": 250, "avgHr": 160},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 120, "distanzaKm": 54.0, "avgWatts": 205, "avgHr": 145}
+      ],
+      "oggi": "mercoledì"
+    }
+  },
+  {
+    "name": "base-con-55-minuti",
+    "description": "Caso normale con 55 minuti: entrano sweet spot, soglia e cadenza, il tempo no (vuole 60 minuti).",
+    "rule": "base",
+    "allowed": ["sweet_spot_3x15", "threshold_3x10", "z2_cadence_drills"],
+    "minutes": 55,
+    "context": {
+      "ftp": 240,
+      "lthr": 163,
+      "weight": 73,
+      "ctl": 47,
+      "atl": 52,
+      "tsb": -5,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 78, "hardPct": 22, "totalMin": 1560},
+      "weeklyHours": 7,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 75, "distanzaKm": 34.0, "avgWatts": 205, "avgHr": 147},
+        {"data": "2026-10-24", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.0, "avgWatts": 240, "avgHr": 158},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 110, "distanzaKm": 48.0, "avgWatts": 195, "avgHr": 141}
+      ],
+      "oggi": "martedì"
+    }
+  },
+  {
+    "name": "forma-esattamente-piu-5",
+    "description": "Poche uscite dure e forma esattamente +5: è il primo valore che ammette anche il 4×8'.",
+    "rule": "sotto_stimolato_fresco",
+    "allowed": ["seiler_4x8", "sweet_spot_3x15", "threshold_3x10", "tempo_2x20"],
+    "minutes": 60,
+    "context": {
+      "ftp": 235,
+      "lthr": 161,
+      "weight": 75,
+      "ctl": 44,
+      "atl": 39,
+      "tsb": 5,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 90, "hardPct": 10, "totalMin": 1440},
+      "weeklyHours": 7,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 50.0, "avgWatts": 175, "avgHr": 136},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.5, "avgWatts": 180, "avgHr": 138},
+        {"data": "2026-10-23", "tipo": "Ride", "durataMin": 60, "distanzaKm": 26.0, "avgWatts": 170, "avgHr": 134}
+      ],
+      "oggi": "giovedì"
+    }
+  },
+  {
+    "name": "senza-soglia-cardiaca-ne-peso",
+    "description": "Profilo senza soglia cardiaca né peso: nessuna uscita conta come dura (0%), e la forma è +18.",
+    "rule": "sotto_stimolato_fresco",
+    "allowed": ["seiler_4x8", "sweet_spot_3x15", "threshold_3x10", "tempo_2x20"],
+    "minutes": 90,
+    "context": {
+      "ftp": 220,
+      "lthr": null,
+      "weight": null,
+      "ctl": 36,
+      "atl": 18,
+      "tsb": 18,
+      "tier": "Mid volume",
+      "polarizzazione": {"easyPct": 100, "hardPct": 0, "totalMin": 960},
+      "weeklyHours": 6,
+      "weeklyDays": 3,
+      "recentDays": [
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.0, "avgWatts": 185, "avgHr": 152},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 75, "distanzaKm": 32.0, "avgWatts": 190, "avgHr": 155}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "forma-esattamente-piu-10",
+    "description": "Forma esattamente +10: è il primo valore che dà gli intervalli intensi; l'over-under (64 minuti) non ci sta.",
+    "rule": "fresco",
+    "allowed": ["seiler_4x8", "seiler_4x4", "ronnestad_30_15"],
+    "minutes": 60,
+    "context": {
+      "ftp": 275,
+      "lthr": 170,
+      "weight": 69,
+      "ctl": 60,
+      "atl": 50,
+      "tsb": 10,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 80, "hardPct": 20, "totalMin": 1860},
+      "weeklyHours": 9,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 44.0, "avgWatts": 230, "avgHr": 152},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 32.0, "avgWatts": 270, "avgHr": 164},
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 150, "distanzaKm": 70.0, "avgWatts": 220, "avgHr": 148}
+      ],
+      "oggi": "venerdì"
+    }
+  },
+  {
+    "name": "fresco-con-100-minuti",
+    "description": "Fresco (forma +16) e il 25% di uscite dure, con 100 minuti: tutti gli intervalli intensi.",
+    "rule": "fresco",
+    "allowed": ["seiler_4x8", "seiler_4x4", "ronnestad_30_15", "over_under"],
+    "minutes": 100,
+    "context": {
+      "ftp": 295,
+      "lthr": 172,
+      "weight": 65,
+      "ctl": 70,
+      "atl": 54,
+      "tsb": 16,
+      "tier": "Elite volume",
+      "polarizzazione": {"easyPct": 75, "hardPct": 25, "totalMin": 2100},
+      "weeklyHours": 10,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 120, "distanzaKm": 58.0, "avgWatts": 245, "avgHr": 155},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 33.0, "avgWatts": 290, "avgHr": 168}
+      ],
+      "oggi": "domenica"
+    }
+  },
+  {
+    "name": "fresco-senza-peso",
+    "description": "Fresco (forma +12) senza peso nel profilo, con 70 minuti: tutti gli intervalli intensi.",
+    "rule": "fresco",
+    "allowed": ["seiler_4x8", "seiler_4x4", "ronnestad_30_15", "over_under"],
+    "minutes": 70,
+    "context": {
+      "ftp": 260,
+      "lthr": 167,
+      "weight": null,
+      "ctl": 52,
+      "atl": 40,
+      "tsb": 12,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 82, "hardPct": 18, "totalMin": 1620},
+      "weeklyHours": 8,
+      "weeklyDays": 4,
+      "recentDays": [
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 220, "avgHr": 150},
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 75, "distanzaKm": 35.0, "avgWatts": 230, "avgHr": 153}
+      ],
+      "oggi": "giovedì"
+    }
+  }
+]
