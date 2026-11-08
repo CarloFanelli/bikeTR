@@ -1,6 +1,6 @@
 ---
 feature: eval-set
-spec-version: 1.0
+spec-version: 1.1
 status: approved
 ---
 
@@ -60,7 +60,7 @@ Everything lives in the Coach service (`docker/coach/app/`) and runs as `coach-t
 
 **Files to create:**
 - `docker/coach/app/selection_rules.py` — ordered rules: condition on form, hard share (`None` allowed) and minutes; allowed protocol ids; source (PMID or "practice"); the Italian sentence Task 07 puts in the prompt; the numeric thresholds; one function returning the matching rule and its allowed list. Frozen dataclass like `Protocol` (`protocols.py:15-19`).
-- `docker/coach/tests/test_selection_rules.py` — grid over form (every integer from -60 to +40), hard share (0–100 and `None`) and minutes (20–240): non-empty list, every allowed protocol's `build` is not `None`, order cases, and sources checked against `build_index.SEARCHES` PMIDs.
+- `docker/coach/tests/test_selection_rules.py` — grid over form (every integer from -60 to +40), hard share (0–100 and `None`) and minutes (30–240): non-empty list, every allowed protocol's `build` is not `None`, order cases, and sources checked against `build_index.SEARCHES` PMIDs.
 
 **Patterns to reuse:**
 - `fallback_protocol_id` (`protocols.py:223-241`) for reading `tsb` and `hardPct` from the same context shape.
@@ -145,7 +145,27 @@ Everything lives in the Coach service (`docker/coach/app/`) and runs as `coach-t
 
 ---
 
-### Task 07: prompt-rewrite
+### Task 07: minimum-duration
+
+**Files to modify:**
+- `docker/coach/app/workout.py:25` — `MIN_DURATION` becomes 30; the refusal message is built from it, and `main.py:94` already checks before any download, spending check or model call.
+- `docker/coach/tests/test_workout.py:234-235` — refusal cases 20, 29 and 241 with the 30–240 message, in the test that also asserts no download, search or model call; 30 and 240 accepted (pattern: `test_empty_profile_values_use_the_defaults`).
+- `docker/coach/tests/fixtures/coach_cases.json:62` — the "empty-answer" case goes from 20 to 30 minutes; `coach_expected.json` is regenerated with the README command (`README.md:317`), never hand-edited.
+- `web/src/core/coach-view.ts` — the 30 and 240 limits, plus a pure helper turning the saved duration into the opening value.
+- `web/src/screens/CoachScreen.vue:19,54-55` — opening value from that helper; `:min`/`:max` from the limits.
+- `web/tests/core/coach-view.test.ts` — helper cases: 20, 29, 30, 45, 300, missing, 0, a string.
+
+**Key decisions:**
+- The service is the only gate: the screen still sends what is typed and saves it first (`CoachScreen.vue:29-31`), so a tab opened before the update gets the same refusal.
+- The clamp lives in `coach-view.ts`, beside the other pure Coach screen helpers, so vitest covers it; saving stays unchanged.
+
+**Watch out for:**
+- `request_of` sends every browser case through `parse_request` (`test_workout.py:49`), so the 20-minute "empty-answer" case would be refused → change the case, regenerate; the fixture diff must touch only "empty-answer"; test: `test_model_answer_gives_the_browser_workout[empty-answer]`.
+- The arrows rely on Vuetify passing `min`/`max`/`step` to the native input, as `:min="20"` does today; `node_modules` is only inside the app container → check the arrows by hand at 30 and 240.
+
+---
+
+### Task 08: prompt-rewrite
 
 **Files to modify:**
 - `docker/coach/app/prompts.py:16-31` — the rules section becomes the sentences from `selection_rules`, each with its source; the text outside it stays identical.
@@ -159,7 +179,7 @@ Everything lives in the Coach service (`docker/coach/app/`) and runs as `coach-t
 
 ---
 
-### Task 08: after-runs-readme
+### Task 09: after-runs-readme
 
 **Files to modify:**
 - `README.md:3` — remove "Experimental"; §5 becomes the Coach section: problem, ASCII diagram (style of §9, `README.md:239-252`), decisions with the practice rules, run and grade commands, before/after table; §10 (`README.md:292`) no longer says the system prompt matches the browser.
