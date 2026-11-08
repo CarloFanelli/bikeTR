@@ -19,7 +19,7 @@ from app.errors import CoachError
 from app.jscompat import is_number, js_str, js_truthy
 from app.metrics import Profile, coach_context
 from app.protocols import PROTOCOLS
-from app.selection_rules import fallback_protocol_id
+from app.selection_rules import fallback_protocol_id, minimum_minutes
 from app.spending import Spending, charge, cost
 from app.strava import StravaRides
 
@@ -108,6 +108,20 @@ def paper_ref(p: dict) -> dict:
             "journal": p.get("journal")}
 
 
+def fallback_warning(parsed, chosen: str | None, duration: int, truncated: bool) -> str:
+    """L'avviso della scheda: perché le regole di ripiego hanno scelto al posto del modello. Solo
+    testo del codice (nomi del catalogo, numeri), mai testo scritto dal modello."""
+    by_rules = "il Coach ha scelto con le regole di selezione."
+    if truncated:
+        return f"⚠️ La risposta del modello si è interrotta prima della fine: {by_rules}"
+    if not isinstance(parsed, dict):
+        return f"⚠️ La risposta del modello non era leggibile: {by_rules}"
+    if chosen not in PROTOCOLS:
+        return f"⚠️ Il modello non ha indicato un protocollo del catalogo: {by_rules}"
+    return (f"⚠️ Il modello ha scelto {PROTOCOLS[chosen].name}, che richiede almeno {minimum_minutes(chosen)} "
+            f"minuti: con {duration} minuti {by_rules}")
+
+
 def decide(model_raw: str, ctx: dict, duration: int, index: dict, truncated: bool = False) -> dict:
     """Dal testo del modello al workout. Una risposta che non si può usare (troncata, illeggibile,
     senza un protocollo del catalogo o con un protocollo che non entra nei minuti) lascia la scelta
@@ -119,14 +133,14 @@ def decide(model_raw: str, ctx: dict, duration: int, index: dict, truncated: boo
         protocol_id = chosen
         razionale = js_str(parsed.get("razionale")) if js_truthy(parsed.get("razionale")) else NO_RATIONALE
         cited = parsed["paperUsati"] if isinstance(parsed.get("paperUsati"), list) else []
-        fell_back = False
+        warning = None
     else:
         protocol_id = fallback_protocol_id(ctx, duration)
         built = PROTOCOLS[protocol_id].build(ctx["ftp"], duration)
         hard = ctx["polarizzazione"]["hardPct"]
         razionale = (f"Decisione fallback: TSB {js_str(ctx['tsb'])}, polarizzazione hard "
                      f"{'—' if hard is None else js_str(hard)}% → {PROTOCOLS[protocol_id].name}")
-        cited, fell_back = [], True
+        cited, warning = [], fallback_warning(parsed, chosen, duration, truncated)
 
     # Paper citati: solo quelli dell'indice, nell'ordine e con i doppioni della risposta;
     # poi la fonte del protocollo dato, se non c'è già.
@@ -139,7 +153,8 @@ def decide(model_raw: str, ctx: dict, duration: int, index: dict, truncated: boo
         refs.append(by_pmid[source])
 
     return {"protocolId": protocol_id, **built, "razionale": razionale,
-            "paperRefs": [paper_ref(p) for p in refs], "fellBack": fell_back}
+            "paperRefs": [paper_ref(p) for p in refs], "fellBack": warning is not None,
+            "fallbackWarning": warning}
 
 
 def step(name: str, message: str, **extra) -> dict:

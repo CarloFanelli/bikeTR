@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Il workout proposto dal Coach: titolo, watt, passi, razionale, paper citati e
+// Il workout proposto dal Coach: avviso del ripiego, titolo, watt, passi, razionale, paper citati e
 // recuperati, da dove vengono le corse e la risposta grezza del modello. I testi del
 // servizio e del modello si mostrano come testo.
 import { ref } from 'vue';
@@ -14,9 +14,7 @@ const papersOpen = ref(['cited']);
 </script>
 
 <template>
-  <div v-if="workout.fellBack" class="coach-warn">
-    ⚠️ Il modello non ha restituito JSON valido — uso fallback deterministico in base alle regole TSB/polarizzazione.
-  </div>
+  <div v-if="workout.fallbackWarning" class="coach-warn">{{ workout.fallbackWarning }}</div>
   <div class="coach-card">
     <div class="coach-title"><b>{{ workout.title }}</b></div>
     <div class="coach-watt">⚡ {{ workout.targetWatt }}</div>
