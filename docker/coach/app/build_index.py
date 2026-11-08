@@ -13,7 +13,6 @@ primo un altro paper, o il comando si interrompe, l'indice di prima resta com'è
 import argparse
 import html
 import json
-import os
 import re
 import sys
 import time
@@ -22,7 +21,7 @@ from pathlib import Path
 import httpx
 
 from app import search
-from app.project_files import give_to_folder_owner
+from app.project_files import replace_file
 
 INDEX_FILE = Path("/project/papers_index.json")
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -161,14 +160,8 @@ def finished(built_at: str | None, papers: list[dict]) -> dict:
 
 
 def write_index(path: Path, index: dict) -> None:
-    """File temporaneo, poi rename: un'interruzione a metà non lascia un indice troncato."""
-    tmp = path.with_name(path.name + ".tmp")
-    try:
-        tmp.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        give_to_folder_owner(tmp)
-        os.replace(tmp, path)
-    finally:
-        tmp.unlink(missing_ok=True)
+    """Un'interruzione a metà non lascia un indice troncato."""
+    replace_file(path, json.dumps(index, ensure_ascii=False, separators=(",", ":")))
 
 
 def reencode(path: Path) -> dict:

@@ -159,19 +159,30 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
         step("details", f"Scarico dettagli corse {done}/{total}", done=done, total=total)))
     ctx = coach_context(data.activities, data.details, req.profile, now_ms, req.tz)
     emit({"type": "context", "context": ctx})
+    result = await from_context(ctx, req.duration, emit, chat=chat, chat_client=chat_client, embed=embed,
+                                load_index=load_index, spending=spending)
+    emit({"type": "result", **result,
+          "rides": {"fromSaved": data.from_saved, "downloadedAt": data.downloaded_at,
+                    "missingDetails": data.missing_details}})
 
+
+async def from_context(ctx: dict, duration: int, emit: Callable[[dict], None], *, chat: provider.ChatSettings,
+                       chat_client: httpx.AsyncClient, embed: Callable[[str], Awaitable[list]],
+                       load_index: Callable[[], Awaitable[dict]], spending: Spending) -> dict:
+    """Dal contesto atleta al workout: paper, modello e decisione. Il servizio ci arriva dalle
+    corse di Strava, il set di valutazione dai numeri già pronti delle sue situazioni."""
     emit(step("papers", "Recupero paper rilevanti…"))
     started = time.monotonic()
     try:
         index = await load_index()
-        query = prompts.retrieval_query(ctx, req.duration)
+        query = prompts.retrieval_query(ctx, duration)
         retrieved = papers.top_papers(index, await embed(query))
     except papers.PaperIndexError as e:
         raise CoachError(502, "retrieval", str(e)) from e
 
     emit(step("model", "Il modello sta scegliendo il protocollo…"))
     messages = [{"role": "system", "content": prompts.system_prompt(retrieved)},
-                {"role": "user", "content": prompts.user_prompt(ctx, req.duration)}]
+                {"role": "user", "content": prompts.user_prompt(ctx, duration)}]
     answer, end, accepted = [], ChatEnd(None, None, False), False
     try:
         async for piece in provider.stream(chat, chat_client, messages):
@@ -191,12 +202,10 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
             spending.add(charge(chat.prices, end.input_tokens, end.output_tokens))
 
     model_raw = "".join(answer)
-    emit({"type": "result", **decide(model_raw, ctx, req.duration, index, end.truncated),
-          "retrievedPapers": [{"pmid": p["pmid"], "title": p["title"], "authors": p["authors"],
-                               "year": p["year"], "score": p["score"]} for p in retrieved],
-          "provider": chat.provider, "model": chat.model, "seconds": round(time.monotonic() - started, 1),
-          "inputTokens": end.input_tokens, "outputTokens": end.output_tokens, "truncated": end.truncated,
-          "cost": cost(chat.prices, end.input_tokens, end.output_tokens),
-          "modelRaw": model_raw,
-          "rides": {"fromSaved": data.from_saved, "downloadedAt": data.downloaded_at,
-                    "missingDetails": data.missing_details}})
+    return {**decide(model_raw, ctx, duration, index, end.truncated),
+            "retrievedPapers": [{"pmid": p["pmid"], "title": p["title"], "authors": p["authors"],
+                                 "year": p["year"], "score": p["score"]} for p in retrieved],
+            "provider": chat.provider, "model": chat.model, "seconds": round(time.monotonic() - started, 1),
+            "inputTokens": end.input_tokens, "outputTokens": end.output_tokens, "truncated": end.truncated,
+            "cost": cost(chat.prices, end.input_tokens, end.output_tokens),
+            "modelRaw": model_raw}

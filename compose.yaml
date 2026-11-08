@@ -81,9 +81,10 @@ services:
         condition: service_started
         required: false
 
-  # Comandi che scrivono nella cartella del progetto: la ricostruzione dell'indice dei paper
-  # e il controllo dal vivo (python -m app.live_check, risultati in live-checks/). Parte solo
-  # quando lo si nomina: docker compose run --rm coach-tools <comando>.
+  # Comandi che scrivono nella cartella del progetto: la ricostruzione dell'indice dei paper,
+  # il controllo dal vivo (python -m app.live_check, risultati in live-checks/) e la corsa del
+  # set di valutazione (python -m app.evaluation, risultati in eval-runs/). Parte solo quando
+  # lo si nomina: docker compose run --rm coach-tools <comando>.
   coach-tools:
     build: ./docker/coach
     # La stessa immagine del Coach: dopo `docker compose up -d --build` anche questa è nuova.
@@ -93,7 +94,7 @@ services:
     volumes:
       - ./docker/coach:/app:ro
       - ./:/project
-      # Lo stesso totale speso del Coach: il controllo dal vivo rispetta lo stesso tetto.
+      # Lo stesso totale speso del Coach: i comandi rispettano lo stesso tetto.
       - coach-data:/data
     environment: *coach-env
 
