@@ -29,7 +29,7 @@ export function openingDuration(saved: unknown): number {
   return Math.min(Math.max(saved, MIN_DURATION), MAX_DURATION);
 }
 
-export const pubmedUrl = (pmid: string) =>`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
+export const pubmedUrl = (pmid: string) => `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
 
 export const paperCitation = (p: PaperRef) => `${p.authors} (${p.year}). ${p.title}`;
 
