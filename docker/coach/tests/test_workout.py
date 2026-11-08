@@ -52,11 +52,12 @@ def request_of(case: dict) -> workout.WorkoutRequest:
     return workout.parse_request({"duration": case["duration"], "timeZone": case["timeZone"], "profile": profile})
 
 
-async def run_case(case: dict, fake: FakeOllama | FakeCloud, finder: FakeSearch | None = None) -> list:
+async def run_case(case: dict, fake: FakeOllama | FakeCloud, finder: FakeSearch | None = None,
+                   rides: FakeRides | None = None) -> list:
     events = []
     async with fake.client() as client:
         await workout.run(request_of(case), events.append,
-                          rides=FakeRides(activities(scenario(case["scenario"]))),
+                          rides=rides or FakeRides(activities(scenario(case["scenario"]))),
                           chat=fake.chat, chat_client=client, embed=(finder or fake_search(case)).encode,
                           load_index=fixture_index, now_ms=NOW_MS, spending=main.cloud_spending)
     return events

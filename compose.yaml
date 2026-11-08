@@ -12,6 +12,8 @@ x-coach-env: &coach-env
   CLOUD_PRICE_IN: ${CLOUD_PRICE_IN:-}
   CLOUD_PRICE_OUT: ${CLOUD_PRICE_OUT:-}
   CLOUD_SPENDING_LIMIT: ${CLOUD_SPENDING_LIMIT:-}
+  # Dove mandare le tracce: Phoenix, qui sotto. Il Coach risponde anche quando Phoenix è spento.
+  PHOENIX_URL: http://phoenix:6006
 
 services:
   web:
@@ -99,6 +101,24 @@ services:
       - coach-data:/data
     environment: *coach-env
 
+  # Phoenix: le tracce di ogni richiesta del Coach, con passi, prompt, paper, risposta, token e
+  # costo. Si apre solo da questo computer, su http://localhost:6006 (PHOENIX_PORT in .env).
+  phoenix:
+    image: arizephoenix/phoenix:version-20.24.0
+    # L'utente senza privilegi dell'immagine, al posto di root.
+    user: "65532:65532"
+    ports:
+      - "127.0.0.1:${PHOENIX_PORT:-6006}:6006"
+    environment:
+      # Niente richieste a internet: né pixel di statistiche né caratteri scaricati dalla pagina.
+      PHOENIX_TELEMETRY_ENABLED: "false"
+      PHOENIX_ALLOW_EXTERNAL_RESOURCES: "false"
+    volumes:
+      # Le tracce, in ~/.phoenix: restano dopo `docker compose down`, spariscono con `down -v`.
+      # Il volume va sulla cartella home dell'utente, che è sua: montato su una cartella che
+      # l'immagine non ha, apparterrebbe a root e Phoenix non potrebbe scriverci.
+      - phoenix-data:/home/nonroot
+
   ollama:
     image: ollama/ollama:0.12.6
     scale: ${OLLAMA_CONTAINERS:-1}
@@ -129,4 +149,5 @@ volumes:
   ollama-models:
   auth-data:
   coach-data:
+  phoenix-data:
   web-modules:

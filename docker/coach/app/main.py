@@ -22,7 +22,7 @@ import httpx
 from fastapi import Depends, FastAPI, Header, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app import cloud, ollama, papers, provider, search, workout
+from app import cloud, ollama, papers, provider, search, tracing, workout
 from app.errors import CoachError
 from app.spending import SPENDING_FILE, Spending
 from app.store import RideStore
@@ -32,6 +32,7 @@ store = RideStore(Path("/data/rides.json"))
 cloud_spending = Spending(SPENDING_FILE)
 http = httpx.AsyncClient(timeout=15)
 rides = StravaRides(store, http)
+tracing.setup(tracing.COACH_SCREEN)
 
 
 def same_origin_only(sec_fetch_site: Annotated[str | None, Header()] = None):
@@ -99,10 +100,11 @@ async def generate_workout(request: Request):
 
     async def produce():
         try:
-            async with provider.client(chat) as chat_client:
-                await workout.run(req, events.put_nowait, rides=rides, chat=chat, chat_client=chat_client,
-                                  embed=search.encode, load_index=load_index, now_ms=time.time() * 1000,
-                                  spending=cloud_spending)
+            with tracing.request(req.duration):
+                async with provider.client(chat) as chat_client:
+                    await workout.run(req, events.put_nowait, rides=rides, chat=chat, chat_client=chat_client,
+                                      embed=search.encode, load_index=load_index, now_ms=time.time() * 1000,
+                                      spending=cloud_spending)
         except CoachError as e:
             events.put_nowait({"type": "error", "error": e.code, "message": e.message})
         except Exception:
