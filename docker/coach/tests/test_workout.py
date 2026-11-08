@@ -26,8 +26,11 @@ EXPECTED = load("coach_expected.json")
 CASE = {c["name"]: c for c in CASES["cases"]}
 WORKOUT_CASES = [c for c in CASES["cases"] if "built" in EXPECTED["cases"][c["name"]]]
 # Il browser aggiungeva ai paper citati la fonte del protocollo, che qui era un paper su altro
-# (23197584, 20861519); il paper di supporto che la sostituisce non è nell'indice di prova.
-SUPPORTING_PAPER_REFS = {"too-short-keeps-source": [], "json-in-text": []}
+# (20861519); il paper di supporto che la sostituisce non è nell'indice di prova.
+SUPPORTING_PAPER_REFS = {"json-in-text": []}
+# Il browser dava Z2 a un protocollo troppo lungo per i minuti, con razionale e paper del modello;
+# qui ha il workout di una risposta illeggibile nella stessa situazione.
+TOO_LONG = {"too-short", "too-short-keeps-source"}
 SAME_ORIGIN = {"Sec-Fetch-Site": "same-origin"}
 BODY = {"duration": 60, "timeZone": "Europe/Rome", "profile": RIDES["profiles"]["base"]}
 
@@ -59,6 +62,15 @@ async def run_case(case: dict, fake: FakeOllama | FakeCloud, finder: FakeSearch 
     return events
 
 
+def workout_of_an_unreadable_answer(case: dict, provider: str) -> dict:
+    """Workout, razionale, paper citati e ripiego della stessa situazione con una risposta vuota,
+    nella forma di coach_expected.json."""
+    unreadable = {**case, "answer": ""}
+    result = asyncio.run(run_case(unreadable, fake_model(provider, unreadable)))[-1]
+    return {"built": {k: result[k] for k in ("title", "targetWatt", "struttura")}, "razionale": result["razionale"],
+            "paperRefs": [p["pmid"] for p in result["paperRefs"]], "fellBack": result["fellBack"]}
+
+
 def chat_request(fake: FakeOllama | FakeCloud, messages: list) -> None:
     """L'unica richiesta arrivata al provider è la chat, con le regole di ciascuno: per Ollama
     temperatura 0,2 e 1.000 token; per il cloud chiave, nessuna temperatura e 4.000 token."""
@@ -77,6 +89,8 @@ def chat_request(fake: FakeOllama | FakeCloud, messages: list) -> None:
 @pytest.mark.parametrize("case", WORKOUT_CASES, ids=lambda c: c["name"])
 def test_model_answer_gives_the_browser_workout(case, provider):
     exp, fake, finder = EXPECTED["cases"][case["name"]], fake_model(provider, case), fake_search(case)
+    if case["name"] in TOO_LONG:
+        exp = {**exp, **workout_of_an_unreadable_answer(case, provider)}
     result = asyncio.run(run_case(case, fake, finder=finder))[-1]
     assert result["type"] == "result"
     assert {k: result[k] for k in ("title", "targetWatt", "struttura")} == exp["built"]
@@ -94,16 +108,40 @@ def test_model_answer_gives_the_browser_workout(case, provider):
 CONTEXT = {"ftp": 250, "tsb": 0, "polarizzazione": {"hardPct": 20}}
 
 
-def index_with_supporting_paper(protocol_id: str) -> tuple[dict, str]:
+def index_with_supporting_paper(protocol_id: str, index: dict = INDEX) -> tuple[dict, str]:
     pmid = PROTOCOLS[protocol_id].source_pmid
-    return {**INDEX, "papers": [*INDEX["papers"], {**INDEX["papers"][0], "pmid": pmid}]}, pmid
+    return {**index, "papers": [*index["papers"], {**INDEX["papers"][0], "pmid": pmid}]}, pmid
 
 
-def test_too_short_duration_still_cites_the_supporting_paper_of_the_chosen_protocol():
-    index, pmid = index_with_supporting_paper("z2_cadence_drills")
+def test_a_protocol_too_long_for_the_minutes_gets_the_choice_of_the_fallback_rules():
+    # Atleta stanco (regola del recupero): Over-Under vuole 64 minuti, ne ha 45.
+    tired, cited = {**CONTEXT, "tsb": -18}, INDEX["papers"][0]["pmid"]
+    answer = f'{{"protocolId":"over_under","razionale":"Forma ok [PMID:{cited}].","paperUsati":["{cited}"]}}'
+    result = workout.decide(answer, tired, 45, INDEX)
+    assert (result["protocolId"], result["fellBack"], result["paperRefs"]) == ("z1_recovery", True, [])
+    assert result["razionale"] == "Decisione fallback: TSB -18, polarizzazione hard 20% → Recupero attivo Z1"
+
+
+@pytest.mark.parametrize("duration, protocol_id, fell_back", [(64, "over_under", False),
+                                                              (63, "sweet_spot_3x15", True)])
+def test_a_protocol_fits_from_its_minimum_minutes(duration, protocol_id, fell_back):
+    result = workout.decide('{"protocolId":"over_under","razionale":"x","paperUsati":[]}', CONTEXT, duration, INDEX)
+    assert (result["protocolId"], result["fellBack"]) == (protocol_id, fell_back)
+
+
+def test_a_protocol_too_long_cites_the_supporting_paper_of_the_protocol_given():
+    # Con 45 minuti le regole danno Z2: si cita la sua fonte, non quella delle cadenze scelte dal modello.
+    index, _ = index_with_supporting_paper("z2_cadence_drills")
+    index, given_source = index_with_supporting_paper("z2_endurance", index)
     answer = '{"protocolId":"z2_cadence_drills","razionale":"Cadenza.","paperUsati":[]}'
     result = workout.decide(answer, CONTEXT, 45, index)
-    assert (result["protocolId"], [p["pmid"] for p in result["paperRefs"]]) == ("z2_endurance", [pmid])
+    assert (result["protocolId"], [p["pmid"] for p in result["paperRefs"]]) == ("z2_endurance", [given_source])
+
+
+def test_a_protocol_that_fits_is_used_even_when_the_selection_rule_does_not_allow_it():
+    # Forma 0 e 20% di lavoro duro: la regola base non ammette Rønnestad, ma entra in 60 minuti.
+    result = workout.decide('{"protocolId":"ronnestad_30_15","razionale":"x","paperUsati":[]}', CONTEXT, 60, INDEX)
+    assert (result["protocolId"], result["fellBack"]) == ("ronnestad_30_15", False)
 
 
 def test_supporting_paper_already_cited_by_the_model_is_not_repeated():

@@ -1,4 +1,4 @@
 # Task Progress - fallback-reason
 
-01-too-long-uses-rules: TODO
+01-too-long-uses-rules: DONE
 02-fallback-warning: TODO
