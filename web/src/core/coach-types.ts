@@ -38,6 +38,9 @@ export interface CoachWorkout {
   paperRefs: PaperRef[];
   retrievedPapers: RetrievedPaper[];
   fellBack: boolean;
+  // Perché il servizio ha scelto con le regole di ripiego al posto del modello; null se ha usato
+  // la scelta del modello. Manca nelle risposte di un servizio avviato prima di questo campo.
+  fallbackWarning: string | null;
   // Il modello chat scelto in .env del servizio: Ollama (locale) o un provider cloud.
   provider: 'ollama' | 'cloud';
   model: string;

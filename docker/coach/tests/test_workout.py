@@ -144,6 +144,37 @@ def test_a_protocol_that_fits_is_used_even_when_the_selection_rule_does_not_allo
     assert (result["protocolId"], result["fellBack"]) == ("ronnestad_30_15", False)
 
 
+UNREADABLE = "⚠️ La risposta del modello non era leggibile: il Coach ha scelto con le regole di selezione."
+NOT_IN_CATALOG = ("⚠️ Il modello non ha indicato un protocollo del catalogo: il Coach ha scelto con le regole di "
+                  "selezione.")
+
+
+@pytest.mark.parametrize("answer, duration, warning", [
+    ("", 60, UNREADABLE),
+    ("Penso che oggi sia meglio un lavoro aerobico.", 60, UNREADABLE),
+    ('[{"protocolId":"seiler_4x8"}]', 60, UNREADABLE),
+    ("42", 60, UNREADABLE),
+    ('"seiler_4x8"', 60, UNREADABLE),
+    ('{"protocolId":"vo2_extreme","razionale":"x","paperUsati":[]}', 60, NOT_IN_CATALOG),
+    ('{"razionale":"x","paperUsati":[]}', 60, NOT_IN_CATALOG),
+    ('{"protocolId":"","razionale":"x"}', 60, NOT_IN_CATALOG),
+    ('{"protocolId":null,"razionale":"x"}', 60, NOT_IN_CATALOG),
+    ('{"protocolId":"Over_Under","razionale":"x"}', 60, NOT_IN_CATALOG),
+    ('{"protocolId":" over_under","razionale":"x"}', 60, NOT_IN_CATALOG),
+    ('{"protocolId":"over_under","razionale":"x"}', 45, "⚠️ Il modello ha scelto Over-Under, che richiede almeno 64 "
+     "minuti: con 45 minuti il Coach ha scelto con le regole di selezione."),
+    ('{"protocolId":"over_under","razionale":"x"}', 30, "⚠️ Il modello ha scelto Over-Under, che richiede almeno 64 "
+     "minuti: con 30 minuti il Coach ha scelto con le regole di selezione."),
+    ('{"protocolId":"ronnestad_30_15","razionale":"x"}', 40, "⚠️ Il modello ha scelto Rønnestad 30/15, che richiede "
+     "almeno 55 minuti: con 40 minuti il Coach ha scelto con le regole di selezione."),
+    ('{"protocolId":"tempo_2x20","razionale":"x"}', 59, "⚠️ Il modello ha scelto Tempo 2×20', che richiede almeno 60 "
+     "minuti: con 59 minuti il Coach ha scelto con le regole di selezione."),
+    ('{"protocolId":"seiler_4x8","razionale":"x","paperUsati":[]}', 60, None),
+])
+def test_the_warning_says_why_the_fallback_rules_chose(answer, duration, warning):
+    assert workout.decide(answer, CONTEXT, duration, INDEX)["fallbackWarning"] == warning
+
+
 def test_supporting_paper_already_cited_by_the_model_is_not_repeated():
     index, pmid = index_with_supporting_paper("seiler_4x8")
     answer = f'{{"protocolId":"seiler_4x8","razionale":"Forma buona [PMID:{pmid}].","paperUsati":["{pmid}"]}}'
@@ -159,6 +190,9 @@ def test_answer_stopped_at_the_token_limit_uses_the_fallback_rules(provider):
     fake.done_reason = fake.finish_reason = "length"
     result = asyncio.run(run_case(case, fake))[-1]
     assert result["fellBack"] is True and result["razionale"].startswith("Decisione fallback: TSB ")
+    # La risposta era un JSON completo e valido: vale comunque l'interruzione.
+    assert result["fallbackWarning"] == ("⚠️ La risposta del modello si è interrotta prima della fine: il Coach ha "
+                                         "scelto con le regole di selezione.")
     assert (result["modelRaw"], result["truncated"]) == (case["answer"], True)
 
 

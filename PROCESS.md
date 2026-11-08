@@ -349,3 +349,9 @@ Before this feature, a protocol too long for the minutes became a Z2 ride whatev
 - **Decision**: when the model picks a catalog protocol that does not fit the minutes, the Coach gives the first protocol the athlete's selection rule allows, with the fallback rationale and no papers from the model, as for an unreadable answer.
 - **Why**: a tired rider with 45 minutes whose model picked Over-Under got Z2 endurance, which the recovery rule does not allow; one fallback path follows one set of rules.
 - **Cost**: the model's explanation is dropped even when it was sensible; it explained a workout the rider does not get.
+
+### 2026-11-08 · The Coach service writes the warning, one per cause
+
+- **Decision**: the workout carries a warning naming why the fallback rules chose: the answer was cut off, was not readable, named no catalog protocol, or picked one too long for the minutes (with its name and minimum minutes). The service writes the text and the card shows it; the "fallback used" flag stays for the live check, the evaluation and grading.
+- **Why**: the card blamed invalid JSON even when the JSON was fine and only the minutes were short; only the service knows the catalog names and minimum minutes, as it already writes the fallback rationale.
+- **Cost**: until the Coach service is restarted after an update, the card shows no warning.
