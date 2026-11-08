@@ -1,5 +1,6 @@
-// Testi del Coach AI: il profilo atleta inviato al servizio, le righe della card del
-// workout e il modello in uso. Ricevono i dati e restituiscono testi, senza leggere il browser.
+// Testi del Coach AI: il profilo atleta inviato al servizio, la durata di partenza, le righe
+// della card del workout e il modello in uso. Ricevono i dati e restituiscono testi o valori,
+// senza leggere il browser.
 
 import type { AthleteProfile, CoachStatus, CoachWorkout, ConnectionCheck, PaperRef } from './coach-types.ts';
 import type { HrProfile } from './hr.ts';
@@ -17,7 +18,18 @@ export function coachProfile(hr: HrProfile, settings: Settings): AthleteProfile 
   };
 }
 
-export const pubmedUrl = (pmid: string) => `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
+// Le durate che il servizio Coach accetta: rifiuta le altre.
+export const MIN_DURATION = 30;
+export const MAX_DURATION = 240;
+
+// La durata con cui si apre il Coach: l'ultima chiesta, portata dentro i limiti, così il primo
+// clic non viene rifiutato; 60 quando non ce n'è una.
+export function openingDuration(saved: unknown): number {
+  if (typeof saved !== 'number' || !saved) return 60;
+  return Math.min(Math.max(saved, MIN_DURATION), MAX_DURATION);
+}
+
+export const pubmedUrl = (pmid: string) =>`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
 
 export const paperCitation = (p: PaperRef) => `${p.authors} (${p.year}). ${p.title}`;
 

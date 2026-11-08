@@ -226,13 +226,20 @@ def test_empty_profile_values_use_the_defaults(service):
     assert events_of(res)[-1]["type"] == "result"
 
 
+@pytest.mark.parametrize("duration", [30, 240])
+def test_the_shortest_and_longest_durations_are_accepted(service, duration):
+    assert events_of(post(service, {**BODY, "duration": duration}))[-1]["type"] == "result"
+
+
 def with_profile(**values) -> dict:
     return {**BODY, "profile": {**BODY["profile"], **values}}
 
 
 @pytest.mark.parametrize("body,headers,status,code,message", [
-    ({**BODY, "duration": 241}, SAME_ORIGIN, 400, "invalid_duration", "La durata deve essere tra 20 e 240 minuti"),
-    ({**BODY, "duration": 19}, SAME_ORIGIN, 400, "invalid_duration", "La durata deve essere tra 20 e 240 minuti"),
+    ({**BODY, "duration": 241}, SAME_ORIGIN, 400, "invalid_duration", "La durata deve essere tra 30 e 240 minuti"),
+    ({**BODY, "duration": 29}, SAME_ORIGIN, 400, "invalid_duration", "La durata deve essere tra 30 e 240 minuti"),
+    # La durata che manda una scheda aperta prima dell'aggiornamento.
+    ({**BODY, "duration": 20}, SAME_ORIGIN, 400, "invalid_duration", "La durata deve essere tra 30 e 240 minuti"),
     ({**BODY, "duration": 45.5}, SAME_ORIGIN, 400, "invalid_duration", "La durata deve essere un numero intero di minuti"),
     ({**BODY, "duration": "60"}, SAME_ORIGIN, 400, "invalid_duration", "La durata deve essere un numero intero di minuti"),
     (with_profile(weight=-70), SAME_ORIGIN, 400, "invalid_profile", "Valore non valido per peso: serve un numero maggiore di zero"),
