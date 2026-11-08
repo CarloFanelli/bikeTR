@@ -3,7 +3,7 @@
 01-supporting-papers: DONE
 02-selection-rules: DONE
 03-evaluation-set: DONE
-04-evaluation-run: TODO
+04-evaluation-run: DONE
 05-grading: TODO
 06-before-runs: TODO
 07-prompt-rewrite: TODO

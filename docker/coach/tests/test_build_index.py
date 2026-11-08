@@ -10,7 +10,7 @@ import json
 import httpx
 import pytest
 
-from app import build_index, papers, search
+from app import build_index, papers, project_files, search
 from app.protocols import PROTOCOLS
 from fixture_data import load
 
@@ -60,7 +60,7 @@ def test_interrupted_job_leaves_the_index_unchanged(index_file, monkeypatch, whe
     def interrupt(*args):
         raise KeyboardInterrupt
     monkeypatch.setattr(search, "encode_now", interrupt) if where == "encoding" else \
-        monkeypatch.setattr(build_index.os, "replace", interrupt)
+        monkeypatch.setattr(project_files.os, "replace", interrupt)
     before = index_file.read_bytes()
     with pytest.raises(KeyboardInterrupt):
         build_index.main(["--reencode"], path=index_file)

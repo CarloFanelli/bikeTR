@@ -1,6 +1,8 @@
 """Prompt del Coach e query per la ricerca dei paper, carattere per carattere come
 li scriveva il browser: i test li confrontano con il vecchio codice."""
 
+import hashlib
+
 from app.jscompat import js_length, js_slice, js_str
 from app.protocols import PROTOCOLS
 
@@ -54,6 +56,13 @@ def system_prompt(papers: list) -> str:
     papers_block = "\n\n".join(paper_entry(p) for p in papers)
     # I paper vanno inseriti per ultimi: un abstract potrebbe contenere "<PROTOCOL_LIST>".
     return SYSTEM_TEMPLATE.replace("<PROTOCOL_LIST>", protocol_list).replace("<PAPERS_BLOCK>", papers_block)
+
+
+def prompt_version() -> str:
+    """Le prime 8 cifre dell'impronta SHA-256 del prompt di sistema senza paper: lo stesso testo
+    dà sempre la stessa versione, due testi diversi mai la stessa (salvo una coincidenza su
+    quattro miliardi). Così i risultati di due prompt non si confondono."""
+    return hashlib.sha256(system_prompt([]).encode("utf-8")).hexdigest()[:8]
 
 
 def or_dash(value) -> str:

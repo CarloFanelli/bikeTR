@@ -1,8 +1,9 @@
 """La spesa per il modello chat in cloud: il costo di ogni risposta, dai token e dai prezzi di
 .env, e il totale speso, in /data/spending.json ({"total": dollari}). Il file sta nel volume
 dei dati del Coach: resta dopo un riavvio e dopo "Disconnetti da Strava", e solo
-`docker compose down -v` lo cancella. Il controllo dal vivo (coach-tools) usa lo stesso file,
-quindi lo stesso tetto. Le risposte di Ollama non costano nulla e non passano di qui."""
+`docker compose down -v` lo cancella. Il controllo dal vivo e il set di valutazione
+(coach-tools) usano lo stesso file, quindi lo stesso tetto. Le risposte di Ollama non costano
+nulla e non passano di qui."""
 
 import fcntl
 import json
@@ -90,8 +91,8 @@ class Spending:
 
     @contextmanager
     def locked(self):
-        """Un processo alla volta tra rilettura e riscrittura: il servizio Coach e il controllo
-        dal vivo sono due container sullo stesso file, e asyncio.Lock vale per un processo solo."""
+        """Un processo alla volta tra rilettura e riscrittura: il servizio Coach e i comandi di
+        coach-tools sono container diversi sullo stesso file, e asyncio.Lock vale per un processo solo."""
         with open(self.path.with_name(self.path.name + ".lock"), "a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             yield   # chiudere il file libera il lucchetto

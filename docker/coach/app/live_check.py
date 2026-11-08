@@ -17,6 +17,9 @@ import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Awaitable, Callable
+
+import httpx
 
 from app import papers, provider, search, workout
 from app.errors import CoachError
@@ -54,7 +57,7 @@ class MadeUpRides:
 
 
 class SituationSpending(Spending):
-    """Lo stesso totale dell'app, più quanto vi aggiunge una sola situazione: anche la stima
+    """Lo stesso totale dell'app, più quanto vi aggiunge una sola risposta: anche la stima
     alta di una risposta senza token o interrotta, che il costo della risposta non mostra."""
 
     def __init__(self, path: Path):
@@ -96,32 +99,44 @@ def record(base: dict, result: dict, charged: float | None) -> dict:
             "cost": result["cost"], "charged": charged, "seconds": result["seconds"], "modelRaw": result["modelRaw"]}
 
 
-async def situation(name: str, duration: int, made_up: dict, chat: provider.ChatSettings, spending: Spending,
-                    load_index) -> dict:
-    base = {"situation": name, "duration": duration, "provider": chat.provider, "model": chat.model}
-    rides = MadeUpRides(made_up)
+async def coach_answer(base: dict, chat: provider.ChatSettings, spending: Spending,
+                       ask: Callable[[httpx.AsyncClient, Spending], Awaitable[dict]], command: str) -> dict:
+    """Una risposta del Coach per il file dei risultati: `ask` la chiede con il client del modello
+    e il totale della spesa, dopo il controllo del tetto. Un errore diventa la riga del file;
+    `command` lo nomina nel messaggio di un errore inatteso ("del controllo dal vivo")."""
     counted = SituationSpending(spending.path)
-    events, failure = [], None
+    result, failure = None, None
     try:
         if chat.prices:
             counted.check(chat.prices.limit)
-        req = workout.parse_request({"duration": duration, "timeZone": TIME_ZONE,
-                                     "profile": made_up["profiles"][name]})
         async with provider.client(chat) as chat_client:
-            await workout.run(req, events.append, rides=rides, chat=chat, chat_client=chat_client,
-                              embed=search.encode, load_index=load_index, now_ms=rides.now_ms, spending=counted)
+            result = await ask(chat_client, counted)
     except CoachError as e:
         failure = {"error": e.code, "message": e.message}
     except Exception as e:
-        # Come il servizio a ogni richiesta: fallisce questa situazione, non il controllo. Il
+        # Come il servizio a ogni richiesta: fallisce questa risposta, non il comando. Il
         # messaggio finisce nel file che va in git, quindi senza la chiave.
         text = str(e).replace(chat.key, "***") if chat.key else str(e)
-        failure = {"error": "internal",
-                   "message": f"Errore interno del controllo dal vivo ({type(e).__name__}): {text}"}
+        failure = {"error": "internal", "message": f"Errore interno {command} ({type(e).__name__}): {text}"}
     charged = counted.charged if chat.prices else None
     if failure:
         return {**base, **failure, "charged": charged}
-    return record(base, events[-1], charged)
+    return record(base, result, charged)
+
+
+async def situation(name: str, duration: int, made_up: dict, chat: provider.ChatSettings, spending: Spending,
+                    load_index) -> dict:
+    rides = MadeUpRides(made_up)
+
+    async def ask(chat_client: httpx.AsyncClient, counted: Spending) -> dict:
+        req = workout.parse_request({"duration": duration, "timeZone": TIME_ZONE,
+                                     "profile": made_up["profiles"][name]})
+        events = []
+        await workout.run(req, events.append, rides=rides, chat=chat, chat_client=chat_client,
+                          embed=search.encode, load_index=load_index, now_ms=rides.now_ms, spending=counted)
+        return events[-1]
+    return await coach_answer({"situation": name, "duration": duration, "provider": chat.provider,
+                               "model": chat.model}, chat, spending, ask, "del controllo dal vivo")
 
 
 def money(dollars: float | None) -> str:
