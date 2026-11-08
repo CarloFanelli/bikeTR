@@ -1,11 +1,13 @@
 """Sostituti di Strava, del modello di ricerca, dell'indice dei paper, dei due provider del
 modello chat (Ollama e un provider cloud compatibile con OpenAI) e di Phoenix per i test del workout."""
 
+import asyncio
 import json
+import threading
+from datetime import datetime, timedelta, timezone
 
 import httpx
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from app import cloud, tracing
 from app.provider import ChatSettings
@@ -155,12 +157,47 @@ class FakeCloud:
                                  transport=httpx.MockTransport(self.handle))
 
 
-class Received(InMemorySpanExporter):
-    """I passi arrivati al finto Phoenix. Restano leggibili anche dopo che un comando ha chiuso le
-    sue tracce all'uscita, e un comando eseguito di nuovo nello stesso test ne aggiunge altri."""
+def project_of(span) -> str:
+    return span.resource.attributes["openinference.project.name"]
 
-    def shutdown(self) -> None:
-        pass
+
+def nanoseconds(at: datetime) -> int:
+    return (at - datetime(1970, 1, 1, tzinfo=timezone.utc)) // timedelta(microseconds=1) * 1000
+
+
+class Received(SpanExporter):
+    """I passi arrivati al finto Phoenix, di ogni progetto. Restano leggibili anche dopo che un
+    comando ha chiuso le sue tracce all'uscita, e un comando eseguito di nuovo nello stesso test ne
+    aggiunge altri."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.spans = []
+        self.projects = set()
+
+    def export(self, spans) -> SpanExportResult:
+        with self.lock:
+            self.spans += spans
+            self.projects |= {project_of(s) for s in spans}
+        return SpanExportResult.SUCCESS
+
+    def get_finished_spans(self) -> list:
+        with self.lock:
+            return list(self.spans)
+
+    def delete(self, project: str, start_ns: int, end_ns: int) -> bool:
+        """Come Phoenix: via le tracce di `project` partite in [start, end), con tutti i loro passi.
+        False se il progetto non esiste."""
+        with self.lock:
+            if project not in self.projects:
+                return False
+            started = {}
+            for s in self.spans:
+                if project_of(s) == project:
+                    started[s.context.trace_id] = min(started.get(s.context.trace_id, s.start_time), s.start_time)
+            gone = {t for t, ns in started.items() if start_ns <= ns < end_ns}
+            self.spans = [s for s in self.spans if project_of(s) != project or s.context.trace_id not in gone]
+            return True
 
 
 class FakePhoenix:
@@ -169,6 +206,9 @@ class FakePhoenix:
     def __init__(self, project: str = tracing.COACH_SCREEN):
         self.received = Received()
         self.provider = tracing.setup(project, self.received)
+        self.up = True
+        # Le cancellazioni chieste a Phoenix, anche quelle tentate mentre era spento.
+        self.attempts = []
 
     def spans(self) -> list:
         """I passi arrivati finora, ciascuno appena finito: prima manda quelli ancora in coda."""
@@ -181,6 +221,24 @@ class FakePhoenix:
         spans = sorted(self.received.get_finished_spans(), key=lambda s: s.start_time)
         return [(root, [s for s in spans if s.parent and s.parent.span_id == root.context.span_id])
                 for root in spans if root.parent is None]
+
+    def handle(self, request: httpx.Request) -> httpx.Response:
+        """L'API di Phoenix che cancella le tracce di un progetto partite in [start_time, end_time):
+        204 fatto, 404 progetto che non esiste. Spento, non risponde."""
+        self.attempts.append(request)
+        if not self.up:
+            raise httpx.ConnectError("Phoenix spento")
+        project = request.url.path.removeprefix("/v1/projects/").removesuffix("/traces")
+        start, end = (nanoseconds(datetime.fromisoformat(request.url.params[k])) for k in ("start_time", "end_time"))
+        return httpx.Response(204 if self.received.delete(project, start, end) else 404)
+
+    def client(self) -> httpx.AsyncClient:
+        return httpx.AsyncClient(transport=httpx.MockTransport(self.handle))
+
+
+async def quick_sleep(seconds: float):
+    """Le attese della cancellazione delle tracce, mille volte più brevi."""
+    await asyncio.sleep(seconds / 1000)
 
 
 class DownPhoenix(SpanExporter):
