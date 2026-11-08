@@ -1,14 +1,14 @@
 ---
 feature: eval-set
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-08
-head: 34fc087a2abac93bf34164fdc4f01abde49e422e
+head: 6db4e5dac9f89ecdf1dd298600adb6db9c876c9b
 ---
 
 # Review — eval-set
 
-**Scope**: 36 files (primary — diff since base `9c524474`; 16 workflow artifacts under `.ai/` excluded)
-**Findings**: 0 must-fix · 0 should-fix · 3 nit
+**Scope**: 3 files (re-verification — delta since review head `34fc087a`; 1 workflow artifact under `.ai/` excluded; `.gitignore` left out: an uncommitted edit outside this feature)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 

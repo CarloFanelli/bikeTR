@@ -2,7 +2,7 @@
 feature: eval-set
 version: 1.1
 status: approved
-completed: false
+completed: true
 base: 9c5244744da217cf0021031f662153d2150fe8bc
 ---
 
