@@ -11,7 +11,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from app import cloud, live_check, ollama, search
+from app import cloud, live_check, ollama, prompts, search
 from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, FakeCloud, FakeOllama, FakeSearch
 from fixture_data import FIXTURES, load
 
@@ -206,6 +206,21 @@ def test_an_unexpected_error_is_recorded_and_the_next_situation_runs(fakes, tmp_
     assert (first["error"], first["message"], first["charged"]) == (
         "internal", "Errore interno del controllo dal vivo (RuntimeError): modello di ricerca rotto (***)", 0)
     assert CLOUD_KEY not in file.read_text()
+
+
+def test_every_situation_leaves_its_trace_sent_before_the_command_ends(fakes, tmp_path, cloud_spending, phoenix):
+    check(tmp_path, cloud_spending)
+    # Senza mandare le tracce in coda: il comando le ha già mandate prima di finire.
+    traces = phoenix.traces()
+    assert [root.name for root, _ in traces] == ["live-check · base", "live-check · ftp280", "live-check · noLthr"]
+    for (root, steps), (name, duration) in zip(traces, live_check.SITUATIONS):
+        assert root.resource.attributes["openinference.project.name"] == "live-check"
+        assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "live-check",
+                                         "coach.minutes": duration, "coach.prompt_version": prompts.prompt_version(),
+                                         "coach.situation": name}
+        assert [s.name for s in steps] == ["rides", "papers", "model", "decision"]
+        # Le corse inventate, non un download da Strava.
+        assert steps[0].attributes["coach.rides.made_up"] is True
 
 
 def test_wrong_env_stops_before_any_call_and_writes_nothing(fakes, tmp_path, cloud_spending, monkeypatch, capsys):

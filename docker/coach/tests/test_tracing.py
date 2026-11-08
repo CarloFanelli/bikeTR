@@ -9,13 +9,12 @@ import threading
 import time
 
 import pytest
-from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from opentelemetry.trace import StatusCode
 
 from app import main, papers, prompts, search, tracing
 from app.errors import CoachError
 from app.strava import STRAVA_REFUSED, RideData
-from fakes import CLOUD_KEY, FakeCloud, FakeOllama, FakeRides
+from fakes import CLOUD_KEY, REAL_PHOENIX, DownPhoenix, FakeCloud, FakeOllama, FakeRides
 from fixture_data import NOW_MS, RIDES
 from test_cancel import CEILING, SILENCE, CoachServer, FakeModelServer, chat, run_workout, short_silence_client
 from test_cancel import until_first_token
@@ -312,7 +311,7 @@ class SilentPhoenix:
 def test_a_trace_receiver_that_never_answers_delays_no_coach_result(service, monkeypatch, capsys, caplog):
     with SilentPhoenix() as url:
         monkeypatch.setattr(tracing, "PHOENIX_URL", url)
-        provider = tracing.setup(tracing.COACH_SCREEN)
+        provider = tracing.setup(tracing.COACH_SCREEN, REAL_PHOENIX())
         for _ in range(3):
             started = time.monotonic()
             assert events_of(post(service, BODY))[-1]["type"] == "result"
@@ -324,16 +323,6 @@ def test_a_trace_receiver_that_never_answers_delays_no_coach_result(service, mon
     assert capsys.readouterr().out.count("[coach] Phoenix non risponde") == 1
     # Le righe di OpenTelemetry per ogni tentativo restano spente.
     assert not [r for r in caplog.records if r.name.startswith("opentelemetry")]
-
-
-class DownPhoenix(SpanExporter):
-    """Phoenix spento, o acceso solo quando `up` è vero."""
-
-    def __init__(self):
-        self.up = False
-
-    def export(self, spans):
-        return SpanExportResult.SUCCESS if self.up else SpanExportResult.FAILURE
 
 
 def test_with_phoenix_down_the_log_gets_one_line_until_a_trace_gets_through(capsys):

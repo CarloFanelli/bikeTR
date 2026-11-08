@@ -6,10 +6,11 @@ cartella del progetto:
   docker compose run --rm coach-tools python -m app.evaluation [--repeat N]
 
 Ogni situazione parte dai numeri dell'atleta, già pronti, e passa dagli stessi passi di una
-richiesta del Coach (paper, modello, scelta del protocollo), senza Strava né browser. Il file si
-riscrive dopo ogni risposta: una corsa fermata a metà tiene le risposte finite e resta segnata
-incompleta. Con un modello cloud la spesa va nello stesso totale dell'app, e la corsa non parte se
-il costo massimo supera quanto resta sotto il tetto."""
+richiesta del Coach (paper, modello, scelta del protocollo), senza Strava né browser, e lascia
+la sua traccia nel progetto evaluation di Phoenix. Il file si riscrive dopo ogni risposta: una
+corsa fermata a metà tiene le risposte finite e resta segnata incompleta. Con un modello cloud la
+spesa va nello stesso totale dell'app, e la corsa non parte se il costo massimo supera quanto resta
+sotto il tetto."""
 
 import argparse
 import asyncio
@@ -21,7 +22,7 @@ from pathlib import Path
 
 import httpx
 
-from app import prompts, provider, search, workout
+from app import prompts, provider, search, tracing, workout
 from app.errors import CoachError
 from app.grading import SITUATIONS_FILE, grade, report
 from app.live_check import INDEX_FILE, coach_answer, file_stem, index_from, money, summary, write_results
@@ -99,12 +100,16 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
         run.update(answers=answers, totalCost=total, complete=complete)
         replace_file(path, json.dumps(run, ensure_ascii=False, indent=2) + "\n")
 
+    traces = tracing.setup("evaluation")
     try:
         answers = asyncio.run(run_answers(situations, repeat, chat, spending, index_from(index_file), save))
     except KeyboardInterrupt:
         print(f"\nCorsa interrotta: le risposte finite sono in {results_dir.name}/{path.name}, "
               "segnata incompleta.", file=sys.stderr)
         return 130
+    finally:
+        # Le ultime tracce partono prima dell'uscita: con Phoenix spento, al massimo un secondo in più.
+        traces.shutdown()
     # Completa solo se ogni risposta è arrivata senza errori.
     save(answers, complete=all("error" not in a for a in answers))
     print("\n".join(report(run, grade(run, situations), f"{results_dir.name}/{path.name}")))

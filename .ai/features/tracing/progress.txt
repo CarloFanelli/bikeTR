@@ -2,5 +2,5 @@
 
 01-coach-screen-traces: DONE
 02-failed-and-stopped: DONE
-03-test-run-traces: TODO
+03-test-run-traces: DONE
 04-disconnect-deletes-traces: TODO

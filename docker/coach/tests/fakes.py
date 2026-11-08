@@ -4,6 +4,7 @@ modello chat (Ollama e un provider cloud compatibile con OpenAI) e di Phoenix pe
 import json
 
 import httpx
+from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from app import cloud, tracing
@@ -22,6 +23,8 @@ CLOUD_ENV = {"COACH_PROVIDER": "cloud", "CLOUD_URL": CLOUD_URL, "CLOUD_API_KEY":
              "CLOUD_PRICE_IN": "3", "CLOUD_PRICE_OUT": "15", "CLOUD_SPENDING_LIMIT": "1"}
 # Il client vero, preso prima che un test lo sostituisca con FakeCloud.client.
 REAL_CLOUD_CLIENT = cloud.client
+# Chi manda le tracce al Phoenix vero, preso prima che conftest.py lo sostituisca con FakePhoenix.
+REAL_PHOENIX = tracing.phoenix
 
 
 class FakeRides:
@@ -152,14 +155,39 @@ class FakeCloud:
                                  transport=httpx.MockTransport(self.handle))
 
 
+class Received(InMemorySpanExporter):
+    """I passi arrivati al finto Phoenix. Restano leggibili anche dopo che un comando ha chiuso le
+    sue tracce all'uscita, e un comando eseguito di nuovo nello stesso test ne aggiunge altri."""
+
+    def shutdown(self) -> None:
+        pass
+
+
 class FakePhoenix:
-    """Al posto di Phoenix: le tracce del progetto restano in memoria, nessuna va in rete."""
+    """Al posto di Phoenix: le tracce del servizio e dei comandi restano in memoria, nessuna va in rete."""
 
     def __init__(self, project: str = tracing.COACH_SCREEN):
-        self.received = InMemorySpanExporter()
+        self.received = Received()
         self.provider = tracing.setup(project, self.received)
 
     def spans(self) -> list:
         """I passi arrivati finora, ciascuno appena finito: prima manda quelli ancora in coda."""
         self.provider.force_flush()
         return list(self.received.get_finished_spans())
+
+    def traces(self) -> list[tuple]:
+        """Le tracce già arrivate, senza mandare quelle ancora in coda: per ognuna la richiesta e i
+        suoi passi, in ordine di partenza."""
+        spans = sorted(self.received.get_finished_spans(), key=lambda s: s.start_time)
+        return [(root, [s for s in spans if s.parent and s.parent.span_id == root.context.span_id])
+                for root in spans if root.parent is None]
+
+
+class DownPhoenix(SpanExporter):
+    """Phoenix spento, o acceso solo quando `up` è vero."""
+
+    def __init__(self):
+        self.up = False
+
+    def export(self, spans):
+        return SpanExportResult.SUCCESS if self.up else SpanExportResult.FAILURE
