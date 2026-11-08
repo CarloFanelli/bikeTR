@@ -1,14 +1,14 @@
 ---
 feature: fallback-reason
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-08
-head: 635c9202b66faeeddeac7db21e10e2ea19d1ac5c
+head: aa05144b0f4134a9216388ec3defd84ba71217e3
 ---
 
 # Review — fallback-reason
 
-**Scope**: 7 files (primary — diff since base `6db4e5da`; 10 workflow artifacts under `.ai/` excluded; `.gitignore` left out: an uncommitted edit outside this feature)
-**Findings**: 0 must-fix · 0 should-fix · 1 nit
+**Scope**: 1 file (re-verification — delta since review head `635c9202`; 1 workflow artifact under `.ai/` excluded; `.gitignore` left out: an uncommitted edit outside this feature)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 

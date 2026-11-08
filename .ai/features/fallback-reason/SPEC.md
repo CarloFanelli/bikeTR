@@ -2,7 +2,7 @@
 feature: fallback-reason
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: 6db4e5dac9f89ecdf1dd298600adb6db9c876c9b
 ---
 
