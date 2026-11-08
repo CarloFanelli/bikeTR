@@ -1,0 +1,1084 @@
+{
+  "kind": "evaluation",
+  "startedAt": "2026-11-08T14:44:24Z",
+  "provider": "ollama",
+  "model": "qwen2.5:7b",
+  "searchModel": "BAAI/bge-small-en-v1.5",
+  "promptVersion": "d146523f",
+  "repeat": 1,
+  "complete": true,
+  "totalCost": null,
+  "answers": [
+    {
+      "situation": "riposo-dopo-blocco",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "seiler_4x8",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8626319153670502
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8115220327330486
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.809384003708995
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8067641911027976
+        }
+      ],
+      "papersCited": [
+        "21812820"
+      ],
+      "inputTokens": 3081,
+      "outputTokens": 98,
+      "cost": null,
+      "charged": null,
+      "seconds": 23.2,
+      "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"TSB -32, indicativo di una polarizzazione insufficiente; volume settimanale elevato richiede un protocollo con intensità moderata come Seiler 4×8' per migliorare l'efficienza aerobica e la VO2max [PMID:21812820]\",\"paperUsati\":[\"21812820\"]}"
+    },
+    {
+      "situation": "riposo-anche-con-tre-ore",
+      "repeat": 1,
+      "duration": 180,
+      "protocolId": "z1_recovery",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8359046838341369
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8087541815455491
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.804115183704957
+        },
+        {
+          "pmid": "23197584",
+          "title": "Cyclists' improvement of pedaling efficacy and performance after heavy strength training.",
+          "score": 0.8033494881582641
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 3015,
+      "outputTokens": 84,
+      "cost": null,
+      "charged": null,
+      "seconds": 11.5,
+      "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"TSB sotto -25, quindi si preconizza un giorno di riposo o recupero attivo a Z1. L'attività recente è intensa (3120 minuti settimanali) e l'ultimo TSB è -28, indicando una forte fatica accumulata.\",\"paperUsati\":[]}"
+    },
+    {
+      "situation": "forma-esattamente-meno-25",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "z1_recovery",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8688735232745197
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8086247734475084
+        },
+        {
+          "pmid": "40010355",
+          "title": "What Is \"Zone 2 Training\"?: Experts' Viewpoint on Definition, Training Methods, and Expected Adaptations.",
+          "score": 0.8083967396292374
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8049733365178351
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 2832,
+      "outputTokens": 61,
+      "cost": null,
+      "charged": null,
+      "seconds": 9.8,
+      "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"TSB sotto -25, quindi necessario un giorno di riposo o recupero attivo a Z1 per permettere la ristabilizzazione delle funzioni fisiologiche [pratica]\",\"paperUsati\":[]}"
+    },
+    {
+      "situation": "recupero-con-due-ore-e-mezza",
+      "repeat": 1,
+      "duration": 150,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8474993439047841
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8069074876665314
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8062787965077758
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8033819962017492
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 3035,
+      "outputTokens": 58,
+      "cost": null,
+      "charged": null,
+      "seconds": 8.9,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"TSB sotto -15, volume recente elevato e polarizzazione bassa richiedono un giorno di Z2 endurance per il recupero attivo e la ripresa del volume.\",\"paperUsati\":[]}"
+    },
+    {
+      "situation": "recupero-mezz-ora",
+      "repeat": 1,
+      "duration": 30,
+      "protocolId": "z1_recovery",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8293570125862227
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8251924736590095
+        },
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8214380797668338
+        },
+        {
+          "pmid": "11772161",
+          "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+          "score": 0.8188698760400079
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 2921,
+      "outputTokens": 62,
+      "cost": null,
+      "charged": null,
+      "seconds": 12.2,
+      "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"TSB sotto -25 non si applica, TSB -20 con polarizzazione bassa suggerisce recupero attivo Z1 per mantenere la polarizzazione corretta [pratica]\",\"paperUsati\":[]}"
+    },
+    {
+      "situation": "due-ore-esatte",
+      "repeat": 1,
+      "duration": 120,
+      "protocolId": "z2_long_intervals",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8512973166727488
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.8219398648701084
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8184302533150113
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8174306170114002
+        }
+      ],
+      "papersCited": [
+        "PMID:31977120"
+      ],
+      "inputTokens": 2943,
+      "outputTokens": 151,
+      "cost": null,
+      "charged": null,
+      "seconds": 17.1,
+      "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il TSB è positivo ma basso, indicando una polarizzazione recente con pochi giorni di hard training. Il volume disponibile corrisponde a un lungo ride Z2 + ride-at-the-end, che si adatta alla durata di 120 minuti. Inoltre, il protocollo Rønnestad 30/15 (ronnestad_30_15) richiede una polarizzazione più elevata e un volume maggiore, mentre Z2 + ride-at-the-end è più adatto al caso attuale.\",\"paperUsati\":[\"PMID:31977120\"]}"
+    },
+    {
+      "situation": "quattro-ore-da-fresco",
+      "repeat": 1,
+      "duration": 240,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8461008061125795
+        },
+        {
+          "pmid": "24550842",
+          "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training.",
+          "score": 0.8184935664856188
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.8117127478608294
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8086106990843577
+        }
+      ],
+      "papersCited": [
+        "PMID:24550842"
+      ],
+      "inputTokens": 3023,
+      "outputTokens": 110,
+      "cost": null,
+      "charged": null,
+      "seconds": 13.8,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"TSB di 15 suggerisce un addestramento a intensità medie-alte, mentre la polarizzazione recente con 40% hard attività è compatibile con lo sweet spot. Il paper [PMID:24550842] evidenzia l'efficacia del training polarizzato su vari parametri di prestazione.\",\"paperUsati\":[\"PMID:24550842\"]}"
+    },
+    {
+      "situation": "poco-tempo-poche-uscite-dure",
+      "repeat": 1,
+      "duration": 40,
+      "protocolId": "z2_endurance",
+      "fellBack": true,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8342836294869935
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8281274790491933
+        },
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8259883337343888
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8224188072274974
+        }
+      ],
+      "papersCited": [
+        "24550842"
+      ],
+      "inputTokens": 2995,
+      "outputTokens": 95,
+      "cost": null,
+      "charged": null,
+      "seconds": 15.5,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"TSB zero, polarizzazione recente con percentuale di hard training bassa (8%), volume adeguato. Il Sweet Spot 3×15' è adatto per mantenere la polarizzazione e migliorare le prestazioni a breve termine [PMID:24550842].\",\"paperUsati\":[\"24550842\"]}"
+    },
+    {
+      "situation": "mezz-ora-da-fresco",
+      "repeat": 1,
+      "duration": 30,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8741625092613879
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8305023147311905
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.8282877438291234
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8257834217092667
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 2837,
+      "outputTokens": 109,
+      "cost": null,
+      "charged": null,
+      "seconds": 13.8,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"TSB 12 indica un livello di stanchezza moderato, quindi si preconizza una sessione Z2 endurance per il recupero e la polarizzazione espressa (80% easy / 20% hard) suggerisce che l'atleta sia già in uno stato di preparazione buona. Il protocollo Z2 endurance è adatto anche per un allenamento breve come quello disponibile oggi.\",\"paperUsati\":[]}"
+    },
+    {
+      "situation": "poco-tempo-un-po-stanco",
+      "repeat": 1,
+      "duration": 45,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8607735161480625
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8232797024565567
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8208513578958162
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8187112047968511
+        }
+      ],
+      "papersCited": [
+        "31977120"
+      ],
+      "inputTokens": 2994,
+      "outputTokens": 95,
+      "cost": null,
+      "charged": null,
+      "seconds": 11.6,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"TSB -12 suggerisce un recupero o una sessione a intensità bassa, mentre la polarizzazione recente con 25% di attività hard indica che si può utilizzare Z2 Endurance per mantenere la base aerobica. [PMID:31977120]\",\"paperUsati\":[\"31977120\"]}"
+    },
+    {
+      "situation": "cinquanta-minuti-esatti",
+      "repeat": 1,
+      "duration": 50,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.832253774245757
+        },
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8265910577327349
+        },
+        {
+          "pmid": "24550842",
+          "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training.",
+          "score": 0.8246253042950042
+        },
+        {
+          "pmid": "11772161",
+          "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+          "score": 0.822817472411256
+        }
+      ],
+      "papersCited": [
+        "24550842"
+      ],
+      "inputTokens": 2784,
+      "outputTokens": 70,
+      "cost": null,
+      "charged": null,
+      "seconds": 11.4,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Atleta con TSB neutro e polarizzazione recente, adatta al sweet spot per migliorare la performance a medio termine [PMID:24550842]\",\"paperUsati\":[\"24550842\"]}"
+    },
+    {
+      "situation": "poche-uscite-dure-forma-piu-4",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8713118009560996
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8228689642578647
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8195429333932693
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8167390177963403
+        }
+      ],
+      "papersCited": [
+        "24550842"
+      ],
+      "inputTokens": 2994,
+      "outputTokens": 128,
+      "cost": null,
+      "charged": null,
+      "seconds": 14.7,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"TSB 4 indica un livello di recupero sufficiente per una sessione a intensità moderata. Il volume recente è elevato ma non sovraccarico, e la polarizzazione conduce a scegliere un protocollo Z2 come Sweet Spot 3x15' che stimola sia l'aerobico a medio termine che l'efficienza energetica [PMID:24550842].\",\"paperUsati\":[\"24550842\"]}"
+    },
+    {
+      "situation": "ripresa-dopo-una-pausa",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "z2_long_intervals",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "11772161",
+          "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+          "score": 0.8217940111983516
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8154300413403681
+        },
+        {
+          "pmid": "24550842",
+          "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training.",
+          "score": 0.8142983765019915
+        },
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8116174030431954
+        }
+      ],
+      "papersCited": [
+        "31977120"
+      ],
+      "inputTokens": 2676,
+      "outputTokens": 107,
+      "cost": null,
+      "charged": null,
+      "seconds": 12.2,
+      "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il TSB è leggermente positivo (22), quindi si preconizza un lungo ride Z2 per migliorare la resistenza aerobica. Inoltre, la durata disponibile di 60 minuti corrisponde bene a questo protocollo che include anche una sessione finale più intensa [PMID:31977120]\",\"paperUsati\":[\"31977120\"]}"
+    },
+    {
+      "situation": "ripresa-dopo-la-corsa",
+      "repeat": 1,
+      "duration": 75,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8191266931246202
+        },
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8176380846075041
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8145025187002215
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8140391372142521
+        }
+      ],
+      "papersCited": [
+        "20861519"
+      ],
+      "inputTokens": 2886,
+      "outputTokens": 82,
+      "cost": null,
+      "charged": null,
+      "seconds": 12.3,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"TSB -12, senza uscite negli ultimi 28 giorni e durata disponibile inferiore ai 50 minuti suggeriscono l'utilizzo di Z2 endurance. [PMID:20861519]\",\"paperUsati\":[\"20861519\"]}"
+    },
+    {
+      "situation": "quota-dura-esattamente-30",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8679289635300981
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8147755816338558
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8139040504957372
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.812373608017056
+        }
+      ],
+      "papersCited": [
+        "24550842"
+      ],
+      "inputTokens": 2937,
+      "outputTokens": 121,
+      "cost": null,
+      "charged": null,
+      "seconds": 14.1,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"TSB 0 indica un atleta ben allenato, con polarizzazione recente a intensità medie-alte. Il volume di addestramento è elevato ma non eccessivo per questo protocollo. Citando [PMID:24550842], il Sweet Spot è efficace per migliorare la performance in atleti ben allenati con una polarizzazione recente a intensità medie-alte.\",\"paperUsati\":[\"24550842\"]}"
+    },
+    {
+      "situation": "fresco-ma-tanto-lavoro-duro",
+      "repeat": 1,
+      "duration": 90,
+      "protocolId": "seiler_4x8",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8636138960652517
+        },
+        {
+          "pmid": "24550842",
+          "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training.",
+          "score": 0.8227423119988124
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8100103195330507
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.8098820795864085
+        }
+      ],
+      "papersCited": [
+        "20861519"
+      ],
+      "inputTokens": 2903,
+      "outputTokens": 111,
+      "cost": null,
+      "charged": null,
+      "seconds": 11.9,
+      "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"TSB di 14 suggerisce un protocollo con intensità, mentre la polarizzazione recente (285W) indica che l'atleta ha già fatto uscite a forte intensità negli ultimi giorni. Seiler 4×8' è adatto per migliorare la FTP/VO2max [PMID:20861519]\",\"paperUsati\":[\"20861519\"]}"
+    },
+    {
+      "situation": "forma-esattamente-meno-15",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "z2_long_intervals",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8687858682238635
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8146836153642508
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8141070844833007
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8119988656090751
+        }
+      ],
+      "papersCited": [
+        "22646668"
+      ],
+      "inputTokens": 2998,
+      "outputTokens": 136,
+      "cost": null,
+      "charged": null,
+      "seconds": 13.4,
+      "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"TSB -15 suggerisce un protocollo di recupero o Z2, mentre la durata di 120 minuti nelle ultime uscite indica che si tratta di una sessione ad alta polarizzazione. Il Rønnestad 30/15 (PMID:22646668) è stato scelto per i suoi benefici sulla performance, anche se non esattamente con la durata richiesta, dato l'uso di intervalli più brevi.\",\"paperUsati\":[\"22646668\"]}"
+    },
+    {
+      "situation": "un-po-stanco-poche-uscite-dure",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8780439159828605
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.840425271664058
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8280781578707155
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8243677369592968
+        }
+      ],
+      "papersCited": [
+        "31977120"
+      ],
+      "inputTokens": 3031,
+      "outputTokens": 106,
+      "cost": null,
+      "charged": null,
+      "seconds": 5.8,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"TSB -12 suggerisce la necessità di un giorno di recupero, ma poiché l'atleta ha eseguito sessioni difficili negli ultimi giorni, è preferibile scegliere z2_endurance per mantenere una polarizzazione adatta e non superare il TSB. [PMID:31977120]\",\"paperUsati\":[\"31977120\"]}"
+    },
+    {
+      "situation": "forma-esattamente-meno-10",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "seiler_4x8",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8687858682238635
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8146836153642508
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8141070844833007
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8119988656090751
+        }
+      ],
+      "papersCited": [
+        "21812820"
+      ],
+      "inputTokens": 2995,
+      "outputTokens": 78,
+      "cost": null,
+      "charged": null,
+      "seconds": 4.5,
+      "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"TSB -10 suggerisce un protocollo Z2 con stimolo ad alto volume, come Seiler 4×8', per migliorare la base aerobica [PMID:21812820]\",\"paperUsati\":[\"21812820\"]}"
+    },
+    {
+      "situation": "quota-dura-esattamente-15",
+      "repeat": 1,
+      "duration": 75,
+      "protocolId": "z2_long_intervals",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8679289635300981
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8147755816338558
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8139040504957372
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.812373608017056
+        }
+      ],
+      "papersCited": [
+        "31977120"
+      ],
+      "inputTokens": 2940,
+      "outputTokens": 112,
+      "cost": null,
+      "charged": null,
+      "seconds": 12.1,
+      "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il TSB è zero, indicando un equilibrio tra la fatica accumulata e la ripresa. La durata della sessione (75 minuti) consente di utilizzare il protocollo Z2 Long Intervals che include una ride-at-the-end per migliorare l'adattamento aerobico a lungo termine [PMID:31977120].\",\"paperUsati\":[\"31977120\"]}"
+    },
+    {
+      "situation": "forma-piu-8",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8679289635300981
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8147755816338558
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8139040504957372
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.812373608017056
+        }
+      ],
+      "papersCited": [
+        "PMID:24550842"
+      ],
+      "inputTokens": 2939,
+      "outputTokens": 66,
+      "cost": null,
+      "charged": null,
+      "seconds": 4.0,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"TSB positivo e polarizzazione recente suggeriscono un allenamento a intensità di sweet spot per migliorare la performance in sessioni più lunghe.\",\"paperUsati\":[\"PMID:24550842\"]}"
+    },
+    {
+      "situation": "base-con-55-minuti",
+      "repeat": 1,
+      "duration": 55,
+      "protocolId": "z2_long_intervals",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8679289635300981
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8147755816338558
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8139040504957372
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.812373608017056
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668",
+        "PMID:31977120"
+      ],
+      "inputTokens": 2938,
+      "outputTokens": 112,
+      "cost": null,
+      "charged": null,
+      "seconds": 5.9,
+      "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il TSB è -5, quindi si prevede una sessione di lunghe Z2 con ride-at-the-end per migliorare la polarizzazione. Inoltre, l'attività recente include sessioni di intensità media-alta che rendono il protocollo Rønnestad 30/15 appropriato.\", \"paperUsati\":[\"PMID:22646668\",\"PMID:31977120\"]}"
+    },
+    {
+      "situation": "forma-esattamente-piu-5",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "tempo_2x20",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8713118009560996
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8228689642578647
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8195429333932693
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8167390177963403
+        }
+      ],
+      "papersCited": [
+        "24550842"
+      ],
+      "inputTokens": 2994,
+      "outputTokens": 147,
+      "cost": null,
+      "charged": null,
+      "seconds": 13.8,
+      "modelRaw": "{\"protocolId\":\"tempo_2x20\",\"razionale\":\"Durata dell'attività oggi è di 60 minuti, quindi tempo_2x20 entra nella durata disponibile. Il TSB è +5, che corrisponde alla regola 8, quindi si sceglie un protocollo con hard sotto il 15%, come sweet_spot_3x15, threshold_3x10 o tempo_2x20 [PMID:24550842]. In questo caso, tempo_2x20 è scelto per la sua durata esatta.\",\"paperUsati\":[\"24550842\"]}"
+    },
+    {
+      "situation": "senza-soglia-cardiaca-ne-peso",
+      "repeat": 1,
+      "duration": 90,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "11772161",
+          "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+          "score": 0.8462723171935748
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.838845118826462
+        },
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.837845599361555
+        },
+        {
+          "pmid": "24550842",
+          "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training.",
+          "score": 0.8349930684059574
+        }
+      ],
+      "papersCited": [
+        "24550842"
+      ],
+      "inputTokens": 2739,
+      "outputTokens": 101,
+      "cost": null,
+      "charged": null,
+      "seconds": 12.4,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"TSB 18 indica un livello di condizione moderato, con polarizzazione recente completa di easy training. Il volume target è superiore a quello attuale, quindi si prevede una sessione di intensità media-alta come sweet spot per migliorare la performance [PMID:24550842]\",\"paperUsati\":[\"24550842\"]}"
+    },
+    {
+      "situation": "forma-esattamente-piu-10",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "tempo_2x20",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8679289635300981
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8147755816338558
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8139040504957372
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.812373608017056
+        }
+      ],
+      "papersCited": [
+        "PMID:24550842"
+      ],
+      "inputTokens": 2938,
+      "outputTokens": 94,
+      "cost": null,
+      "charged": null,
+      "seconds": 13.0,
+      "modelRaw": "{\"protocolId\":\"tempo_2x20\",\"razionale\":\"Con un TSB di 10, l'atleta si trova in una situazione neutra con un volume di allenamento elevato. Il tempo 2×20' è adatto per mantenere la polarizzazione e migliorare la performance senza superare il limite di intensità.\",\"paperUsati\":[\"PMID:24550842\"]}"
+    },
+    {
+      "situation": "fresco-con-100-minuti",
+      "repeat": 1,
+      "duration": 100,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8800858405816238
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.8255116444805292
+        },
+        {
+          "pmid": "11772161",
+          "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+          "score": 0.8242232731267675
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8226315441696714
+        }
+      ],
+      "papersCited": [
+        "24550842"
+      ],
+      "inputTokens": 2627,
+      "outputTokens": 89,
+      "cost": null,
+      "charged": null,
+      "seconds": 9.7,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Atleta con TSB positivo (16) e polarizzazione recente a favore delle uscite facili, adatta al sweet spot training di 45-75% FTP per migliorare la performance. [PMID:24550842]\",\"paperUsati\":[\"24550842\"]}"
+    },
+    {
+      "situation": "fresco-senza-peso",
+      "repeat": 1,
+      "duration": 70,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8800858405816238
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.8255116444805292
+        },
+        {
+          "pmid": "11772161",
+          "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+          "score": 0.8242232731267675
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.8226315441696714
+        }
+      ],
+      "papersCited": [
+        "24550842"
+      ],
+      "inputTokens": 2621,
+      "outputTokens": 137,
+      "cost": null,
+      "charged": null,
+      "seconds": 6.7,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"TSB 12 indica un livello di addestramento adeguato, con Polarizzazione che mostra una distribuzione equilibrata tra easy e hard training. Il volume settimanale è alto ma ragionevole. Il protocollo Sweet Spot 3×15' è appropriato per mantenere la polarizzazione corretta e migliorare l'efficienza energetica, senza sovraccaricare l'atleta [PMID:24550842].\",\"paperUsati\":[\"24550842\"]}"
+    }
+  ]
+}
