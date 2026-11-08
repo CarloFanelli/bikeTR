@@ -302,8 +302,8 @@ browser ──► web (nginx, http://localhost:5050)
              ├─ /papers_index.json → the paper index, from the project folder (read-only)
              ├─ /auth/    → auth: Strava login, keeps client secret and tokens (docker/auth/server.ts)
              └─ /coach/   → coach: the Coach service, Python with FastAPI (docker/coach);
-                            keeps the rides it downloads from Strava and the cloud spending total
-                            in a Docker volume
+                            keeps the rides it downloads from Strava, the cloud spending total
+                            and a trace deletion still waiting for Phoenix in a Docker volume
                             └─► the chat model chosen in .env: ollama, kept in a Docker volume
                                 (or the Ollama on your computer), or a cloud provider such as Claude
 browser ──► phoenix (http://localhost:6006): the traces of each Coach request, kept in a Docker volume;
