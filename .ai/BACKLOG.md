@@ -16,9 +16,10 @@
 - **What**: Classify rides as recovery, endurance, intervals or race with a small model, used as input to the graph.
 - **From**: docker-setup (interview, 2026-11-05)
 
-### B-5 · open
+### B-5 · picked-up
 - **What**: Trace every run with Langfuse: prompt, tools called, latency, tokens and cost.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: tracing (2026-11-08)
 
 ### B-6 · picked-up
 - **What**: Create 20–30 questions with expected answer and papers to cite, plus a script measuring correctness and groundedness, with a before/after results table in the README.

@@ -48,6 +48,10 @@ _Avoid_: "source" alone (a selection rule's source may be practice).
 The Coach's fixed choice of protocol when the **Chat model**'s answer is cut off, unreadable, names no catalog protocol, or picks one too long for the minutes: the first protocol the athlete's **Selection rules** rule allows for those minutes. The workout card names which of the four causes it was.
 _Avoid_: "backup choice" (used once in an interview; the README says fallback).
 
+### Trace
+The record in Phoenix of one Coach request, from the Coach screen, the **Live check** or the **Evaluation set**: each step with its duration, the prompt, the papers found, the model's raw answer, tokens, cost and the decision. Disconnecting from Strava deletes the Coach screen's traces.
+_Avoid_: "log" (the service's log is lines of text, a trace has steps and durations), "span" outside code (OpenTelemetry's name for one step of a trace).
+
 ## Decisions
 
 - **The browser sends the athlete profile instead of the service estimating it**: FTP and heart-rate values travel with each Coach request. Why: the estimates use segment data only the browser has, and the Coach must use the same numbers the app shows.
