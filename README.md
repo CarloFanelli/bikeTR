@@ -1,6 +1,6 @@
 # BikeTR
 
-Experimental first version of the project, started on **May 7, 2026**.
+Started on **May 7, 2026**.
 
 A browser app (Vue and TypeScript in `web/`, served by a live-reload development server) for cycling analysis and training recommendations based on the user's Strava data. Designed for **personal, local use**: each person runs their own copy on their own computer, connected to their own Strava app. One Docker command starts everything: a web server, the app's development server, a small auth server that holds the Strava secret, the Coach service (Python), and the local AI model used by the Coach (a cloud model such as Claude can be chosen instead). Settings and caches stay in the browser's `localStorage`.
 
@@ -109,7 +109,55 @@ docker compose down -v
 
 ## 5. AI Coach
 
-The Coach works without any setup: Docker runs Ollama and downloads the chat model, and the Coach service finds the papers with its own small search model, installed with it. The chat model, the one that writes the answer, is chosen only in `.env`: an Ollama model (the default), or a cloud model reached through the OpenAI-compatible format, such as Claude. The key stays in the Coach service: the browser never sees it. The "Coach AI" card in Impostazioni shows the model in use and, for a cloud model, the money spent and the limit. **Verifica connessione** asks the Coach service whether the provider answers and has that model, with the command that downloads it when Ollama lacks it. The check asks for no answer, so it spends no tokens.
+A cyclist has an hour free today and wants to know what to ride: rest, an easy Z2 ride, or intervals. The right answer depends on numbers that are hard to weigh by hand: how fit and how tired the rider is (CTL, ATL and form, TSB), how much of the last four weeks was hard, how many minutes there are. It also depends on what training studies say. The Coach reads your Strava rides, works out those numbers, finds the studies that fit, and asks a language model to pick one workout from a fixed catalog and say why, citing the studies.
+
+**How a request works.**
+
+```
+Coach AI: "Genera workout di oggi" sends the minutes (30–240), the time zone and the athlete profile
+  └─► Coach service (docker/coach)
+        1. rides       downloads your Strava rides, kept in a Docker volume
+        2. numbers     CTL, ATL, TSB, easy and hard share of the last 28 days, capacity tier, last 7 days
+        3. papers      a search sentence built from those numbers finds the 4 closest papers
+                       in papers_index.json
+        4. chat model  reads the catalog, the selection rules, the 4 papers and the numbers, and answers
+                       {"protocolId": …, "razionale": …, "paperUsati": […]}
+        5. decision    a catalog protocol is kept; an unreadable answer, a cut answer or an unknown
+                       protocol goes to the fallback rules; a protocol longer than the minutes becomes Z2
+        6. workout     the code turns the protocol into steps and watts from your FTP and the minutes
+  ◄── each step, the model's text as it is written, then the workout card
+```
+
+**Decisions.** The reasons and the costs are in [PROCESS.md](PROCESS.md).
+
+- **The model picks, the code computes.** The model names one protocol from a catalog of 13 and writes the explanation; watts, repetitions and minutes come from the code. A small model gets numbers wrong, an invented workout can be too hard, and "is this protocol allowed?" can be checked with a rule.
+- **The selection rules live in the code, written once.** For each form, hard share and number of minutes they give the protocols the Coach may choose. The prompt prints them, the fallback rules follow them, and the tests and the evaluation set check them. Each rule names its source: the paper that gives its number, or coaching practice when no paper does. Two rules come from papers: a hard share of 30% or more asks for an easy Z2 day (Seiler 2010, about 20% of hard work in well-trained endurance athletes), and below 15% asks for a quality session (Stöggl 2014: low-intensity volume alone did not improve the athletes, polarized training did).
+- **Practice, and why.** The form cut-offs (rest below -25, recovery below -15, an easy day below -10, 4×8' intervals from +5, harder intervals from +10), the time rules (a long ride from 120 minutes, only Z2 under 50 minutes) and the rule for a rider with no ride in 28 days are practice: no paper in the index gives those numbers. Sweet spot, threshold, tempo, over-under, Z1 recovery, progressive Z2 and rest are practice workouts too; the others each name a paper found on PubMed that describes them.
+- **Fallback.** When the model's answer cannot be used, the Coach takes the first protocol the athlete's rule allows.
+- **30 to 240 minutes.** Shorter is not a workout, and the rules are tested on that range.
+- **Graded by fixed checks, not by another model.** A check repeats identically and costs nothing. It judges what the model wrote, before the Coach corrects it.
+
+**Evaluation set.** To measure a chat model on many situations, the evaluation set holds 27 made-up athletes, each with the workouts the selection rules allow. The first command runs the chat model in `.env` on every situation and writes each answer to a new file in `eval-runs/`; the second grades saved files without calling any model:
+
+```bash
+docker compose run --rm coach-tools python -m app.evaluation
+docker compose run --rm coach-tools python -m app.grading eval-runs/FILE.json
+```
+
+`eval-runs/README.md` explains each score. Results so far, one answer per situation, run with Ollama on a Mac. "Before" is the prompt with its eight hand-written rules; "after" is the prompt that prints the selection rules, each with its source.
+
+| Model | Prompt | Rules followed | Readable JSON | Invented citations | Support cited | Support found | Fallback | Median seconds | Cost per answer | Results file |
+|---|---|---|---|---|---|---|---|---|---|---|
+| qwen2.5:3b | 07cc6501 (before) | 30% (8/27) | 100% (27/27) | 0% (0/27) | — | 0% (0/4) | 7% (2/27) | 6.3 | — | [2026-11-08_13-47-36_qwen2.5-3b.json](eval-runs/2026-11-08_13-47-36_qwen2.5-3b.json) |
+| qwen2.5:7b | 07cc6501 (before) | 56% (15/27) | 96% (26/27) | 0% (0/27) | — | 0% (0/10) | 7% (2/27) | 11.9 | — | [2026-11-08_13-50-49_qwen2.5-7b.json](eval-runs/2026-11-08_13-50-49_qwen2.5-7b.json) |
+| qwen2.5:3b | d146523f (after) | 33% (9/27) | 100% (27/27) | 0% (0/27) | — | 0% (0/8) | 11% (3/27) | 5.6 | — | [2026-11-08_14-41-52_qwen2.5-3b.json](eval-runs/2026-11-08_14-41-52_qwen2.5-3b.json) |
+| qwen2.5:7b | d146523f (after) | 44% (12/27) | 100% (27/27) | 0% (0/27) | 100% (2/2) | 15% (2/13) | 4% (1/27) | 12.2 | — | [2026-11-08_14-44-24_qwen2.5-7b.json](eval-runs/2026-11-08_14-44-24_qwen2.5-7b.json) |
+
+- **Writing the rules out did not make the models follow them.** qwen2.5:3b goes from 8 to 9 situations and still chooses sweet spot in 18 of the 27 (21 before), a rest day included. qwen2.5:7b goes from 15 to 12: it now chooses a quality session when there was too little hard riding, but four times it chooses the long ride, meant for 120 minutes or more, with 55 to 75 minutes available, and once hard intervals when the rule says rest. With one answer per situation a few answers can be chance (`--repeat 3` steadies the numbers), but this is no improvement. Applying 11 ordered rules that compare numbers is hard for these models; the code already knows each athlete's allowed workouts, so the next step is to show the model only those and let it choose and explain.
+- **No answer cites a paper number it was not shown.** With the new prompt the models often cite the paper written next to a rule (Seiler 2010, Stöggl 2014) even when the search did not return it; the grading counts it as given, because the prompt shows it.
+- **The search rarely finds the chosen workout's paper**: in 2 of 13 answers for qwen2.5:7b after the rewrite, and none before. When it did, the model cited it. A better search is a later step.
+
+**Choosing the chat model.** The Coach works without any setup: Docker runs Ollama and downloads the chat model, and the Coach service finds the papers with its own small search model, installed with it. The chat model, the one that writes the answer, is chosen only in `.env`: an Ollama model (the default), or a cloud model reached through the OpenAI-compatible format, such as Claude. The key stays in the Coach service: the browser never sees it. The "Coach AI" card in Impostazioni shows the model in use and, for a cloud model, the money spent and the limit. **Verifica connessione** asks the Coach service whether the provider answers and has that model, with the command that downloads it when Ollama lacks it. The check asks for no answer, so it spends no tokens.
 
 **Another Ollama model.** In `.env`, write the model's name as Ollama lists it, for example:
 
@@ -152,23 +200,6 @@ docker compose run --rm coach-tools python -m app.live_check
 ```
 
 The Coach picks a workout in 3 made-up situations, prints one line per situation, and writes everything (protocol chosen, papers, tokens, cost, the whole answer) to a new file in `live-checks/`, named by date, time and model. Commit that file to compare models, or to look at a run made on another computer. With Ollama, start BikeTR first so Ollama is running; with a cloud model, the 3 answers cost money and count toward the same total and limit as the app. `live-checks/README.md` describes the file.
-
-**Evaluation set.** To measure a chat model on many situations, the evaluation set holds 27 made-up athletes, each with the workouts the selection rules allow. The first command runs the chat model in `.env` on every situation and writes each answer to a new file in `eval-runs/`; the second grades saved files without calling any model:
-
-```bash
-docker compose run --rm coach-tools python -m app.evaluation
-docker compose run --rm coach-tools python -m app.grading eval-runs/FILE.json
-```
-
-`eval-runs/README.md` explains each score. Results so far, one answer per situation, run with Ollama on a Mac; "before" is the prompt in use before the selection rules are rewritten:
-
-| Model | Prompt | Rules followed | Readable JSON | Invented citations | Support cited | Support found | Fallback | Median seconds | Cost per answer | Results file |
-|---|---|---|---|---|---|---|---|---|---|---|
-| qwen2.5:3b | 07cc6501 (before) | 30% (8/27) | 100% (27/27) | 0% (0/27) | — | 0% (0/4) | 7% (2/27) | 6.3 | — | [2026-11-08_13-47-36_qwen2.5-3b.json](eval-runs/2026-11-08_13-47-36_qwen2.5-3b.json) |
-| qwen2.5:7b | 07cc6501 (before) | 56% (15/27) | 96% (26/27) | 0% (0/27) | — | 0% (0/10) | 7% (2/27) | 11.9 | — | [2026-11-08_13-50-49_qwen2.5-7b.json](eval-runs/2026-11-08_13-50-49_qwen2.5-7b.json) |
-
-- qwen2.5:3b chooses sweet spot in 21 of the 27 situations, rest days and recovery days included. qwen2.5:7b follows the rules in 15, and once names a protocol that does not exist (`z2_recovery`), so the fallback rules choose.
-- Neither model cites a paper it was not given. When a model chose a workout with a supporting paper, the search had not found that paper: the models mostly chose Z2 days, and the search rarely returns the Z2 papers (Sitko 2025 in 1 of 27 situations, Spragg 2023 in none). "Support cited" is therefore "—": no answer had its workout's paper to cite.
 
 **Slow computers.** In Docker, Ollama runs on the CPU only (Docker cannot use a Mac's GPU). On a laptop without a GPU, one Coach generation with `qwen2.5:7b` can take over 5 minutes (measured on an Intel i5-1240P under WSL). There is no limit on the total time: the Coach AI screen shows the model's text as it arrives, and the Coach gives up only when the model writes nothing for 3 minutes, including the wait before its first word ("Il modello non ha scritto nulla per 3 minuti"). An answer longer than 1,000 tokens is cut, and the Coach then picks the protocol with its fallback rules. Pick a smaller model such as `qwen2.5:3b` in `.env`, or use the Ollama installed on your computer (below).
 
@@ -264,8 +295,8 @@ browser ──► web (nginx, http://localhost:5050)
                             └─► the chat model chosen in .env: ollama, kept in a Docker volume
                                 (or the Ollama on your computer), or a cloud provider such as Claude
 ollama-pull: downloads the Ollama chat model at start if it is missing, then exits
-coach-tools: starts only when named (docker compose run --rm coach-tools …); rebuilds the paper index
-             and runs the live check, writing into the project folder
+coach-tools: starts only when named (docker compose run --rm coach-tools …); rebuilds the paper index,
+             runs the live check and the evaluation set and grades its runs, writing into the project folder
 ```
 
 The browser calls the Strava API directly with a short-lived access token it asks `/auth/token` for right before each request, so a tab left open for hours keeps working; the client secret and the refresh token never leave the auth server. The nginx configuration is `docker/nginx/default.conf.template`.
@@ -305,7 +336,7 @@ The Coach tests (`web/tests/coach/`) feed made-up answers to the browser's answe
 
 The calculation tests (`web/tests/core/`) run on made-up rides, settings and segments (`web/tests/fixtures/rides.json`) and, for the training plan, on made-up days, weeks of rides, settings and saved values (`plan-cases.json`). They compare every result, at two decimals, with the one the JavaScript app gave before it was rewritten in TypeScript (`load-expected.json` and `plan-expected.json` in the same folder). Those files were recorded once from that app and are not regenerated: a test that fails against them means a calculation changed.
 
-**Coach service.** The Coach service's tests check that its numbers (normalized power, training load, fitness, fatigue, form, intensity split, capacity tier) equal those of the browser code, and that for the same model answers it builds the same prompts, papers and workout as the browser Coach did, except for the paper each workout comes from: the browser's often described other training, so the catalog now names a supporting paper found on PubMed, or none for coaching practice. They need only Docker: no Ollama, no cloud provider (made-up ones answer instead), no Strava connection, and they can run while BikeTR is running. From the project folder (the same command works in PowerShell):
+**Coach service.** The Coach service's tests check that its numbers (normalized power, training load, fitness, fatigue, form, intensity split, capacity tier) equal those of the browser code, and that for the same model answers it builds the same prompts, papers and workout as the browser Coach did, except where the Coach changed on purpose: the system prompt prints the selection rules instead of the browser's eight, the fallback rules follow the selection rules, and each workout names a supporting paper found on PubMed, or none for coaching practice, because the browser's often described other training. They need only Docker: no Ollama, no cloud provider (made-up ones answer instead), no Strava connection, and they can run while BikeTR is running. From the project folder (the same command works in PowerShell):
 
 ```bash
 docker compose run --rm --no-deps coach pytest
@@ -317,6 +348,8 @@ The tests use made-up activities (`docker/coach/tests/fixtures/rides.json`), mad
 docker run --rm -v "${PWD}:/src:ro" -v "${PWD}/docker/coach/tests:/tests" node:22-alpine node /tests/reference/make_reference.mjs
 ```
 
+The same command rebuilds the tests' paper index from `papers_index.json`, which has gained papers since the results were recorded, so it changes the papers found in every case. To change one case only, mount the index the results were made from over the project's (`git show d28db13^:papers_index.json > /tmp/old.json`, then add `-v /tmp/old.json:/src/papers_index.json:ro`), and check that the diff touches only that case.
+
 ---
 
 ## 11. Known limitations
@@ -324,4 +357,5 @@ docker run --rm -v "${PWD}:/src:ro" -v "${PWD}/docker/coach/tests:/tests" node:2
 - **Local, single-user only**: no cross-device sync or multi-user support. Settings and caches live in the browser, per address.
 - **Without Strava streams**, TSS and time in zones are approximated from the summary's `weighted_average_watts` or from hrTSS calculated using average heart rate (e.g. a long Z2 ride with 20 minutes at threshold averages out to Z2). Click "Aggiorna con streams" for precise calculations: one API call per activity (Strava rate limit: 100 per 15 minutes).
 - **An FTP from a dedicated test is always more reliable** than estimates. The four `estimatesFromSegments` methods mitigate but do not eliminate estimation error (±5–10% compared with the true value). A 20-minute all-out test every 4–6 weeks is recommended.
+- **The chat model does not follow the selection rules reliably**: qwen2.5:7b chose an allowed workout in 12 of the 27 evaluation situations, qwen2.5:3b in 9 (section 5). The fallback rules, the 30–240-minute check and the code that computes the workout keep every answer a real workout, but not always the one the rules ask for.
 - **The AI Coach depends on its chat model**: with Ollama, while the model downloads or if Ollama is unavailable, the Coach AI screen shows an error, and on a CPU-only computer the default model is slow (section 5). A cloud model needs internet, costs money, and stops at the spending limit.

@@ -37,3 +37,8 @@ The rewritten prompt is graded on the Mac like the "before" runs, and the README
 - A row without a results file in git → not allowed: every row names its file (REQ-26)
 - A cloud model run later → added as a new row with its file; not required to finish (REQ-26)
 - A row's file is later re-graded with a corrected set → the row is updated from the re-grade (REQ-26)
+
+## Notes from implementation
+
+- **REQ-18 — divergence**: the spec counts as invented any cited PMID that was not among the papers given → the grading also accepts the selection rules' source papers (Seiler 2010, Stöggl 2014), because the prompt shows them beside the rules since the rewrite; after it, the models cited them in 8 and 10 of 27 answers, all the "invented" citations. "Supporting paper found" still counts only the papers the search returned. Agreed in /dev, 2026-11-08.
+- **Known limitation**: the after runs follow the rules less often for qwen2.5:7b (12 of 27, 15 before) and barely more for qwen2.5:3b (9, 8 before); the README shows them as measured and names the next step, showing the model only the protocols its athlete's rule allows. Agreed in /dev, 2026-11-08.
