@@ -4,7 +4,7 @@
 02-selection-rules: DONE
 03-evaluation-set: DONE
 04-evaluation-run: DONE
-05-grading: TODO
+05-grading: DONE
 06-before-runs: TODO
 07-prompt-rewrite: TODO
 08-after-runs-readme: TODO

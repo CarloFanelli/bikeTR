@@ -6,20 +6,18 @@ la situazione; ogni regola ha almeno due situazioni e ogni soglia una situazione
 import json
 from collections import Counter
 from dataclasses import fields
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
 
-from app import selection_rules
+from app import grading, selection_rules
 from app.metrics import capacity_tier, coach_context
 from app.prompts import retrieval_query, user_prompt
 from app.protocols import PROTOCOLS
 from app.selection_rules import RULES, Rule
 from fixture_data import DETAILS, NOW_MS, RIDES, profile
 
-SITUATIONS = json.loads((Path(__file__).resolve().parents[1] / "evaluation" / "situations.json")
-                        .read_text(encoding="utf-8"))
+SITUATIONS = json.loads(grading.SITUATIONS_FILE.read_text(encoding="utf-8"))
 # Un contesto vero del Coach, dalle corse inventate dei test: le chiavi che le situazioni devono avere.
 REAL_CONTEXT = coach_context(RIDES["activities"], DETAILS, profile("base"), NOW_MS, ZoneInfo("Europe/Rome"))
 EACH_SITUATION = pytest.mark.parametrize("situation", SITUATIONS, ids=lambda s: s["name"])
