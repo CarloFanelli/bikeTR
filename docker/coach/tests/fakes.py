@@ -1,11 +1,12 @@
-"""Sostituti di Strava, del modello di ricerca, dell'indice dei paper e dei due provider del
-modello chat (Ollama e un provider cloud compatibile con OpenAI) per i test del workout."""
+"""Sostituti di Strava, del modello di ricerca, dell'indice dei paper, dei due provider del
+modello chat (Ollama e un provider cloud compatibile con OpenAI) e di Phoenix per i test del workout."""
 
 import json
 
 import httpx
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from app import cloud
+from app import cloud, tracing
 from app.provider import ChatSettings
 from app.spending import Prices
 from app.strava import RideData
@@ -149,3 +150,16 @@ class FakeCloud:
         real = REAL_CLOUD_CLIENT(url, key)
         return httpx.AsyncClient(base_url=real.base_url, headers=real.headers, timeout=real.timeout,
                                  transport=httpx.MockTransport(self.handle))
+
+
+class FakePhoenix:
+    """Al posto di Phoenix: le tracce del progetto restano in memoria, nessuna va in rete."""
+
+    def __init__(self, project: str = tracing.COACH_SCREEN):
+        self.received = InMemorySpanExporter()
+        self.provider = tracing.setup(project, self.received)
+
+    def spans(self) -> list:
+        """I passi arrivati finora, ciascuno appena finito: prima manda quelli ancora in coda."""
+        self.provider.force_flush()
+        return list(self.received.get_finished_spans())

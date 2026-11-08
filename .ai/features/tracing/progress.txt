@@ -1,6 +1,6 @@
 # Task Progress - tracing
 
-01-coach-screen-traces: TODO
+01-coach-screen-traces: DONE
 02-failed-and-stopped: TODO
 03-test-run-traces: TODO
 04-disconnect-deletes-traces: TODO
