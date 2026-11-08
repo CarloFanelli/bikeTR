@@ -122,3 +122,7 @@
 ### B-28 · open
 - **What**: The code works out the protocols the athlete's selection rule allows today and the prompt shows the model only those; the model chooses one and explains why. Measured with the evaluation set against the after rows (qwen2.5:3b 9 of 27, qwen2.5:7b 12 of 27).
 - **From**: eval-set (dev task 09, 2026-11-08)
+
+### B-29 · open
+- **What**: Live-check and evaluation results files record why the Coach used the fallback rules (cut off, unreadable, not in the catalog, too long), and grading counts each cause. Deferred because grading reads the model's own choice and nobody needs a count per cause yet.
+- **From**: fallback-reason (interview, 2026-11-08)
