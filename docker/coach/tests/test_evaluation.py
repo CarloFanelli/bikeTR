@@ -85,7 +85,9 @@ def test_every_situation_of_the_set_runs_like_a_coach_request_and_the_file_is_co
     lines = capsys.readouterr().out.splitlines()
     first = SITUATIONS[0]
     assert lines[0].startswith(f"[1/{len(SITUATIONS)}] {first['name']} ({first['minutes']} min): ")
-    assert len(lines) == len(SITUATIONS) + 2
+    # Poi i punteggi della corsa, il costo totale e il nome del file.
+    assert lines[len(SITUATIONS)] == f"eval-runs/{file.name} — qwen2.5:7b · prompt {run['promptVersion']} · corsa completa"
+    assert f"  Risposte valutate: {len(SITUATIONS)} · errori: 0" in lines and "  Costo per risposta: —" in lines
     assert lines[-2:] == ["Costo totale: —", f"Risultati in eval-runs/{file.name}"]
 
 

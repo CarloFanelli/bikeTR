@@ -13,10 +13,32 @@ docker compose run --rm coach-tools python -m app.evaluation
 `--repeat 3` answers every situation 3 times, to see how much the model changes its mind on the same question; the default is 1. Each situation goes through the same paper search, chat model and protocol choice as a Coach request, starting from the athlete's numbers.
 
 1. Set the model in `.env` (`OLLAMA_CHAT_MODEL=qwen2.5:3b`, for example) and run `docker compose up -d`.
-2. Run the command and wait: it prints one line per answer as it finishes (`[3/27] situation (minutes): protocol · fallback · seconds · tokens · cost`), then the total cost and the file name.
+2. Run the command and wait: it prints one line per answer as it finishes (`[3/27] situation (minutes): protocol · fallback · seconds · tokens · cost`), then the run's scores, the total cost and the file name.
 3. Commit the new file in `eval-runs/` and push it.
 
 With a cloud model, the command first prints the worst case: every answer at the high estimate (8,000 tokens read, 4,000 written). If that exceeds what is left under `CLOUD_SPENDING_LIMIT`, the run does not start; raise the limit or ask for fewer repeats. Every answer adds to the same spending total as the app.
+
+## Grading
+
+Grading reads results files and calls no model and no network, so it runs anywhere, the same file always gets the same scores, and a corrected evaluation set re-grades old runs without running them again:
+
+```bash
+docker compose run --rm coach-tools python -m app.grading eval-runs/FILE.json [more files]
+```
+
+It prints each run's scores, then one row per file for the README table. Every answer is judged on what the model wrote, not on what the Coach did with it: the Coach replaces a protocol that does not fit the minutes, and adds the protocol's paper to the cited ones by itself. Answers with an error are counted apart, outside the scores.
+
+| Score | Counts |
+|---|---|
+| Rules followed | answers whose protocol, as the model wrote it, is in the situation's allowed list |
+| Readable JSON | answers the Coach could read as a JSON object, not cut at the token limit |
+| Invented citations | answers citing a PMID, in `paperUsati` or anywhere in the text, that was not among the papers given |
+| Support cited | among answers given the supporting paper of the protocol they chose, those citing it |
+| Support found | among answers choosing a protocol with a supporting paper, those whose search found it |
+| Fallback | answers where the Coach's fallback rules chose instead of the model |
+| Median seconds, cost per answer | cost is what each answer added to the spending total, failed ones included; `—` with Ollama |
+
+An answer for a situation no longer in the set is skipped and listed; a situation without an answer is listed as not run. A row for an incomplete run says `(incompleta)`: incomplete runs do not go in the README.
 
 ## File name and content
 

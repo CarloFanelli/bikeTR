@@ -23,12 +23,12 @@ import httpx
 
 from app import prompts, provider, search, workout
 from app.errors import CoachError
+from app.grading import SITUATIONS_FILE, grade, report
 from app.live_check import INDEX_FILE, coach_answer, file_stem, index_from, money, summary, write_results
 from app.project_files import replace_file
 from app.spending import SPENDING_FILE, Prices, Spending, charge
 
 RESULTS_DIR = Path("/project/eval-runs")
-SITUATIONS_FILE = Path(__file__).resolve().parents[1] / "evaluation" / "situations.json"
 
 
 def affordable(prices: Prices, answers: int, spending: Spending) -> bool:
@@ -107,6 +107,7 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
         return 130
     # Completa solo se ogni risposta è arrivata senza errori.
     save(answers, complete=all("error" not in a for a in answers))
+    print("\n".join(report(run, grade(run, situations), f"{results_dir.name}/{path.name}")))
     print(f"Costo totale: {money(run['totalCost'])}")
     print(f"Risultati in {results_dir.name}/{path.name}")
     return 0 if any("error" not in a for a in answers) else 1
