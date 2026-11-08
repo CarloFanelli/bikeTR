@@ -118,3 +118,7 @@
 ### B-27 · open
 - **What**: A command that tries small prompt changes and keeps the ones that score better on the evaluation set, as a proposal the user approves. Every try calls the chat model, so it needs a cost guard.
 - **From**: eval-set (interview, 2026-11-07)
+
+### B-28 · open
+- **What**: The code works out the protocols the athlete's selection rule allows today and the prompt shows the model only those; the model chooses one and explains why. Measured with the evaluation set against the after rows (qwen2.5:3b 9 of 27, qwen2.5:7b 12 of 27).
+- **From**: eval-set (dev task 09, 2026-11-08)
