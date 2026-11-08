@@ -240,7 +240,7 @@
     },
     {
      "role": "user",
-     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: 165 bpm · Peso: 70 kg · Tier: High volume\n- CTL 21 · ATL 44 · TSB -23\n- Polarizzazione 28gg: easy 78% / hard 22% · volume 692min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: sabato · DURATA DISPONIBILE: 20 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
+     "content": "STATO ATLETA:\n- FTP: 250W · LTHR: 165 bpm · Peso: 70 kg · Tier: High volume\n- CTL 21 · ATL 44 · TSB -23\n- Polarizzazione 28gg: easy 78% / hard 22% · volume 692min\n- Volume target: 8h/sett su 4 giorni\n\nULTIME ATTIVITÀ BICI:\n- 2026-11-06 (Ride): 90min, 45km, 230W, FC 150\n- 2026-11-05 (Ride): 31min, 12.3km, FC 141\n- 2026-11-03 (VirtualRide): 60min, 30km, 260W, FC 160\n- 2026-11-02 (Ride): 2min, 0.5km, 250W, FC 165\n\nOGGI: sabato · DURATA DISPONIBILE: 30 minuti\n\nScegli il protocollo e restituisci SOLO il JSON."
     }
    ],
    "built": {
@@ -248,7 +248,7 @@
     "targetWatt": "115-140W (45-55% FTP)",
     "struttura": [
      "Riscaldamento 5': partenza fluida, cadenza 90+ rpm",
-     "Lavoro 10': costante 115-140W, gambe sciolte, niente sforzi",
+     "Lavoro 20': costante 115-140W, gambe sciolte, niente sforzi",
      "Defaticamento 5': scendere progressivamente"
     ]
    },

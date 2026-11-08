@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { CoachStatus, CoachWorkout, ConnectionCheck } from '../../src/core/coach-types.ts';
 import {
-  checkLine, coachProfile, dataLine, errorHeading, metaLine, modelLine, paperCitation, ridesNotes, spendingLine,
+  checkLine, coachProfile, dataLine, errorHeading, metaLine, modelLine, openingDuration, paperCitation, ridesNotes,
+  spendingLine,
 } from '../../src/core/coach-view.ts';
 import type { HrProfile } from '../../src/core/hr.ts';
 
@@ -41,6 +42,11 @@ describe('testi del Coach', () => {
     expect(metaLine(w)).toBe('⚡ cloud · m · 3.0s · token: — in, 0 out · costo: —');
     expect(metaLine({ ...w, inputTokens: 100, cost: 0.0004 })).toBe('⚡ cloud · m · 3.0s · token: 100 in, 0 out · costo: $0.0004');
     expect(metaLine({ ...w, cost: 0 })).toContain('· costo: $0.0000');
+  });
+
+  it('durata di partenza: l\'ultima chiesta, portata tra 30 e 240; 60 se manca', () => {
+    expect([20, 29, 30, 45, 240, 300].map(openingDuration)).toEqual([30, 30, 30, 45, 240, 240]);
+    expect([undefined, 0, '45'].map(openingDuration)).toEqual([60, 60, 60]);
   });
 
   it('titolo degli errori senza spiegazione propria', () => {

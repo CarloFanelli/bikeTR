@@ -59,7 +59,7 @@
       "name": "empty-answer",
       "scenario": "base",
       "timeZone": "Europe/Rome",
-      "duration": 20,
+      "duration": 30,
       "query": "tail",
       "answer": ""
     },

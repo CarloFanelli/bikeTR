@@ -22,7 +22,7 @@ from app.protocols import PROTOCOLS, fallback_protocol_id
 from app.spending import Spending, charge, cost
 from app.strava import StravaRides
 
-MIN_DURATION, MAX_DURATION = 20, 240
+MIN_DURATION, MAX_DURATION = 30, 240
 # Campo del profilo inviato dal browser → nome mostrato nei messaggi d'errore.
 PROFILE_FIELDS = {"ftp": "FTP", "lthr": "FC soglia", "hrMax": "FC massima", "weight": "peso",
                   "weeklyHours": "ore settimanali", "weeklyDays": "giorni settimanali"}

@@ -6,5 +6,6 @@
 04-evaluation-run: DONE
 05-grading: DONE
 06-before-runs: DONE
-07-prompt-rewrite: TODO
-08-after-runs-readme: TODO
+07-minimum-duration: DONE
+08-prompt-rewrite: TODO
+09-after-runs-readme: TODO

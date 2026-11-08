@@ -12,11 +12,11 @@ import { hrProfile } from '../app/session.ts';
 import CoachErrorCard from '../components/CoachErrorCard.vue';
 import CoachWorkoutCard from '../components/CoachWorkoutCard.vue';
 import type { CoachStatus } from '../core/coach-types.ts';
-import { coachProfile, dataLine } from '../core/coach-view.ts';
+import { MAX_DURATION, MIN_DURATION, coachProfile, dataLine, openingDuration } from '../core/coach-view.ts';
 import { coachStatus, type CoachAnswer } from '../data/coach.ts';
 import { loadCoachSettings, loadSettings, saveCoachSettings } from '../data/storage.ts';
 
-const duration = ref(String(loadCoachSettings().lastDuration || 60));
+const duration = ref(String(openingDuration(loadCoachSettings().lastDuration)));
 // Il modello del .env del servizio: dice anche se i dati escono dal computer.
 const status = ref<CoachAnswer<CoachStatus> | null>(null);
 onMounted(async () => {
@@ -51,8 +51,8 @@ function generate() {
           v-model="duration"
           type="number"
           label="Durata disponibile (min)"
-          :min="20"
-          :max="240"
+          :min="MIN_DURATION"
+          :max="MAX_DURATION"
           :step="5"
           hide-details
           class="duration"
