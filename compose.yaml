@@ -73,7 +73,8 @@ services:
       - ./docker/coach:/app:ro
       # Corse e dettagli corsa scaricati da Strava: restano dopo `docker compose down`,
       # spariscono con `down -v` o con "Disconnetti da Strava". Qui anche il totale speso
-      # per il modello cloud, che "Disconnetti da Strava" non tocca.
+      # per il modello cloud, che "Disconnetti da Strava" non tocca, e la cancellazione delle
+      # tracce che "Disconnetti da Strava" lascia in attesa finché Phoenix non risponde.
       - coach-data:/data
     environment: *coach-env
     depends_on:
