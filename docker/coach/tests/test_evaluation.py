@@ -1,8 +1,10 @@
 """La corsa del set di valutazione: un comando fa scegliere il workout al modello chat di .env in
 ogni situazione, tante volte quante chiede --repeat, e scrive un file di risultati nuovo, riscritto
-dopo ogni risposta. Qui modello chat, modello di ricerca e provider sono finti: nessuna spesa."""
+dopo ogni risposta; con --search-only misura soltanto la ricerca dei paper. Qui modello chat, modello
+di ricerca e provider sono finti: nessuna spesa."""
 
 import json
+import socket
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -23,7 +25,7 @@ SITUATIONS = json.loads(evaluation.SITUATIONS_FILE.read_text(encoding="utf-8"))
 ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
 CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "repeat", "duration", "protocolId", "fellBack", "truncated", "jsonReadable", "papersFound",
-          "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds", "modelRaw"}
+          "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds", "modelRaw"}
 
 
 @pytest.fixture
@@ -77,7 +79,7 @@ def test_every_situation_of_the_set_runs_like_a_coach_request_and_the_file_is_co
     for a in run["answers"]:
         assert set(a) == FIELDS
         assert (a["modelRaw"], a["jsonReadable"], a["inputTokens"], a["outputTokens"]) == (ANSWER, True, 900, 42)
-        assert len(a["papersFound"]) == 4
+        assert len(a["papersFound"]) == 4 and len(a["passagesFound"]) == 8
     # Lo stesso prompt di una richiesta del Coach, dai numeri della situazione.
     sent = [body["messages"] for _, body in fakes["ollama"].requests]
     assert [m[1]["content"] for m in sent] == [prompts.user_prompt(s["context"], s["minutes"]) for s in SITUATIONS]
@@ -295,6 +297,65 @@ def test_wrong_env_stops_before_any_call_and_writes_nothing(fakes, tmp_path, clo
     code, files = evaluate(tmp_path, cloud_spending, two_situations)
     assert (code, files, fakes["cloud"].requests) == (2, [], [])
     assert "manca in .env: CLOUD_URL" in capsys.readouterr().err
+
+
+def search_only_files(tmp_path) -> tuple[Path, Path]:
+    """Tre situazioni (paper atteso trovato, non trovato, solo pratica) e un indice in cui la
+    ricerca finta trova per prima Seiler 2011, il paper di seiler_4x8."""
+    vector = CASES["queries"]["middle"]
+    index = load("papers_index.json")
+    first = index["papers"][0]
+    first.update(pmid="21812820", passages=[{**s, "embedding": vector} for s in first["passages"]])
+    index_file = tmp_path / "papers_index.json"
+    index_file.write_text(json.dumps(index), encoding="utf-8")
+    base = SITUATIONS[0]
+    situations = [{**base, "name": "trovato", "allowed": ["seiler_4x8", "rest"]},
+                  {**base, "name": "non-trovato", "allowed": ["ronnestad_30_15"]},
+                  {**base, "name": "solo-pratica", "allowed": ["rest"]}]
+    situations_file = tmp_path / "situations.json"
+    situations_file.write_text(json.dumps(situations), encoding="utf-8")
+    return situations_file, index_file
+
+
+def test_search_only_runs_the_coach_search_in_every_situation_and_prints_the_search_score(
+        fakes, tmp_path, cloud_spending, monkeypatch, phoenix, capsys):
+    # Un .env cloud senza chiave né indirizzo, e niente rete: la sola ricerca non ne ha bisogno.
+    monkeypatch.setenv("COACH_PROVIDER", "cloud")
+
+    def no_network(*args):
+        raise AssertionError("la sola ricerca non deve usare la rete")
+    monkeypatch.setattr(socket.socket, "connect", no_network)
+    situations_file, index_file = search_only_files(tmp_path)
+    results = tmp_path / "eval-runs"
+    code = evaluation.main(["--search-only"], results_dir=results, index_file=index_file,
+                           situations_file=situations_file, spending=cloud_spending)
+    assert code == 0
+    assert capsys.readouterr().out.splitlines() == [
+        f"Sola ricerca dei paper: 3 situazioni, modello di ricerca {search.SEARCH_MODEL}",
+        "  Punteggio della ricerca, paper atteso trovato: 50% (1/2)"]
+    situations = json.loads(situations_file.read_text(encoding="utf-8"))
+    assert fakes["search"].texts == [prompts.retrieval_query(s["context"], s["minutes"]) for s in situations]
+    # Nessun modello chat, nessuna spesa, nessun file, nessuna traccia.
+    assert (fakes["ollama"].requests, fakes["cloud"].requests) == ([], [])
+    assert cloud_spending.total() == 0 and not results.exists() and phoenix.traces() == []
+
+
+def test_search_only_counts_every_situation_of_the_set_with_an_expected_paper(fakes, tmp_path, cloud_spending,
+                                                                              capsys):
+    code, files = evaluate(tmp_path, cloud_spending, args=["--search-only"])
+    # 20 delle 27 situazioni ammettono un protocollo con un paper di supporto; l'indice dei test non ne ha.
+    assert (code, files) == (0, [])
+    assert "  Punteggio della ricerca, paper atteso trovato: 0% (0/20)" in capsys.readouterr().out.splitlines()
+
+
+def test_search_only_with_a_refused_index_prints_the_coach_message_and_fails(fakes, tmp_path, cloud_spending, capsys):
+    situations_file, index_file = search_only_files(tmp_path)
+    index = json.loads(index_file.read_text(encoding="utf-8"))
+    index_file.write_text(json.dumps({**index, "model": "altro-modello"}), encoding="utf-8")
+    code = evaluation.main(["--search-only"], results_dir=tmp_path / "eval-runs", index_file=index_file,
+                           situations_file=situations_file, spending=cloud_spending)
+    assert code == 2
+    assert "✗ papers_index.json è codificato con altro-modello" in capsys.readouterr().err
 
 
 def test_the_prompt_version_changes_with_the_prompt_text_and_only_with_it(monkeypatch):

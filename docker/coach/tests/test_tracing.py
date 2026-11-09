@@ -14,7 +14,7 @@ from opentelemetry.trace import StatusCode
 from app import main, papers, prompts, search, tracing
 from app.errors import CoachError
 from app.strava import STRAVA_REFUSED, RideData
-from fakes import CLOUD_KEY, REAL_PHOENIX, DownPhoenix, FakeCloud, FakeOllama, FakeRides
+from fakes import CLOUD_KEY, INDEX, REAL_PHOENIX, DownPhoenix, FakeCloud, FakeOllama, FakeRides
 from fixture_data import NOW_MS, RIDES
 from test_cancel import CEILING, SILENCE, CoachServer, FakeModelServer, chat, run_workout, short_silence_client
 from test_cancel import until_first_token
@@ -75,17 +75,20 @@ def test_saved_rides_used_when_strava_is_unreachable_show_in_the_rides_step(phoe
     assert step_of(phoenix, "rides").attributes["coach.rides.from_saved"] is True
 
 
-def test_the_search_step_holds_the_search_text_and_the_papers_found(service, phoenix):
-    result = events_of(post(service, BODY))[-1]
-    papers = step_of(phoenix, "papers").attributes
-    assert papers["openinference.span.kind"] == "RETRIEVER"
-    assert papers["input.value"] == service.search.texts[0]
-    found = [{"pmid": papers[f"retrieval.documents.{i}.document.id"],
-              "title": papers[f"retrieval.documents.{i}.document.content"],
-              "score": papers[f"retrieval.documents.{i}.document.score"]} for i in range(len(result["retrievedPapers"]))]
-    assert found == [{k: p[k] for k in ("pmid", "title", "score")} for p in result["retrievedPapers"]]
-    # Solo PMID, titolo e punteggio: niente abstract né vettori dell'indice.
-    assert not any("abstract" in k or "embedding" in k for k in papers)
+def test_the_search_step_holds_the_search_text_and_each_passage_given(service, phoenix):
+    events_of(post(service, BODY))
+    step = step_of(phoenix, "papers").attributes
+    assert step["openinference.span.kind"] == "RETRIEVER"
+    assert step["input.value"] == service.search.texts[0]
+    given = [(s["label"], p["title"], s["score"], s["text"])
+             for p in papers.top_papers(INDEX, service.search.vector) for s in p["passages"]]
+    documents = [(step[f"retrieval.documents.{i}.document.id"], step[f"retrieval.documents.{i}.document.content"],
+                  step[f"retrieval.documents.{i}.document.score"]) for i in range(len(given))]
+    assert documents == [(label, title, score) for label, title, score, _ in given]
+    assert f"retrieval.documents.{len(given)}.document.id" not in step
+    # Etichetta, titolo del paper e punteggio: niente testo dei passaggi né vettori dell'indice.
+    assert not any(text in str(value) for _, _, _, text in given for value in step.values())
+    assert not any("abstract" in k or "embedding" in k for k in step)
 
 
 def sent_messages(fake) -> list:

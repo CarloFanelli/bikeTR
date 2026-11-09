@@ -175,13 +175,14 @@ def note_made_up_rides() -> None:
 
 
 def note_papers(query: str, found: list) -> None:
-    """Il testo cercato e i paper trovati, con PMID, titolo e punteggio: niente abstract né vettori."""
+    """Il testo cercato e ogni passaggio dato al modello, con etichetta, titolo del suo paper e
+    punteggio: niente testo dei passaggi né vettori."""
     attributes = {SpanAttributes.INPUT_VALUE: query}
-    for i, p in enumerate(found):
+    for i, (p, s) in enumerate((p, s) for p in found for s in p["passages"]):
         document = f"{SpanAttributes.RETRIEVAL_DOCUMENTS}.{i}."
-        attributes |= {document + DocumentAttributes.DOCUMENT_ID: p["pmid"],
+        attributes |= {document + DocumentAttributes.DOCUMENT_ID: s["label"],
                        document + DocumentAttributes.DOCUMENT_CONTENT: p["title"],
-                       document + DocumentAttributes.DOCUMENT_SCORE: p["score"]}
+                       document + DocumentAttributes.DOCUMENT_SCORE: s["score"]}
     _note(attributes)
 
 

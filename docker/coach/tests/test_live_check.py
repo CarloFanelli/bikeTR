@@ -22,7 +22,8 @@ COACH_DIR = Path(__file__).resolve().parents[1]
 ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
 CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "duration", "provider", "model", "protocolId", "fellBack", "truncated", "jsonReadable",
-          "papersFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds", "modelRaw"}
+          "papersFound", "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds",
+          "modelRaw"}
 
 
 @pytest.fixture
@@ -59,6 +60,9 @@ def test_three_made_up_situations_with_the_env_model(fakes, tmp_path, cloud_spen
         assert set(s) == FIELDS
         assert (s["provider"], s["model"], s["modelRaw"], s["jsonReadable"]) == ("ollama", "qwen2.5:7b", ANSWER, True)
         assert len(s["papersFound"]) == 4 and {"pmid", "title", "score"} <= set(s["papersFound"][0])
+        # I passaggi dati: etichetta e punteggio, non il testo, che l'etichetta ritrova nell'indice.
+        assert [set(g) for g in s["passagesFound"]] == [{"label", "score"}] * 8
+        assert {g["label"].split()[0] for g in s["passagesFound"]} == {f"PMID:{p['pmid']}" for p in s["papersFound"]}
         assert all(isinstance(pmid, str) for pmid in s["papersCited"])
         assert (s["inputTokens"], s["outputTokens"], s["cost"], s["charged"]) == (900, 42, None, None)
     assert len(fakes["ollama"].requests) == 3 and len(fakes["search"].texts) == 3

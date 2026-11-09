@@ -1,7 +1,7 @@
 """Il workout di oggi, dalla richiesta del browser al risultato.
 
 La logica è quella del Coach che girava nel browser: contesto atleta, ricerca dei
-paper, scelta del modello, ripieghi deterministici e paper citati. Strada facendo
+paper, scelta del modello, ripieghi deterministici e paper citati, ora con i passaggi. Strada facendo
 `emit` manda al browser gli eventi: step, context, token e infine result; ogni passo lascia
 anche la sua parte della traccia in Phoenix (app/tracing.py)."""
 
@@ -104,9 +104,40 @@ def parse_model_json(text: str):
     return None
 
 
-def paper_ref(p: dict) -> dict:
-    return {"pmid": p["pmid"], "title": p["title"], "authors": p["authors"], "year": p["year"],
-            "journal": p.get("journal")}
+def paper_ref(p: dict, quoted: list) -> dict:
+    """Il paper come lo mostra la scheda, con i passaggi citati; un testo completo citato porta la sua
+    licenza e il suo link, perché la scheda ne riporta il testo."""
+    ref = {"pmid": p["pmid"], "title": p["title"], "authors": p["authors"], "year": p["year"],
+           "journal": p.get("journal"), "passages": [{"label": s["label"], "text": s["text"]} for s in quoted]}
+    if quoted and p.get("textUsed") == "fullText":
+        ref |= {"license": p["license"], "licenseUrl": p["licenseUrl"]}
+    return ref
+
+
+def card_papers(listed, razionale: str, protocol_id: str, index: dict, retrieved: list) -> list[dict]:
+    """I paper della scheda: ogni paper citato una volta, nell'ordine della prima citazione (la lista
+    dei passaggi usati, poi il razionale), con i passaggi citati tra quelli dati al modello, in ordine
+    di etichetta; poi il paper di supporto del protocollo, se manca, con il suo passaggio più vicino
+    quando la ricerca l'ha trovato. Solo paper dell'indice e passaggi dati: un'etichetta inventata
+    non arriva alla scheda."""
+    by_pmid = {}
+    for p in index["papers"]:
+        by_pmid.setdefault(p["pmid"], p)
+    given = {s["label"]: s for p in retrieved for s in p["passages"]}
+    quoted: dict[str, dict[str, dict]] = {}
+    for pmid, number in papers.citations(listed, razionale):
+        if pmid in by_pmid:
+            chosen = quoted.setdefault(pmid, {})
+            cited = papers.label(pmid, number) if number is not None else None
+            if cited in given:
+                chosen[cited] = given[cited]
+    source = PROTOCOLS[protocol_id].source_pmid
+    if source and source in by_pmid and source not in quoted:
+        found = next((p for p in retrieved if p["pmid"] == source), None)
+        closest = max(found["passages"], key=lambda s: s["score"]) if found else None
+        quoted[source] = {closest["label"]: closest} if closest else {}
+    return [paper_ref(by_pmid[pmid], sorted(chosen.values(), key=lambda s: papers.number_of(s["label"])))
+            for pmid, chosen in quoted.items()]
 
 
 def fallback_warning(parsed, chosen: str | None, duration: int, truncated: bool) -> str:
@@ -123,40 +154,30 @@ def fallback_warning(parsed, chosen: str | None, duration: int, truncated: bool)
             f"minuti: con {duration} minuti {by_rules}")
 
 
-def decide(model_raw: str, ctx: dict, duration: int, index: dict, truncated: bool = False) -> dict:
-    """Dal testo del modello al workout. Una risposta che non si può usare (troncata, illeggibile,
-    senza un protocollo del catalogo o con un protocollo che non entra nei minuti) lascia la scelta
-    al primo protocollo che le regole ammettono, con il razionale di ripiego e senza i paper del modello."""
+def decide(model_raw: str, ctx: dict, duration: int, index: dict, retrieved: list, truncated: bool = False) -> dict:
+    """Dal testo del modello al workout, con i paper trovati dalla ricerca (`retrieved`): i loro
+    passaggi sono quelli che la scheda può citare. Una risposta che non si può usare (troncata,
+    illeggibile, senza un protocollo del catalogo o con un protocollo che non entra nei minuti) lascia
+    la scelta al primo protocollo che le regole ammettono, con il razionale di ripiego e senza i paper
+    del modello."""
     parsed = None if truncated else parse_model_json(model_raw)
     chosen = js_str(parsed.get("protocolId")) if isinstance(parsed, dict) else None
     built = PROTOCOLS[chosen].build(ctx["ftp"], duration) if chosen in PROTOCOLS else None
     if built is not None:
         protocol_id = chosen
         razionale = js_str(parsed.get("razionale")) if js_truthy(parsed.get("razionale")) else NO_RATIONALE
-        cited = parsed["paperUsati"] if isinstance(parsed.get("paperUsati"), list) else []
-        warning = None
+        listed, warning = parsed.get("passaggiUsati"), None
     else:
         protocol_id = fallback_protocol_id(ctx, duration)
         built = PROTOCOLS[protocol_id].build(ctx["ftp"], duration)
         hard = ctx["polarizzazione"]["hardPct"]
         razionale = (f"Decisione fallback: TSB {js_str(ctx['tsb'])}, polarizzazione hard "
                      f"{'—' if hard is None else js_str(hard)}% → {PROTOCOLS[protocol_id].name}")
-        cited, warning = [], fallback_warning(parsed, chosen, duration, truncated)
+        listed, warning = [], fallback_warning(parsed, chosen, duration, truncated)
     tracing.note_decision(chosen, protocol_id, warning)
-
-    # Paper citati: solo quelli dell'indice, nell'ordine e con i doppioni della risposta;
-    # poi la fonte del protocollo dato, se non c'è già.
-    by_pmid = {}
-    for p in index["papers"]:
-        by_pmid.setdefault(p["pmid"], p)
-    refs = [by_pmid[js_str(pmid)] for pmid in cited if js_str(pmid) in by_pmid]
-    source = PROTOCOLS[protocol_id].source_pmid
-    if source and source in by_pmid and all(p["pmid"] != source for p in refs):
-        refs.append(by_pmid[source])
-
     return {"protocolId": protocol_id, **built, "razionale": razionale,
-            "paperRefs": [paper_ref(p) for p in refs], "fellBack": warning is not None,
-            "fallbackWarning": warning}
+            "paperRefs": card_papers(listed, razionale, protocol_id, index, retrieved),
+            "fellBack": warning is not None, "fallbackWarning": warning}
 
 
 def step(name: str, message: str, **extra) -> dict:
@@ -181,6 +202,18 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
                     "missingDetails": data.missing_details}})
 
 
+async def find_papers(ctx: dict, duration: int, *, embed: Callable[[str], Awaitable[list]],
+                      load_index: Callable[[], Awaitable[dict]]) -> tuple[dict, str, list]:
+    """La ricerca dei paper per un atleta: l'indice letto, il testo di ricerca e i paper più
+    vicini. Un indice rifiutato diventa un errore del Coach, con il messaggio che dice come rimediare."""
+    try:
+        index = await load_index()
+        query = prompts.retrieval_query(ctx, duration)
+        return index, query, papers.top_papers(index, await embed(query))
+    except papers.PaperIndexError as e:
+        raise CoachError(502, "retrieval", str(e)) from e
+
+
 async def from_context(ctx: dict, duration: int, emit: Callable[[dict], None], *, chat: provider.ChatSettings,
                        chat_client: httpx.AsyncClient, embed: Callable[[str], Awaitable[list]],
                        load_index: Callable[[], Awaitable[dict]], spending: Spending) -> dict:
@@ -189,12 +222,7 @@ async def from_context(ctx: dict, duration: int, emit: Callable[[dict], None], *
     emit(step("papers", "Recupero paper rilevanti…"))
     started = time.monotonic()
     with tracing.step("papers"):
-        try:
-            index = await load_index()
-            query = prompts.retrieval_query(ctx, duration)
-            retrieved = papers.top_papers(index, await embed(query))
-        except papers.PaperIndexError as e:
-            raise CoachError(502, "retrieval", str(e)) from e
+        index, query, retrieved = await find_papers(ctx, duration, embed=embed, load_index=load_index)
         tracing.note_papers(query, retrieved)
 
     emit(step("model", "Il modello sta scegliendo il protocollo…"))
@@ -225,10 +253,13 @@ async def from_context(ctx: dict, duration: int, emit: Callable[[dict], None], *
             tracing.note_model(chat, messages, model_raw, end, answer_cost, charged)
 
     with tracing.step("decision"):
-        decision = decide(model_raw, ctx, duration, index, end.truncated)
+        decision = decide(model_raw, ctx, duration, index, retrieved, end.truncated)
     return {**decision,
+            # I passaggi dati al modello, con etichetta e punteggio: i file dei risultati li registrano.
             "retrievedPapers": [{"pmid": p["pmid"], "title": p["title"], "authors": p["authors"],
-                                 "year": p["year"], "score": p["score"]} for p in retrieved],
+                                 "year": p["year"], "score": p["score"],
+                                 "passages": [{"label": s["label"], "score": s["score"]} for s in p["passages"]]}
+                                for p in retrieved],
             "provider": chat.provider, "model": chat.model, "seconds": round(time.monotonic() - started, 1),
             "inputTokens": end.input_tokens, "outputTokens": end.output_tokens, "truncated": end.truncated,
             "cost": answer_cost, "modelRaw": model_raw}
