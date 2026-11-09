@@ -8,6 +8,32 @@ A browser app (Vue and TypeScript in `web/`, served by a live-reload development
 
 ---
 
+## The AI Coach in short
+
+You have an hour today: rest, easy Z2, or intervals? The Coach reads your Strava rides, computes fitness, fatigue and form (CTL/ATL/TSB) and the hard share of the last 28 days, searches 17 sports-science papers for the passages that fit, and asks a language model to pick **one workout from a fixed catalog of 13** and explain why, citing those passages.
+
+**The model picks, the code computes.** Watts, repetitions and minutes come from the code, never from the model. Selection rules in the code decide which workouts each athlete is allowed today. An answer that is unreadable, cut off, outside the catalog or too long for the minutes goes to fallback rules, and the workout card says why.
+
+**Measured, not assumed.** 27 made-up athletes, each listing the workouts the rules allow, graded by fixed checks: no model judges another model. Latest runs, local Ollama on a Mac:
+
+| Model | Rules followed | Invented citations | Fallback | Median seconds |
+|---|---|---|---|---|
+| qwen2.5:7b | 44% (12/27) | 0% | 4% | 12.2 |
+| qwen2.5:3b | 33% (9/27) | 0% | 11% | 5.6 |
+
+The paper search alone finds an expected paper in 14 of 20 situations (9 before passage-level search).
+
+**What doesn't work yet.** The runs above use small models (3B and 7B) running locally, and they don't follow the selection rules reliably: writing the rules out in the prompt didn't help (qwen2.5:7b went from 15 to 12). Two changes come next:
+
+- **Cloud models by default.** The Coach can already call a cloud model through an OpenAI-compatible API, with a spending cap, but none has been measured on the evaluation set yet. The plan is to make a cloud model the default, and keep local models for machines with enough compute to run larger ones than today's.
+- **A narrower choice for the model.** Show the model only the workouts its athlete is allowed, and let it choose among those and explain, instead of asking it to apply the rules itself.
+
+Both get measured on the same 27 situations before the README claims anything.
+
+More: [how a request works](#5-ai-coach) · [evaluation set and every score](eval-runs/README.md) · [each decision and its cost](PROCESS.md)
+
+---
+
 ## Features
 
 The sidebar lists five sections: **Home**, **Allenamento** (Training), **Analisi** (Analysis), **Attività** (Activities) and **Coach AI**, with **Impostazioni** (Settings) and the Strava connection at its bottom. "Riduci a icone" shrinks it to icons, and the choice is kept after a reload.
