@@ -2,7 +2,9 @@
 // della card del workout e il modello in uso. Ricevono i dati e restituiscono testi o valori,
 // senza leggere il browser.
 
-import type { AthleteProfile, CoachStatus, CoachWorkout, ConnectionCheck, PaperRef } from './coach-types.ts';
+import type {
+  AthleteProfile, CoachStatus, CoachWorkout, ConnectionCheck, PaperRef, PassageQuote,
+} from './coach-types.ts';
 import type { HrProfile } from './hr.ts';
 import type { Settings } from './settings.ts';
 
@@ -32,6 +34,25 @@ export function openingDuration(saved: unknown): number {
 export const pubmedUrl = (pmid: string) => `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
 
 export const paperCitation = (p: PaperRef) => `${p.authors} (${p.year}). ${p.title}`;
+
+// Un paper citato come lo mostra la card: i passaggi da citare sotto il titolo e la licenza da
+// accreditare accanto agli autori.
+interface CitedPaper {
+  paper: PaperRef;
+  quotes: PassageQuote[];
+  license: { name: string; url: string } | null;
+}
+
+// La licenza ha un link solo se è un indirizzo web: mai un altro tipo di link nella pagina.
+export function citedPapers(refs: PaperRef[]): CitedPaper[] {
+  return refs.map((paper) => ({
+    paper,
+    quotes: paper.passages ?? [],
+    license: paper.license && paper.licenseUrl && /^https?:\/\//.test(paper.licenseUrl)
+      ? { name: paper.license, url: paper.licenseUrl }
+      : null,
+  }));
+}
 
 // Da dove vengono le corse, quando non è il solito download completo.
 export function ridesNotes(rides: CoachWorkout['rides']): string[] {

@@ -17,15 +17,26 @@ export interface WorkoutRequest {
   profile: AthleteProfile;
 }
 
+// Un passaggio di un paper citato dal modello: l'etichetta "PMID:n §k" e il testo.
+export interface PassageQuote {
+  label: string;
+  text: string;
+}
+
 export interface PaperRef {
   pmid: string;
   title: string;
   authors: string;
   year: string;
   journal?: string | null;
+  // I passaggi citati, in ordine di etichetta; con la licenza e il suo link quando il paper è un
+  // testo completo. Mancano nelle risposte di un servizio avviato prima dei passaggi.
+  passages?: PassageQuote[];
+  license?: string;
+  licenseUrl?: string;
 }
 
-interface RetrievedPaper extends PaperRef {
+interface RetrievedPaper extends Omit<PaperRef, 'passages' | 'license' | 'licenseUrl'> {
   score: number;
 }
 

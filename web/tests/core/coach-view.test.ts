@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { CoachStatus, CoachWorkout, ConnectionCheck } from '../../src/core/coach-types.ts';
+import type { CoachStatus, CoachWorkout, ConnectionCheck, PaperRef } from '../../src/core/coach-types.ts';
 import {
-  checkLine, coachProfile, dataLine, errorHeading, metaLine, modelLine, openingDuration, paperCitation, ridesNotes,
-  spendingLine,
+  checkLine, citedPapers, coachProfile, dataLine, errorHeading, metaLine, modelLine, openingDuration, paperCitation,
+  ridesNotes, spendingLine,
 } from '../../src/core/coach-view.ts';
 import type { HrProfile } from '../../src/core/hr.ts';
 
@@ -17,6 +17,30 @@ describe('testi del Coach', () => {
   it('citazione del paper', () => {
     expect(paperCitation({ pmid: '123', authors: 'Seiler S', year: '2010', title: 'What is best practice?' }))
       .toBe('Seiler S (2010). What is best practice?');
+  });
+
+  const seiler: PaperRef = { pmid: '21812820', authors: 'Seiler et al.', year: '2013', title: 'Adaptations.' };
+  const quotes = [{ label: 'PMID:21812820 §1', text: 'Primo.' }, { label: 'PMID:21812820 §3', text: 'Terzo.' }];
+  const ccBy = { license: 'CC BY', licenseUrl: 'http://creativecommons.org/licenses/by/4.0/' };
+
+  it('paper citati: i passaggi sotto il titolo e la licenza di un testo completo', () => {
+    expect(citedPapers([{ ...seiler, passages: quotes, ...ccBy }, { ...seiler, pmid: '1', passages: [] }])).toEqual([
+      { paper: { ...seiler, passages: quotes, ...ccBy }, quotes, license: { name: 'CC BY', url: ccBy.licenseUrl } },
+      { paper: { ...seiler, pmid: '1', passages: [] }, quotes: [], license: null },
+    ]);
+  });
+
+  it('paper citati da un servizio avviato prima dei passaggi: nessuna citazione né licenza', () => {
+    expect(citedPapers([seiler])).toEqual([{ paper: seiler, quotes: [], license: null }]);
+  });
+
+  it('la licenza si mostra solo con il suo nome e un indirizzo web', () => {
+    const licenseOf = (p: Partial<PaperRef>) => citedPapers([{ ...seiler, passages: quotes, ...p }])[0].license;
+    expect(licenseOf({ license: 'CC BY' })).toBeNull();
+    expect(licenseOf({ licenseUrl: ccBy.licenseUrl })).toBeNull();
+    expect(licenseOf({ license: 'CC BY', licenseUrl: 'javascript:alert(1)//creativecommons.org/' })).toBeNull();
+    expect(licenseOf({ license: 'CC BY', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' }))
+      .toEqual({ name: 'CC BY', url: 'https://creativecommons.org/licenses/by/4.0/' });
   });
 
   it('note sulle corse: salvate e senza dettagli, nessuna nota nel caso normale', () => {
