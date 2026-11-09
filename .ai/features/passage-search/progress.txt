@@ -1,0 +1,8 @@
+# Task Progress - passage-search
+
+01-search-score: DONE
+02-abstract-passages: DONE
+03-open-license-full-texts: DONE
+04-search-text-protocols: DONE
+05-passage-citations: DONE
+06-coach-readme: DONE

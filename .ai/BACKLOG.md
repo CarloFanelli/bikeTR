@@ -1,8 +1,9 @@
 # Backlog
 
-### B-1 · open
+### B-1 · picked-up
 - **What**: Build RAG over sports-science PDFs: ingestion, chunking, embeddings, a local vector store (Chroma, LanceDB or sqlite-vec), and retrieval citing paper and passage in every recommendation.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: passage-search (2026-11-09)
 
 ### B-2 · open
 - **What**: Model coaching as a LangGraph graph: Strava fetch, metrics, evidence retrieval, draft plan, constraint check (load ramp, recovery) looping back on failure, delivery, with at least one conditional branch.
@@ -127,3 +128,11 @@
 ### B-29 · open
 - **What**: Live-check and evaluation results files record why the Coach used the fallback rules (cut off, unreadable, not in the catalog, too long), and grading counts each cause. Deferred because grading reads the model's own choice and nobody needs a count per cause yet.
 - **From**: fallback-reason (interview, 2026-11-08)
+
+### B-30 · open
+- **What**: Describe each protocol in English in the paper search text: the protocol names are Italian while the search model and the papers are English. Measured with the search-only run of the evaluation set.
+- **From**: passage-search (interview, 2026-11-09)
+
+### B-31 · open
+- **What**: Find open-license (CC BY, CC BY-SA, CC0) studies behind the same workouts, so more papers are searched by their full text: today only 2 of the 17 qualify. Measured with the search-only run of the evaluation set.
+- **From**: passage-search (dev task 03, 2026-11-09)
