@@ -2,7 +2,7 @@
 feature: tracing
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: f01222be1ea4e52dad89dc42728a2eeb4608efa8
 ---
 
