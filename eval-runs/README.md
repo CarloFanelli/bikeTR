@@ -18,6 +18,14 @@ docker compose run --rm coach-tools python -m app.evaluation
 
 With a cloud model, the command first prints the worst case: every answer at the high estimate (8,000 tokens read, 4,000 written). If that exceeds what is left under `CLOUD_SPENDING_LIMIT`, the run does not start; raise the limit or ask for fewer repeats. Every answer adds to the same spending total as the app.
 
+To measure the paper search alone, with no chat model:
+
+```bash
+docker compose run --rm coach-tools python -m app.evaluation --search-only
+```
+
+It runs the Coach's paper search in every situation and prints the search score (the "Expected paper found" column below), for example `Punteggio della ricerca, paper atteso trovato: 45% (9/20)`. It needs only the search model inside the Coach image: no Ollama, no key, no internet, no spending, and it writes no file and no trace. It stops with code 2, printing the Coach's message, when the paper index is refused.
+
 ## Grading
 
 Grading reads results files and calls no model and no network, so it runs anywhere, the same file always gets the same scores, and a corrected evaluation set re-grades old runs without running them again:
@@ -26,15 +34,16 @@ Grading reads results files and calls no model and no network, so it runs anywhe
 docker compose run --rm coach-tools python -m app.grading eval-runs/FILE.json [more files]
 ```
 
-It prints each run's scores, then one row per file for the README table. Every answer is judged on what the model wrote, not on what the Coach did with it: the Coach replaces a protocol that does not fit the minutes, and adds the protocol's paper to the cited ones by itself. Answers with an error are counted apart, outside the scores.
+It prints each run's scores, then one row per file for the README table. Every answer is judged on what the model wrote, not on what the Coach did with it: the Coach replaces a protocol that does not fit the minutes, drops the citations it never gave the model, and adds the protocol's paper to the cited ones by itself. Answers with an error are counted apart, outside the scores, except the search score, which counts situations (see its row).
 
 | Score | Counts |
 |---|---|
 | Rules followed | answers whose protocol, as the model wrote it, is in the situation's allowed list |
 | Readable JSON | answers the Coach could read as a JSON object, not cut at the token limit |
-| Invented citations | answers citing a PMID, in `paperUsati` or anywhere in the text, that was neither among the papers given nor the source of a selection rule, which the prompt shows beside the rule |
+| Invented citations | answers citing, in `passaggiUsati` or anywhere in the text, a passage label that was not among the passages given, or a paper's PMID alone that was neither among the papers given nor the source of a selection rule, which the prompt shows beside the rule. Files from before passages record no passages given: their answers are judged on PMIDs alone, `paperUsati` included |
 | Support cited | among answers given the supporting paper of the protocol they chose, those citing it |
 | Support found | among answers choosing a protocol with a supporting paper, those whose search found it |
+| Expected paper found | the search score: among situations whose allowed protocols include one with a supporting paper, those where the search found one of those papers among the 4. Each situation counts once, from its first answer without an error; a situation whose answers all failed counts as not found |
 | Fallback | answers where the Coach's fallback rules chose instead of the model |
 | Median seconds, cost per answer | cost is what each answer added to the spending total, failed ones included; `—` with Ollama |
 
@@ -56,6 +65,6 @@ The file is rewritten after every answer, so a run stopped halfway (Ctrl+C, the 
 | `totalCost` | the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama. A run stopped with Ctrl+C during an answer leaves that answer out of the file, but the spending total still counts it, so `totalCost` is a little lower than what the run spent |
 | `answers` | one entry per answer, in the order they ran |
 
-Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds` and `modelRaw` (the whole answer).
+Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `passagesFound` (the passages the model was given, by label and score), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds` and `modelRaw` (the whole answer).
 
 A failed answer has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next answer still runs. The command exits with code 1 when every answer fails, with code 2, writing no file, when `.env` or `--repeat` is wrong or the worst case exceeds the cap, and with code 130 after Ctrl+C. The cloud key is never written here.
