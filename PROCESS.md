@@ -355,3 +355,37 @@ Before this feature, a protocol too long for the minutes became a Z2 ride whatev
 - **Decision**: the workout carries a warning naming why the fallback rules chose: the answer was cut off, was not readable, named no catalog protocol, or picked one too long for the minutes (with its name and minimum minutes). The service writes the text and the card shows it; the "fallback used" flag stays for the live check, the evaluation and grading.
 - **Why**: the card blamed invalid JSON even when the JSON was fine and only the minutes were short; only the service knows the catalog names and minimum minutes, as it already writes the fallback rationale.
 - **Cost**: until the Coach service is restarted after an update, the card shows no warning.
+
+## passage-search — the Coach searches passages of the papers, and the search gets its own score (2026-11-09)
+
+Before this feature, the Coach searched whole abstracts and gave the model 4 abstracts cut to 1,200 characters, so an answer could cite a paper but never the sentences it relied on, and no number measured the search apart from the chat model.
+
+### 2026-11-09 · The search is measured on its own before it changes
+
+- **Decision**: the evaluation gains "Expected paper found": the situations where the search finds, among its 4 papers, the supporting paper of a protocol the selection rules allow. A search-only run prints it without any chat model, and grading computes it from the papers found that results files already record.
+- **Why**: "Support found" depends on the protocol the model chose, so it mixes the search with the model. A search-only number costs nothing and runs on any computer, so every change to the search shows its effect: 9 of 20 before this feature.
+- **Cost**: it says whether the right paper is among those found, not whether the passages given are the useful ones.
+
+### 2026-11-09 · Abstracts cut into passages, searched in sqlite-vec built in memory at every request
+
+- **Decision**: each abstract is cut into passages of whole sentences, at most 600 characters, labeled "PMID:n §k", and each passage is encoded alone, without the paper's title. The index stays a JSON file in git; every search loads its passages into an in-memory sqlite-vec table, and the model gets the 4 papers with the closest passages, 2 passages each.
+- **Why**: a passage is something the model can cite and the card can quote. Passages alone scored 14 of 20 with the final search text, against 13 with the title in front (measured with the search model only). 600 characters stay well under the 512 tokens the search model reads. A JSON file in git keeps `git restore` and the rebuild command as they were, and a database built per request needs no file on disk and no restart after a rebuild. 4 papers × 2 passages keep the paper text in the prompt within 4,800 characters, as 4 abstracts cut at 1,200 did. With passages alone the search score goes from 9 to 11 of 20.
+- **Cost**: sqlite-vec is a new package in the Coach image, so each computer needs `docker compose up -d --build` once. The database is rebuilt at every request, a few milliseconds for 66 passages. The rest of a paper's text never reaches the model.
+
+### 2026-11-09 · A paper uses its full text only under a license that allows copying it
+
+- **Decision**: the rebuild asks Europe PMC for each paper's license. With CC BY, CC BY-SA or CC0 and the full text there, the paper's passages come from its abstract and its body sections, leaving out references, tables, figures, acknowledgments, funding, conflicts, author contributions and untitled sections; otherwise from its abstract. The license name comes from Europe PMC's search record, the license link from the full text, and a full text without a Creative Commons link falls back to the abstract. The index records the text used, and for a full text its license and link.
+- **Why**: the repository is public, so copying a text into it needs a license that allows it; checking paper by paper means papers added later follow the same rule. A full text gives the search the methods and results an abstract summarizes in one sentence, and the card can always credit the license it shows.
+- **Cost**: only 2 of 17 papers qualify today, and their 62 and 90 passages make them appear among the 4 papers found in 8 situations instead of 1: the search score stays 11 of 20, because they take the place of papers that were not the expected ones. The index grows from 0.6 to 1.9 MB, and the rebuild makes 19 more requests.
+
+### 2026-11-09 · The search text names the workouts the selection rules allow
+
+- **Decision**: the search text keeps the browser's words for form, hard share and minutes, and ends with the names of the protocols the selection rules allow for that athlete and those minutes, the same list the fallback rules use. The Coach screen, the live check, the evaluation and the search-only run all build it in the one place.
+- **Why**: the model may only choose among the allowed protocols, so the useful papers are the ones about those protocols. Their names ("Seiler 4×4' (VO2max)", "Rønnestad 30/15") bring the search close to the studies behind them. The search score goes from 11 to 14 of 20, as in the trial during the spec; names, not ids, because the trial used names.
+- **Cost**: some names are Italian ("Riposo", "Soglia 3×10'") and add little for an English search model. A protocol without a supporting paper still adds its name, which can pull the search toward unrelated passages.
+
+### 2026-11-09 · The answer cites passages by label, and the card quotes them
+
+- **Decision**: the prompt asks the model to cite passages as "[PMID:n §k]" in its explanation and to list the labels in `passaggiUsati` (it was `paperUsati`). One reader in `papers.py` turns labels, written in any of the ways models write them, and bare PMIDs into citations for both the card and the grading. The card shows each cited paper once, in first-cited order, quoting only the passages the model was given, in label order, with a full text's license linked beside the authors; the supporting paper of the chosen workout is added when missing, quoting its closest passage. Results files record the passages given (`passagesFound`, label and score); grading counts a label not given as invented, while files without `passagesFound` are graded on PMIDs as before.
+- **Why**: a passage label says which sentence an answer relied on, so a reader can check it, and the card can quote it. Dropping labels that were never given keeps an invented quote off the card, and counting them keeps the evaluation honest. Reading the old list only in grading keeps the four saved runs' scores unchanged (checked: identical rows).
+- **Cost**: the prompt version changes again, so the saved runs and new ones do not share a version. A paper whose only citation is an invented label still appears on the card, without a quote, because its PMID is real. A rule source's PMID stays allowed, but not a passage of it the model was not given.

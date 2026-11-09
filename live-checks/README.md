@@ -24,7 +24,8 @@ Each file holds `startedAt`, `provider`, `model`, `searchModel`, `totalCost` (th
 | `truncated` | the answer stopped at the token limit |
 | `jsonReadable` | the answer was readable as a JSON object |
 | `papersFound` | the 4 papers the search model retrieved, with their score |
-| `papersCited` | the papers the model said it used, as it wrote them |
+| `passagesFound` | the passages the model was given, 2 per paper, with their label and score; the label finds the text in `papers_index.json` |
+| `papersCited` | the passage labels the model said it used (`passaggiUsati`), as it wrote them |
 | `inputTokens`, `outputTokens`, `cost`, `seconds` | `null` when the provider doesn't report them |
 | `charged` | dollars this situation added to the spending total: its cost, or the high estimate (8,000 tokens read, 4,000 written) when the provider gave no token counts or the answer broke off; `null` with Ollama |
 | `modelRaw` | the model's whole answer |
