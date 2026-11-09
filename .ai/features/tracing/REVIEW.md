@@ -1,14 +1,14 @@
 ---
 feature: tracing
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-08
-head: efc764922b86e2ecc5929073065b722fa005f9e8
+head: 6aadac02f052a4d596a94e4d6c4d5fbf93894ac0
 ---
 
 # Review — tracing
 
-**Scope**: 17 files (primary — diff since base `f01222be`; 12 workflow artifacts under `.ai/` excluded; `.gitignore` left out: the user's own uncommitted change, not part of the feature)
-**Findings**: 0 must-fix · 0 should-fix · 1 nit
+**Scope**: 2 files (delta since review head `efc76492`; 1 workflow artifact under `.ai/` excluded; `.gitignore` left out: the user's own uncommitted change, not part of the feature)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
