@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Un testo completo di Europe PMC (JATS), scritto a mano e corto, con le forme dei testi veri:
+     numeri nei titoli, un titolo fatto solo di markup, sottosezioni, tabelle e figure (anche dentro
+     un paragrafo), sezioni da lasciare fuori (anche una sottosezione), una sezione senza titolo e i
+     riferimenti nel corpo. -->
+<article xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ali="http://www.niso.org/schemas/ali/1.0/">
+<front><article-meta>
+<permissions><license><license-p>This is an open access article under the terms of the <ext-link ext-link-type="uri" xlink:href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution</ext-link> License.</license-p></license></permissions>
+<abstract><p>The abstract of the full text is not used: the index takes the one from PubMed.</p></abstract>
+</article-meta></front>
+<body>
+<sec><label>1</label><title>1. Introduction</title>
+<p>Heavy strength training improves cycling economy.</p>
+<p>Few studies tested <italic>well-trained</italic> cyclists.</p>
+</sec>
+<sec><title>2. Methods</title>
+<sec><title>2.1. Participants</title><p>Twelve cyclists took part.</p></sec>
+<sec><title>2.2. Training</title><p>They lifted twice a week.</p>
+<table-wrap><label>Table 1</label><caption><p>Training load.</p></caption><table><tr><td>4 × 10RM</td></tr></table></table-wrap>
+<fig><label>Figure 1</label><caption><p>The design.</p></caption></fig>
+</sec>
+<sec><title>2.3. Funding</title><p>A grant paid for the study.</p></sec>
+</sec>
+<sec><title><italic>V</italic>O<sub>2max</sub></title><p>It rose by 3%.<fig><label>Figure 2</label><caption><p>The rise.</p></caption></fig></p></sec>
+<sec><title>Acknowledgements</title><p>We thank the cyclists.</p></sec>
+<sec><title>Conflict of Interests</title><p>None declared.</p></sec>
+<sec><p>Cite this article as: Vikmoen et al.</p></sec>
+<sec><title>References</title><ref-list><ref><mixed-citation>Seiler S. 2010.</mixed-citation></ref></ref-list></sec>
+</body>
+<back><ref-list><ref><mixed-citation>Another reference.</mixed-citation></ref></ref-list></back>
+</article>

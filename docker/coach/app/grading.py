@@ -5,19 +5,21 @@ cartella del progetto:
   docker compose run --rm coach-tools python -m app.grading eval-runs/FILE.json [altri file…]
 
 Ogni risposta si giudica da quello che il modello ha scritto, non da quello che il Coach ne ha
-fatto: il Coach sostituisce una scelta che non entra nei minuti e aggiunge da sé il paper del
-protocollo ai citati. Le risposte con un errore si contano a parte, fuori dai punteggi. Lo stesso
-file dà sempre lo stesso voto; se il set cambia, i file vecchi si rivalutano senza rifare la corsa."""
+fatto: il Coach sostituisce una scelta che non entra nei minuti, toglie le citazioni inventate e
+aggiunge da sé il paper del protocollo ai citati. Le risposte con un errore si contano a parte, fuori dai punteggi; solo il
+punteggio della ricerca, che conta situazioni, segna come non trovata una situazione con sole
+risposte fallite. Lo stesso file dà sempre lo stesso voto; se il set cambia, i file vecchi si
+rivalutano senza rifare la corsa."""
 
 import argparse
 import json
-import re
 import statistics
 import sys
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
+from app import papers
 from app.jscompat import js_round, js_str
 from app.live_check import money
 from app.protocols import PROTOCOLS
@@ -26,14 +28,13 @@ from app.workout import parse_model_json
 
 PROJECT_DIR = Path("/project")
 SITUATIONS_FILE = Path(__file__).resolve().parents[1] / "evaluation" / "situations.json"
-# Un PMID nel testo della risposta: il prompt chiede [PMID:n], i modelli scrivono anche "PMID n".
-PMID_IN_TEXT = re.compile(r"PMID\W{0,3}(\d+)", re.IGNORECASE)
-# Le fonti delle regole di selezione: il prompt le mostra accanto alle regole, quindi citarle non è
-# inventare. Il paper trovato dalla ricerca resta contato solo tra i paper dati.
+# Le fonti delle regole di selezione: il prompt ne mostra il PMID accanto alle regole, quindi citarle
+# non è inventare; un loro passaggio non dato sì. Il paper trovato dalla ricerca resta contato solo
+# tra i paper dati.
 RULE_SOURCES = {rule.source_pmid for rule in RULES if rule.source_pmid}
 TABLE_HEADER = ("| Model | Prompt | Rules followed | Readable JSON | Invented citations | Support cited "
-                "| Support found | Fallback | Median seconds | Cost per answer | Results file |",
-                "|---|---|---|---|---|---|---|---|---|---|---|")
+                "| Support found | Expected paper found | Fallback | Median seconds | Cost per answer | Results file |",
+                "|---|---|---|---|---|---|---|---|---|---|---|---|")
 
 
 class Refused(Exception):
@@ -50,6 +51,9 @@ class Scores:
     invented: tuple[int, int]
     support_cited: tuple[int, int]
     support_found: tuple[int, int]
+    # Per situazione, non per risposta: (situazioni con il paper atteso tra i trovati,
+    # situazioni con un paper atteso).
+    expected_found: tuple[int, int]
     fallback: tuple[int, int]
     median_seconds: float | None
     cost_per_answer: float | None
@@ -66,12 +70,44 @@ def model_choice(answer: dict) -> tuple[dict | None, str | None]:
     return parsed, js_str(parsed.get("protocolId"))
 
 
-def cited_pmids(parsed: dict | None, model_raw: str) -> set[str]:
-    """I PMID che il modello ha citato: le cifre di ogni voce di paperUsati (un numero e il suo
-    testo contano uguale, una volta sola) e ogni PMID scritto nel testo, razionale compreso."""
-    listed = parsed.get("paperUsati") if parsed else None
-    from_list = {d for p in listed for d in re.findall(r"\d+", js_str(p))} if isinstance(listed, list) else set()
-    return from_list | set(PMID_IN_TEXT.findall(model_raw))
+def cited_in(parsed: dict | None, model_raw: str) -> set[tuple[str, int | None]]:
+    """Le citazioni della risposta, ognuna una volta: le voci della lista dei passaggi usati
+    (paperUsati nei file di prima dei passaggi) e ogni etichetta o PMID scritti nel testo, razionale
+    compreso. (PMID, numero del passaggio), o (PMID, None) per un paper senza passaggio. Il razionale
+    si legge anche decodificato: nel testo grezzo il JSON può scrivere "§" come \\u00a7."""
+    lists = [parsed.get(key) for key in ("passaggiUsati", "paperUsati")] if parsed else []
+    text = f"{model_raw}\n{js_str(parsed.get('razionale'))}" if parsed else model_raw
+    return set(papers.citations([e for listed in lists if isinstance(listed, list) for e in listed], text))
+
+
+def invented(cited: set[tuple[str, int | None]], answer: dict) -> bool:
+    """Una citazione che il modello non ha ricevuto: un'etichetta fuori dai passaggi dati, o il PMID
+    di un paper non dato e non fonte di una regola. Un file di prima dei passaggi non registra i
+    passaggi dati: si contano solo i PMID, come allora."""
+    pmids_given = {p["pmid"] for p in answer["papersFound"]} | RULE_SOURCES
+    if "passagesFound" not in answer:
+        return any(pmid not in pmids_given for pmid, _ in cited)
+    labels_given = {s["label"] for s in answer["passagesFound"]}
+    return any(papers.label(pmid, number) not in labels_given if number is not None else pmid not in pmids_given
+               for pmid, number in cited)
+
+
+def search_score(situations: list[dict], found: dict[str, set[str]]) -> tuple[int, int]:
+    """Il punteggio della ricerca: tra le situazioni con un paper atteso (il paper di supporto di un
+    protocollo che le regole ammettono), quelle che lo hanno tra i paper trovati. `found` dà i PMID
+    trovati per nome di situazione; quelle che non vi compaiono, e quelle che ammettono solo
+    protocolli di pratica, non contano."""
+    hits = counted = 0
+    for s in situations:
+        expected = {PROTOCOLS[p].source_pmid for p in s["allowed"]} - {None}
+        if expected and s["name"] in found:
+            counted += 1
+            hits += bool(expected & found[s["name"]])
+    return hits, counted
+
+
+def search_score_line(score: tuple[int, int]) -> str:
+    return f"  Punteggio della ricerca, paper atteso trovato: {ratio(score)}"
 
 
 def grade(run: dict, situations: list[dict]) -> Scores:
@@ -83,10 +119,10 @@ def grade(run: dict, situations: list[dict]) -> Scores:
     for a in answered:
         parsed, choice = model_choice(a)
         given = {p["pmid"] for p in a["papersFound"]}
-        cited = cited_pmids(parsed, a["modelRaw"])
+        cited = cited_in(parsed, a["modelRaw"])
         count["followed"] += choice in allowed[a["situation"]]
         count["readable"] += parsed is not None
-        count["invented"] += bool(cited - given - RULE_SOURCES)
+        count["invented"] += invented(cited, a)
         count["fallback"] += a["fellBack"]
         # Il paper di supporto del protocollo scelto dal modello; i protocolli di pratica non ne hanno.
         source = PROTOCOLS[choice].source_pmid if choice in PROTOCOLS else None
@@ -94,13 +130,21 @@ def grade(run: dict, situations: list[dict]) -> Scores:
             count["supported"] += 1
             if source in given:
                 count["given"] += 1
-                count["cited"] += source in cited
+                count["cited"] += source in {pmid for pmid, _ in cited}
+    # La ricerca è la stessa a ogni ripetizione: ogni situazione conta una volta, con i paper della
+    # sua prima risposta riuscita. Una risposta fallita non registra paper trovati.
+    found = {}
+    for a in answered:
+        found.setdefault(a["situation"], {p["pmid"] for p in a["papersFound"]})
+    for a in in_set:
+        found.setdefault(a["situation"], set())
     charges = [a["charged"] for a in in_set]
     ran = {a["situation"] for a in run["answers"]}
     return Scores(answered=n, failed=len(in_set) - n,
                   rules_followed=(count["followed"], n), readable=(count["readable"], n),
                   invented=(count["invented"], n), support_cited=(count["cited"], count["given"]),
-                  support_found=(count["given"], count["supported"]), fallback=(count["fallback"], n),
+                  support_found=(count["given"], count["supported"]),
+                  expected_found=search_score(situations, found), fallback=(count["fallback"], n),
                   median_seconds=statistics.median(a["seconds"] for a in answered) if answered else None,
                   # Quanto ha aggiunto al totale della spesa ogni risposta, anche quelle fallite; con Ollama niente.
                   cost_per_answer=sum(charges) / len(charges) if charges and None not in charges else None,
@@ -126,6 +170,7 @@ def report(run: dict, scores: Scores, shown: str) -> list[str]:
              f"  Citazioni inventate: {ratio(scores.invented)}",
              f"  Paper di supporto citato: {ratio(scores.support_cited)}",
              f"  Paper di supporto trovato dalla ricerca: {ratio(scores.support_found)}",
+             search_score_line(scores.expected_found),
              f"  Ripiego usato: {ratio(scores.fallback)}",
              f"  Secondi (mediana): {seconds(scores.median_seconds)}",
              f"  Costo per risposta: {money(scores.cost_per_answer)}"]
@@ -141,7 +186,8 @@ def table_row(run: dict, scores: Scores, link: str) -> str:
     file = f"[{Path(link).name}]({link})" + ("" if run["complete"] else " (incompleta)")
     cells = [run["model"], run["promptVersion"], ratio(scores.rules_followed), ratio(scores.readable),
              ratio(scores.invented), ratio(scores.support_cited), ratio(scores.support_found),
-             ratio(scores.fallback), seconds(scores.median_seconds), money(scores.cost_per_answer), file]
+             ratio(scores.expected_found), ratio(scores.fallback), seconds(scores.median_seconds),
+             money(scores.cost_per_answer), file]
     return "| " + " | ".join(cells) + " |"
 
 

@@ -4,13 +4,18 @@ risultati in un file nuovo di eval-runs/, da portare in git e valutare su un alt
 cartella del progetto:
 
   docker compose run --rm coach-tools python -m app.evaluation [--repeat N]
+  docker compose run --rm coach-tools python -m app.evaluation --search-only
 
 Ogni situazione parte dai numeri dell'atleta, già pronti, e passa dagli stessi passi di una
 richiesta del Coach (paper, modello, scelta del protocollo), senza Strava né browser, e lascia
 la sua traccia nel progetto evaluation di Phoenix. Il file si riscrive dopo ogni risposta: una
 corsa fermata a metà tiene le risposte finite e resta segnata incompleta. Con un modello cloud la
 spesa va nello stesso totale dell'app, e la corsa non parte se il costo massimo supera quanto resta
-sotto il tetto."""
+sotto il tetto.
+
+Con --search-only ogni situazione fa solo la ricerca dei paper del Coach, e il comando stampa il
+punteggio della ricerca: nessun modello chat, nessuna spesa, nessun file, nessuna traccia. Basta il
+modello di ricerca, quindi funziona su qualsiasi computer, anche senza internet né Ollama."""
 
 import argparse
 import asyncio
@@ -24,7 +29,7 @@ import httpx
 
 from app import prompts, provider, search, tracing, workout
 from app.errors import CoachError
-from app.grading import SITUATIONS_FILE, grade, report
+from app.grading import SITUATIONS_FILE, grade, report, search_score, search_score_line
 from app.live_check import INDEX_FILE, coach_answer, file_stem, index_from, money, summary, write_results
 from app.project_files import replace_file
 from app.spending import SPENDING_FILE, Prices, Spending, charge
@@ -65,19 +70,48 @@ async def run_answers(situations: list[dict], repeat: int, chat: provider.ChatSe
     return answers
 
 
+def search_only(situations_file: Path, index_file: Path) -> int:
+    """In ogni situazione la stessa ricerca dei paper del Coach, poi il punteggio della ricerca.
+    0 con il punteggio stampato, 2 con l'indice dei paper rifiutato."""
+    situations = json.loads(situations_file.read_text(encoding="utf-8"))
+    load_index = index_from(index_file)
+
+    async def search_all() -> dict[str, set[str]]:
+        found = {}
+        for s in situations:
+            _, _, retrieved = await workout.find_papers(s["context"], s["minutes"], embed=search.encode,
+                                                        load_index=load_index)
+            found[s["name"]] = {p["pmid"] for p in retrieved}
+        return found
+
+    try:
+        found = asyncio.run(search_all())
+    except CoachError as e:
+        print(f"✗ {e.message}", file=sys.stderr)
+        return 2
+    print(f"Sola ricerca dei paper: {len(situations)} situazioni, modello di ricerca {search.SEARCH_MODEL}")
+    print(search_score_line(search_score(situations, found)))
+    return 0
+
+
 def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, index_file: Path = INDEX_FILE,
          situations_file: Path = SITUATIONS_FILE, spending: Spending | None = None,
          clock=lambda: datetime.now(timezone.utc)) -> int:
     """0 se almeno una risposta ha dato un workout, 1 se tutte sono fallite, 2 se la corsa non
     parte (ripetizioni non valide, .env sbagliato, costo massimo oltre il tetto: nessuna chiamata,
-    nessun file), 130 se la si ferma con Ctrl+C."""
+    nessun file; con --search-only, indice dei paper rifiutato), 130 se la si ferma con Ctrl+C."""
     parser = argparse.ArgumentParser(prog="python -m app.evaluation", description=__doc__.splitlines()[0])
     parser.add_argument("--repeat", default="1", help="quante volte rispondere a ogni situazione (1 se manca)")
+    parser.add_argument("--search-only", action="store_true",
+                        help="solo la ricerca dei paper, senza modello chat: stampa il punteggio della ricerca")
     args = parser.parse_args(argv)
     if not re.fullmatch(r"[0-9]+", args.repeat) or int(args.repeat) < 1:
         print(f"✗ --repeat vuole un numero intero da 1 in su, non «{args.repeat}»", file=sys.stderr)
         return 2
     repeat = int(args.repeat)
+    # Prima di leggere .env: la sola ricerca non usa il modello chat, né la sua chiave.
+    if args.search_only:
+        return search_only(situations_file, index_file)
     try:
         chat = provider.settings()
         spending = spending or Spending(SPENDING_FILE)

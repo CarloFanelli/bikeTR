@@ -64,8 +64,8 @@ async def chat_stream(client: httpx.AsyncClient, model: str, messages: list):
     MAX_ANSWER_TOKENS)."""
     body = {"model": model, "messages": messages, "stream": True,
             "options": {"temperature": 0.2, "num_predict": MAX_ANSWER_TOKENS}}
-    # json.dumps scrive come \uXXXX anche mezza coppia surrogata (un abstract tagliato a metà
-    # di un carattere oltre U+FFFF), come JSON.stringify; json= di httpx fallirebbe in UTF-8.
+    # json.dumps scrive come \uXXXX anche mezza coppia surrogata (per esempio in un nome di
+    # modello incollato), come JSON.stringify; json= di httpx fallirebbe in UTF-8.
     content = json.dumps(body)
     try:
         async with client.stream("POST", "/api/chat", content=content,

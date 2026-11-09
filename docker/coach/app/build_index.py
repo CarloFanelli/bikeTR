@@ -2,13 +2,14 @@
 ricerca del servizio Coach: non serve Ollama. Dalla cartella del progetto:
 
   docker compose run --rm coach-tools python -m app.build_index --reencode
-      ricodifica i paper già nell'indice, senza PubMed (serve dopo un cambio del modello
+      ricodifica i passaggi già nell'indice, senza PubMed (serve dopo un cambio del modello
       di ricerca): cambiano solo i vettori e il nome del modello.
   docker compose run --rm coach-tools python -m app.build_index
-      rifà la lista dei paper da PubMed, poi la codifica.
+      rifà la lista dei paper da PubMed, prende da Europe PMC il testo completo dei paper con
+      una licenza che permette di copiarlo, taglia ogni testo in passaggi e li codifica.
 
-Il file si sostituisce solo a lavoro finito: se PubMed non risponde, una ricerca trova per
-primo un altro paper, o il comando si interrompe, l'indice di prima resta com'è."""
+Il file si sostituisce solo a lavoro finito: se PubMed o Europe PMC non rispondono, una ricerca
+trova per primo un altro paper, o il comando si interrompe, l'indice di prima resta com'è."""
 
 import argparse
 import html
@@ -16,19 +17,35 @@ import json
 import re
 import sys
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import httpx
 
 from app import search
+from app.papers import cut_passages
 from app.project_files import replace_file
 
 INDEX_FILE = Path("/project/papers_index.json")
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+EUROPE_PMC = "https://www.ebi.ac.uk/europepmc/webservices/rest"
 HEADERS = {"User-Agent": "BikeTR-Coach/1.0"}
 # Senza chiave PubMed accetta al massimo 3 richieste al secondo.
 PAUSE = 0.35
 MIN_ABSTRACT = 100
+# Le licenze che permettono di copiare un testo nel repository, che è pubblico, nella forma di license_name.
+OPEN_LICENSES = {"cc by": "CC BY", "cc by sa": "CC BY-SA", "cc0": "CC0"}
+XLINK_HREF = "{http://www.w3.org/1999/xlink}href"
+ALI_LICENSE_REF = "{http://www.niso.org/schemas/ali/1.0/}license_ref"
+# Il link della licenza, che la scheda del workout apre: solo una pagina di creativecommons.org.
+CC_LINK = re.compile(r"https?://(www\.)?creativecommons\.org/\S*")
+# Parti di un testo completo che non sono testo da leggere.
+NOT_TEXT = {"table-wrap", "table-wrap-group", "fig", "fig-group"}
+# Elementi che vanno a capo: uno spazio attorno, perché due paragrafi non si incollino.
+BLOCKS = {"p", "title", "list-item", "caption", "disp-quote", "def-item"}
+# Le sezioni del corpo che non sono il lavoro descritto, con qualunque maiuscola, variante e plurale.
+LEFT_OUT = re.compile(r"\b(acknowledge?ments?|fundings?|conflicts? of interests?|competing interests?|"
+                      r"authors?['’]?s? contributions?|references?|tables?|figures?)\b", re.IGNORECASE)
 
 # Ogni voce: un nome, una ricerca PubMed precisa e il PMID che deve trovare per primo. Il paper
 # si scarica dalla ricerca; il PMID serve solo a controllare che la ricerca trovi ancora quello.
@@ -73,16 +90,20 @@ class BuildError(Exception):
     """L'indice non si può ricostruire; il messaggio dice perché. Il file non è cambiato."""
 
 
-def pubmed(client: httpx.Client, path: str, params: dict) -> httpx.Response:
-    """Una richiesta a PubMed. Se PubMed non risponde, la ricostruzione si ferma: saltare il
-    paper darebbe un indice più corto senza accorgersene."""
+def get(client: httpx.Client, service: str, base: str, path: str, params: dict | None = None) -> httpx.Response:
+    """Una richiesta a PubMed o a Europe PMC. Se il servizio non risponde, la ricostruzione si
+    ferma: saltare un paper, o il suo testo completo, darebbe un indice diverso senza accorgersene."""
     try:
-        res = client.get(f"{EUTILS}/{path}", params=params, headers=HEADERS)
+        res = client.get(f"{base}/{path}", params=params, headers=HEADERS)
     except httpx.HTTPError as e:
-        raise BuildError(f"PubMed non raggiungibile ({e.__class__.__name__})") from e
+        raise BuildError(f"{service} non raggiungibile ({e.__class__.__name__})") from e
     if res.status_code != 200:
-        raise BuildError(f"PubMed ha risposto HTTP {res.status_code} a {path}")
+        raise BuildError(f"{service} ha risposto HTTP {res.status_code} a {path}")
     return res
+
+
+def pubmed(client: httpx.Client, path: str, params: dict) -> httpx.Response:
+    return get(client, "PubMed", EUTILS, path, params)
 
 
 def first_pmid(client: httpx.Client, query: str) -> str | None:
@@ -124,10 +145,120 @@ def parse_article(xml: str) -> dict:
     }
 
 
+def license_name(raw) -> str | None:
+    """Il nome della licenza, se permette di copiare il testo: "cc by", "CC BY 4.0" e "cc-by-sa"
+    danno CC BY, CC BY e CC BY-SA. None per ogni altra licenza (CC BY-NC, CC BY-ND…) o nessuna."""
+    words = [w for w in re.split(r"[^a-z0-9]+", str(raw or "").lower()) if w and not w.isdigit()]
+    return OPEN_LICENSES.get(" ".join(words))
+
+
+def open_license(client: httpx.Client, pmid: str) -> tuple[str | None, str | None]:
+    """La licenza del paper secondo Europe PMC, se permette di copiarlo, e il suo PMCID se Europe
+    PMC ne ha il testo completo."""
+    res = get(client, "Europe PMC", EUROPE_PMC, "search",
+              {"query": f"EXT_ID:{pmid} AND SRC:MED", "resultType": "core", "format": "json"})
+    time.sleep(PAUSE)
+    try:
+        found = res.json()["resultList"]["result"]
+        record = found[0] if found else {}
+        pmcid = record.get("pmcid") if record.get("inEPMC") == "Y" else None
+        if pmcid is not None and not re.fullmatch(r"PMC\d+", pmcid):
+            raise ValueError(f"PMCID non valido: {pmcid}")
+        return license_name(record.get("license")), pmcid
+    except (ValueError, KeyError, TypeError, AttributeError) as e:
+        raise BuildError("Risposta di Europe PMC illeggibile (search)") from e
+
+
+def full_text(client: httpx.Client, pmcid: str) -> ET.Element:
+    res = get(client, "Europe PMC", EUROPE_PMC, f"{pmcid}/fullTextXML")
+    time.sleep(PAUSE)
+    try:
+        return ET.fromstring(res.content)
+    except ET.ParseError as e:
+        raise BuildError("Risposta di Europe PMC illeggibile (fullTextXML)") from e
+
+
+def flat_text(element: ET.Element) -> str:
+    """Il testo dell'elemento senza tabelle né figure, con gli spazi compattati."""
+    def walk(e: ET.Element) -> str:
+        parts = [e.text or ""]
+        for child in e:
+            if child.tag not in NOT_TEXT:
+                inner = walk(child)
+                parts.append(f" {inner} " if child.tag in BLOCKS else inner)
+            parts.append(child.tail or "")
+        return "".join(parts)
+    return re.sub(r"\s+", " ", walk(element)).strip()
+
+
+def title_of(section: ET.Element) -> str:
+    """Il titolo della sezione senza la numerazione ("2.1. Participants" → "Participants")."""
+    title = section.find("title")
+    return "" if title is None else re.sub(r"^[\d.]+\s+", "", flat_text(title))
+
+
+def section_text(section: ET.Element) -> str:
+    """Il titolo e il testo della sezione, con le sottosezioni nell'ordine di lettura; quelle da
+    lasciare fuori restano fuori anche qui."""
+    parts = []
+    for child in section:
+        if child.tag == "sec":
+            if not LEFT_OUT.search(title_of(child)):
+                parts.append(section_text(child))
+        elif child.tag not in ("title", "label") and child.tag not in NOT_TEXT:
+            parts.append(flat_text(child))
+    body, title = " ".join(p for p in parts if p), title_of(section)
+    if not (title and body):
+        return body
+    return f"{title} {body}" if title[-1] in ".:?!" else f"{title}: {body}"
+
+
+def body_sections(article: ET.Element) -> list[str]:
+    """Le sezioni del corpo da leggere, in ordine: solo quelle con un titolo (le altre, nei testi di
+    oggi, sono note di citazione e finanziamento), senza riferimenti, ringraziamenti, finanziamenti,
+    conflitti di interesse e contributi degli autori."""
+    body = article.find("body")
+    sections = [] if body is None else body.findall("sec")
+    return [text for s in sections if title_of(s) and not LEFT_OUT.search(title_of(s)) and (text := section_text(s))]
+
+
+def license_link(article: ET.Element) -> str | None:
+    """L'indirizzo Creative Commons della licenza, in una delle tre forme dei testi completi."""
+    for license in article.iter("license"):
+        for url in (license.get(XLINK_HREF), *(e.text for e in license.iter(ALI_LICENSE_REF)),
+                    *(e.get(XLINK_HREF) for e in license.iter("ext-link"))):
+            if url and CC_LINK.fullmatch(url.strip()):
+                return url.strip()
+    return None
+
+
+def with_text(client: httpx.Client, paper: dict) -> dict:
+    """Il paper con il testo che usa, tagliato in passaggi ancora senza vettori: il testo completo
+    se Europe PMC lo ha con una licenza che permette di copiarlo, altrimenti l'abstract."""
+    abstract = {**paper, "textUsed": "abstract", "passages": cut_passages(paper["pmid"], paper["abstract"])}
+    license, pmcid = open_license(client, paper["pmid"])
+    if license is None:
+        return abstract
+    if pmcid is None:
+        print(f"  ↳ licenza {license}, ma Europe PMC non ha il testo completo: uso l'abstract")
+        return abstract
+    article = full_text(client, pmcid)
+    url, sections = license_link(article), body_sections(article)
+    if url is None:
+        print(f"  ↳ licenza {license}, ma il testo completo non ha il link della licenza: uso l'abstract")
+        return abstract
+    if not sections:
+        print(f"  ↳ licenza {license}, ma il testo completo non ha sezioni da leggere: uso l'abstract")
+        return abstract
+    print(f"  ↳ testo completo da Europe PMC ({license}, {pmcid}): {len(sections)} sezioni")
+    return {**paper, "textUsed": "fullText", "license": license, "licenseUrl": url,
+            "passages": cut_passages(paper["pmid"], paper["abstract"], *sections)}
+
+
 def fetch_papers(client: httpx.Client) -> list[dict]:
-    """I paper delle SEARCHES, senza vettori. Una ricerca che non trova per primo il paper atteso,
-    o un abstract troppo corto, ferma tutto, come PubMed che non risponde: un indice senza quel
-    paper toglierebbe al Coach la fonte di un protocollo senza accorgersene."""
+    """I paper delle SEARCHES con i loro passaggi, senza vettori. Una ricerca che non trova per
+    primo il paper atteso, o un abstract troppo corto, ferma tutto, come PubMed che non risponde:
+    un indice senza quel paper toglierebbe al Coach la fonte di un protocollo senza accorgersene."""
     papers = []
     for tag, query, expected in SEARCHES:
         pmid = first_pmid(client, query)
@@ -141,22 +272,23 @@ def fetch_papers(client: httpx.Client) -> list[dict]:
         if len(meta["abstract"]) < MIN_ABSTRACT:
             raise BuildError(f"{tag} (PMID {pmid}): abstract di {len(meta['abstract'])} caratteri, troppo corto "
                              "perché il modello di ricerca lo trovi")
-        papers.append({"pmid": pmid, **meta})
         print(f"✓ [{tag}] PMID {pmid} ({meta['year']}) {meta['authors']}")
+        papers.append(with_text(client, {"pmid": pmid, **meta}))
     return papers
 
 
 def finished(built_at: str | None, papers: list[dict]) -> dict:
-    """L'indice completo: i paper con il vettore del modello di ricerca, calcolato da titolo
-    e abstract, e il nome di quel modello."""
-    texts = [f"{p['title']}\n\n{p['abstract']}" for p in papers]
+    """L'indice completo: ogni passaggio con il vettore del modello di ricerca, calcolato dal solo
+    testo del passaggio, e il nome di quel modello."""
+    texts = [s["text"] for p in papers for s in p["passages"]]
     cut = sum(search.cut(t) for t in texts)
     if cut:
-        print(f"Paper oltre i {search.MAX_TOKENS} token che il modello di ricerca legge: {cut} su {len(papers)}. "
+        print(f"Passaggi oltre i {search.MAX_TOKENS} token che il modello di ricerca legge: {cut} su {len(texts)}. "
               "Di questi è codificato solo l'inizio.")
-    vectors = search.encode_now(texts)
-    return {"model": search.SEARCH_MODEL, "builtAt": built_at, "count": len(papers), "embeddingDim": len(vectors[0]),
-            "papers": [{**p, "embedding": vector} for p, vector in zip(papers, vectors)]}
+    vectors = iter(search.encode_now(texts))
+    encoded = [{**p, "passages": [{**s, "embedding": next(vectors)} for s in p["passages"]]} for p in papers]
+    return {"model": search.SEARCH_MODEL, "builtAt": built_at, "count": len(papers),
+            "embeddingDim": len(encoded[0]["passages"][0]["embedding"]), "papers": encoded}
 
 
 def write_index(path: Path, index: dict) -> None:
@@ -165,15 +297,22 @@ def write_index(path: Path, index: dict) -> None:
 
 
 def reencode(path: Path) -> dict:
+    """I passaggi dell'indice ricodificati, senza tagliarli di nuovo: etichette e testi restano."""
     try:
         index = json.loads(path.read_text(encoding="utf-8"))
-        papers = [{k: v for k, v in p.items() if k != "embedding"} for p in index["papers"]]
+        old = [p for p in index["papers"] if "passages" not in p]
+        papers = [{**p, "passages": [{k: v for k, v in s.items() if k != "embedding"} for s in p["passages"]]}
+                  for p in index["papers"] if "passages" in p]
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as e:
         raise BuildError(f"{path.name} mancante o illeggibile: ripristinalo con git restore papers_index.json, "
                          "o ricostruiscilo da PubMed (lo stesso comando senza --reencode)") from e
+    if old:
+        raise BuildError(f"{path.name} è di una versione precedente, senza passaggi: ricostruiscilo da PubMed "
+                         "(lo stesso comando senza --reencode)")
     if not papers:
         raise BuildError(f"{path.name} non contiene paper da ricodificare")
-    print(f"Ricodifico {len(papers)} paper con {search.SEARCH_MODEL}…")
+    print(f"Ricodifico {sum(len(p['passages']) for p in papers)} passaggi di {len(papers)} paper "
+          f"con {search.SEARCH_MODEL}…")
     # builtAt resta: dice quando la lista dei paper è stata presa da PubMed.
     return finished(index.get("builtAt"), papers)
 
@@ -181,14 +320,15 @@ def reencode(path: Path) -> dict:
 def rebuild(client: httpx.Client) -> dict:
     print(f"Cerco {len(SEARCHES)} paper su PubMed…")
     papers = fetch_papers(client)
-    print(f"Codifico {len(papers)} paper con {search.SEARCH_MODEL}…")
+    print(f"Codifico {sum(len(p['passages']) for p in papers)} passaggi di {len(papers)} paper "
+          f"con {search.SEARCH_MODEL}…")
     return finished(time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), papers)
 
 
 def main(argv: list[str] | None = None, path: Path = INDEX_FILE, client: httpx.Client | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.build_index", description=__doc__.splitlines()[0])
     parser.add_argument("--reencode", action="store_true",
-                        help="ricodifica i paper già nell'indice, senza PubMed")
+                        help="ricodifica i passaggi già nell'indice, senza PubMed")
     args = parser.parse_args(argv)
     try:
         if args.reencode:
@@ -200,7 +340,8 @@ def main(argv: list[str] | None = None, path: Path = INDEX_FILE, client: httpx.C
         print(f"✗ {e}. {path.name} non è cambiato.", file=sys.stderr)
         return 1
     write_index(path, index)
-    print(f"✅ Salvato {path.name}: {len(index['papers'])} paper, vettori di {index['embeddingDim']} numeri, "
+    print(f"✅ Salvato {path.name}: {len(index['papers'])} paper, "
+          f"{sum(len(p['passages']) for p in index['papers'])} passaggi, vettori di {index['embeddingDim']} numeri, "
           f"modello {index['model']}")
     return 0
 

@@ -90,12 +90,15 @@ def record(base: dict, result: dict, charged: float | None) -> dict:
     """Quello che serve per valutare il modello. Campi scritti uno per uno: le impostazioni,
     che contengono la chiave, non finiscono mai nel file."""
     parsed = workout.parse_model_json(result["modelRaw"])
-    cited = parsed.get("paperUsati") if isinstance(parsed, dict) else None
+    cited = parsed.get("passaggiUsati") if isinstance(parsed, dict) else None
     return {**base, "protocolId": result["protocolId"], "fellBack": result["fellBack"],
             "truncated": result["truncated"], "jsonReadable": isinstance(parsed, dict),
             "papersFound": [{"pmid": p["pmid"], "title": p["title"], "score": p["score"]}
                             for p in result["retrievedPapers"]],
-            # I paper che il modello ha scritto di aver usato, come li ha scritti.
+            # I passaggi dati al modello: etichetta e punteggio, non il testo, che l'etichetta ritrova
+            # nell'indice. Il voto ci riconosce un'etichetta inventata.
+            "passagesFound": [s for p in result["retrievedPapers"] for s in p["passages"]],
+            # Le etichette dei passaggi che il modello ha scritto di aver usato, come le ha scritte.
             "papersCited": [js_str(p) for p in cited] if isinstance(cited, list) else [],
             "inputTokens": result["inputTokens"], "outputTokens": result["outputTokens"],
             "cost": result["cost"], "charged": charged, "seconds": result["seconds"], "modelRaw": result["modelRaw"]}

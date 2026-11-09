@@ -1,5 +1,5 @@
 """Il voto delle corse del set di valutazione: regole seguite, JSON leggibile, citazioni inventate,
-paper di supporto citato e trovato, ripiego, secondi e costo, dai file dei risultati scritti qui a
+paper di supporto citato e trovato, punteggio della ricerca, ripiego, secondi e costo, dai file dei risultati scritti qui a
 mano, contro il set di oggi; senza modello né rete, e sempre lo stesso voto per lo stesso file."""
 
 import json
@@ -67,6 +67,7 @@ def test_rules_followed_counts_only_the_model_choice_inside_the_allowed_list():
 
 
 def test_a_pmid_not_given_in_the_list_or_in_the_text_is_an_invented_citation():
+    # Un file di prima dei passaggi: si contano i PMID della lista paperUsati e del testo, come allora.
     scores = grade([
         answer(cited=[SEILER]),
         answer(cited=["99999999"]),
@@ -89,6 +90,38 @@ def test_the_source_paper_of_a_selection_rule_is_shown_by_the_prompt_and_not_inv
     assert grade([answer("seiler_4x8", cited=["20861519"], given=(OTHER,))]).support_found == (0, 1)
 
 
+def labelled(cited=(), rationale="Forma alta.", protocol="seiler_4x8") -> dict:
+    """Una risposta di un file con i passaggi: il modello cita etichette in passaggiUsati e nel
+    razionale, e il file registra i passaggi dati (§1 e §3 di Seiler, §2 dell'altro paper). json.dumps
+    scrive "§" come \\u00a7, come può farlo un modello."""
+    raw = json.dumps({"protocolId": protocol, "razionale": rationale, "passaggiUsati": list(cited)})
+    given = [f"PMID:{SEILER} §1", f"PMID:{SEILER} §3", f"PMID:{OTHER} §2"]
+    return answer(protocol, raw=raw, passagesFound=[{"label": label, "score": 0.5} for label in given])
+
+
+@pytest.mark.parametrize("cited, rationale, invented", [
+    # Un'etichetta data non è inventata: le sue cifre non sono un PMID "3".
+    ([f"PMID:{SEILER} §3"], f"Come in [PMID:{SEILER} §1].", False),
+    ([f"PMID:{SEILER} §2"], "Forma alta.", True),
+    ([], f"Come in [PMID:{RONNESTAD} §1].", True),
+    ([], "Come in [PMID:99999999 §1].", True),
+    # Un paper dato citato senza passaggio, come prima dei passaggi.
+    ([], f"Come in [PMID:{OTHER}].", False),
+    # La fonte di una regola: il suo PMID è nel prompt, un suo passaggio non dato no.
+    ([], "Poco lavoro duro [PMID:24550842].", False),
+    ([], "Poco lavoro duro [PMID:24550842 §1].", True),
+    # La stessa etichetta inventata nel razionale e nella lista conta una volta.
+    ([f"PMID:{SEILER} §2"], f"Come in [PMID:{SEILER} §2].", True),
+], ids=["given", "section-not-given", "paper-not-given", "paper-not-in-index", "paper-only", "rule-source",
+        "rule-source-label", "both-places"])
+def test_a_cited_label_not_given_in_that_answer_is_invented(cited, rationale, invented):
+    assert grade([labelled(cited, rationale)]).invented == (int(invented), 1)
+
+
+def test_a_label_of_the_supporting_paper_counts_as_citing_it():
+    assert grade([labelled([f"PMID:{SEILER} §3"])]).support_cited == (1, 1)
+
+
 def test_support_counts_only_answers_given_the_paper_of_the_chosen_protocol():
     scores = grade([
         answer(cited=[SEILER]),
@@ -101,6 +134,30 @@ def test_support_counts_only_answers_given_the_paper_of_the_chosen_protocol():
     ])
     assert scores.support_cited == (2, 3)
     assert scores.support_found == (3, 4)
+
+
+def test_the_search_score_counts_each_situation_once_from_the_papers_found_its_file_records():
+    scores = grade([
+        # Forma +10: un errore, poi la prima risposta riuscita trova Rønnestad; la ripetizione,
+        # che ha la stessa ricerca, non conta di nuovo.
+        failure(),
+        answer(given=(RONNESTAD, OTHER)),
+        answer(given=(OTHER,), repeat=2),
+        # Il paper atteso è Seiler 2011, che la ricerca non trova.
+        answer(given=(OTHER,), situation="forma-esattamente-piu-5"),
+        # Solo risposte fallite: nessun paper trovato.
+        failure(situation="due-ore-esatte"),
+        # Solo protocolli di pratica (riposo): nessun paper atteso, non conta.
+        answer("rest", situation="riposo-dopo-blocco"),
+        answer(situation="vecchia-situazione"),
+    ])
+    assert scores.expected_found == (1, 3)
+
+
+def test_with_no_situation_that_has_an_expected_paper_the_search_score_is_a_dash():
+    scores = grade([answer("rest", situation="riposo-dopo-blocco")])
+    assert scores.expected_found == (0, 0)
+    assert "  Punteggio della ricerca, paper atteso trovato: —" in grading.report(run([]), scores, "corsa.json")
 
 
 def test_errors_are_counted_apart_and_no_success_gives_dashes():
@@ -146,7 +203,7 @@ def test_scores_and_readme_rows_one_per_file_even_for_the_same_model_and_prompt(
     second = write(tmp_path, "b.json", run([answer()]))
     assert grading.main([first, second], project_dir=tmp_path) == 0
     out = capsys.readouterr().out.splitlines()
-    assert out[:11] == [
+    assert out[:12] == [
         "eval-runs/a.json — qwen2.5:7b · prompt abcd1234 · corsa completa",
         "  Risposte valutate: 2 · errori: 0",
         "  Regole seguite: 50% (1/2)",
@@ -154,6 +211,7 @@ def test_scores_and_readme_rows_one_per_file_even_for_the_same_model_and_prompt(
         "  Citazioni inventate: 0% (0/2)",
         "  Paper di supporto citato: 100% (1/1)",
         "  Paper di supporto trovato dalla ricerca: 100% (1/1)",
+        "  Punteggio della ricerca, paper atteso trovato: 100% (1/1)",
         "  Ripiego usato: 50% (1/2)",
         "  Secondi (mediana): 10.0",
         "  Costo per risposta: —",
@@ -161,13 +219,14 @@ def test_scores_and_readme_rows_one_per_file_even_for_the_same_model_and_prompt(
     ]
     rows = [line for line in out if line.startswith("| qwen2.5:7b")]
     assert rows == [
-        "| qwen2.5:7b | abcd1234 | 50% (1/2) | 100% (2/2) | 0% (0/2) | 100% (1/1) | 100% (1/1) | 50% (1/2) | 10.0 "
-        "| — | [a.json](eval-runs/a.json) |",
-        "| qwen2.5:7b | abcd1234 | 100% (1/1) | 100% (1/1) | 0% (0/1) | 0% (0/1) | 100% (1/1) | 0% (0/1) | 10.0 "
-        "| — | [b.json](eval-runs/b.json) |",
+        "| qwen2.5:7b | abcd1234 | 50% (1/2) | 100% (2/2) | 0% (0/2) | 100% (1/1) | 100% (1/1) | 100% (1/1) "
+        "| 50% (1/2) | 10.0 | — | [a.json](eval-runs/a.json) |",
+        "| qwen2.5:7b | abcd1234 | 100% (1/1) | 100% (1/1) | 0% (0/1) | 0% (0/1) | 100% (1/1) | 100% (1/1) "
+        "| 0% (0/1) | 10.0 | — | [b.json](eval-runs/b.json) |",
     ]
     header = out.index(rows[0]) - 2
     assert out[header].startswith("| Model | Prompt | Rules followed |")
+    assert "| Support found | Expected paper found | Fallback |" in out[header]
 
 
 def test_an_incomplete_run_is_graded_but_its_row_says_it_is_not_for_the_readme(tmp_path, capsys):

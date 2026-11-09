@@ -1,14 +1,13 @@
 """Prompt del Coach e query per la ricerca dei paper, carattere per carattere come
-li scriveva il browser, tranne le regole di selezione, che vengono da selection_rules: i test
-li confrontano con il vecchio codice."""
+li scriveva il browser, tranne le regole di selezione e i protocolli ammessi in fondo alla query,
+che vengono da selection_rules, e dai paper in fondo, che danno i passaggi e chiedono di citarli per
+etichetta: i test li confrontano con il vecchio codice."""
 
 import hashlib
 
-from app.jscompat import js_length, js_slice, js_str
+from app.jscompat import js_str
 from app.protocols import PROTOCOLS
-from app.selection_rules import RULES, minimum_minutes
-
-ABSTRACT_CHARS = 1200
+from app.selection_rules import RULES, minimum_minutes, select
 
 # Le regole di selezione nell'ordine in cui valgono, poi i minuti che servono ai protocolli che non
 # entrano in ogni durata: la lista ammessa toglie quelli che non ci stanno.
@@ -25,7 +24,7 @@ SYSTEM_TEMPLATE = """Sei un coach di ciclismo evidence-based. Devi scegliere UN 
 CATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):
 <PROTOCOL_LIST>
 
-REGOLE DI SELEZIONE (applica in ordine, vale la prima che si applica). Tra parentesi quadre la fonte della regola: il paper che ne dà il numero, o [pratica] quando nessun paper lo dà. È solo un'informazione: nel razionale cita solo i PMID dei paper recuperati qui sotto.
+REGOLE DI SELEZIONE (applica in ordine, vale la prima che si applica). Tra parentesi quadre la fonte della regola: il paper che ne dà il numero, o [pratica] quando nessun paper lo dà. È solo un'informazione: nel razionale cita solo i passaggi dei paper recuperati qui sotto.
 <SELECTION_RULES>
 
 DIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):
@@ -33,38 +32,43 @@ DIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):
 - z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.
 - z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.
 
-PAPER SCIENTIFICI RECUPERATI (cita SOLO questi PMID, mai altri):
+PAPER SCIENTIFICI RECUPERATI (cita SOLO questi passaggi, con la loro etichetta, mai altri):
 <PAPERS_BLOCK>
 
 OUTPUT — rispondi SOLO con un oggetto JSON valido, nessun testo extra prima o dopo, niente markdown, niente blocchi di codice:
 
-{"protocolId":"<id_dal_catalogo>","razionale":"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante un paper come [PMID:xxx]>","paperUsati":["<PMID1>","<PMID2>"]}
+{"protocolId":"<id_dal_catalogo>","razionale":"<2-3 frasi italiane che giustificano la scelta citando TSB, polarizzazione, e quando rilevante il passaggio su cui ti basi con la sua etichetta, come [PMID:xxx §n]>","passaggiUsati":["PMID:xxx §n"]}
 
 Vincoli:
 - protocolId DEVE essere uno degli id del catalogo
-- paperUsati può essere [] se nessun paper recuperato è davvero rilevante; altrimenti includi solo PMID che hai effettivamente usato nel razionale
-- Non inventare PMID: usa solo quelli forniti sopra"""
+- passaggiUsati può essere [] se nessun passaggio recuperato è davvero rilevante; altrimenti includi solo le etichette dei passaggi che hai citato nel razionale
+- Non inventare etichette: usa solo quelle dei passaggi forniti sopra"""
+
+
+# Un paper d'esempio fisso: con lui anche la forma della sezione dei paper entra nella versione del prompt.
+VERSION_SAMPLE = {"pmid": "1", "authors": "Autori", "year": "2000", "title": "Titolo.",
+                  "passages": [{"label": "PMID:1 §1", "text": "Passaggio."}]}
 
 
 def paper_entry(p: dict) -> str:
-    abstract = p["abstract"]
-    cut = js_slice(abstract, ABSTRACT_CHARS) + ("…" if js_length(abstract) > ABSTRACT_CHARS else "")
-    return f"[PMID:{p['pmid']}] {js_str(p['authors'])} {js_str(p['year'])}. {js_str(p['title'])}\nAbstract: {cut}"
+    """Il paper una volta sola, poi i suoi passaggi, ognuno con la sua etichetta."""
+    passages = "\n".join(f"[{s['label']}] {s['text']}" for s in p["passages"])
+    return f"[PMID:{p['pmid']}] {js_str(p['authors'])} {js_str(p['year'])}. {js_str(p['title'])}\n{passages}"
 
 
 def system_prompt(papers: list) -> str:
     protocol_list = "\n".join(f"- {pid}: {proto.name}" for pid, proto in PROTOCOLS.items())
     papers_block = "\n\n".join(paper_entry(p) for p in papers)
-    # I paper vanno inseriti per ultimi: un abstract potrebbe contenere "<PROTOCOL_LIST>".
+    # I paper vanno inseriti per ultimi: un passaggio potrebbe contenere "<PROTOCOL_LIST>".
     return (SYSTEM_TEMPLATE.replace("<PROTOCOL_LIST>", protocol_list).replace("<SELECTION_RULES>", RULES_SECTION)
             .replace("<PAPERS_BLOCK>", papers_block))
 
 
 def prompt_version() -> str:
-    """Le prime 8 cifre dell'impronta SHA-256 del prompt di sistema senza paper: lo stesso testo
-    dà sempre la stessa versione, due testi diversi mai la stessa (salvo una coincidenza su
-    quattro miliardi). Così i risultati di due prompt non si confondono."""
-    return hashlib.sha256(system_prompt([]).encode("utf-8")).hexdigest()[:8]
+    """Le prime 8 cifre dell'impronta SHA-256 del prompt di sistema con il paper d'esempio: lo
+    stesso testo dà sempre la stessa versione, due testi diversi mai la stessa (salvo una
+    coincidenza su quattro miliardi). Così i risultati di due prompt non si confondono."""
+    return hashlib.sha256(system_prompt([VERSION_SAMPLE]).encode("utf-8")).hexdigest()[:8]
 
 
 def or_dash(value) -> str:
@@ -102,6 +106,9 @@ Scegli il protocollo e restituisci SOLO il JSON."""
 
 
 def retrieval_query(ctx: dict, duration: int) -> str:
+    """Il testo della ricerca dei paper: forma, quota dura e minuti con le parole del browser, poi i
+    nomi dei protocolli che le regole di selezione ammettono oggi, perché la ricerca trovi le prove
+    sulle scelte che l'atleta ha davvero."""
     tsb, hard = ctx["tsb"], ctx["polarizzazione"]["hardPct"]
     tags = ["cycling endurance training adaptation"]
     if tsb > 10:
@@ -127,4 +134,5 @@ def retrieval_query(ctx: dict, duration: int) -> str:
         tags.append("long ride fatigue resistance")
     if duration <= 45:
         tags.append("short session")
+    tags.extend(PROTOCOLS[pid].name for pid in select(ctx, duration)[1])
     return " ".join(tags)

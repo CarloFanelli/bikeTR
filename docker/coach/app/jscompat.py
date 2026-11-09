@@ -70,13 +70,3 @@ def is_number(value) -> bool:
 def js_truthy(value) -> bool:
     """Vero come in JavaScript: [] e {} sono veri; null, false, 0 e "" falsi."""
     return isinstance(value, (list, dict)) or value not in (None, False, 0, "")
-
-
-def js_slice(text: str, end: int) -> str:
-    """text.slice(0, end): JavaScript conta le unità UTF-16, quindi un'emoji vale 2."""
-    return text.encode("utf-16-le", "surrogatepass")[: 2 * end].decode("utf-16-le", "surrogatepass")
-
-
-def js_length(text: str) -> int:
-    """text.length in unità UTF-16."""
-    return len(text.encode("utf-16-le", "surrogatepass")) // 2
