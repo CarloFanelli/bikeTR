@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { LibraryPaper } from '../../src/core/library-types.ts';
-import { dependencyLines, europePmcUrl, originLabel, passageCount, textUsed } from '../../src/core/library-view.ts';
+import {
+  addedLine, dependencyLines, europePmcUrl, originLabel, passageCount, pmidError, textUsed,
+} from '../../src/core/library-view.ts';
 
 const whitty: LibraryPaper = {
   pmid: '27175601', title: 'The effect of low- vs high-cadence interval training.', authors: 'Whitty et al.',
@@ -40,5 +42,14 @@ describe('testi della Libreria', () => {
 
   it('link a Europe PMC solo per un testo completo', () => {
     expect([europePmcUrl(fullText), europePmcUrl(whitty)]).toEqual(['https://europepmc.org/article/MED/24550842', null]);
+  });
+
+  it('il PMID è un numero', () => {
+    expect([pmidError('27175601'), pmidError(' 27175601 ')]).toEqual([null, null]);
+    expect(['', '12a', 'PMID:1', '12345678901'].map(pmidError)).toEqual(Array(4).fill('Il PMID è un numero'));
+  });
+
+  it('esito dell\'aggiunta: passaggi salvati e secondi', () => {
+    expect(addedLine({ pmid: '1', passageCount: 62, seconds: 4.5 })).toBe('✅ Aggiunto: 62 passaggi salvati in 4,5 s.');
   });
 });

@@ -4,18 +4,20 @@
 import type {
   CoachEvent, CoachRefusal, CoachStatus, ConnectionCheck, WorkoutRequest,
 } from '../core/coach-types.ts';
-import type { LibraryPaper, LibraryPassages } from '../core/library-types.ts';
+import type { AddedPaper, LibraryPaper, LibraryPassages, PaperPreview } from '../core/library-types.ts';
 
 export const COACH_UNREACHABLE = 'Coach non raggiungibile: avvia BikeTR con docker compose up -d';
 
 export type CoachAnswer<T> = { ok: true; value: T } | { ok: false; msg: string };
 
 // Il servizio risponde con i dati oppure con {error, message}. Senza una risposta del
-// servizio, il Coach non è avviato.
-async function askCoach<T>(path: string): Promise<CoachAnswer<T>> {
+// servizio, il Coach non è avviato. Con un corpo, la richiesta è un POST in JSON.
+async function askCoach<T>(path: string, payload?: unknown): Promise<CoachAnswer<T>> {
   let res: Response;
   try {
-    res = await fetch(path);
+    res = await fetch(path, payload === undefined ? undefined : {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    });
   } catch {
     return { ok: false, msg: COACH_UNREACHABLE };
   }
@@ -31,9 +33,15 @@ export const coachStatus = () => askCoach<CoachStatus>('/coach/status');
 export const checkConnection = () => askCoach<ConnectionCheck>('/coach/ping');
 
 // I paper che il Coach cerca, senza passaggi; i passaggi di un paper si chiedono aprendolo.
-export const libraryPapers = () => askCoach<{ papers: LibraryPaper[] }>('/coach/library');
+export const libraryPapers = () => askCoach<{ papers: LibraryPaper[]; warning: string | null }>('/coach/library');
 export const libraryPassages = (pmid: string) =>
   askCoach<LibraryPassages>(`/coach/library/${encodeURIComponent(pmid)}`);
+
+// Il paper da PubMed come entrerebbe in libreria: il servizio non salva nulla.
+export const previewPaper = (pmid: string) => askCoach<PaperPreview>('/coach/library/preview', { pmid });
+
+// Scarica, taglia e codifica il paper e lo salva nella libreria: qualche secondo.
+export const addPaper = (pmid: string) => askCoach<AddedPaper>('/coach/library', { pmid });
 
 // Le corse salvate dal servizio appartengono al collegamento con Strava: dopo lo
 // scollegamento nessuna richiesta del Coach può ottenere un nuovo token.

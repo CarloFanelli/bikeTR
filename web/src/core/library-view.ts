@@ -2,14 +2,14 @@
 // dipende e i suoi link. Ricevono i dati e restituiscono testi, senza leggere il browser.
 
 import { licenseLink } from './coach-view.ts';
-import type { LibraryPaper } from './library-types.ts';
+import type { AddedPaper, LibraryPaper } from './library-types.ts';
 
 export const originLabel = (p: LibraryPaper) => (p.origin === 'base' ? 'paper di base' : 'aggiunto');
 
 export const passageCount = (n: number) => (n === 1 ? '1 passaggio' : `${n} passaggi`);
 
 // Il testo completo porta la sua licenza, da accreditare; l'abstract no.
-export function textUsed(p: LibraryPaper): { label: string; license: { name: string; url: string } | null } {
+export function textUsed(p: Pick<LibraryPaper, 'textUsed' | 'license' | 'licenseUrl'>): { label: string; license: { name: string; url: string } | null } {
   if (p.textUsed !== 'fullText') return { label: 'abstract', license: null };
   return { label: 'testo completo', license: licenseLink(p.license, p.licenseUrl) };
 }
@@ -27,3 +27,12 @@ export function dependencyLines(p: LibraryPaper): string[] {
 // Europe PMC solo per un paper di cui il Coach usa il testo completo, che viene da lì.
 export const europePmcUrl = (p: LibraryPaper) =>
   p.textUsed === 'fullText' ? `https://europepmc.org/article/MED/${p.pmid}` : null;
+
+// Un PMID è un numero: il servizio rifiuta il resto prima di chiedere a PubMed.
+export const pmidError = (text: string) => (/^\d{1,10}$/.test(text.trim()) ? null : 'Il PMID è un numero');
+
+// L'indicizzazione usa il modello di ricerca del servizio, non il modello chat: nessun costo.
+export const FREE_INDEXING = "Indicizzazione gratis: la fa il modello di ricerca sul tuo computer, nessun modello chat.";
+
+export const addedLine = (a: AddedPaper) =>
+  `✅ Aggiunto: ${passageCount(a.passageCount)} salvati in ${a.seconds.toLocaleString('it-IT')} s.`;

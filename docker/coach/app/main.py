@@ -8,6 +8,8 @@ Rotte:
                          schermata Coach partite prima (Disconnetti da Strava)
   GET  /coach/library  → i paper che il Coach cerca, senza passaggi, con cosa ne dipende
   GET  /coach/library/{pmid} → i passaggi di un paper, nell'ordine di lettura
+  POST /coach/library/preview → {pmid}: il paper da PubMed come entrerebbe in libreria (niente salvato)
+  POST /coach/library  → {pmid}: aggiunge il paper alla libreria salvata in /data
 
 Gli errori sono {error: codice, message: testo in italiano da mostrare}: come risposta
 JSON se la richiesta è rifiutata subito, come evento {type: "error", ...} se il flusso
@@ -40,6 +42,7 @@ http = httpx.AsyncClient(timeout=15)
 rides = StravaRides(store, http)
 tracing.setup(tracing.COACH_SCREEN)
 trace_deletion = TraceDeletion(DELETION_FILE, http)
+saved_library = library.Library(library.LIBRARY_FILE)
 
 
 def same_origin_only(sec_fetch_site: Annotated[str | None, Header()] = None):
@@ -64,16 +67,28 @@ async def coach_error(request: Request, e: CoachError):
 
 
 async def load_index() -> dict:
-    return await papers.load_index(http)
+    """L'indice che il Coach cerca: i paper di base e quelli aggiunti, letti all'inizio di ogni
+    richiesta. Con una libreria salvata illeggibile, i soli paper di base."""
+    index, _ = library.searched(await papers.load_index(http), saved_library)
+    return index
 
 
-async def searched_index() -> dict:
-    """L'indice che il Coach cerca, per la schermata Libreria; un indice inutilizzabile la rifiuta con
-    lo stesso messaggio che darebbe il Coach."""
+async def library_view() -> tuple[dict, dict, str | None]:
+    """Per la schermata Libreria: i paper di base, quelli che il Coach cerca e l'eventuale messaggio
+    sulla libreria salvata. Un indice di base inutilizzabile la rifiuta con il messaggio del Coach."""
     try:
-        return await load_index()
+        base = await papers.load_index(http)
     except papers.PaperIndexError as e:
         raise CoachError(502, "retrieval", str(e)) from e
+    index, warning = library.searched(base, saved_library)
+    return base, index, warning
+
+
+async def json_body(request: Request):
+    try:
+        return await request.json()
+    except (ValueError, RecursionError):
+        return None
 
 
 @app.get("/coach/status")
@@ -111,11 +126,7 @@ async def ping():
 
 @app.post("/coach/workout")
 async def generate_workout(request: Request):
-    try:
-        body = await request.json()
-    except (ValueError, RecursionError):
-        body = None
-    req = workout.parse_request(body)
+    req = workout.parse_request(await json_body(request))
     chat = provider.settings()
     if chat.prices:
         cloud_spending.check(chat.prices.limit)
@@ -161,9 +172,42 @@ async def forget():
 
 @app.get("/coach/library")
 async def library_papers():
-    return {"papers": library.listing(await searched_index())}
+    base, index, warning = await library_view()
+    return {"papers": library.listing(base, index), "warning": warning}
 
 
 @app.get("/coach/library/{pmid}")
 async def library_passages(pmid: str):
-    return library.passages(await searched_index(), pmid)
+    _, index, _ = await library_view()
+    return library.passages(index, pmid)
+
+
+async def addable(request: Request) -> tuple[str, dict]:
+    """Il PMID richiesto e i paper di base, se il paper si può aggiungere: numero, non già in
+    libreria, sotto il massimo, e libreria salvata leggibile. Nessuna richiesta a PubMed prima."""
+    pmid = library.valid_pmid(await json_body(request))
+    base, _, _ = await library_view()
+    try:
+        saved = saved_library.load()
+    except library.LibraryUnreadable as e:
+        raise CoachError(500, "library_unreadable", str(e)) from e
+    library.check_addable(base, saved, pmid)
+    return pmid, base
+
+
+@app.post("/coach/library/preview")
+async def library_preview(request: Request):
+    pmid, _ = await addable(request)
+    return library.preview(*await asyncio.to_thread(library.fetch, pmid))
+
+
+@app.post("/coach/library")
+async def library_add(request: Request):
+    pmid, base = await addable(request)
+    start = time.monotonic()
+    paper = await asyncio.to_thread(library.encoded, pmid)
+    # Scheda chiusa durante l'indicizzazione: l'atleta non aspetta più il paper, e non lo vedrebbe arrivare.
+    if await request.is_disconnected():
+        raise CoachError(499, "cancelled", "Aggiunta interrotta: niente è stato salvato")
+    await asyncio.to_thread(library.save, saved_library, base, paper)
+    return {"pmid": pmid, "passageCount": len(paper["passages"]), "seconds": round(time.monotonic() - start, 1)}
