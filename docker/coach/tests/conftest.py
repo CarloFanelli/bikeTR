@@ -28,6 +28,7 @@ def cloud_spending(monkeypatch, tmp_path) -> Spending:
 @pytest.fixture(autouse=True)
 def saved_library(monkeypatch, tmp_path) -> library.Library:
     saved = library.Library(tmp_path / "library.json")
+    monkeypatch.setattr(library, "LIBRARY_FILE", saved.path)
     monkeypatch.setattr(main, "saved_library", saved)
     return saved
 

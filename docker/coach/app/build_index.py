@@ -3,7 +3,8 @@ ricerca del servizio Coach: non serve Ollama. Dalla cartella del progetto:
 
   docker compose run --rm coach-tools python -m app.build_index --reencode
       ricodifica i passaggi già nell'indice, senza PubMed (serve dopo un cambio del modello
-      di ricerca): cambiano solo i vettori e il nome del modello.
+      di ricerca): cambiano solo i vettori e il nome del modello. Ricodifica anche i paper
+      aggiunti alla libreria (/data/library.json), dopo che l'indice è salvato.
   docker compose run --rm coach-tools python -m app.build_index
       rifà la lista dei paper da PubMed, prende da Europe PMC il testo completo dei paper con
       una licenza che permette di copiarlo, taglia ogni testo in passaggi e li codifica.
@@ -23,7 +24,10 @@ from typing import Callable
 
 import httpx
 
-from app import search
+# library usa le funzioni di questo modulo per aggiungere un paper: i due si importano a vicenda,
+# e qui library si usa solo dentro le funzioni.
+from app import library, search
+from app.errors import CoachError
 from app.papers import cut_passages
 from app.project_files import replace_file
 
@@ -323,6 +327,29 @@ def reencode(path: Path) -> dict:
     return finished(index.get("builtAt"), papers)
 
 
+def reencode_library(saved: "library.Library") -> None:
+    """I passaggi dei paper aggiunti ricodificati con il modello di ricerca in uso, sotto il lucchetto
+    della libreria: il servizio Coach che aggiunge un paper intanto aspetta. Senza libreria salvata,
+    niente da fare."""
+    if not saved.path.exists():
+        return
+
+    def encoded(current: dict) -> dict:
+        added = [{**p, "passages": [{k: v for k, v in s.items() if k != "embedding"} for s in p["passages"]]}
+                 for p in current["added"]]
+        if added:
+            print(f"Ricodifico {sum(len(p['passages']) for p in added)} passaggi di {len(added)} paper aggiunti "
+                  f"con {search.SEARCH_MODEL}…")
+            added = finished(None, added)["papers"]
+        print(f"✅ Salvata la libreria: {len(added)} paper aggiunti, {sum(len(p['passages']) for p in added)} passaggi")
+        return {**current, "model": search.SEARCH_MODEL, "added": added}
+
+    try:
+        saved.change(encoded)
+    except CoachError as e:
+        raise BuildError(e.message) from e
+
+
 def rebuild(client: httpx.Client) -> dict:
     print(f"Cerco {len(SEARCHES)} paper su PubMed…")
     papers = fetch_papers(client)
@@ -336,19 +363,29 @@ def main(argv: list[str] | None = None, path: Path = INDEX_FILE, client: httpx.C
     parser.add_argument("--reencode", action="store_true",
                         help="ricodifica i passaggi già nell'indice, senza PubMed")
     args = parser.parse_args(argv)
+    saved = library.Library(library.LIBRARY_FILE)
     try:
         if args.reencode:
+            # Una libreria illeggibile ferma tutto prima di scrivere: nessuno dei due file cambia.
+            saved.load()
             index = reencode(path)
         else:
             with client or httpx.Client(timeout=30) as pubmed_client:
                 index = rebuild(pubmed_client)
-    except BuildError as e:
+    except (BuildError, library.LibraryUnreadable) as e:
         print(f"✗ {e}. {path.name} non è cambiato.", file=sys.stderr)
         return 1
     write_index(path, index)
     print(f"✅ Salvato {path.name}: {len(index['papers'])} paper, "
           f"{sum(len(p['passages']) for p in index['papers'])} passaggi, vettori di {index['embeddingDim']} numeri, "
           f"modello {index['model']}")
+    if args.reencode:
+        # Solo dopo l'indice: con l'indice fallito, la libreria avrebbe vettori di un altro modello.
+        try:
+            reencode_library(saved)
+        except BuildError as e:
+            print(f"✗ {e}. La libreria non è cambiata.", file=sys.stderr)
+            return 1
     return 0
 
 

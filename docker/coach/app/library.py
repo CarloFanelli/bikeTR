@@ -82,9 +82,17 @@ def merged(base: dict, saved: dict) -> dict:
 
 def searched(base: dict, library: Library) -> tuple[dict, str | None]:
     """L'indice da cercare e, se la libreria salvata non si legge, il messaggio che lo dice: allora
-    il Coach cerca i paper di base."""
+    il Coach cerca i paper di base. Paper aggiunti codificati da un altro modello di ricerca:
+    PaperIndexError, come per l'indice di base."""
     try:
         saved = library.load()
+    except LibraryUnreadable as e:
+        return base, str(e)
+    # Vettori di due modelli darebbero paper a caso: la richiesta si ferma con il comando che rimedia.
+    if saved["added"] and saved["model"] != search.SEARCH_MODEL:
+        raise papers.PaperIndexError(f"La libreria salvata è codificata con {saved['model']}, non con il modello di "
+                                     f"ricerca del Coach ({search.SEARCH_MODEL}). Ricodificala con: {papers.REENCODE}")
+    try:
         index = merged(base, saved)
         if not all(papers.usable(p, base["embeddingDim"]) for p in index["papers"]):
             raise library.unreadable()
