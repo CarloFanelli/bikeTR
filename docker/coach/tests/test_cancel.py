@@ -24,13 +24,16 @@ PIECES = [ANSWER[i:i + 4] for i in range(0, len(ANSWER), 4)]
 SAME_ORIGIN = {"Sec-Fetch-Site": "same-origin"}
 PROVIDERS = ("ollama", "cloud")
 KEY = "sk-test-chiave"
-# Come risponde il finto provider per ogni nome di modello: (attesa in secondi, pezzo di testo).
+# Come risponde il finto provider per ogni nome di modello, alla richiesta numero `n` per quel modello:
+# (attesa in secondi, pezzo di testo).
 PLANS = {
-    "steady": lambda: [(0.1, p) for p in PIECES],                   # un pezzo ogni 0,1 s
-    "late": lambda: [(5.5, PIECES[0])] + [(0, p) for p in PIECES[1:]],  # prima parola dopo 5,5 s
-    "silent": lambda: [(3600, None)],                               # non scrive mai
-    "forever": lambda: itertools.repeat((0.05, "bla ")),            # scrive senza fine
-    "mute": lambda: [(3600, None)],                                 # non risponde nemmeno
+    "steady": lambda n: [(0.1, p) for p in PIECES],                   # un pezzo ogni 0,1 s
+    "late": lambda n: [(5.5, PIECES[0])] + [(0, p) for p in PIECES[1:]],  # prima parola dopo 5,5 s
+    "silent": lambda n: [(3600, None)],                               # non scrive mai
+    "forever": lambda n: itertools.repeat((0.05, "bla ")),            # scrive senza fine
+    "mute": lambda n: [(3600, None)],                                 # non risponde nemmeno
+    # Una prima bozza illeggibile, che il controllo rimanda; la seconda scrive senza fine.
+    "retry": lambda n: [(0, "Non è JSON.")] if n == 1 else itertools.repeat((0.05, "bla ")),
 }
 # Piani in cui il provider non manda neppure l'inizio della risposta (HTTP 200).
 NO_ANSWER = {"mute"}
@@ -71,7 +74,7 @@ class FakeModelServer:
             writer.write(b"HTTP/1.1 200 OK\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n\r\n" % kind)
         client_gone = asyncio.ensure_future(reader.read())  # b"" quando il client chiude
         try:
-            for delay, piece in PLANS[model]():
+            for delay, piece in PLANS[model](self.asked.count(model)):
                 await asyncio.wait({client_gone}, timeout=delay)
                 if client_gone.done():
                     self.closed.append(time.monotonic())
@@ -244,6 +247,25 @@ def test_closed_connection_stops_the_provider_within_5_seconds(monkeypatch, kind
     assert closed < 5
     # Il provider fa pagare quello che ha già scritto: senza i token, il costo massimo.
     assert total == pytest.approx(CEILING[kind])
+
+
+@pytest.mark.parametrize("kind", PROVIDERS)
+def test_closing_during_the_second_draft_stops_the_provider_and_both_drafts_are_charged(monkeypatch, kind):
+    async def go():
+        async with FakeModelServer() as fake, CoachServer(monkeypatch, kind, "retry", fake.url) as client:
+            async with client.stream("POST", "/coach/workout", json=BODY, headers=SAME_ORIGIN) as res:
+                retried = False
+                async for line in res.aiter_lines():
+                    event = json.loads(line)
+                    retried = retried or event.get("step") == "draft"
+                    if retried and event["type"] == "token":
+                        break
+            left = time.monotonic()
+            return await fake.wait_closed() - left, fake, await spent(2 * CEILING[kind])
+    closed, fake, total = asyncio.run(go())
+    assert closed < 5 and fake.asked == ["retry", "retry"] and fake.finished == ["retry"]
+    # Senza i token, ogni bozza accettata dal provider costa la stima alta.
+    assert total == pytest.approx(2 * CEILING[kind])
 
 
 def test_stop_before_the_cloud_provider_answers_costs_nothing(monkeypatch):

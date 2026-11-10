@@ -21,11 +21,11 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.check import cited, not_given, read_draft, usable
 from app.jscompat import js_round
 from app.live_check import money
 from app.protocols import PROTOCOLS
 from app.selection_rules import RULES
-from app.check import cited, not_given, read_draft, usable
 
 PROJECT_DIR = Path("/project")
 SITUATIONS_FILE = Path(__file__).resolve().parents[1] / "evaluation" / "situations.json"
@@ -88,13 +88,15 @@ def drafts_of(answer: dict) -> list[dict]:
 
 def fallback_cause(answer: dict) -> str | None:
     """Perché le regole di ripiego hanno scelto. Un file di prima delle bozze non lo registra: la causa
-    viene dalla risposta, che allora andava al ripiego solo se inutilizzabile."""
+    viene dalla risposta, che allora andava al ripiego solo se inutilizzabile; nessuna se il catalogo di
+    oggi la accetta."""
     if not answer["fellBack"]:
         return None
     if "fallbackCause" in answer:
         return answer["fallbackCause"]
     parsed, choice = read_draft(answer["modelRaw"], answer["truncated"])
-    return usable(parsed, choice, answer["truncated"], answer["duration"]).causes[0]
+    causes = usable(parsed, choice, answer["truncated"], answer["duration"]).causes
+    return causes[0] if causes else None
 
 
 def search_score(situations: list[dict], found: dict[str, set[str]]) -> tuple[int, int]:
