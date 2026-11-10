@@ -33,7 +33,7 @@ export function openingDuration(saved: unknown): number {
 
 export const pubmedUrl = (pmid: string) => `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
 
-export const paperCitation = (p: PaperRef) => `${p.authors} (${p.year}). ${p.title}`;
+export const paperCitation = (p: Pick<PaperRef, 'authors' | 'year' | 'title'>) => `${p.authors} (${p.year}). ${p.title}`;
 
 // Un paper citato come lo mostra la card: i passaggi da citare sotto il titolo e la licenza da
 // accreditare accanto agli autori.
@@ -44,13 +44,14 @@ interface CitedPaper {
 }
 
 // La licenza ha un link solo se è un indirizzo web: mai un altro tipo di link nella pagina.
+export const licenseLink = (name?: string | null, url?: string | null) =>
+  name && url && /^https?:\/\//.test(url) ? { name, url } : null;
+
 export function citedPapers(refs: PaperRef[]): CitedPaper[] {
   return refs.map((paper) => ({
     paper,
     quotes: paper.passages ?? [],
-    license: paper.license && paper.licenseUrl && /^https?:\/\//.test(paper.licenseUrl)
-      ? { name: paper.license, url: paper.licenseUrl }
-      : null,
+    license: licenseLink(paper.license, paper.licenseUrl),
   }));
 }
 

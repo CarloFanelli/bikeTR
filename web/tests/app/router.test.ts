@@ -8,6 +8,7 @@ vi.mock('../../src/screens/HomeScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/TrainingScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/AnalysisScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/CoachScreen.vue', () => ({ default: {} }));
+vi.mock('../../src/screens/LibraryScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/ActivitiesScreen.vue', () => ({ default: {} }));
 vi.mock('../../src/screens/ActivityDetailScreen.vue', () => ({ default: {} }));
 
@@ -25,6 +26,7 @@ describe('indirizzi dell\'app', () => {
     ['/analisi', 'analisi'],
     ['/attivita', 'attivita'],
     ['/coach', 'coach'],
+    ['/libreria', 'libreria'],
     ['/impostazioni', 'impostazioni'],
   ])('%s apre la sua sezione', async (address, name) => {
     const route = await open(address);

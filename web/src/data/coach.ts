@@ -4,6 +4,7 @@
 import type {
   CoachEvent, CoachRefusal, CoachStatus, ConnectionCheck, WorkoutRequest,
 } from '../core/coach-types.ts';
+import type { LibraryPaper, LibraryPassages } from '../core/library-types.ts';
 
 export const COACH_UNREACHABLE = 'Coach non raggiungibile: avvia BikeTR con docker compose up -d';
 
@@ -28,6 +29,11 @@ export const coachStatus = () => askCoach<CoachStatus>('/coach/status');
 
 // Il provider risponde, accetta la chiave e ha il modello? Nessun token speso.
 export const checkConnection = () => askCoach<ConnectionCheck>('/coach/ping');
+
+// I paper che il Coach cerca, senza passaggi; i passaggi di un paper si chiedono aprendolo.
+export const libraryPapers = () => askCoach<{ papers: LibraryPaper[] }>('/coach/library');
+export const libraryPassages = (pmid: string) =>
+  askCoach<LibraryPassages>(`/coach/library/${encodeURIComponent(pmid)}`);
 
 // Le corse salvate dal servizio appartengono al collegamento con Strava: dopo lo
 // scollegamento nessuna richiesta del Coach può ottenere un nuovo token.

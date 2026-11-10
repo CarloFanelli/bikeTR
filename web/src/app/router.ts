@@ -33,6 +33,10 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Coach AI' },
   },
   {
+    path: '/libreria', name: 'libreria', component: () => import('../screens/LibraryScreen.vue'),
+    meta: { title: 'Libreria' },
+  },
+  {
     path: '/impostazioni', name: 'impostazioni', component: () => import('../screens/SettingsScreen.vue'),
     meta: { title: 'Impostazioni' },
   },

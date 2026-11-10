@@ -1,6 +1,6 @@
 # Task Progress - paper-library
 
-01-library-section: TODO
+01-library-section: DONE
 02-add-by-pmid: TODO
 03-remove-and-restore: TODO
 04-reencode-added: TODO

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// Barra laterale: le cinque sezioni in alto; Impostazioni, stato di Strava e il tasto
+// Barra laterale: le sei sezioni in alto; Impostazioni, stato di Strava e il tasto
 // che la riduce a icone in basso. Ridotta, ogni voce mostra il nome al passaggio del mouse.
 import {
-  mdiBike, mdiChartLine, mdiCheckCircleOutline, mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiCogOutline,
+  mdiBike, mdiBookOpenVariant, mdiChartLine, mdiCheckCircleOutline, mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiCogOutline,
   mdiFormatListBulleted, mdiHomeOutline, mdiRobotOutline, mdiTarget,
 } from '@mdi/js';
 import { computed, ref } from 'vue';
@@ -35,6 +35,7 @@ const sections: SidebarItem[] = [
   { title: 'Analisi', icon: mdiChartLine, to: '/analisi' },
   { title: 'Attività', icon: mdiFormatListBulleted, to: '/attivita' },
   { title: 'Coach AI', icon: mdiRobotOutline, to: '/coach' },
+  { title: 'Libreria', icon: mdiBookOpenVariant, to: '/libreria' },
 ];
 
 const bottom = computed<SidebarItem[]>(() => {

@@ -6,6 +6,8 @@ Rotte:
   POST /coach/workout  → il workout di oggi, come flusso di eventi (una riga JSON l'uno)
   POST /coach/forget   → cancella corse e dettagli corsa salvati e, in Phoenix, le tracce della
                          schermata Coach partite prima (Disconnetti da Strava)
+  GET  /coach/library  → i paper che il Coach cerca, senza passaggi, con cosa ne dipende
+  GET  /coach/library/{pmid} → i passaggi di un paper, nell'ordine di lettura
 
 Gli errori sono {error: codice, message: testo in italiano da mostrare}: come risposta
 JSON se la richiesta è rifiutata subito, come evento {type: "error", ...} se il flusso
@@ -25,7 +27,7 @@ import httpx
 from fastapi import Depends, FastAPI, Header, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app import cloud, ollama, papers, provider, search, tracing, workout
+from app import cloud, library, ollama, papers, provider, search, tracing, workout
 from app.errors import CoachError
 from app.spending import SPENDING_FILE, Spending
 from app.store import RideStore
@@ -63,6 +65,15 @@ async def coach_error(request: Request, e: CoachError):
 
 async def load_index() -> dict:
     return await papers.load_index(http)
+
+
+async def searched_index() -> dict:
+    """L'indice che il Coach cerca, per la schermata Libreria; un indice inutilizzabile la rifiuta con
+    lo stesso messaggio che darebbe il Coach."""
+    try:
+        return await load_index()
+    except papers.PaperIndexError as e:
+        raise CoachError(502, "retrieval", str(e)) from e
 
 
 @app.get("/coach/status")
@@ -146,3 +157,13 @@ async def forget():
     await store.forget()
     trace_deletion.schedule(disconnected)
     return Response(status_code=204)
+
+
+@app.get("/coach/library")
+async def library_papers():
+    return {"papers": library.listing(await searched_index())}
+
+
+@app.get("/coach/library/{pmid}")
+async def library_passages(pmid: str):
+    return library.passages(await searched_index(), pmid)
