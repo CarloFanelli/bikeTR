@@ -28,6 +28,18 @@ _Avoid_: "embedding model" in user-facing text (too technical), "nomic-embed-tex
 A few whole sentences of a paper, at most 600 characters, labeled "PMID:n §k": from its abstract, or from its full text when an open license (CC BY, CC BY-SA, CC0) allows copying it. It is what the search finds and what the model cites; the workout card quotes it.
 _Avoid_: "chunk" (jargon), "excerpt" or "snippet" (unclear which unit).
 
+### Paper library
+What the Coach searches: the **Base papers** minus the ones the athlete removed, plus the **Added papers**. The Libreria section of the app shows and changes it; it is personal and never committed.
+_Avoid_: "index" (the committed file of **Base papers**), "corpus" (jargon).
+
+### Base paper
+One of the papers in the committed index file, built from the fixed list of PubMed searches. Removing one in the **Paper library** only hides it for that athlete.
+_Avoid_: "default paper" (unclear whether it can change).
+
+### Added paper
+A paper the athlete added to the **Paper library** by its PMID, saved by the **Coach service** on that computer, outside git. Its full text is used only under an open license, otherwise its abstract.
+_Avoid_: "uploaded paper" (nothing is uploaded: the app downloads it from PubMed and Europe PMC).
+
 ### Search score
 The "Expected paper found" column of the **Evaluation set**: how many situations have the **Supporting paper** of a protocol the **Selection rules** allow among the 4 papers the search finds. It needs no **Chat model**, so a search-only run measures it on any computer.
 _Avoid_: "recall@4" (jargon), "Support found" (another column, which depends on the model's choice).
@@ -72,6 +84,8 @@ _Avoid_: "log" (the service's log is lines of text, a trace has steps and durati
 - **A measured result goes into the README as measured, even when it is worse**: the rewritten rules made qwen2.5:7b follow them less (12 of 27, 15 before) and qwen2.5:3b barely more (9, 8 before), and the README says so (user decision of 2026-11-08). Why: the evaluation set exists to stop untested claims like "the new prompt is better".
 
 - **Every unusable answer goes to the Fallback rules, and the card says which cause**: a catalog protocol too long for the minutes is treated like an unreadable answer (user decision of 2026-11-08), and the Coach service writes the card's warning, one Italian text per cause (cut off, unreadable, not in the catalog, too long), with only catalog names and numbers. Why: the old Z2 swap ignored the athlete's rule (a tired rider got Z2), the old fixed text blamed invalid JSON for every cause, and only the service knows catalog names and minimum minutes.
+
+- **Papers enter by PMID only, and copy a full text only under an open license**: the paper library adds a paper from its PMID (no PDF upload), and its full text is used only under CC BY, CC BY-SA or CC0, otherwise its abstract (user decision of 2026-11-10, paper-library). Why: the user wants no legal risk, and passages leave the computer through the cloud **Chat model** and, later, an online deployment, not only through a commit.
 
 ## Gotchas
 
