@@ -27,7 +27,8 @@ SITUATIONS = json.loads(evaluation.SITUATIONS_FILE.read_text(encoding="utf-8"))
 ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
 CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "repeat", "duration", "protocolId", "fellBack", "truncated", "jsonReadable", "papersFound",
-          "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds", "modelRaw"}
+          "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds", "modelRaw",
+          "drafts", "fallbackCause", "citationsDropped"}
 
 
 @pytest.fixture
@@ -170,14 +171,16 @@ def test_cloud_run_prints_the_worst_case_records_costs_and_never_writes_the_key(
     assert [(a["cost"], a["charged"]) for a in run["answers"]] == [(pytest.approx(ANSWER_COST),) * 2] * 2
     assert run["totalCost"] == pytest.approx(2 * ANSWER_COST) and cloud_spending.total() == pytest.approx(2 * ANSWER_COST)
     out = capsys.readouterr().out
-    assert out.splitlines()[0] == "Costo massimo: $0.1680 per 2 risposte; restano $1.0000 sotto il tetto."
+    # Ogni risposta fino a 3 bozze, ciascuna alla stima alta.
+    assert out.splitlines()[0] == ("Costo massimo: $0.5040 per 2 risposte, fino a 3 bozze ciascuna; restano $1.0000 "
+                                   "sotto il tetto.")
     assert "Costo totale: $0.0067" in out
     assert CLOUD_KEY not in file.read_text() and CLOUD_KEY not in out
 
 
 def test_cloud_run_whose_worst_case_exceeds_what_is_left_does_not_start(fakes, tmp_path, cloud_spending, cloud_env,
                                                                         two_situations, capsys):
-    cloud_spending.add(1 - 2 * CEILING_COST + 0.0001)
+    cloud_spending.add(1 - 2 * 3 * CEILING_COST + 0.0001)
     code, files = evaluate(tmp_path, cloud_spending, two_situations)
     assert (code, files, fakes["cloud"].requests) == (2, [], [])
     assert "Il costo massimo supera quanto resta sotto il tetto" in capsys.readouterr().err
@@ -185,9 +188,24 @@ def test_cloud_run_whose_worst_case_exceeds_what_is_left_does_not_start(fakes, t
 
 def test_cloud_run_whose_worst_case_is_exactly_what_is_left_starts(fakes, tmp_path, cloud_spending, cloud_env,
                                                                    two_situations):
-    cloud_spending.add(1 - 2 * CEILING_COST)
+    cloud_spending.add(1 - 2 * 3 * CEILING_COST)
     code, [file] = evaluate(tmp_path, cloud_spending, two_situations)
     assert code == 0 and read(file)["complete"]
+
+
+def test_an_answer_of_three_drafts_is_written_with_its_three_drafts(fakes, tmp_path, cloud_spending, two_situations):
+    # Riposo dopo un blocco: la regola ammette solo il riposo.
+    seiler = '{"protocolId":"seiler_4x8","razionale":"x","passaggiUsati":[]}'
+    fakes["ollama"].queue = ["Non è JSON.", seiler]
+    _, [file] = evaluate(tmp_path, cloud_spending, two_situations)
+    first, second = read(file)["answers"]
+    assert [(d["protocolId"], d["modelRaw"], d["check"]["causes"], d["inputTokens"], d["outputTokens"], d["cost"])
+            for d in first["drafts"]] == [(None, "Non è JSON.", ["unreadable"], 900, 42, None),
+                                          ("seiler_4x8", seiler, ["not_allowed"], 900, 42, None),
+                                          ("rest", ANSWER, [], 900, 42, None)]
+    assert first["drafts"][1]["check"]["reasons"][0].startswith("Seiler 4×8' (FTP/VO2) (seiler_4x8) non è ammesso oggi")
+    assert (first["fellBack"], first["fallbackCause"], first["citationsDropped"]) == (False, None, [])
+    assert len(second["drafts"]) == 1
 
 
 def test_unreadable_spending_file_refuses_a_cloud_run(fakes, tmp_path, cloud_spending, cloud_env, two_situations,

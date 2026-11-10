@@ -101,7 +101,11 @@ def record(base: dict, result: dict, charged: float | None) -> dict:
             # Le etichette dei passaggi che il modello ha scritto di aver usato, come le ha scritte.
             "papersCited": [js_str(p) for p in cited] if isinstance(cited, list) else [],
             "inputTokens": result["inputTokens"], "outputTokens": result["outputTokens"],
-            "cost": result["cost"], "charged": charged, "seconds": result["seconds"], "modelRaw": result["modelRaw"]}
+            "cost": result["cost"], "charged": charged, "seconds": result["seconds"], "modelRaw": result["modelRaw"],
+            # Ogni bozza con il suo protocollo, la risposta, l'esito del controllo con i motivi, token e costo;
+            # perché le regole di ripiego hanno scelto e le citazioni tolte dalla scheda.
+            "drafts": result["drafts"], "fallbackCause": result["fallbackCause"],
+            "citationsDropped": result["citationsDropped"]}
 
 
 async def coach_answer(base: dict, chat: provider.ChatSettings, spending: Spending,

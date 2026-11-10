@@ -160,6 +160,35 @@ def test_with_no_situation_that_has_an_expected_paper_the_search_score_is_a_dash
     assert "  Punteggio della ricerca, paper atteso trovato: —" in grading.report(run([]), scores, "corsa.json")
 
 
+def drafted(*raws: str, cause=None, dropped=(), **fields) -> dict:
+    """Una risposta con le sue bozze, come le registra il grafo: l'ultima è la risposta."""
+    drafts = [{"modelRaw": r, "truncated": False} for r in raws]
+    return answer(raw=raws[-1], drafts=drafts, fallbackCause=cause, citationsDropped=list(dropped),
+                  fellBack=cause is not None, **fields)
+
+
+def choice(protocol: str) -> str:
+    return json.dumps({"protocolId": protocol, "razionale": "x", "passaggiUsati": []})
+
+
+def test_an_answer_sent_back_for_the_rule_then_delivered_counts_only_in_rules_followed():
+    scores = grade([drafted(choice("rest"), choice("seiler_4x8")), drafted(choice("seiler_4x8"))])
+    assert (scores.rules_followed, scores.rules_first) == ((2, 2), (1, 2))
+    assert scores.average_drafts == 1.5
+
+
+def test_answers_are_counted_per_fallback_cause_and_citations_dropped():
+    scores = grade([drafted(choice("rest"), choice("rest"), choice("rest"), cause="not_allowed"),
+                    drafted("", "", "", cause="unreadable"),
+                    drafted(choice("seiler_4x8"), cause="truncated", truncated=True),
+                    drafted(choice("rest"), cause="not_allowed"),
+                    drafted(choice("seiler_4x8"), dropped=["PMID:9 §1"]),
+                    answer("over_under", fellBack=True)])
+    assert scores.fallback_causes == {"truncated": 1, "unreadable": 1, "too_long": 1, "not_allowed": 2}
+    assert scores.fallback == (5, 6) and scores.citations_dropped == (1, 6)
+    assert scores.average_drafts == pytest.approx(10 / 6)
+
+
 def test_errors_are_counted_apart_and_no_success_gives_dashes():
     scores = grade([failure(), failure()])
     assert (scores.answered, scores.failed) == (0, 2)
@@ -203,26 +232,32 @@ def test_scores_and_readme_rows_one_per_file_even_for_the_same_model_and_prompt(
     second = write(tmp_path, "b.json", run([answer()]))
     assert grading.main([first, second], project_dir=tmp_path) == 0
     out = capsys.readouterr().out.splitlines()
-    assert out[:12] == [
+    # File di prima delle bozze: la prima bozza è la risposta, e la causa del ripiego viene da lei (Over-Under
+    # in 60 minuti: troppo lungo).
+    assert out[:16] == [
         "eval-runs/a.json — qwen2.5:7b · prompt abcd1234 · corsa completa",
         "  Risposte valutate: 2 · errori: 0",
         "  Regole seguite: 50% (1/2)",
+        "  Regole seguite alla prima bozza: 50% (1/2)",
         "  JSON leggibile: 100% (2/2)",
         "  Citazioni inventate: 0% (0/2)",
+        "  Citazioni tolte dalla scheda: 0% (0/2)",
         "  Paper di supporto citato: 100% (1/1)",
         "  Paper di supporto trovato dalla ricerca: 100% (1/1)",
         "  Punteggio della ricerca, paper atteso trovato: 100% (1/1)",
         "  Ripiego usato: 50% (1/2)",
+        "  Cause del ripiego: troppo lungo 1",
+        "  Bozze per risposta (media): 1.0",
         "  Secondi (mediana): 10.0",
         "  Costo per risposta: —",
         "  Non eseguite: " + ", ".join(s["name"] for s in SITUATIONS if s["name"] != FRESH),
     ]
     rows = [line for line in out if line.startswith("| qwen2.5:7b")]
     assert rows == [
-        "| qwen2.5:7b | abcd1234 | 50% (1/2) | 100% (2/2) | 0% (0/2) | 100% (1/1) | 100% (1/1) | 100% (1/1) "
-        "| 50% (1/2) | 10.0 | — | [a.json](eval-runs/a.json) |",
-        "| qwen2.5:7b | abcd1234 | 100% (1/1) | 100% (1/1) | 0% (0/1) | 0% (0/1) | 100% (1/1) | 100% (1/1) "
-        "| 0% (0/1) | 10.0 | — | [b.json](eval-runs/b.json) |",
+        "| qwen2.5:7b | abcd1234 | 50% (1/2) | 50% (1/2) | 100% (2/2) | 0% (0/2) | 0% (0/2) | 100% (1/1) | 100% (1/1) "
+        "| 100% (1/1) | 50% (1/2) | too_long 1 | 1.0 | 10.0 | — | [a.json](eval-runs/a.json) |",
+        "| qwen2.5:7b | abcd1234 | 100% (1/1) | 100% (1/1) | 100% (1/1) | 0% (0/1) | 0% (0/1) | 0% (0/1) | 100% (1/1) "
+        "| 100% (1/1) | 0% (0/1) | — | 1.0 | 10.0 | — | [b.json](eval-runs/b.json) |",
     ]
     header = out.index(rows[0]) - 2
     assert out[header].startswith("| Model | Prompt | Rules followed |")

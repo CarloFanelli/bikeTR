@@ -25,7 +25,7 @@ ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
 CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "duration", "provider", "model", "protocolId", "fellBack", "truncated", "jsonReadable",
           "papersFound", "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds",
-          "modelRaw"}
+          "modelRaw", "drafts", "fallbackCause", "citationsDropped"}
 
 
 @pytest.fixture

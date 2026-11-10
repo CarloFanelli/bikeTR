@@ -16,7 +16,7 @@ docker compose run --rm coach-tools python -m app.evaluation
 2. Run the command and wait: it prints one line per answer as it finishes (`[3/27] situation (minutes): protocol · fallback · seconds · tokens · cost`), then the run's scores, the total cost and the file name.
 3. Commit the new file in `eval-runs/` and push it.
 
-With a cloud model, the command first prints the worst case: every answer at the high estimate (8,000 tokens read, 4,000 written). If that exceeds what is left under `CLOUD_SPENDING_LIMIT`, the run does not start; raise the limit or ask for fewer repeats. Every answer adds to the same spending total as the app.
+With a cloud model, the command first prints the worst case: every answer with its 3 drafts, each at the high estimate (8,000 tokens read, 4,000 written). If that exceeds what is left under `CLOUD_SPENDING_LIMIT`, the run does not start; raise the limit or ask for fewer repeats. Every answer adds to the same spending total as the app.
 
 To measure the paper search alone, with no chat model:
 
@@ -36,17 +36,21 @@ Grading reads results files and calls no model and no network, so it runs anywhe
 docker compose run --rm coach-tools python -m app.grading eval-runs/FILE.json [more files]
 ```
 
-It prints each run's scores, then one row per file for the README table. Every answer is judged on what the model wrote, not on what the Coach did with it: the Coach replaces a protocol that does not fit the minutes, drops the citations it never gave the model, and adds the protocol's paper to the cited ones by itself. Answers with an error are counted apart, outside the scores, except the search score, which counts situations (see its row).
+It prints each run's scores, then one row per file for the README table. Every answer is judged on what the model wrote in its last draft, not on what the Coach did with it: the Coach replaces a protocol that does not fit the minutes or that today's rule does not allow, drops the citations it never gave the model, and adds the protocol's paper to the cited ones by itself. The rules are also judged on the first draft, before the check sent anything back. A file from before the drafts holds one answer per situation: it is graded as one draft, so the first and the last are the same. Answers with an error are counted apart, outside the scores, except the search score, which counts situations (see its row).
 
 | Score | Counts |
 |---|---|
-| Rules followed | answers whose protocol, as the model wrote it, is in the situation's allowed list |
+| Rules followed | answers whose protocol, as the model wrote it in its last draft, is in the situation's allowed list |
+| Rules at first draft | the same on the first draft: what the narrowed prompt achieves alone, before the check sends an answer back |
 | Readable JSON | answers the Coach could read as a JSON object, not cut at the token limit |
 | Invented citations | answers citing, in `passaggiUsati` or anywhere in the text, a passage label that was not among the passages given, or a paper's PMID alone that was neither among the papers given nor the source of a selection rule, which the prompt shows beside the rule. Files from before passages record no passages given: their answers are judged on PMIDs alone, `paperUsati` included |
 | Support cited | among answers given the supporting paper of the protocol they chose, those citing it |
 | Support found | among answers choosing a protocol with a supporting paper, those whose search found it |
 | Expected paper found | the search score: among situations whose allowed protocols include one with a supporting paper, those where the search found one of those papers among the 4. Each situation counts once, from its first answer without an error; a situation whose answers all failed counts as not found |
+| Citations dropped | answers whose last draft was wrong only in its citations, so the card kept its workout without them |
 | Fallback | answers where the Coach's fallback rules chose instead of the model |
+| Fallback causes | the fallback answers per cause of the last draft: `truncated`, `unreadable`, `not_in_catalog`, `too_long`, `not_allowed`. Files from before the drafts record no cause: it comes from the answer, which then went to the fallback only when unusable |
+| Average drafts | drafts per answer, 1 to 3 |
 | Median seconds, cost per answer | cost is what each answer added to the spending total, failed ones included; `—` with Ollama |
 
 An answer for a situation no longer in the set is skipped and listed; a situation without an answer is listed as not run. A row for an incomplete run says `(incompleta)`: incomplete runs do not go in the README.
@@ -68,6 +72,6 @@ The file is rewritten after every answer, so a run stopped halfway (Ctrl+C, the 
 | `totalCost` | the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama. A run stopped with Ctrl+C during an answer leaves that answer out of the file, but the spending total still counts it, so `totalCost` is a little lower than what the run spent |
 | `answers` | one entry per answer, in the order they ran |
 
-Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `passagesFound` (the passages the model was given, by label and score), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds` and `modelRaw` (the whole answer).
+Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `passagesFound` (the passages the model was given, by label and score), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds`, `modelRaw` (the whole last draft), `drafts`, `fallbackCause` and `citationsDropped`.
 
 A failed answer has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next answer still runs. The command exits with code 1 when every answer fails, with code 2, writing no file, when `.env` or `--repeat` is wrong, the paper index or the saved library is refused, or the worst case exceeds the cap, and with code 130 after Ctrl+C. The cloud key is never written here.

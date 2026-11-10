@@ -28,6 +28,9 @@ Each file holds `startedAt`, `provider`, `model`, `searchModel`, `totalCost` (th
 | `papersCited` | the passage labels the model said it used (`passaggiUsati`), as it wrote them |
 | `inputTokens`, `outputTokens`, `cost`, `seconds` | `null` when the provider doesn't report them |
 | `charged` | dollars this situation added to the spending total: its cost, or the high estimate (8,000 tokens read, 4,000 written) when the provider gave no token counts or the answer broke off; `null` with Ollama |
-| `modelRaw` | the model's whole answer |
+| `modelRaw` | the model's whole answer, its last draft when the check sent earlier ones back |
+| `drafts` | every draft, the first included: `protocolId` (`null` when unreadable), `modelRaw`, `truncated`, `inputTokens`, `outputTokens`, `cost`, and `check` with `ok`, the `causes` (`truncated`, `unreadable`, `not_in_catalog`, `too_long`, `not_allowed`, `invented`) and the `reasons` sent back to the model. `inputTokens`, `outputTokens` and `cost` above are the sums over the drafts |
+| `fallbackCause` | why the fallback rules chose, the last draft's first cause; `null` when they did not |
+| `citationsDropped` | the citations dropped from the card because the model was not given them, when the last draft was wrong only there |
 
 A failed situation has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next situation still runs. The command exits with code 1 when all 3 fail, and with code 2, writing no file, when `.env` is wrong. The cloud key is never written here.
