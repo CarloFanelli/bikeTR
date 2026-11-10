@@ -65,8 +65,20 @@ The paper in the Coach's index that a protocol comes from, found by a PubMed sea
 _Avoid_: "source" alone (a selection rule's source may be practice).
 
 ### Fallback rules
-The Coach's fixed choice of protocol when the **Chat model**'s answer is cut off, unreadable, names no catalog protocol, or picks one too long for the minutes: the first protocol the athlete's **Selection rules** rule allows for those minutes. The workout card names which of the four causes it was.
+The Coach's fixed choice of protocol when the **Coach graph** runs out of **Draft**s without one the **Check** accepts: the first protocol the athlete's **Selection rules** rule allows for those minutes. The card names the last draft's cause: cut off, unreadable, not in the catalog, too long for the minutes, or not allowed today. A last draft failing only on invented citations keeps its protocol instead.
 _Avoid_: "backup choice" (used once in an interview; the README says fallback).
+
+### Coach graph
+The Coach's request as a LangGraph graph: rides, metrics, papers, **Draft**, **Check**, deliver, with the check sending a rejected draft back to the model, up to 3 drafts. The **Live check** and the **Evaluation set** enter it at papers.
+_Avoid_: "pipeline" (it has a loop back), "agent" (the model chooses no steps; that is the tool-calling step).
+
+### Draft
+One answer of the **Chat model** within a Coach request; a request makes at most 3. The Coach screen calls it "tentativo".
+_Avoid_: "retry" for the first one (every request has a first draft), "attempt" in specs (the screen's word only).
+
+### Check
+The **Coach graph** node that accepts a **Draft** or sends it back with code-written reasons: unusable answer, protocol not allowed by the **Selection rules** today, or a citation outside the passages given.
+_Avoid_: "validation" (used for request input), "guardrail" (vague).
 
 ### Trace
 The record in Phoenix of one Coach request, from the Coach screen, the **Live check** or the **Evaluation set**: each step with its duration, the prompt, the papers found, the model's raw answer, tokens, cost and the decision. Disconnecting from Strava deletes the Coach screen's traces.

@@ -12,7 +12,7 @@ import httpx
 import pytest
 
 from app import cloud, live_check, ollama, prompts, search
-from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, FakeCloud, FakeOllama, FakeSearch
+from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, FakeCloud, FakeOllama, FakeSearch, drafts_per_answer
 from fixture_data import FIXTURES, load
 
 CASES = load("coach_cases.json")
@@ -56,7 +56,9 @@ def test_three_made_up_situations_with_the_env_model(fakes, tmp_path, cloud_spen
     assert (run["provider"], run["model"], run["startedAt"]) == ("ollama", "qwen2.5:7b", "2026-11-07T18:30:05Z")
     assert [(s["situation"], s["duration"]) for s in run["situations"]] == [("base", 60), ("ftp280", 90),
                                                                            ("noLthr", 45)]
-    for s in run["situations"]:
+    drafts = drafts_per_answer([body for _, body in fakes["ollama"].requests])
+    assert len(drafts) == 3 and len(fakes["search"].texts) == 3
+    for s, n in zip(run["situations"], drafts):
         assert set(s) == FIELDS
         assert (s["provider"], s["model"], s["modelRaw"], s["jsonReadable"]) == ("ollama", "qwen2.5:7b", ANSWER, True)
         assert len(s["papersFound"]) == 4 and {"pmid", "title", "score"} <= set(s["papersFound"][0])
@@ -64,8 +66,8 @@ def test_three_made_up_situations_with_the_env_model(fakes, tmp_path, cloud_spen
         assert [set(g) for g in s["passagesFound"]] == [{"label", "score"}] * 8
         assert {g["label"].split()[0] for g in s["passagesFound"]} == {f"PMID:{p['pmid']}" for p in s["papersFound"]}
         assert all(isinstance(pmid, str) for pmid in s["papersCited"])
-        assert (s["inputTokens"], s["outputTokens"], s["cost"], s["charged"]) == (900, 42, None, None)
-    assert len(fakes["ollama"].requests) == 3 and len(fakes["search"].texts) == 3
+        # Ogni bozza legge 900 token e ne scrive 42: la risposta conta tutte le sue bozze.
+        assert (s["inputTokens"], s["outputTokens"], s["cost"], s["charged"]) == (900 * n, 42 * n, None, None)
     lines = capsys.readouterr().out.splitlines()
     assert lines[0].startswith("base (60 min): ") and " · ripiego: no · " in lines[0]
     assert lines[0].endswith(" · token: 900 in, 42 out · costo: —")
@@ -96,13 +98,14 @@ def test_cloud_run_records_costs_adds_them_to_the_total_and_never_writes_the_key
         monkeypatch.setenv(name, value)
     code, [file] = check(tmp_path, cloud_spending)
     assert code == 0
-    assert [(s["cost"], s["charged"]) for s in read(file)["situations"]] == [(pytest.approx(ANSWER_COST),
-                                                                              pytest.approx(ANSWER_COST))] * 3
-    assert read(file)["totalCost"] == pytest.approx(3 * ANSWER_COST)
-    assert cloud_spending.total() == pytest.approx(3 * ANSWER_COST)
+    drafts = drafts_per_answer([body for _, _, body in fakes["cloud"].requests])
+    assert [(s["cost"], s["charged"]) for s in read(file)["situations"]] == [
+        (pytest.approx(ANSWER_COST * n), pytest.approx(ANSWER_COST * n)) for n in drafts]
+    total = sum(drafts) * ANSWER_COST
+    assert read(file)["totalCost"] == pytest.approx(total) and cloud_spending.total() == pytest.approx(total)
     assert CLOUD_KEY not in file.read_text() and fakes["cloud"].requests[0][1]["authorization"] == f"Bearer {CLOUD_KEY}"
     out = capsys.readouterr().out
-    assert " · costo: $0.0033" in out and "Costo totale: $0.0100" in out and CLOUD_KEY not in out
+    assert " · costo: $0.0033" in out and f"Costo totale: ${total:.4f}" in out and CLOUD_KEY not in out
 
 
 def test_cap_reached_mid_run_refuses_the_rest_and_still_writes_the_file(fakes, tmp_path, cloud_spending,
@@ -174,10 +177,13 @@ def test_answers_without_token_counts_add_their_high_estimate_to_the_run_total(f
     fakes["cloud"].usage = None
     _, [file] = check(tmp_path, cloud_spending)
     run = read(file)
-    assert [(s["cost"], s["charged"]) for s in run["situations"]] == [(None, pytest.approx(CEILING_COST))] * 3
-    assert run["totalCost"] == pytest.approx(3 * CEILING_COST) and cloud_spending.total() == pytest.approx(3 * CEILING_COST)
+    drafts = drafts_per_answer([body for _, _, body in fakes["cloud"].requests])
+    assert [(s["cost"], s["charged"]) for s in run["situations"]] == [(None, pytest.approx(CEILING_COST * n))
+                                                                      for n in drafts]
+    total = sum(drafts) * CEILING_COST
+    assert run["totalCost"] == pytest.approx(total) and cloud_spending.total() == pytest.approx(total)
     out = capsys.readouterr().out
-    assert " · costo: — · addebitati: $0.0840" in out and "Costo totale: $0.2520" in out
+    assert " · costo: — · addebitati: $0.0840" in out and f"Costo totale: ${total:.4f}" in out
 
 
 def test_a_situation_failing_mid_answer_records_what_it_added_to_the_total(fakes, tmp_path, cloud_spending,
@@ -222,7 +228,9 @@ def test_every_situation_leaves_its_trace_sent_before_the_command_ends(fakes, tm
         assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "live-check",
                                          "coach.minutes": duration, "coach.prompt_version": prompts.prompt_version(),
                                          "coach.situation": name}
-        assert [s.name for s in steps] == ["rides", "papers", "model", "decision"]
+        names = [s.name for s in steps]
+        assert names[:3] == ["rides", "metrics", "papers"] and names[-1] == "deliver"
+        assert names[3:-1] == ["draft", "check"] * (len(names[3:-1]) // 2)
         # Le corse inventate, non un download da Strava.
         assert steps[0].attributes["coach.rides.made_up"] is True
 

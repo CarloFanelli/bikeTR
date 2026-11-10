@@ -22,7 +22,7 @@ from typing import Awaitable, Callable
 
 import httpx
 
-from app import papers, provider, search, tracing, workout
+from app import check, graph, papers, provider, search, tracing, workout
 from app.errors import CoachError
 from app.jscompat import instant_ms, js_str
 from app.metrics import ride_details
@@ -89,7 +89,7 @@ def index_from(path: Path):
 def record(base: dict, result: dict, charged: float | None) -> dict:
     """Quello che serve per valutare il modello. Campi scritti uno per uno: le impostazioni,
     che contengono la chiave, non finiscono mai nel file."""
-    parsed = workout.parse_model_json(result["modelRaw"])
+    parsed = check.parse_model_json(result["modelRaw"])
     cited = parsed.get("passaggiUsati") if isinstance(parsed, dict) else None
     return {**base, "protocolId": result["protocolId"], "fellBack": result["fellBack"],
             "truncated": result["truncated"], "jsonReadable": isinstance(parsed, dict),
@@ -139,7 +139,7 @@ async def situation(name: str, duration: int, made_up: dict, chat: provider.Chat
         req = workout.parse_request({"duration": duration, "timeZone": TIME_ZONE,
                                      "profile": made_up["profiles"][name]})
         events = []
-        await workout.run(req, events.append, rides=rides, chat=chat, chat_client=chat_client,
+        await graph.run(req, events.append, rides=rides, chat=chat, chat_client=chat_client,
                           embed=search.encode, load_index=load_index, now_ms=rides.now_ms, spending=counted)
         return events[-1]
     return await coach_answer({"situation": name, "duration": duration, "provider": chat.provider,

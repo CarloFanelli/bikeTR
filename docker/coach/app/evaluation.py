@@ -31,7 +31,7 @@ from pathlib import Path
 
 import httpx
 
-from app import library, papers, prompts, provider, search, tracing, workout
+from app import graph, library, papers, prompts, provider, search, tracing, workout
 from app.errors import CoachError
 from app.grading import SITUATIONS_FILE, grade, report, search_score, search_score_line
 from app.live_check import INDEX_FILE, coach_answer, file_stem, index_from, money, summary, write_results
@@ -64,7 +64,7 @@ async def run_answers(situations: list[dict], repeat: int, chat: provider.ChatSe
     for n in range(1, repeat + 1):
         for s in situations:
             async def ask(chat_client: httpx.AsyncClient, counted: Spending) -> dict:
-                return await workout.from_context(s["context"], s["minutes"], lambda event: None, chat=chat,
+                return await graph.from_context(s["context"], s["minutes"], lambda event: None, chat=chat,
                                                   chat_client=chat_client, embed=search.encode,
                                                   load_index=load_index, spending=counted)
             base = {"situation": s["name"], "repeat": n, "duration": s["minutes"]}

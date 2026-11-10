@@ -31,7 +31,7 @@ import httpx
 from fastapi import Depends, FastAPI, Header, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app import cloud, library, ollama, papers, provider, search, tracing, workout
+from app import cloud, graph, library, ollama, papers, provider, search, tracing, workout
 from app.errors import CoachError
 from app.spending import SPENDING_FILE, Spending
 from app.store import RideStore
@@ -138,7 +138,7 @@ async def generate_workout(request: Request):
         try:
             with tracing.request(req.duration):
                 async with provider.client(chat) as chat_client:
-                    await workout.run(req, events.put_nowait, rides=rides, chat=chat, chat_client=chat_client,
+                    await graph.run(req, events.put_nowait, rides=rides, chat=chat, chat_client=chat_client,
                                       embed=search.encode, load_index=load_index, now_ms=time.time() * 1000,
                                       spending=cloud_spending)
         except CoachError as e:

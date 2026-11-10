@@ -14,7 +14,7 @@ import httpx
 import pytest
 import uvicorn
 
-from app import main, ollama, provider, search, workout
+from app import graph, main, ollama, provider, search, workout
 from app.errors import CoachError
 from fakes import CLOUD_PRICES, FakeRides, FakeSearch, fixture_index
 from fixture_data import NOW_MS, RIDES
@@ -123,7 +123,7 @@ BODY = {"duration": 60, "timeZone": "Europe/Rome", "profile": RIDES["profiles"][
 
 async def run_workout(settings: provider.ChatSettings, client: httpx.AsyncClient) -> list:
     events = []
-    await workout.run(workout.parse_request(BODY), events.append, rides=FakeRides(RIDES["activities"]),
+    await graph.run(workout.parse_request(BODY), events.append, rides=FakeRides(RIDES["activities"]),
                       chat=settings, chat_client=client, embed=FakeSearch([1] * 10).encode,
                       load_index=fixture_index, now_ms=NOW_MS, spending=main.cloud_spending)
     return events

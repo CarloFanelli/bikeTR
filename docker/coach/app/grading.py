@@ -24,7 +24,7 @@ from app.jscompat import js_round, js_str
 from app.live_check import money
 from app.protocols import PROTOCOLS
 from app.selection_rules import RULES
-from app.workout import parse_model_json
+from app.check import read_draft
 
 PROJECT_DIR = Path("/project")
 SITUATIONS_FILE = Path(__file__).resolve().parents[1] / "evaluation" / "situations.json"
@@ -59,15 +59,6 @@ class Scores:
     cost_per_answer: float | None
     skipped: list[str]
     not_run: list[str]
-
-
-def model_choice(answer: dict) -> tuple[dict | None, str | None]:
-    """Il JSON della risposta e il protocollo scritto dal modello, letti come li legge il Coach:
-    nessuno dei due da una risposta troncata o illeggibile."""
-    parsed = None if answer["truncated"] else parse_model_json(answer["modelRaw"])
-    if not isinstance(parsed, dict):
-        return None, None
-    return parsed, js_str(parsed.get("protocolId"))
 
 
 def cited_in(parsed: dict | None, model_raw: str) -> set[tuple[str, int | None]]:
@@ -117,7 +108,7 @@ def grade(run: dict, situations: list[dict]) -> Scores:
     n = len(answered)
     count = Counter()
     for a in answered:
-        parsed, choice = model_choice(a)
+        parsed, choice = read_draft(a["modelRaw"], a["truncated"])
         given = {p["pmid"] for p in a["papersFound"]}
         cited = cited_in(parsed, a["modelRaw"])
         count["followed"] += choice in allowed[a["situation"]]

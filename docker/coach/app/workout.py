@@ -1,28 +1,19 @@
-"""Il workout di oggi, dalla richiesta del browser al risultato.
+"""Il workout di oggi: la richiesta del browser controllata, la ricerca dei paper e la decisione
+sull'ultima bozza del modello, con ripieghi deterministici e paper citati con i loro passaggi. La
+logica è quella del Coach che girava nel browser; i passi della richiesta li mette in fila il grafo
+(app/graph.py)."""
 
-La logica è quella del Coach che girava nel browser: contesto atleta, ricerca dei
-paper, scelta del modello, ripieghi deterministici e paper citati, ora con i passaggi. Strada facendo
-`emit` manda al browser gli eventi: step, context, token e infine result; ogni passo lascia
-anche la sua parte della traccia in Phoenix (app/tracing.py)."""
-
-import json
-import re
-import time
 from dataclasses import dataclass
 from typing import Awaitable, Callable
 from zoneinfo import ZoneInfo
 
-import httpx
-
-from app import papers, prompts, provider, tracing
-from app.chat import Accepted, ChatEnd, ModelError
+from app import papers, prompts, tracing
+from app.check import read_draft, usable
 from app.errors import CoachError
 from app.jscompat import is_number, js_str, js_truthy
-from app.metrics import Profile, coach_context
+from app.metrics import Profile
 from app.protocols import PROTOCOLS
 from app.selection_rules import fallback_protocol_id, minimum_minutes
-from app.spending import Spending, charge, cost
-from app.strava import StravaRides
 
 MIN_DURATION, MAX_DURATION = 30, 240
 # Campo del profilo inviato dal browser → nome mostrato nei messaggi d'errore.
@@ -86,24 +77,6 @@ def parse_request(body) -> WorkoutRequest:
     return req
 
 
-def parse_model_json(text: str):
-    """tryParseModelJSON del browser: il testo intero, altrimenti dalla prima "{"
-    all'ultima "}". NaN e Infinity non sono JSON per il browser."""
-    def reject(name):
-        raise ValueError(name)
-
-    candidates = [text]
-    match = re.search(r"\{[\s\S]*\}", text)
-    if match:
-        candidates.append(match.group(0))
-    for candidate in candidates:
-        try:
-            return json.loads(candidate, parse_constant=reject)
-        except (ValueError, RecursionError):
-            pass
-    return None
-
-
 def paper_ref(p: dict, quoted: list) -> dict:
     """Il paper come lo mostra la scheda, con i passaggi citati; un testo completo citato porta la sua
     licenza e il suo link, perché la scheda ne riporta il testo."""
@@ -140,66 +113,48 @@ def card_papers(listed, razionale: str, protocol_id: str, index: dict, retrieved
             for pmid, chosen in quoted.items()]
 
 
-def fallback_warning(parsed, chosen: str | None, duration: int, truncated: bool) -> str:
-    """L'avviso della scheda: perché le regole di ripiego hanno scelto al posto del modello. Solo
-    testo del codice (nomi del catalogo, numeri), mai testo scritto dal modello."""
+def fallback_warning(cause: str, chosen: str | None, duration: int) -> str:
+    """L'avviso della scheda: perché le regole di ripiego hanno scelto al posto del modello, dalla
+    causa dell'ultima bozza. Solo testo del codice (nomi del catalogo, numeri), mai testo scritto dal
+    modello."""
     by_rules = "il Coach ha scelto con le regole di selezione."
-    if truncated:
+    if cause == "truncated":
         return f"⚠️ La risposta del modello si è interrotta prima della fine: {by_rules}"
-    if not isinstance(parsed, dict):
+    if cause == "unreadable":
         return f"⚠️ La risposta del modello non era leggibile: {by_rules}"
-    if chosen not in PROTOCOLS:
+    if cause == "not_in_catalog":
         return f"⚠️ Il modello non ha indicato un protocollo del catalogo: {by_rules}"
     return (f"⚠️ Il modello ha scelto {PROTOCOLS[chosen].name}, che richiede almeno {minimum_minutes(chosen)} "
             f"minuti: con {duration} minuti {by_rules}")
 
 
 def decide(model_raw: str, ctx: dict, duration: int, index: dict, retrieved: list, truncated: bool = False) -> dict:
-    """Dal testo del modello al workout, con i paper trovati dalla ricerca (`retrieved`): i loro
-    passaggi sono quelli che la scheda può citare. Una risposta che non si può usare (troncata,
+    """Dall'ultima bozza del modello al workout, con i paper trovati dalla ricerca (`retrieved`): i
+    loro passaggi sono quelli che la scheda può citare. Una bozza che non si può usare (troncata,
     illeggibile, senza un protocollo del catalogo o con un protocollo che non entra nei minuti) lascia
-    la scelta al primo protocollo che le regole ammettono, con il razionale di ripiego e senza i paper
-    del modello."""
-    parsed = None if truncated else parse_model_json(model_raw)
-    chosen = js_str(parsed.get("protocolId")) if isinstance(parsed, dict) else None
-    built = PROTOCOLS[chosen].build(ctx["ftp"], duration) if chosen in PROTOCOLS else None
-    if built is not None:
+    la scelta al primo protocollo che le regole ammettono, con il razionale di ripiego, senza i paper
+    del modello e con la causa."""
+    parsed, chosen = read_draft(model_raw, truncated)
+    verdict = usable(parsed, chosen, truncated, duration)
+    if verdict.ok:
         protocol_id = chosen
         razionale = js_str(parsed.get("razionale")) if js_truthy(parsed.get("razionale")) else NO_RATIONALE
-        listed, warning = parsed.get("passaggiUsati"), None
+        listed, cause, warning = parsed.get("passaggiUsati"), None, None
     else:
         protocol_id = fallback_protocol_id(ctx, duration)
-        built = PROTOCOLS[protocol_id].build(ctx["ftp"], duration)
         hard = ctx["polarizzazione"]["hardPct"]
         razionale = (f"Decisione fallback: TSB {js_str(ctx['tsb'])}, polarizzazione hard "
                      f"{'—' if hard is None else js_str(hard)}% → {PROTOCOLS[protocol_id].name}")
-        listed, warning = [], fallback_warning(parsed, chosen, duration, truncated)
+        cause = verdict.causes[0]
+        listed, warning = [], fallback_warning(cause, chosen, duration)
     tracing.note_decision(chosen, protocol_id, warning)
-    return {"protocolId": protocol_id, **built, "razionale": razionale,
+    return {"protocolId": protocol_id, **PROTOCOLS[protocol_id].build(ctx["ftp"], duration), "razionale": razionale,
             "paperRefs": card_papers(listed, razionale, protocol_id, index, retrieved),
-            "fellBack": warning is not None, "fallbackWarning": warning}
+            "fellBack": warning is not None, "fallbackCause": cause, "fallbackWarning": warning}
 
 
 def step(name: str, message: str, **extra) -> dict:
     return {"type": "step", "step": name, "message": message, **extra}
-
-
-async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: StravaRides,
-              chat: provider.ChatSettings, chat_client: httpx.AsyncClient,
-              embed: Callable[[str], Awaitable[list]], load_index: Callable[[], Awaitable[dict]],
-              now_ms: float, spending: Spending) -> None:
-    emit(step("rides", "Scarico le corse da Strava…"))
-    with tracing.step("rides"):
-        data = await rides.refresh(now_ms, progress=lambda done, total: emit(
-            step("details", f"Scarico dettagli corse {done}/{total}", done=done, total=total)))
-        ctx = coach_context(data.activities, data.details, req.profile, now_ms, req.tz)
-        tracing.note_rides(data.from_saved, ctx)
-    emit({"type": "context", "context": ctx})
-    result = await from_context(ctx, req.duration, emit, chat=chat, chat_client=chat_client, embed=embed,
-                                load_index=load_index, spending=spending)
-    emit({"type": "result", **result,
-          "rides": {"fromSaved": data.from_saved, "downloadedAt": data.downloaded_at,
-                    "missingDetails": data.missing_details}})
 
 
 async def find_papers(ctx: dict, duration: int, *, embed: Callable[[str], Awaitable[list]],
@@ -212,54 +167,3 @@ async def find_papers(ctx: dict, duration: int, *, embed: Callable[[str], Awaita
         return index, query, papers.top_papers(index, await embed(query))
     except papers.PaperIndexError as e:
         raise CoachError(502, "retrieval", str(e)) from e
-
-
-async def from_context(ctx: dict, duration: int, emit: Callable[[dict], None], *, chat: provider.ChatSettings,
-                       chat_client: httpx.AsyncClient, embed: Callable[[str], Awaitable[list]],
-                       load_index: Callable[[], Awaitable[dict]], spending: Spending) -> dict:
-    """Dal contesto atleta al workout: paper, modello e decisione. Il servizio ci arriva dalle
-    corse di Strava, il set di valutazione dai numeri già pronti delle sue situazioni."""
-    emit(step("papers", "Recupero paper rilevanti…"))
-    started = time.monotonic()
-    with tracing.step("papers"):
-        index, query, retrieved = await find_papers(ctx, duration, embed=embed, load_index=load_index)
-        tracing.note_papers(query, retrieved)
-
-    emit(step("model", "Il modello sta scegliendo il protocollo…"))
-    messages = [{"role": "system", "content": prompts.system_prompt(retrieved)},
-                {"role": "user", "content": prompts.user_prompt(ctx, duration)}]
-    answer, end, accepted = [], ChatEnd(None, None, False), False
-    with tracing.step("model"):
-        try:
-            async for piece in provider.stream(chat, chat_client, messages):
-                if isinstance(piece, Accepted):
-                    accepted = True
-                elif isinstance(piece, ChatEnd):
-                    end = piece
-                else:
-                    answer.append(piece)
-                    emit({"type": "token", "text": piece})
-        except ModelError as e:
-            raise CoachError(502, "model", str(e)) from e
-        finally:
-            model_raw, answer_cost = "".join(answer), cost(chat.prices, end.input_tokens, end.output_tokens)
-            # Anche quando Stop annulla la richiesta: accettata la richiesta, il provider fa pagare
-            # ciò che ha già scritto. Una richiesta rifiutata o mai arrivata non costa nulla.
-            charged = None   # Ollama non costa nulla
-            if chat.prices:
-                charged = charge(chat.prices, end.input_tokens, end.output_tokens) if accepted else 0.0
-                if accepted:
-                    spending.add(charged)
-            tracing.note_model(chat, messages, model_raw, end, answer_cost, charged)
-
-    with tracing.step("decision"):
-        decision = decide(model_raw, ctx, duration, index, retrieved, end.truncated)
-    return {**decision,
-            # I passaggi dati al modello, con etichetta e punteggio: i file dei risultati li registrano.
-            "retrievedPapers": [{"pmid": p["pmid"], "title": p["title"], "authors": p["authors"],
-                                 "year": p["year"], "score": p["score"],
-                                 "passages": [{"label": s["label"], "score": s["score"]} for s in p["passages"]]}
-                                for p in retrieved],
-            "provider": chat.provider, "model": chat.model, "seconds": round(time.monotonic() - started, 1),
-            "inputTokens": end.input_tokens, "outputTokens": end.output_tokens, "truncated": end.truncated,
-            "cost": answer_cost, "modelRaw": model_raw}

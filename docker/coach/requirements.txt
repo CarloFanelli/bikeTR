@@ -3,6 +3,7 @@ uvicorn==0.54.0
 httpx==0.28.1
 fastembed==0.9.1
 sqlite-vec==0.1.9
+langgraph==1.2.18
 pytest==9.2.0
 opentelemetry-sdk==1.45.1
 opentelemetry-exporter-otlp-proto-http==1.45.1

@@ -20,7 +20,7 @@ from test_cancel import CEILING, SILENCE, CoachServer, FakeModelServer, chat, ru
 from test_cancel import until_first_token
 from test_workout import BODY, CASE, FAKES, events_of, make_service, post, run_case
 
-STEPS = ["rides", "papers", "model", "decision"]
+STEPS = ["rides", "metrics", "papers", "draft", "check", "deliver"]
 
 
 @pytest.fixture
@@ -59,11 +59,10 @@ def test_a_coach_screen_request_leaves_one_trace_with_its_steps_in_order(service
     assert root.resource.attributes["openinference.project.name"] == "coach-screen"
 
 
-def test_the_rides_step_holds_the_athlete_numbers(service, phoenix):
+def test_the_rides_step_says_where_the_rides_come_from_and_the_metrics_step_holds_the_athlete_numbers(service, phoenix):
     context = next(e for e in events_of(post(service, BODY)) if e["type"] == "context")["context"]
-    rides = step_of(phoenix, "rides")
-    assert rides.attributes["coach.rides.from_saved"] is False
-    assert json.loads(rides.attributes["output.value"]) == context
+    assert step_of(phoenix, "rides").attributes["coach.rides.from_saved"] is False
+    assert json.loads(step_of(phoenix, "metrics").attributes["output.value"]) == context
 
 
 def test_saved_rides_used_when_strava_is_unreachable_show_in_the_rides_step(phoenix):
@@ -100,7 +99,7 @@ def test_the_model_step_holds_what_was_sent_and_answered(provider, phoenix):
     case = CASE["valid-answer"]
     fake = FAKES[provider](case["answer"])
     result = run_traced(case, fake)[-1]
-    model = step_of(phoenix, "model").attributes
+    model = step_of(phoenix, "draft").attributes
     assert model["openinference.span.kind"] == "LLM"
     assert (model["llm.provider"], model["llm.model_name"]) == (provider, fake.chat.model)
     messages = [{"role": model[f"llm.input_messages.{i}.message.role"],
@@ -123,7 +122,7 @@ def test_the_model_step_never_holds_the_cloud_key(phoenix):
     fake = FakeCloud(case["answer"])
     run_traced(case, fake)
     spans = phoenix.spans()
-    assert len(spans) == 5
+    assert len(spans) == 7
     for span in spans:
         assert not any(fake.chat.key in str(v) for v in span.attributes.values())
 
@@ -134,7 +133,7 @@ def test_an_answer_cut_off_at_the_token_limit_is_recorded_as_cut_off(provider, p
     fake = FAKES[provider](case["answer"])
     fake.done_reason = fake.finish_reason = "length"
     run_traced(case, fake)
-    assert step_of(phoenix, "model").attributes["coach.truncated"] is True
+    assert step_of(phoenix, "draft").attributes["coach.truncated"] is True
 
 
 def test_tokens_and_cost_the_provider_does_not_report_stay_unknown(phoenix):
@@ -142,7 +141,7 @@ def test_tokens_and_cost_the_provider_does_not_report_stay_unknown(phoenix):
     fake = FakeCloud(case["answer"])
     fake.usage = None
     run_traced(case, fake)
-    model = step_of(phoenix, "model").attributes
+    model = step_of(phoenix, "draft").attributes
     assert not {"llm.token_count.prompt", "llm.token_count.completion", "llm.cost.total"} & set(model)
 
 
@@ -156,7 +155,7 @@ def test_tokens_and_cost_the_provider_does_not_report_stay_unknown(phoenix):
 def test_the_decision_step_holds_the_chosen_and_the_given_protocol(case_name, answer, chosen, fell_back, phoenix):
     case = CASE[case_name] if answer is None else {**CASE[case_name], "answer": answer}
     result = run_traced(case, FakeOllama(case["answer"]))[-1]
-    decision = dict(step_of(phoenix, "decision").attributes)
+    decision = dict(step_of(phoenix, "deliver").attributes)
     assert decision.get("coach.decision.chosen") == chosen
     assert decision["coach.decision.given"] == decision["output.value"] == result["protocolId"]
     assert decision.get("coach.decision.fallback_warning") == result["fallbackWarning"]
@@ -221,7 +220,7 @@ def test_a_silent_model_ends_the_model_step_with_the_silence_error(kind, phoenix
                 with pytest.raises(CoachError):
                     await run_workout(settings, client)
     asyncio.run(go())
-    assert failed(step_of(phoenix, "model")) == SILENCE[kind]
+    assert failed(step_of(phoenix, "draft")) == SILENCE[kind]
 
 
 def test_an_unexpected_error_shows_only_its_kind_never_its_text(service, monkeypatch, phoenix):
@@ -256,11 +255,11 @@ def test_stop_after_the_provider_accepted_is_stopped_with_the_partial_answer_and
     asyncio.run(go())
     spans = by_name(phoenix.spans())
     assert spans["coach-screen"].attributes["coach.stopped"] is True
-    model = spans["model"].attributes
+    model = spans["draft"].attributes
     assert model["coach.stopped"] is True
     assert model["output.value"].startswith("bla ")
     assert model["coach.charged"] == pytest.approx(CEILING["cloud"])
-    assert failed(spans["coach-screen"]) is None and failed(spans["model"]) is None
+    assert failed(spans["coach-screen"]) is None and failed(spans["draft"]) is None
 
 
 def test_stop_before_the_provider_accepted_is_stopped_with_nothing_charged(monkeypatch, phoenix):
@@ -275,14 +274,14 @@ def test_stop_before_the_provider_accepted_is_stopped_with_nothing_charged(monke
                     await asyncio.sleep(0.01)
             await asyncio.to_thread(root_of, phoenix)
     asyncio.run(go())
-    model = step_of(phoenix, "model").attributes
+    model = step_of(phoenix, "draft").attributes
     assert (model["coach.stopped"], model["coach.charged"]) == (True, 0)
 
 
 def test_an_ollama_answer_charges_nothing_to_the_cloud_total(phoenix):
     case = CASE["valid-answer"]
     run_traced(case, FakeOllama(case["answer"]))
-    assert "coach.charged" not in step_of(phoenix, "model").attributes
+    assert "coach.charged" not in step_of(phoenix, "draft").attributes
 
 
 # --- Phoenix che non risponde ------------------------------------------------------------
