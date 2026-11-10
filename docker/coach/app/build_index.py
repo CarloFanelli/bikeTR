@@ -19,6 +19,7 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import Callable
 
 import httpx
 
@@ -232,25 +233,30 @@ def license_link(article: ET.Element) -> str | None:
     return None
 
 
-def with_text(client: httpx.Client, paper: dict) -> dict:
+def say(note: str) -> None:
+    print(f"  ↳ {note}")
+
+
+def with_text(client: httpx.Client, paper: dict, note: Callable[[str], None] = say) -> dict:
     """Il paper con il testo che usa, tagliato in passaggi ancora senza vettori: il testo completo
-    se Europe PMC lo ha con una licenza che permette di copiarlo, altrimenti l'abstract."""
+    se Europe PMC lo ha con una licenza che permette di copiarlo, altrimenti l'abstract. note riceve
+    perché, tranne quando la licenza non permette di copiarlo."""
     abstract = {**paper, "textUsed": "abstract", "passages": cut_passages(paper["pmid"], paper["abstract"])}
     license, pmcid = open_license(client, paper["pmid"])
     if license is None:
         return abstract
     if pmcid is None:
-        print(f"  ↳ licenza {license}, ma Europe PMC non ha il testo completo: uso l'abstract")
+        note(f"licenza {license}, ma Europe PMC non ha il testo completo: uso l'abstract")
         return abstract
     article = full_text(client, pmcid)
     url, sections = license_link(article), body_sections(article)
     if url is None:
-        print(f"  ↳ licenza {license}, ma il testo completo non ha il link della licenza: uso l'abstract")
+        note(f"licenza {license}, ma il testo completo non ha il link della licenza: uso l'abstract")
         return abstract
     if not sections:
-        print(f"  ↳ licenza {license}, ma il testo completo non ha sezioni da leggere: uso l'abstract")
+        note(f"licenza {license}, ma il testo completo non ha sezioni da leggere: uso l'abstract")
         return abstract
-    print(f"  ↳ testo completo da Europe PMC ({license}, {pmcid}): {len(sections)} sezioni")
+    note(f"testo completo da Europe PMC ({license}, {pmcid}): {len(sections)} sezioni")
     return {**paper, "textUsed": "fullText", "license": license, "licenseUrl": url,
             "passages": cut_passages(paper["pmid"], paper["abstract"], *sections)}
 

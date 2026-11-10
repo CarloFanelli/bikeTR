@@ -5,15 +5,14 @@ dei dati del Coach: resta dopo un riavvio e dopo "Disconnetti da Strava", e solo
 (coach-tools) usano lo stesso file, quindi lo stesso tetto. Le risposte di Ollama non costano
 nulla e non passano di qui."""
 
-import fcntl
 import json
 import os
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
 from app.errors import CoachError
 from app.jscompat import is_number
+from app.shared_files import locked
 
 SPENDING_FILE = Path("/data/spending.json")
 # Una risposta fermata prima che il provider dica i token (Stop, silenzio, connessione caduta,
@@ -81,18 +80,10 @@ class Spending:
     def add(self, dollars: float) -> float:
         """Aggiunge al totale e ritorna quello nuovo. Senza attese async: una richiesta annullata
         (Stop) registra comunque la sua spesa."""
-        with self.locked():
+        with locked(self.path):
             total = self.total() + dollars
             # File temporaneo + rename, come store.py: mai un totale scritto a metà.
             tmp = self.path.with_name(self.path.name + ".tmp")
             tmp.write_text(json.dumps({"total": total}), encoding="utf-8")
             os.replace(tmp, self.path)
         return total
-
-    @contextmanager
-    def locked(self):
-        """Un processo alla volta tra rilettura e riscrittura: il servizio Coach e i comandi di
-        coach-tools sono container diversi sullo stesso file, e asyncio.Lock vale per un processo solo."""
-        with open(self.path.with_name(self.path.name + ".lock"), "a") as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
-            yield   # chiudere il file libera il lucchetto

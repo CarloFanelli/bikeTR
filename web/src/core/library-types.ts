@@ -23,3 +23,12 @@ export interface LibraryPassages {
   pmid: string;
   passages: PassageQuote[];
 }
+
+// Il paper come entrerebbe in libreria, prima della conferma: reason dice perché il testo usato.
+export type PaperPreview = Omit<LibraryPaper, 'origin' | 'supports'> & { reason: string };
+
+export interface AddedPaper {
+  pmid: string;
+  passageCount: number;
+  seconds: number;
+}

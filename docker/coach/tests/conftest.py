@@ -1,12 +1,12 @@
 """Ogni test parte senza le impostazioni del modello chat di .env: il Coach usa Ollama con
 il modello predefinito, qualunque cosa ci sia nel .env di chi lancia i test, e nessun test
 può usare una chiave vera. Il totale della spesa cloud sta nella cartella del test, mai nel
-volume /data del Coach, e le tracce restano in memoria, mai in Phoenix. Anche la cancellazione
+volume /data del Coach, come la libreria salvata, e le tracce restano in memoria, mai in Phoenix. Anche la cancellazione
 delle tracce di Disconnetti si ricorda nella cartella del test e va al finto Phoenix."""
 
 import pytest
 
-from app import main, provider, tracing
+from app import library, main, provider, tracing
 from app.spending import Spending
 from app.trace_deletion import TraceDeletion
 from fakes import FakePhoenix, quick_sleep
@@ -23,6 +23,13 @@ def cloud_spending(monkeypatch, tmp_path) -> Spending:
     spending = Spending(tmp_path / "spending.json")
     monkeypatch.setattr(main, "cloud_spending", spending)
     return spending
+
+
+@pytest.fixture(autouse=True)
+def saved_library(monkeypatch, tmp_path) -> library.Library:
+    saved = library.Library(tmp_path / "library.json")
+    monkeypatch.setattr(main, "saved_library", saved)
+    return saved
 
 
 @pytest.fixture(autouse=True)

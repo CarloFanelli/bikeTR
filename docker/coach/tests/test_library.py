@@ -1,11 +1,20 @@
-"""Libreria: i paper che il Coach cerca, con cosa ne dipende, e i passaggi di un paper. L'indice è
-quello dei test, con un paper a testo completo e il paper di supporto degli esercizi di cadenza
-aggiunti per i casi che l'indice dei test non ha."""
+"""Libreria: i paper che il Coach cerca, con cosa ne dipende, i passaggi di un paper, e un paper
+aggiunto per PMID, salvato fuori da git. L'indice di base è quello dei test, con un paper a testo
+completo e il paper di supporto degli esercizi di cadenza aggiunti per i casi che non ha. PubMed ed
+Europe PMC sono quelli finti della ricostruzione dell'indice; il modello di ricerca dà vettori fissi."""
 
+import asyncio
+import json
+import time
+
+import httpx
 import pytest
+from fastapi.testclient import TestClient
 
+from app import library, main, papers, search
+from app.protocols import PROTOCOLS, Protocol, z2_endurance
 from fakes import INDEX
-from test_workout import make_service
+from test_build_index import ARTICLES, OPEN_111, RECORDS, client, fake_pubmed, services  # noqa: F401 (fixture)
 
 WHITTY = "27175601"
 SEILER_2010 = "20861519"
@@ -16,19 +25,21 @@ FULL_TEXT = {**INDEX["papers"][0], "pmid": "24550842", "textUsed": "fullText", "
 ONE_PASSAGE = {**INDEX["papers"][1], "pmid": WHITTY, "passages": INDEX["papers"][1]["passages"][:1]}
 LIBRARY_INDEX = {**INDEX, "papers": [*INDEX["papers"], FULL_TEXT, ONE_PASSAGE,
                                      {**INDEX["papers"][2], "pmid": SEILER_2013}]}
+VECTOR = [0.1] * INDEX["embeddingDim"]
 
 
 @pytest.fixture
-def service(monkeypatch):
-    async def library_index():
+def service(monkeypatch, fake_pubmed):
+    async def base_index(http):
         return LIBRARY_INDEX
-    fakes = make_service(monkeypatch, {})
-    monkeypatch.setattr("app.main.load_index", library_index)
-    return fakes
+    monkeypatch.setattr(papers, "load_index", base_index)
+    monkeypatch.setattr(library, "sources", lambda: client(services))
+    monkeypatch.setattr(search, "encode_now", lambda texts: [VECTOR for _ in texts])
+    return TestClient(main.app)
 
 
 def listed(service) -> dict:
-    res = service.client.get("/coach/library")
+    res = service.get("/coach/library")
     assert res.status_code == 200
     return {p["pmid"]: p for p in res.json()["papers"]}
 
@@ -68,38 +79,191 @@ def test_a_paper_nobody_names_has_no_dependency(service):
 
 
 def test_a_paper_both_a_workout_and_a_rule_cite_names_both(service, monkeypatch):
-    from app import protocols
-    monkeypatch.setitem(protocols.PROTOCOLS, "z2_endurance",
-                        protocols.Protocol("Z2 Aerobico", SEILER_2010, protocols.z2_endurance))
+    monkeypatch.setitem(PROTOCOLS, "z2_endurance", Protocol("Z2 Aerobico", SEILER_2010, z2_endurance))
     supports = listed(service)[SEILER_2010]["supports"]
     assert supports["workouts"] == ["Z2 Aerobico"] and len(supports["rules"]) == 1
 
 
 def test_opening_a_paper_gives_its_passages_in_reading_order_without_vectors(service):
-    res = service.client.get("/coach/library/24550842")
+    res = service.get("/coach/library/24550842")
     assert res.status_code == 200
     assert res.json() == {"pmid": "24550842", "passages": [
         {"label": f"PMID:24550842 §{k}", "text": s["text"]} for k, s in enumerate(FULL_TEXT["passages"], 1)]}
 
 
 def test_a_paper_with_one_passage_opens_with_it(service):
-    passages = service.client.get(f"/coach/library/{WHITTY}").json()["passages"]
+    passages = service.get(f"/coach/library/{WHITTY}").json()["passages"]
     assert passages == [{"label": ONE_PASSAGE["passages"][0]["label"], "text": ONE_PASSAGE["passages"][0]["text"]}]
 
 
 def test_a_paper_not_in_the_library_is_not_found(service):
-    res = service.client.get("/coach/library/1")
+    res = service.get("/coach/library/1")
     assert (res.status_code, res.json()["error"]) == (404, "not_found")
     assert res.json()["message"] == "Il paper PMID 1 non è in libreria"
 
 
 def test_an_unusable_index_is_refused_with_its_message(service, monkeypatch):
-    from app import papers
-
-    async def broken():
+    async def broken(http):
         raise papers.PaperIndexError(f"papers_index.json illeggibile. {papers.RESTORE}")
-    monkeypatch.setattr("app.main.load_index", broken)
+    monkeypatch.setattr(papers, "load_index", broken)
     for path in ("/coach/library", f"/coach/library/{WHITTY}"):
-        res = service.client.get(path)
+        res = service.get(path)
         assert (res.status_code, res.json()) == (502, {
             "error": "retrieval", "message": f"papers_index.json illeggibile. {papers.RESTORE}"})
+
+
+# --- Aggiungere un paper per PMID -------------------------------------------------------------
+
+def preview(service, pmid):
+    return service.post("/coach/library/preview", json={"pmid": pmid})
+
+
+def add(service, pmid):
+    return service.post("/coach/library", json={"pmid": pmid})
+
+
+def saved(saved_library) -> dict:
+    return json.loads(saved_library.path.read_text(encoding="utf-8"))
+
+
+def test_a_pmid_gives_a_preview_and_saves_nothing(service, saved_library):
+    RECORDS["111"] = OPEN_111
+    res = preview(service, "111")
+    assert res.status_code == 200
+    assert res.json() == {
+        "pmid": "111", "title": "Block periodization of high-intensity aerobic intervals",
+        "authors": "Rønnestad et al.", "year": "2014", "journal": "Scandinavian journal of medicine & science in sports",
+        "textUsed": "fullText", "license": "CC BY", "licenseUrl": "http://creativecommons.org/licenses/by/4.0/",
+        "reason": "testo completo da Europe PMC (CC BY, PMC111): 3 sezioni", "passageCount": 4}
+    assert not saved_library.path.exists()
+
+
+def test_a_paper_under_a_non_commercial_license_uses_its_abstract_and_says_why(service):
+    RECORDS["111"] = {**OPEN_111, "license": "cc by-nc"}
+    body = preview(service, "111").json()
+    assert (body["textUsed"], body["license"], body["reason"]) == ("abstract", None, library.NO_OPEN_LICENSE)
+
+
+@pytest.mark.parametrize("pmid", ["", "  ", "12a", "PMID:111", None, 111])
+def test_a_pmid_that_is_not_a_number_is_refused_before_pubmed(service, monkeypatch, pmid):
+    monkeypatch.setattr(library, "sources", lambda: pytest.fail("PubMed contattato"))
+    for res in (preview(service, pmid), add(service, pmid)):
+        assert (res.status_code, res.json()) == (400, {"error": "invalid_pmid", "message": "Il PMID è un numero"})
+
+
+def test_a_pmid_already_in_the_library_is_refused_naming_the_paper(service, monkeypatch):
+    monkeypatch.setattr(library, "sources", lambda: pytest.fail("PubMed contattato"))
+    first = INDEX["papers"][0]
+    res = preview(service, first["pmid"])
+    assert (res.status_code, res.json()["message"]) == (
+        409, f"Già in libreria: {first['authors']} ({first['year']}). {first['title']}")
+
+
+def test_a_pmid_pubmed_does_not_know_is_refused(service, monkeypatch):
+    monkeypatch.setitem(ARTICLES, "999", "<PubmedArticleSet></PubmedArticleSet>")
+    res = preview(service, "999")
+    assert (res.status_code, res.json()["message"]) == (404, "PubMed non conosce il PMID 999")
+
+
+@pytest.mark.parametrize("down, says", [
+    ("eutils.ncbi.nlm.nih.gov", "PubMed non raggiungibile (ConnectError)"),
+    ("www.ebi.ac.uk", "Europe PMC ha risposto HTTP 503 a search")])
+def test_a_service_failing_names_it_and_saves_nothing(service, saved_library, monkeypatch, down, says):
+    def handler(request):
+        if request.url.host != down:
+            return services(request)
+        if down == "www.ebi.ac.uk":
+            return httpx.Response(503)
+        raise httpx.ConnectError("giù", request=request)
+    monkeypatch.setattr(library, "sources", lambda: client(handler))
+    for res in (preview(service, "111"), add(service, "111")):
+        assert (res.status_code, res.json()) == (502, {
+            "error": "source", "message": f"{says}: niente è stato salvato, riprova più tardi"})
+    assert not saved_library.path.exists()
+
+
+def test_a_short_abstract_without_an_open_full_text_is_refused(service, saved_library):
+    res = add(service, "222")
+    assert res.status_code == 422 and "abstract di 10 caratteri" in res.json()["message"]
+    assert not saved_library.path.exists()
+
+
+def test_confirming_saves_the_paper_cut_and_encoded_like_the_base_papers(service, saved_library):
+    RECORDS["111"] = OPEN_111
+    res = add(service, "111")
+    assert res.status_code == 200
+    body = res.json()
+    assert (body["pmid"], body["passageCount"]) == ("111", 4) and body["seconds"] >= 0
+    file = saved(saved_library)
+    assert file["model"] == search.SEARCH_MODEL and [p["pmid"] for p in file["added"]] == ["111"]
+    paper = file["added"][0]
+    assert [s["label"] for s in paper["passages"]] == [f"PMID:111 §{k}" for k in range(1, 5)]
+    assert all(len(s["text"]) <= papers.PASSAGE_CHARS and s["embedding"] == VECTOR for s in paper["passages"])
+    assert papers.usable(paper, INDEX["embeddingDim"])
+    added = listed(service)["111"]
+    assert (added["origin"], added["textUsed"], added["license"]) == ("added", "fullText", "CC BY")
+
+
+def test_the_next_coach_request_searches_the_added_paper(service):
+    # Una richiesta partita prima dell'aggiunta ha già il suo indice, letto all'inizio.
+    before = asyncio.run(main.load_index())
+    add(service, "333")
+    after = asyncio.run(main.load_index())
+    assert "333" not in [p["pmid"] for p in before["papers"]] and after["papers"][-1]["pmid"] == "333"
+    assert papers.check_index(after) == after
+    assert len(LIBRARY_INDEX["papers"]) == len(INDEX["papers"]) + 3   # l'indice di base non cambia
+
+
+def test_the_same_pmid_confirmed_twice_is_added_once(service, saved_library):
+    assert add(service, "333").status_code == 200
+    res = add(service, "333")
+    assert (res.status_code, res.json()["error"]) == (409, "duplicate")
+    paper = library.encoded("333")
+    with pytest.raises(Exception, match="Già in libreria"):
+        library.save(saved_library, LIBRARY_INDEX, paper)
+    assert [p["pmid"] for p in saved(saved_library)["added"]] == ["333"]
+
+
+def added_papers(n: int) -> list:
+    return [{**FULL_TEXT, "pmid": str(900000 + k)} for k in range(n)]
+
+
+def test_at_most_fifty_added_papers(service, saved_library):
+    saved_library.path.write_text(json.dumps({"model": search.SEARCH_MODEL, "added": added_papers(49)}))
+    assert add(service, "333").status_code == 200
+    res = add(service, "111")
+    assert (res.status_code, res.json()["message"]) == (
+        409, "La libreria ha già 50 paper aggiunti, il massimo: togline uno prima di aggiungerne un altro")
+
+
+def test_an_unreadable_library_leaves_the_base_papers_and_the_file_untouched(service, saved_library):
+    saved_library.path.write_text("{")
+    res = service.get("/coach/library")
+    assert list(p["pmid"] for p in res.json()["papers"]) == [p["pmid"] for p in LIBRARY_INDEX["papers"]]
+    assert res.json()["warning"].startswith(f"La libreria salvata in {saved_library.path} non si legge")
+    assert asyncio.run(main.load_index()) == LIBRARY_INDEX
+    refused = add(service, "333")
+    assert (refused.status_code, refused.json()["error"]) == (500, "library_unreadable")
+    assert saved_library.path.read_text() == "{"
+
+
+def test_an_added_paper_that_became_a_base_paper_is_listed_once_as_base(service, saved_library):
+    saved_library.path.write_text(json.dumps({"model": search.SEARCH_MODEL, "added": [{**FULL_TEXT, "pmid": WHITTY}]}))
+    pmids = [p["pmid"] for p in service.get("/coach/library").json()["papers"]]
+    assert pmids.count(WHITTY) == 1 and listed(service)[WHITTY]["origin"] == "base"
+    assert [p["pmid"] for p in asyncio.run(main.load_index())["papers"]].count(WHITTY) == 1
+
+
+def test_a_slow_pubmed_does_not_hold_up_the_other_requests(service, monkeypatch):
+    monkeypatch.setattr(library, "fetch", lambda pmid: time.sleep(1) or (FULL_TEXT, "motivo"))
+
+    async def both():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=main.app), base_url="http://coach") as http:
+            started = time.monotonic()
+            slow_preview = asyncio.create_task(http.post("/coach/library/preview", json={"pmid": "333"}))
+            await asyncio.sleep(0.1)
+            await http.get("/coach/status")
+            status_took = time.monotonic() - started
+            await slow_preview
+            return status_took
+    assert asyncio.run(both()) < 0.5
