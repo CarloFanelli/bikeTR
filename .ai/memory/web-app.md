@@ -8,8 +8,22 @@ The browser app: its screens, navigation and the values saved in the browser.
 The screen that gathers what the athlete sets: FTP, heart-rate and weight values, training volume, race, recovery tools, the Coach's **Chat model** with its connection check, and Strava disconnect. The **Athlete profile** is only the subset of these values sent with each Coach request.
 _Avoid_: "settings" alone for the screen (also means the saved values), "Coach settings" (the Coach's chat model shows in Impostazioni, not in the Coach screen).
 
+### Info popover
+A short explanation, at most two sentences, that opens beside a dotted-underlined label when the athlete clicks, taps or presses Enter on it. When the topic has more to say it ends with "Approfondisci", which opens the **Info panel**.
+_Avoid_: "tooltip" (opens on hover only, which phones don't have), "hint".
+
+### Info panel
+The panel that slides in from the right (full screen on a phone) with a longer explanation: up to three plain sentences, then an optional collapsed "Dettagli tecnici" part. One panel is open at a time, and the screen stays visible behind it on a computer.
+_Avoid_: "dialog" or "modal" (a centred window that covers the numbers being explained), "drawer" (also Vuetify's name for the old sidebar).
+
+### Daily overview
+What Home shows since `ui-redesign`: today's workout with a link to Allenamento, form and readiness, the last ride, then level, totals, records and data precision.
+_Avoid_: "dashboard" (suggests Analisi's charts).
+
 ## Decisions
 
+- **Direction B, light editorial, for the whole app**: Space Grotesk headings, Inter text, thin dividers, one accent, line icons, a top bar instead of the sidebar, plus a matching dark theme. Why: picked by the user on 2026-11-10 from three directions on the canvas "BikeTR design directions", to fix crowded, text-heavy screens.
+- **Explanations leave the page**: a short **Info popover** beside the label, "Approfondisci" for an **Info panel**; never a centred dialog. Why: a dialog hides the numbers it explains, and a panel for a one-line definition is heavy (user's choice on 2026-11-10).
 - **Vuetify, not PrimeVue**: the app's components come from Vuetify (MIT), with icons from `@mdi/js`. Why: PrimeVue 5 needs a licence key renewed every year, and without one it shows a red notice on every page, so anyone running the project without their own key would see it.
 - **Segment predictions load when the app opens, not when Analisi opens**: `main.ts` starts the segment job once the session is ready, and Home and Analisi recompute when it ends. Why: the old JavaScript app did the same at every load, and the downloaded segments change the FTP and threshold estimates that Home's precision card shows; starting it from `startSession` would create an import loop (`jobs.ts` imports `session.ts`).
 

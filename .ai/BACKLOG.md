@@ -86,9 +86,10 @@
 - **From**: coach-service (dev task 05, 2026-11-06)
 - **Picked up by**: vue-ts-restructure (2026-11-06)
 
-### B-19 · open
+### B-19 · picked-up
 - **What**: Light and dark themes: follows the computer's setting by default, with a switch that is remembered.
 - **From**: vue-ts-restructure (interview, 2026-11-06)
+- **Picked up by**: ui-redesign (2026-11-10)
 
 ### B-20 · open
 - **What**: Build optimized files for the browser app and serve them with nginx, for a possible cloud deployment (the optional Cloud Run step of the roadmap).
@@ -148,3 +149,27 @@
 ### B-33 · open
 - **What**: A Coach check that rules out hard work when fitness (CTL) rises too fast in a week, with a source (paper or declared practice) to find first, measured with the evaluation set.
 - **From**: coach-graph (interview, 2026-11-10)
+
+### B-34 · open
+- **What**: Redesign Analisi in direction B, with Info popovers and panels replacing its on-page explanations, reusing the ui-redesign foundation.
+- **From**: ui-redesign (interview, 2026-11-10)
+
+### B-35 · open
+- **What**: Redesign the Attività list and the Dettaglio attività screen in direction B, reusing the ui-redesign foundation.
+- **From**: ui-redesign (interview, 2026-11-10)
+
+### B-36 · open
+- **What**: Redesign Coach AI in direction B, with the workout's reasoning and supporting papers in Info panels, reusing the ui-redesign foundation.
+- **From**: ui-redesign (interview, 2026-11-10)
+
+### B-37 · open
+- **What**: Redesign Libreria in direction B, reusing the ui-redesign foundation.
+- **From**: ui-redesign (interview, 2026-11-10)
+
+### B-38 · open
+- **What**: Redesign Impostazioni and the Collega Strava screen in direction B, reusing the ui-redesign foundation.
+- **From**: ui-redesign (interview, 2026-11-10)
+
+### B-39 · open
+- **What**: Show today's workout as a chart of its blocks (warm-up, intervals, recoveries) on Allenamento; needs the advice to provide durations and target power for each block.
+- **From**: ui-redesign (interview, 2026-11-10)
