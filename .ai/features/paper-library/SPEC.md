@@ -2,7 +2,7 @@
 feature: paper-library
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: 12d4228818d2f6a1353a6f2a32f329581e25caf4
 ---
 
