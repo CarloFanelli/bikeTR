@@ -44,7 +44,11 @@ export async function generateWorkout(request: WorkoutRequest): Promise<void> {
     started = true;
     for await (const ev of answer.events) {
       if (ctrl.signal.aborted) return;
-      if (ev.type === 'step') coachRun.step = `⏳ ${ev.message}`;
+      if (ev.type === 'step') {
+        coachRun.step = `⏳ ${ev.message}`;
+        // Una bozza rimandata: il testo della nuova prende il posto di quello della precedente.
+        if (ev.step === 'draft' && (ev.attempt ?? 0) > 1) coachRun.live = '';
+      }
       else if (ev.type === 'context') coachRun.context = ev.context;
       else if (ev.type === 'token') coachRun.live += ev.text;
       else if (ev.type === 'result') return finish(ctrl, { result: ev });

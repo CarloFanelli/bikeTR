@@ -122,6 +122,23 @@ def check_draft(model_raw: str, truncated: bool, ctx: dict, duration: int, retri
     return Verdict(tuple(causes), tuple(reasons), tuple(invented))
 
 
+# Le cause in breve, per la riga del passo sulla schermata Coach.
+CAUSE_PHRASES = {
+    "truncated": "La risposta si è interrotta",
+    "unreadable": "La risposta non era leggibile",
+    "not_in_catalog": "Il protocollo scelto non è nel catalogo",
+    "too_long": "Il protocollo scelto non entra nei minuti",
+    "not_allowed": "Il protocollo scelto non è ammesso oggi",
+    "invented": "La risposta cita passaggi non forniti",
+}
+
+
+def retry_step(verdict: Verdict, attempt: int) -> str:
+    """La riga del passo quando il controllo rimanda una bozza: le cause in breve e il tentativo."""
+    causes = "; ".join(CAUSE_PHRASES[c] for c in verdict.causes)
+    return f"{causes}: il modello riprova, tentativo {attempt} di {MAX_DRAFTS}"
+
+
 def retry_message(verdict: Verdict) -> str:
     """Il messaggio che rimanda la bozza al modello: i motivi, poi la richiesta di una nuova risposta."""
     reasons = "\n".join(f"- {r}" for r in verdict.reasons)

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { CoachStatus, CoachWorkout, ConnectionCheck, PaperRef } from '../../src/core/coach-types.ts';
 import {
-  checkLine, citedPapers, coachProfile, dataLine, errorHeading, metaLine, modelLine, openingDuration, paperCitation,
-  ridesNotes, spendingLine,
+  checkLine, citedPapers, coachProfile, dataLine, draftsNotes, errorHeading, metaLine, modelLine, openingDuration,
+  paperCitation, ridesNotes, spendingLine,
 } from '../../src/core/coach-view.ts';
 import type { HrProfile } from '../../src/core/hr.ts';
 
@@ -49,6 +49,16 @@ describe('testi del Coach', () => {
     expect(notes).toEqual([
       '⚠️ Strava non raggiungibile: uso le corse salvate il 06/11/26, 18:30.',
       'ℹ️ 3 uscite senza dettagli secondo per secondo: per loro uso le cifre di riepilogo.',
+    ]);
+  });
+
+  it('tentativi e citazioni tolte: nessuna nota con una bozza o da un servizio avviato prima delle bozze', () => {
+    const draft = { protocolId: 'rest' };
+    expect(draftsNotes({} as CoachWorkout)).toEqual([]);
+    expect(draftsNotes({ drafts: [draft], citationsDropped: [] } as unknown as CoachWorkout)).toEqual([]);
+    expect(draftsNotes({ drafts: [draft, draft, draft] } as CoachWorkout)).toEqual(['🔁 Ci sono voluti 3 tentativi del modello.']);
+    expect(draftsNotes({ drafts: [draft], citationsDropped: ['PMID:9 §3', 'PMID:8'] } as unknown as CoachWorkout)).toEqual([
+      '✂️ Tolte le citazioni a passaggi non forniti al modello: PMID:9 §3, PMID:8.',
     ]);
   });
 
