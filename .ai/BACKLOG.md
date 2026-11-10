@@ -109,9 +109,10 @@
 - **What**: The Coach can use two chat models at the same time, a small cheap one for simple jobs and a bigger one for writing the plan, which needs .env to name more than one model (model routing).
 - **From**: model-switch (interview, 2026-11-07)
 
-### B-25 · open
+### B-25 · picked-up
 - **What**: A paper library screen in the app: see and open the papers the Coach searches, upload new ones and remove old ones. Each uploaded paper is indexed into the RAG search. The cost of adding a paper is shown before adding it (an estimate the user confirms) and after (the actual cost).
 - **From**: model-switch (user request after prep, 2026-11-07)
+- **Picked up by**: paper-library (2026-11-10)
 
 ### B-26 · open
 - **What**: After each workout the athlete taps "too easy", "right" or "too hard", and the Coach checks Strava for a ride that day; the last 7 days reach the model, with a selection rule (paper or practice) saying how to adjust, measured with the evaluation set. Where suggestions and taps are kept is still to decide.
@@ -136,3 +137,7 @@
 ### B-31 · open
 - **What**: Find open-license (CC BY, CC BY-SA, CC0) studies behind the same workouts, so more papers are searched by their full text: today only 2 of the 17 qualify. Measured with the search-only run of the evaluation set.
 - **From**: passage-search (dev task 03, 2026-11-09)
+
+### B-32 · open
+- **What**: In the paper library, search PubMed by title or author and pick the paper from the results, instead of having to know its PMID.
+- **From**: paper-library (interview, 2026-11-10)
