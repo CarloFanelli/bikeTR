@@ -5,9 +5,10 @@
 - **From**: docker-setup (interview, 2026-11-05)
 - **Picked up by**: passage-search (2026-11-09)
 
-### B-2 · open
+### B-2 · picked-up
 - **What**: Model coaching as a LangGraph graph: Strava fetch, metrics, evidence retrieval, draft plan, constraint check (load ramp, recovery) looping back on failure, delivery, with at least one conditional branch.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: coach-graph (2026-11-10)
 
 ### B-3 · open
 - **What**: Expose Strava, the metrics calculator and the retriever as tools the model calls.
@@ -122,13 +123,15 @@
 - **What**: A command that tries small prompt changes and keeps the ones that score better on the evaluation set, as a proposal the user approves. Every try calls the chat model, so it needs a cost guard.
 - **From**: eval-set (interview, 2026-11-07)
 
-### B-28 · open
+### B-28 · picked-up
 - **What**: The code works out the protocols the athlete's selection rule allows today and the prompt shows the model only those; the model chooses one and explains why. Measured with the evaluation set against the after rows (qwen2.5:3b 9 of 27, qwen2.5:7b 12 of 27).
 - **From**: eval-set (dev task 09, 2026-11-08)
+- **Picked up by**: coach-graph (2026-11-10)
 
-### B-29 · open
+### B-29 · picked-up
 - **What**: Live-check and evaluation results files record why the Coach used the fallback rules (cut off, unreadable, not in the catalog, too long), and grading counts each cause. Deferred because grading reads the model's own choice and nobody needs a count per cause yet.
 - **From**: fallback-reason (interview, 2026-11-08)
+- **Picked up by**: coach-graph (2026-11-10)
 
 ### B-30 · open
 - **What**: Describe each protocol in English in the paper search text: the protocol names are Italian while the search model and the papers are English. Measured with the search-only run of the evaluation set.
@@ -141,3 +144,7 @@
 ### B-32 · open
 - **What**: In the paper library, search PubMed by title or author and pick the paper from the results, instead of having to know its PMID.
 - **From**: paper-library (interview, 2026-11-10)
+
+### B-33 · open
+- **What**: A Coach check that rules out hard work when fitness (CTL) rises too fast in a week, with a source (paper or declared practice) to find first, measured with the evaluation set.
+- **From**: coach-graph (interview, 2026-11-10)

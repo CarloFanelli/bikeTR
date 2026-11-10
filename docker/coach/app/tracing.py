@@ -1,6 +1,6 @@
-"""Le tracce del Coach in Phoenix: ogni richiesta diventa una traccia, con un passo per corse e
-numeri, ricerca dei paper, modello chat e decisione, ognuno con la sua durata e con ciò che il
-Coach ha visto, mandato e deciso. Phoenix gira nel suo container (compose.yaml) e le tracce non
+"""Le tracce del Coach in Phoenix: ogni richiesta diventa una traccia, con un passo per ogni nodo
+del grafo (corse, numeri, ricerca dei paper, ogni bozza del modello chat e il suo controllo,
+consegna), ognuno con la sua durata e con ciò che il Coach ha visto, mandato e deciso. Phoenix gira nel suo container (compose.yaml) e le tracce non
 lasciano il computer.
 
 Le tracce partono a gruppi da un thread in background: una richiesta non aspetta mai Phoenix, e
@@ -37,7 +37,7 @@ COACH_SCREEN = "coach-screen"
 SEND_TIMEOUT = 1
 KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
 # Il tipo di passo per Phoenix: la ricerca dei paper e la chiamata al modello hanno una vista loro.
-KINDS = {"papers": OpenInferenceSpanKindValues.RETRIEVER, "model": OpenInferenceSpanKindValues.LLM}
+KINDS = {"papers": OpenInferenceSpanKindValues.RETRIEVER, "draft": OpenInferenceSpanKindValues.LLM}
 JSON = OpenInferenceMimeTypeValues.JSON.value
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -148,7 +148,7 @@ def request(minutes: int, situation: str | None = None, repeat: int | None = Non
 
 @contextmanager
 def step(name: str):
-    """Un passo della richiesta, con la sua durata: rides, papers, model o decision."""
+    """Un passo della richiesta, con la sua durata: rides, metrics, papers, draft, check o deliver."""
     with _span(name, {KIND: KINDS.get(name, OpenInferenceSpanKindValues.CHAIN).value}):
         yield
 
@@ -163,10 +163,14 @@ def _note(attributes: dict) -> None:
     trace.get_current_span().set_attributes(_known(attributes))
 
 
-def note_rides(from_saved: bool, ctx: dict) -> None:
-    """Se le corse sono quelle salvate (Strava non raggiungibile) e i numeri dell'atleta che ne vengono."""
-    _note({"coach.rides.from_saved": from_saved, SpanAttributes.OUTPUT_VALUE: json.dumps(ctx, ensure_ascii=False),
-          SpanAttributes.OUTPUT_MIME_TYPE: JSON})
+def note_rides(from_saved: bool) -> None:
+    """Se le corse sono quelle salvate (Strava non raggiungibile)."""
+    _note({"coach.rides.from_saved": from_saved})
+
+
+def note_metrics(ctx: dict) -> None:
+    """I numeri dell'atleta calcolati dalle corse."""
+    _note({SpanAttributes.OUTPUT_VALUE: json.dumps(ctx, ensure_ascii=False), SpanAttributes.OUTPUT_MIME_TYPE: JSON})
 
 
 def note_made_up_rides() -> None:
@@ -203,6 +207,11 @@ def note_model(chat: ChatSettings, messages: list, answer: str, end: ChatEnd, co
           SpanAttributes.LLM_TOKEN_COUNT_PROMPT: end.input_tokens,
           SpanAttributes.LLM_TOKEN_COUNT_COMPLETION: end.output_tokens,
           SpanAttributes.LLM_COST_TOTAL: cost, "coach.truncated": end.truncated, "coach.charged": charged})
+
+
+def note_check(attempt: int, causes: tuple[str, ...]) -> None:
+    """Quale bozza è stata controllata e le cause per cui non va bene: nessuna se è accettata."""
+    _note({"coach.check.attempt": attempt, "coach.check.ok": not causes, "coach.check.causes": list(causes)})
 
 
 def note_decision(chosen: str | None, given: str, warning: str | None) -> None:

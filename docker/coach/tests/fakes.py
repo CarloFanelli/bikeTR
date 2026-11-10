@@ -67,12 +67,35 @@ def pieces(answer: str) -> list[str]:
     return [answer[i:i + 7] for i in range(0, len(answer), 7)]
 
 
-class FakeOllama:
+class Answers:
+    """Le risposte del modello finto: una lista dà una risposta per chiamata, nell'ordine, e
+    l'ultima per le chiamate dopo; un testo solo vale per ogni chiamata."""
+
+    def __init__(self, answer: str | list[str]):
+        *self.queue, self.answer = [answer] if isinstance(answer, str) else answer
+
+    def next_answer(self) -> str:
+        return self.queue.pop(0) if self.queue else self.answer
+
+
+def drafts_per_answer(bodies: list[dict]) -> list[int]:
+    """Quante bozze ha chiesto ogni risposta, dalle richieste di chat arrivate al modello finto in
+    ordine: la prima bozza manda solo prompt di sistema e numeri dell'atleta, le bozze rimandate anche
+    la risposta precedente e i motivi."""
+    counts = []
+    for body in bodies:
+        if len(body["messages"]) == 2:
+            counts.append(0)
+        counts[-1] += 1
+    return counts
+
+
+class FakeOllama(Answers):
     """Risponde come Ollama: la risposta del modello a pezzi di 7 caratteri, poi l'ultimo
     pezzo con done, i token letti e scritti e il motivo della fine."""
 
-    def __init__(self, answer: str, model: str = "qwen2.5:7b"):
-        self.answer = answer
+    def __init__(self, answer: str | list[str], model: str = "qwen2.5:7b"):
+        super().__init__(answer)
         self.chat = ChatSettings("ollama", model, "http://ollama:11434")
         self.done_reason = "stop"
         self.requests = []
@@ -89,7 +112,7 @@ class FakeOllama:
         self.requests.append((request.url.path, body))
         if self.status != 200:
             return httpx.Response(self.status, json={"error": "qualcosa non va"})
-        lines = [{"message": {"role": "assistant", "content": p}, "done": False} for p in pieces(self.answer)]
+        lines = [{"message": {"role": "assistant", "content": p}, "done": False} for p in pieces(self.next_answer())]
         lines.append({"message": {"role": "assistant", "content": ""}, "done": True,
                       "done_reason": self.done_reason, "prompt_eval_count": 900, "eval_count": 42})
         return httpx.Response(200, content="".join(json.dumps(x) + "\n" for x in lines).encode())
@@ -110,13 +133,13 @@ class Dropping(httpx.AsyncByteStream):
         raise httpx.ReadError("connessione caduta")
 
 
-class FakeCloud:
+class FakeCloud(Answers):
     """Risponde come un provider compatibile con OpenAI: eventi "data:" con il testo a pezzi
     di 7 caratteri, poi finish_reason, i token usati (con choices vuoto) e [DONE]; in mezzo un
     commento e una riga "event:", come fanno i provider veri."""
 
-    def __init__(self, answer: str):
-        self.answer = answer
+    def __init__(self, answer: str | list[str]):
+        super().__init__(answer)
         self.chat = ChatSettings("cloud", CLOUD_MODEL, CLOUD_URL, CLOUD_KEY, CLOUD_PRICES)
         self.finish_reason = "stop"
         self.usage = {"prompt_tokens": 900, "completion_tokens": 42}
@@ -139,7 +162,7 @@ class FakeCloud:
                 return httpx.Response(404, json={"error": {"message": "model not found"}})
             return httpx.Response(200, json={"id": CLOUD_MODEL, "object": "model"})
         events = [{"choices": [{"index": 0, "delta": {"content": p}, "finish_reason": None}]}
-                  for p in pieces(self.answer)]
+                  for p in pieces(self.next_answer())]
         events.append({"choices": [{"index": 0, "delta": {}, "finish_reason": self.finish_reason}]})
         if self.usage is not None:
             events.append({"choices": [], "usage": self.usage})

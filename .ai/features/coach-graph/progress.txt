@@ -1,0 +1,7 @@
+# Task Progress - coach-graph
+
+01-graph-with-returns: DONE
+02-rule-and-citation-checks: TODO
+03-allowed-protocols-prompt: TODO
+04-drafts-on-screen: TODO
+05-drafts-in-evaluation: TODO

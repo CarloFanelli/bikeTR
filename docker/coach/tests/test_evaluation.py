@@ -14,7 +14,7 @@ import httpx
 import pytest
 
 from app import cloud, evaluation, grading, ollama, prompts, search, tracing
-from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, DownPhoenix, FakeCloud, FakeOllama, FakeSearch
+from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, DownPhoenix, FakeCloud, FakeOllama, FakeSearch, drafts_per_answer
 from fixture_data import FIXTURES, load
 
 CASES = load("coach_cases.json")
@@ -65,6 +65,14 @@ def read(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def assert_steps_from_the_papers(steps) -> None:
+    """Si parte dai numeri dell'atleta già pronti: nessun passo delle corse né dei numeri, poi una
+    coppia bozza e controllo per ogni bozza e la consegna."""
+    names = [step.name for step in steps]
+    assert names[0] == "papers" and names[-1] == "deliver"
+    assert names[1:-1] == ["draft", "check"] * (len(names[1:-1]) // 2) and names[1:-1]
+
+
 def test_every_situation_of_the_set_runs_like_a_coach_request_and_the_file_is_complete(fakes, tmp_path,
                                                                                        cloud_spending, capsys):
     code, [file] = evaluate(tmp_path, cloud_spending)
@@ -76,12 +84,15 @@ def test_every_situation_of_the_set_runs_like_a_coach_request_and_the_file_is_co
     assert (run["repeat"], run["complete"], run["totalCost"]) == (1, True, None)
     assert [(a["situation"], a["repeat"], a["duration"]) for a in run["answers"]] == [
         (s["name"], 1, s["minutes"]) for s in SITUATIONS]
-    for a in run["answers"]:
+    drafts = drafts_per_answer([body for _, body in fakes["ollama"].requests])
+    for a, n in zip(run["answers"], drafts, strict=True):
         assert set(a) == FIELDS
-        assert (a["modelRaw"], a["jsonReadable"], a["inputTokens"], a["outputTokens"]) == (ANSWER, True, 900, 42)
+        # Ogni bozza legge 900 token e ne scrive 42: la risposta conta tutte le sue bozze.
+        assert (a["modelRaw"], a["jsonReadable"], a["inputTokens"], a["outputTokens"]) == (ANSWER, True, 900 * n,
+                                                                                            42 * n)
         assert len(a["papersFound"]) == 4 and len(a["passagesFound"]) == 8
     # Lo stesso prompt di una richiesta del Coach, dai numeri della situazione.
-    sent = [body["messages"] for _, body in fakes["ollama"].requests]
+    sent = [body["messages"] for _, body in fakes["ollama"].requests if len(body["messages"]) == 2]
     assert [m[1]["content"] for m in sent] == [prompts.user_prompt(s["context"], s["minutes"]) for s in SITUATIONS]
     assert fakes["search"].texts == [prompts.retrieval_query(s["context"], s["minutes"]) for s in SITUATIONS]
     lines = capsys.readouterr().out.splitlines()
@@ -120,8 +131,7 @@ def test_every_answer_leaves_its_trace_with_situation_and_repeat_and_no_rides_st
         assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "evaluation",
                                          "coach.minutes": s["minutes"], "coach.situation": s["name"],
                                          "coach.repeat": k, "coach.prompt_version": prompts.prompt_version()}
-        # Si parte dai numeri dell'atleta già pronti: nessun passo delle corse.
-        assert [step.name for step in steps] == ["papers", "model", "decision"]
+        assert_steps_from_the_papers(steps)
 
 
 def test_with_phoenix_not_started_the_run_completes_and_one_line_says_traces_are_lost(fakes, tmp_path, cloud_spending,
@@ -250,7 +260,8 @@ def test_a_run_stopped_halfway_keeps_the_finished_answers_and_their_traces(fakes
     handle, calls = fakes["ollama"].handle, []
 
     def stop_at_the_second(request):
-        if request.url.path == "/api/chat":
+        # La prima bozza di ogni risposta manda due messaggi: si ferma alla seconda risposta.
+        if request.url.path == "/api/chat" and len(json.loads(request.content)["messages"]) == 2:
             calls.append(1)
             if len(calls) == 2:
                 raise KeyboardInterrupt
@@ -262,7 +273,7 @@ def test_a_run_stopped_halfway_keeps_the_finished_answers_and_their_traces(fakes
     assert f"Corsa interrotta: le risposte finite sono in eval-runs/{file.name}" in capsys.readouterr().err
     (root, steps), *_ = phoenix.traces()
     assert root.name == f"evaluation · {SITUATIONS[0]['name']} #1"
-    assert [step.name for step in steps] == ["papers", "model", "decision"]
+    assert_steps_from_the_papers(steps)
 
 
 def test_answers_without_token_counts_record_null_cost_and_charge_the_high_estimate(fakes, tmp_path, cloud_spending,

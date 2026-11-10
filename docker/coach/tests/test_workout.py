@@ -13,7 +13,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app import cloud, main, ollama, papers, search, workout
+from app import cloud, graph, main, ollama, papers, search, workout
 from app.errors import CoachError
 from app.jscompat import js_str
 from app.papers import PaperIndexError
@@ -59,7 +59,7 @@ async def run_case(case: dict, fake: FakeOllama | FakeCloud, finder: FakeSearch 
                    rides: FakeRides | None = None) -> list:
     events = []
     async with fake.client() as client:
-        await workout.run(request_of(case), events.append,
+        await graph.run(request_of(case), events.append,
                           rides=rides or FakeRides(activities(scenario(case["scenario"]))),
                           chat=fake.chat, chat_client=client, embed=(finder or fake_search(case)).encode,
                           load_index=fixture_index, now_ms=NOW_MS, spending=main.cloud_spending)
@@ -76,14 +76,17 @@ def workout_of_an_unreadable_answer(case: dict, provider: str) -> dict:
 
 
 def chat_request(fake: FakeOllama | FakeCloud, messages: list) -> None:
-    """L'unica richiesta arrivata al provider è la chat, con le regole di ciascuno: per Ollama
-    temperatura 0,2 e 1.000 token; per il cloud chiave, nessuna temperatura e 4.000 token."""
+    """Al provider arrivano solo richieste di chat, la prima con questi messaggi e le regole di
+    ciascuno: per Ollama temperatura 0,2 e 1.000 token; per il cloud chiave, nessuna temperatura e
+    4.000 token."""
     if isinstance(fake, FakeOllama):
-        [(path, body)] = fake.requests
+        (path, body), *_ = fake.requests
+        assert {p for p, _ in fake.requests} == {"/api/chat"}
         assert (path, body) == ("/api/chat", {"model": "qwen2.5:7b", "messages": messages, "stream": True,
                                               "options": {"temperature": 0.2, "num_predict": 1000}})
     else:
-        [(path, headers, body)] = fake.requests
+        (path, headers, body), *_ = fake.requests
+        assert {p for p, _, _ in fake.requests} == {"/v1/chat/completions"}
         assert (path, headers["authorization"]) == ("/v1/chat/completions", f"Bearer {CLOUD_KEY}")
         assert body == {"model": CLOUD_MODEL, "messages": messages, "stream": True,
                         "stream_options": {"include_usage": True}, "max_tokens": 4000}
