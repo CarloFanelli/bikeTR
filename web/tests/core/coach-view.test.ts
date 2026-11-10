@@ -15,7 +15,7 @@ describe('testi del Coach', () => {
   });
 
   it('citazione del paper', () => {
-    expect(paperCitation({ pmid: '123', authors: 'Seiler S', year: '2010', title: 'What is best practice?' }))
+    expect(paperCitation({ authors: 'Seiler S', year: '2010', title: 'What is best practice?' }))
       .toBe('Seiler S (2010). What is best practice?');
   });
 
