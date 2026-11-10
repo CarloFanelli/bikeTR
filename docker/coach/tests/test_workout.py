@@ -19,8 +19,8 @@ from app.jscompat import js_str
 from app.papers import PaperIndexError
 from app.protocols import PROTOCOLS
 from app.selection_rules import select
-from fakes import (CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, INDEX, FakeCloud, FakeOllama, FakeRides, FakeSearch, fixture_clock,
-                   fixture_index)
+from fakes import (CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, INDEX, FakeCloud, FakeOllama, FakeRides, FakeSearch,
+                   fixture_clock, fixture_index)
 from fixture_data import NOW_MS, RIDES, activities, case_context, load, scenario, service_query, with_service_sections
 
 CASES = load("coach_cases.json")
@@ -40,7 +40,8 @@ def allowed_answer(case: dict) -> str:
 # La risposta valida del browser sceglie 4×8 Seiler in un giorno di recupero e cita un PMID che il modello
 # non ha ricevuto: il controllo la rimanda. Le prove del servizio usano la stessa situazione con una
 # risposta che il controllo accetta.
-CASE["allowed-answer"] = {**CASE["valid-answer"], "name": "allowed-answer", "answer": allowed_answer(CASE["valid-answer"])}
+CASE["allowed-answer"] = {**CASE["valid-answer"], "name": "allowed-answer",
+                          "answer": allowed_answer(CASE["valid-answer"])}
 WORKOUT_CASES = [c for c in CASES["cases"] if "built" in EXPECTED["cases"][c["name"]]]
 # Il browser dava Z2 a un protocollo troppo lungo per i minuti, e prendeva un protocollo che la regola di
 # oggi non ammette; qui il controllo rimanda la risposta, e con la stessa risposta a ogni bozza si ha il
@@ -122,7 +123,8 @@ def test_model_answer_gives_the_browser_workout(case, provider):
     # Al provider arriva solo la chat: la query è codificata dal modello di ricerca del servizio.
     system, user = exp["messages"]
     found = papers.top_papers(INDEX, finder.vector)
-    chat_request(fake, [{**system, "content": with_service_sections(system["content"], found)}, user])
+    chat_request(fake, [{**system, "content": with_service_sections(system["content"], found, case_context(case),
+                                                                     case["duration"])}, user])
 
 
 # Quanto basta a decide: FTP per i watt, forma e quota dura per la regola di oggi e la scelta di ripiego.
