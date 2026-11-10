@@ -36,3 +36,12 @@ export const FREE_INDEXING = "Indicizzazione gratis: la fa il modello di ricerca
 
 export const addedLine = (a: AddedPaper) =>
   `✅ Aggiunto: ${passageCount(a.passageCount)} salvati in ${a.seconds.toLocaleString('it-IT')} s.`;
+
+// La domanda prima di togliere un paper: nomina i workout e le regole che perdono il loro paper di supporto.
+export function removalQuestion(p: LibraryPaper): string {
+  const lines = dependencyLines(p);
+  const what = p.origin === 'base' ? 'Togliere dalla libreria' : 'Cancellare dalla libreria';
+  const question = `${what} ${p.authors} (${p.year}), PMID ${p.pmid}?`;
+  if (!lines.length) return question;
+  return `${question}\n\nÈ il paper di supporto di workout o regole del Coach, che lo perdono:\n- ${lines.join('\n- ')}`;
+}

@@ -2,7 +2,9 @@
 progetto, più i paper che l'atleta aggiunge per PMID, salvati in /data/library.json: nel volume
 dei dati del Coach, fuori da git, come le corse e la spesa. papers_index.json non cambia mai.
 
-Forma del file: {model: modello di ricerca dei vettori, added: [paper con passaggi e vettori]}.
+Forma del file: {model: modello di ricerca dei vettori, added: [paper con passaggi e vettori],
+removed: [PMID dei paper di base tolti]}. Un file salvato prima che si potessero togliere paper non
+ha removed: niente di tolto.
 
 Un paper si aggiunge come la ricostruzione dell'indice prende i suoi: stessi servizi, stessa regola
 della licenza, stesso taglio in passaggi, stesso modello di ricerca. L'elenco della schermata non
@@ -46,28 +48,36 @@ class Library:
         try:
             saved = json.loads(self.path.read_text(encoding="utf-8"))
         except FileNotFoundError:
-            return {"model": search.SEARCH_MODEL, "added": []}
+            return {"model": search.SEARCH_MODEL, "added": [], "removed": []}
         except (OSError, ValueError, RecursionError) as e:
             raise self.unreadable() from e
         if not (isinstance(saved, dict) and isinstance(saved.get("model"), str) and isinstance(saved.get("added"), list)
-                and all(isinstance(p, dict) and isinstance(p.get("pmid"), str) for p in saved["added"])):
+                and all(isinstance(p, dict) and isinstance(p.get("pmid"), str) for p in saved["added"])
+                and isinstance(saved.get("removed", []), list)
+                and all(isinstance(pmid, str) for pmid in saved.get("removed", []))):
             raise self.unreadable()
-        return saved
+        return {"removed": [], **saved}
 
-    def change(self, edit) -> dict:
-        """Rilegge la libreria sotto il lucchetto, la cambia con edit e la sostituisce intera."""
-        with locked(self.path):
-            saved = edit(self.load())
-            replace_file(self.path, json.dumps(saved, ensure_ascii=False, separators=(",", ":")))
-            return saved
+    def change(self, edit) -> None:
+        """Rilegge la libreria sotto il lucchetto, la cambia con edit e la sostituisce intera. Bloccante
+        (il lucchetto può aspettare un comando di coach-tools): va chiamato in un altro thread. Una
+        libreria illeggibile non si sovrascrive mai."""
+        try:
+            with locked(self.path):
+                saved = edit(self.load())
+                replace_file(self.path, json.dumps(saved, ensure_ascii=False, separators=(",", ":")))
+        except LibraryUnreadable as e:
+            raise CoachError(500, "library_unreadable", str(e)) from e
 
 
 def merged(base: dict, saved: dict) -> dict:
-    """L'indice che il Coach cerca: i paper di base, poi quelli aggiunti. Un paper aggiunto che nel
-    frattempo è diventato di base (dopo un git pull) resta fuori: vale la copia di base."""
+    """L'indice che il Coach cerca: i paper di base non tolti, poi quelli aggiunti. Un paper aggiunto
+    che nel frattempo è diventato di base (dopo un git pull) resta fuori: vale la copia di base. Il
+    PMID tolto di un paper che non è più di base non toglie nulla."""
     base_pmids = {p["pmid"] for p in base["papers"]}
+    kept = [p for p in base["papers"] if p["pmid"] not in saved["removed"]]
     added = [p for p in saved["added"] if p["pmid"] not in base_pmids]
-    return {**base, "papers": [*base["papers"], *added]}
+    return {**base, "papers": [*kept, *added]}
 
 
 def searched(base: dict, library: Library) -> tuple[dict, str | None]:
@@ -89,12 +99,17 @@ def supports(pmid: str) -> dict:
             "rules": [r.sentence() for r in RULES if r.source_pmid == pmid]}
 
 
-def listing(base: dict, index: dict) -> list[dict]:
+def listed(paper: dict, origin: str) -> dict:
+    return {**{k: paper.get(k) for k in LISTED_FIELDS}, "origin": origin, "passageCount": len(paper["passages"]),
+            "license": paper.get("license"), "licenseUrl": paper.get("licenseUrl"), "supports": supports(paper["pmid"])}
+
+
+def listing(base: dict, index: dict) -> dict:
+    """I paper che il Coach cerca e, a parte, i paper di base tolti."""
     base_pmids = {p["pmid"] for p in base["papers"]}
-    return [{**{k: p.get(k) for k in LISTED_FIELDS}, "origin": "base" if p["pmid"] in base_pmids else "added",
-             "passageCount": len(p["passages"]), "license": p.get("license"), "licenseUrl": p.get("licenseUrl"),
-             "supports": supports(p["pmid"])}
-            for p in index["papers"]]
+    searched_pmids = {p["pmid"] for p in index["papers"]}
+    return {"papers": [listed(p, "base" if p["pmid"] in base_pmids else "added") for p in index["papers"]],
+            "removed": [listed(p, "base") for p in base["papers"] if p["pmid"] not in searched_pmids]}
 
 
 def passages(index: dict, pmid: str) -> dict:
@@ -118,11 +133,14 @@ def valid_pmid(body) -> str:
 
 
 def check_addable(base: dict, saved: dict, pmid: str) -> None:
-    """Rifiuta un PMID già in libreria o un paper oltre il massimo degli aggiunti."""
+    """Rifiuta un PMID già in libreria, un paper di base tolto (si ripristina) o un paper oltre il
+    massimo degli aggiunti."""
     index = merged(base, saved)
     present = find(index, pmid)
     if present is not None:
         raise CoachError(409, "duplicate", f"Già in libreria: {present['authors']} ({present['year']}). {present['title']}")
+    if find(base, pmid) is not None:
+        raise CoachError(409, "removed_base", "È un paper di base che hai tolto: ripristinalo dall'elenco dei paper tolti")
     if len(index["papers"]) - len(base["papers"]) >= MAX_ADDED:
         raise CoachError(409, "full", f"La libreria ha già {MAX_ADDED} paper aggiunti, il massimo: "
                                       "togline uno prima di aggiungerne un altro")
@@ -173,7 +191,29 @@ def save(library: Library, base: dict, paper: dict) -> None:
         check_addable(base, saved, paper["pmid"])
         return {**saved, "added": [*saved["added"], paper]}
 
-    try:
-        library.change(append)
-    except LibraryUnreadable as e:
-        raise CoachError(500, "library_unreadable", str(e)) from e
+    library.change(append)
+
+
+def remove(library: Library, base: dict, pmid: str) -> None:
+    """Un paper aggiunto si cancella, uno di base si toglie fino al ripristino. Già tolto: niente da
+    fare. L'ultimo paper resta: il Coach non può cercare in una libreria vuota. Bloccante: va chiamato
+    in un altro thread."""
+    def without(saved: dict) -> dict:
+        index = merged(base, saved)
+        if find(index, pmid) is None:
+            if pmid in saved["removed"] and find(base, pmid) is not None:
+                return saved
+            raise CoachError(404, "not_found", f"Il paper PMID {pmid} non è in libreria")
+        if len(index["papers"]) == 1:
+            raise CoachError(409, "last_paper", "È l'ultimo paper della libreria: il Coach ne ha bisogno di almeno uno")
+        if find(base, pmid) is not None:
+            return {**saved, "removed": [*saved["removed"], pmid]}
+        return {**saved, "added": [p for p in saved["added"] if p["pmid"] != pmid]}
+
+    library.change(without)
+
+
+def restore(library: Library, pmid: str) -> None:
+    """Rimette tra i paper cercati un paper di base tolto; già ripristinato: niente da fare. Bloccante:
+    va chiamato in un altro thread."""
+    library.change(lambda saved: {**saved, "removed": [p for p in saved["removed"] if p != pmid]})

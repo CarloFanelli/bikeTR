@@ -10,6 +10,8 @@ Rotte:
   GET  /coach/library/{pmid} → i passaggi di un paper, nell'ordine di lettura
   POST /coach/library/preview → {pmid}: il paper da PubMed come entrerebbe in libreria (niente salvato)
   POST /coach/library  → {pmid}: aggiunge il paper alla libreria salvata in /data
+  DELETE /coach/library/{pmid} → toglie il paper: cancella un aggiunto, nasconde uno di base
+  POST /coach/library/{pmid}/restore → rimette un paper di base tolto
 
 Gli errori sono {error: codice, message: testo in italiano da mostrare}: come risposta
 JSON se la richiesta è rifiutata subito, come evento {type: "error", ...} se il flusso
@@ -173,7 +175,7 @@ async def forget():
 @app.get("/coach/library")
 async def library_papers():
     base, index, warning = await library_view()
-    return {"papers": library.listing(base, index), "warning": warning}
+    return {**library.listing(base, index), "warning": warning}
 
 
 @app.get("/coach/library/{pmid}")
@@ -211,3 +213,16 @@ async def library_add(request: Request):
         raise CoachError(499, "cancelled", "Aggiunta interrotta: niente è stato salvato")
     await asyncio.to_thread(library.save, saved_library, base, paper)
     return {"pmid": pmid, "passageCount": len(paper["passages"]), "seconds": round(time.monotonic() - start, 1)}
+
+
+@app.delete("/coach/library/{pmid}")
+async def library_remove(pmid: str):
+    base, _, _ = await library_view()
+    await asyncio.to_thread(library.remove, saved_library, base, pmid)
+    return {"pmid": pmid}
+
+
+@app.post("/coach/library/{pmid}/restore")
+async def library_restore(pmid: str):
+    await asyncio.to_thread(library.restore, saved_library, pmid)
+    return {"pmid": pmid}

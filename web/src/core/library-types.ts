@@ -19,6 +19,13 @@ export interface LibraryPaper {
   supports: { workouts: string[]; rules: string[] };
 }
 
+// I paper che il Coach cerca, i paper di base tolti e il messaggio su una libreria salvata illeggibile.
+export interface Library {
+  papers: LibraryPaper[];
+  removed: LibraryPaper[];
+  warning: string | null;
+}
+
 export interface LibraryPassages {
   pmid: string;
   passages: PassageQuote[];
