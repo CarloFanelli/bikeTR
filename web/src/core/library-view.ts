@@ -4,7 +4,10 @@
 import { licenseLink } from './coach-view.ts';
 import type { AddedPaper, LibraryPaper } from './library-types.ts';
 
-export const originLabel = (p: LibraryPaper) => (p.origin === 'base' ? 'paper di base' : 'aggiunto');
+export function originLabel(p: LibraryPaper): string {
+  if (p.wasAdded) return 'ora tra i paper di base';
+  return p.origin === 'base' ? 'paper di base' : 'aggiunto';
+}
 
 export const passageCount = (n: number) => (n === 1 ? '1 passaggio' : `${n} passaggi`);
 

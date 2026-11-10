@@ -118,17 +118,23 @@ def supports(pmid: str) -> dict:
             "rules": [r.sentence() for r in RULES if r.source_pmid == pmid]}
 
 
-def listed(paper: dict, origin: str) -> dict:
-    return {**{k: paper.get(k) for k in LISTED_FIELDS}, "origin": origin, "passageCount": len(paper["passages"]),
-            "license": paper.get("license"), "licenseUrl": paper.get("licenseUrl"), "supports": supports(paper["pmid"])}
-
-
-def listing(base: dict, index: dict) -> dict:
-    """I paper che il Coach cerca e, a parte, i paper di base tolti."""
+def listing(base: dict, index: dict, library: Library) -> dict:
+    """I paper che il Coach cerca e, a parte, i paper di base tolti. Un paper di base che l'atleta
+    aveva aggiunto (prima che un git pull lo portasse tra quelli di base) ha wasAdded."""
     base_pmids = {p["pmid"] for p in base["papers"]}
     searched_pmids = {p["pmid"] for p in index["papers"]}
-    return {"papers": [listed(p, "base" if p["pmid"] in base_pmids else "added") for p in index["papers"]],
-            "removed": [listed(p, "base") for p in base["papers"] if p["pmid"] not in searched_pmids]}
+    try:
+        added_pmids = {p["pmid"] for p in library.load()["added"]}
+    except LibraryUnreadable:
+        added_pmids = set()
+
+    def listed(paper: dict) -> dict:
+        pmid = paper["pmid"]
+        return {**{k: paper.get(k) for k in LISTED_FIELDS}, "origin": "base" if pmid in base_pmids else "added",
+                "wasAdded": pmid in base_pmids and pmid in added_pmids, "passageCount": len(paper["passages"]),
+                "license": paper.get("license"), "licenseUrl": paper.get("licenseUrl"), "supports": supports(pmid)}
+    return {"papers": [listed(p) for p in index["papers"]],
+            "removed": [listed(p) for p in base["papers"] if p["pmid"] not in searched_pmids]}
 
 
 def passages(index: dict, pmid: str) -> dict:
