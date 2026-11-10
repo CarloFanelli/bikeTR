@@ -24,7 +24,9 @@ To measure the paper search alone, with no chat model:
 docker compose run --rm coach-tools python -m app.evaluation --search-only
 ```
 
-It runs the Coach's paper search in every situation and prints the search score (the "Expected paper found" column below), for example `Punteggio della ricerca, paper atteso trovato: 45% (9/20)`. It needs only the search model inside the Coach image: no Ollama, no key, no internet, no spending, and it writes no file and no trace. It stops with code 2, printing the Coach's message, when the paper index is refused.
+It runs the Coach's paper search in every situation and prints the search score (the "Expected paper found" column below), for example `Punteggio della ricerca, paper atteso trovato: 45% (9/20)`. It needs only the search model inside the Coach image: no Ollama, no key, no internet, no spending, and it writes no file and no trace. It also prints which papers it searched. It stops with code 2, printing the Coach's message, when the paper index is refused.
+
+Both commands search the base papers of `papers_index.json` by default, so their scores stay comparable across computers. `--library` searches your Libreria instead: the base papers minus the ones you removed, plus the ones you added. Use it with `--search-only` to see, for free, whether a paper you added helps the search. It stops with code 2, writing no file, when the saved library cannot be read.
 
 ## Grading
 
@@ -60,6 +62,7 @@ The file is rewritten after every answer, so a run stopped halfway (Ctrl+C, the 
 | `kind` | always `evaluation`: tells these files apart from live check files |
 | `startedAt`, `provider`, `model`, `searchModel` | when the run started and which models it used |
 | `promptVersion` | 8 characters that change whenever the Coach's system prompt text changes |
+| `papers` | which papers the run searched: `source` is `base` (the default) or `library` (`--library`), and `pmids` lists them. Files from before this field searched the base papers |
 | `repeat` | how many times each situation was asked |
 | `complete` | `true` only when every answer arrived without an error; a run stopped halfway, or with a failed answer, stays `false` and is not used for a table row |
 | `totalCost` | the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama. A run stopped with Ctrl+C during an answer leaves that answer out of the file, but the spending total still counts it, so `totalCost` is a little lower than what the run spent |
@@ -67,4 +70,4 @@ The file is rewritten after every answer, so a run stopped halfway (Ctrl+C, the 
 
 Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `passagesFound` (the passages the model was given, by label and score), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds` and `modelRaw` (the whole answer).
 
-A failed answer has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next answer still runs. The command exits with code 1 when every answer fails, with code 2, writing no file, when `.env` or `--repeat` is wrong or the worst case exceeds the cap, and with code 130 after Ctrl+C. The cloud key is never written here.
+A failed answer has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next answer still runs. The command exits with code 1 when every answer fails, with code 2, writing no file, when `.env` or `--repeat` is wrong, the paper index or the saved library is refused, or the worst case exceeds the cap, and with code 130 after Ctrl+C. The cloud key is never written here.

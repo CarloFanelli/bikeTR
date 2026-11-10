@@ -13,7 +13,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from app import cloud, evaluation, ollama, prompts, search, tracing
+from app import cloud, evaluation, grading, ollama, prompts, search, tracing
 from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, DownPhoenix, FakeCloud, FakeOllama, FakeSearch
 from fixture_data import FIXTURES, load
 
@@ -332,6 +332,7 @@ def test_search_only_runs_the_coach_search_in_every_situation_and_prints_the_sea
     assert code == 0
     assert capsys.readouterr().out.splitlines() == [
         f"Sola ricerca dei paper: 3 situazioni, modello di ricerca {search.SEARCH_MODEL}",
+        f"Paper cercati: paper di base, {len(BASE_PMIDS)} paper (21812820, {', '.join(BASE_PMIDS[1:])})",
         "  Punteggio della ricerca, paper atteso trovato: 50% (1/2)"]
     situations = json.loads(situations_file.read_text(encoding="utf-8"))
     assert fakes["search"].texts == [prompts.retrieval_query(s["context"], s["minutes"]) for s in situations]
@@ -363,3 +364,62 @@ def test_the_prompt_version_changes_with_the_prompt_text_and_only_with_it(monkey
     assert len(version) == 8 and prompts.prompt_version() == version
     monkeypatch.setattr(prompts, "SYSTEM_TEMPLATE", prompts.SYSTEM_TEMPLATE.replace("evidence-based", "basato sulle prove"))
     assert prompts.prompt_version() != version
+
+
+# --- Paper di base o libreria ------------------------------------------------------------------
+
+BASE_PMIDS = [p["pmid"] for p in load("papers_index.json")["papers"]]
+
+
+def saved_library_with(saved_library, added=(), removed=()):
+    paper = load("papers_index.json")["papers"][0]
+    saved_library.path.write_text(json.dumps({
+        "model": search.SEARCH_MODEL, "added": [{**paper, "pmid": pmid} for pmid in added], "removed": list(removed)}))
+
+
+def test_by_default_the_run_searches_the_base_papers_even_when_the_library_differs(fakes, tmp_path, cloud_spending,
+                                                                                    two_situations, saved_library):
+    saved_library_with(saved_library, added=["999"], removed=[BASE_PMIDS[0]])
+    code, [file] = evaluate(tmp_path, cloud_spending, two_situations)
+    assert code == 0 and read(file)["papers"] == {"source": "base", "pmids": BASE_PMIDS}
+
+
+def test_with_the_library_option_the_run_searches_and_records_the_library(fakes, tmp_path, cloud_spending,
+                                                                           two_situations, saved_library):
+    saved_library_with(saved_library, added=["999"], removed=[BASE_PMIDS[0]])
+    code, [file] = evaluate(tmp_path, cloud_spending, two_situations, args=["--library"])
+    assert code == 0 and read(file)["papers"] == {"source": "library", "pmids": [*BASE_PMIDS[1:], "999"]}
+    assert all(BASE_PMIDS[0] not in [p["pmid"] for p in a["papersFound"]] for a in read(file)["answers"])
+
+
+def test_search_only_on_the_library_prints_the_papers_searched(fakes, tmp_path, cloud_spending, saved_library, capsys):
+    situations_file, index_file = search_only_files(tmp_path)
+    saved_library_with(saved_library, removed=["21812820"])
+    code = evaluation.main(["--search-only", "--library"], results_dir=tmp_path / "eval-runs", index_file=index_file,
+                           situations_file=situations_file, spending=cloud_spending)
+    out = capsys.readouterr().out.splitlines()
+    assert code == 0 and out[1] == f"Paper cercati: libreria, {len(BASE_PMIDS) - 1} paper ({', '.join(BASE_PMIDS[1:])})"
+    # Senza Seiler 2011 la ricerca non trova più il paper atteso.
+    assert out[2] == "  Punteggio della ricerca, paper atteso trovato: 0% (0/2)"
+
+
+def test_the_library_option_with_nothing_added_or_removed_searches_the_base_papers(fakes, tmp_path, cloud_spending,
+                                                                                    two_situations):
+    code, [file] = evaluate(tmp_path, cloud_spending, two_situations, args=["--library"])
+    assert code == 0 and read(file)["papers"] == {"source": "library", "pmids": BASE_PMIDS}
+
+
+def test_the_library_option_with_an_unreadable_library_stops_before_any_file(fakes, tmp_path, cloud_spending,
+                                                                              two_situations, saved_library, capsys):
+    saved_library.path.write_text("{")
+    assert evaluate(tmp_path, cloud_spending, two_situations, args=["--library"]) == (2, [])
+    assert f"✗ La libreria salvata in {saved_library.path} non si legge" in capsys.readouterr().err
+    assert fakes["ollama"].requests == []
+
+
+def test_a_results_file_from_before_the_papers_field_is_graded_as_before(fakes, tmp_path, cloud_spending,
+                                                                          two_situations):
+    _, [file] = evaluate(tmp_path, cloud_spending, two_situations)
+    run = read(file)
+    old = {k: v for k, v in run.items() if k != "papers"}
+    assert grading.grade(old, SITUATIONS[:2]) == grading.grade(run, SITUATIONS[:2])
