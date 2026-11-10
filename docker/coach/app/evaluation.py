@@ -32,6 +32,7 @@ from pathlib import Path
 import httpx
 
 from app import graph, library, papers, prompts, provider, search, tracing, workout
+from app.check import MAX_DRAFTS
 from app.errors import CoachError
 from app.grading import SITUATIONS_FILE, grade, report, search_score, search_score_line
 from app.live_check import INDEX_FILE, coach_answer, file_stem, index_from, money, summary, write_results
@@ -42,11 +43,12 @@ RESULTS_DIR = Path("/project/eval-runs")
 
 
 def affordable(prices: Prices, answers: int, spending: Spending) -> bool:
-    """Stampa il costo massimo della corsa, ogni risposta alla stima alta, e dice se sta in quanto
-    resta sotto il tetto. Un totale della spesa illeggibile ferma la corsa (CoachError)."""
-    worst = answers * charge(prices, None, None)
+    """Stampa il costo massimo della corsa, ogni risposta con tutte le bozze alla stima alta, e dice se
+    sta in quanto resta sotto il tetto. Un totale della spesa illeggibile ferma la corsa (CoachError)."""
+    worst = answers * MAX_DRAFTS * charge(prices, None, None)
     left = prices.limit - spending.total()
-    print(f"Costo massimo: {money(worst)} per {answers} risposte; restano {money(max(left, 0))} sotto il tetto.")
+    print(f"Costo massimo: {money(worst)} per {answers} risposte, fino a {MAX_DRAFTS} bozze ciascuna; "
+          f"restano {money(max(left, 0))} sotto il tetto.")
     # Al miliardesimo di dollaro: un costo uguale a quanto resta deve bastare, anche quando la
     # virgola mobile lo sbaglia di poco.
     if round(worst - left, 9) > 0:

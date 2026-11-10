@@ -4,4 +4,4 @@
 02-rule-and-citation-checks: DONE
 03-allowed-protocols-prompt: DONE
 04-drafts-on-screen: DONE
-05-drafts-in-evaluation: TODO
+05-drafts-in-evaluation: DONE
