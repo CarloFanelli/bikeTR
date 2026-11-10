@@ -1,7 +1,8 @@
 <script setup lang="ts">
-// Il workout proposto dal Coach: avviso del ripiego, tentativi del modello e citazioni tolte, titolo, watt, passi, razionale, paper citati con i
-// passaggi citati e la licenza di un testo completo, paper recuperati, da dove vengono le corse e la
-// risposta grezza del modello. I testi del servizio e del modello si mostrano come testo.
+// Il workout proposto dal Coach: avviso del ripiego, tentativi del modello e citazioni tolte, titolo,
+// watt, passi, razionale, paper citati con i passaggi citati e la licenza di un testo completo, paper
+// recuperati, da dove vengono le corse e la risposta grezza del modello. I testi del servizio e del
+// modello si mostrano come testo.
 import { ref } from 'vue';
 import { VExpansionPanel, VExpansionPanels, VExpansionPanelText, VExpansionPanelTitle } from 'vuetify/components';
 import type { CoachWorkout } from '../core/coach-types.ts';

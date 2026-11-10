@@ -155,7 +155,8 @@ Coach AI: "Genera workout di oggi" sends the minutes (30–240), the time zone a
                        {"protocolId": …, "razionale": "… [PMID:n §k] …", "passaggiUsati": ["PMID:n §k"]}
         5. check       is the answer whole, readable, a catalog protocol that fits the minutes and that
                        today's rule allows, citing only passages it was given?
-                       no, and fewer than 3 drafts ──► back to 4, with its answer and the reasons
+                       no, fewer than 3 drafts and under the spending limit ──► back to 4, with its
+                       answer and the reasons
         6. deliver     the accepted draft; after 3 drafts, the last one if only its citations were
                        wrong (they are dropped), otherwise the fallback rules choose; the code turns
                        the protocol into steps and watts from your FTP and the minutes
@@ -193,7 +194,7 @@ docker compose run --rm coach-tools python -m app.evaluation --search-only
 | qwen2.5:7b | d146523f (after) | 44% (12/27) | 44% (12/27) | 100% (27/27) | 0% (0/27) | 0% (0/27) | 100% (2/2) | 15% (2/13) | 45% (9/20) | 4% (1/27) | too_long 1 | 1.0 | 12.2 | — | [2026-11-08_14-44-24_qwen2.5-7b.json](eval-runs/2026-11-08_14-44-24_qwen2.5-7b.json) |
 | search only | — | — | — | — | — | — | — | — | 70% (14/20) | — | — | — | — | — | — (printed, no file) |
 
-- **Writing the rules out did not make the models follow them.** qwen2.5:3b goes from 8 to 9 situations and still chooses sweet spot in 18 of the 27 (21 before), a rest day included. qwen2.5:7b goes from 15 to 12: it now chooses a quality session when there was too little hard riding, but four times it chooses the long ride, meant for 120 minutes or more, with 55 to 75 minutes available, and once hard intervals when the rule says rest. With one answer per situation a few answers can be chance (`--repeat 3` steadies the numbers), but this is no improvement. Applying 11 ordered rules that compare numbers is hard for these models; the code already knows each athlete's allowed workouts, so the next step is to show the model only those and let it choose and explain.
+- **Writing the rules out did not make the models follow them.** qwen2.5:3b goes from 8 to 9 situations and still chooses sweet spot in 18 of the 27 (21 before), a rest day included. qwen2.5:7b goes from 15 to 12: it now chooses a quality session when there was too little hard riding, but four times it chooses the long ride, meant for 120 minutes or more, with 55 to 75 minutes available, and once hard intervals when the rule says rest. With one answer per situation a few answers can be chance (`--repeat 3` steadies the numbers), but this is no improvement. Applying 11 ordered rules that compare numbers is hard for these models; the code already knows each athlete's allowed workouts, so the Coach now shows the model only those and lets it choose and explain (see the Decisions above).
 - **No answer cites a paper number it was not shown.** With the new prompt the models often cite the paper written next to a rule (Seiler 2010, Stöggl 2014) even when the search did not return it; the grading counts it as given, because the prompt shows it.
 - **The search rarely finds the chosen workout's paper**: in 2 of 13 answers for qwen2.5:7b after the rewrite, and none before. When it did, the model cited it.
 - **Today's search finds an expected paper in 14 of the 20 situations that have one, against 9.** Cutting the papers into passages brought it to 11, the full texts of the two open-license papers left it at 11, and naming the allowed workouts in the search sentence brought it to 14. A rebuilt paper index can change this number: the search-only run gives the new one.

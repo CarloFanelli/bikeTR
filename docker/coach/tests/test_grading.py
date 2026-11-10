@@ -189,6 +189,12 @@ def test_answers_are_counted_per_fallback_cause_and_citations_dropped():
     assert scores.average_drafts == pytest.approx(10 / 6)
 
 
+def test_an_old_fallback_answer_that_todays_catalog_accepts_counts_under_no_cause():
+    # Un file di prima delle bozze: Seiler in 60 minuti oggi si può usare, ma allora era andato al ripiego.
+    scores = grade([answer("seiler_4x8", fellBack=True)])
+    assert (scores.fallback, scores.fallback_causes) == ((1, 1), {})
+
+
 def test_errors_are_counted_apart_and_no_success_gives_dashes():
     scores = grade([failure(), failure()])
     assert (scores.answered, scores.failed) == (0, 2)

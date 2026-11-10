@@ -160,7 +160,7 @@ async def deliver_node(state: State, runtime: Runtime[Request]) -> State:
     chat, drafts, last = runtime.context.chat, state["drafts"], state["drafts"][-1]
     with tracing.step("deliver"):
         decision = decide(last["modelRaw"], state["ctx"], state["duration"], state["index"], state["retrieved"],
-                          last["truncated"])
+                          last["truncated"], last["verdict"])
     retrieved = state["retrieved"]
     return {"result": {
         **decision,

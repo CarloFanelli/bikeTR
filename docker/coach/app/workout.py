@@ -8,7 +8,7 @@ from typing import Awaitable, Callable
 from zoneinfo import ZoneInfo
 
 from app import papers, prompts, tracing
-from app.check import check_draft, citation_label, read_draft
+from app.check import Verdict, check_draft, citation_label, read_draft
 from app.errors import CoachError
 from app.jscompat import is_number, js_str, js_truthy
 from app.metrics import Profile
@@ -131,15 +131,18 @@ def fallback_warning(cause: str, chosen: str | None, duration: int) -> str:
             f"minuti: con {duration} minuti {by_rules}")
 
 
-def decide(model_raw: str, ctx: dict, duration: int, index: dict, retrieved: list, truncated: bool = False) -> dict:
+def decide(model_raw: str, ctx: dict, duration: int, index: dict, retrieved: list, truncated: bool = False,
+           verdict: Verdict | None = None) -> dict:
     """Dall'ultima bozza del modello al workout, con i paper trovati dalla ricerca (`retrieved`): i
     loro passaggi sono quelli che la scheda può citare. Una bozza che sbaglia solo le citazioni tiene
     protocollo e razionale, senza le citazioni inventate. Una bozza che non si può usare (troncata,
     illeggibile, senza un protocollo del catalogo, con un protocollo che non entra nei minuti o che la
     regola di oggi non ammette) lascia la scelta al primo protocollo che le regole ammettono, con il
-    razionale di ripiego, senza i paper del modello e con la causa."""
+    razionale di ripiego, senza i paper del modello e con la causa. `verdict` è quello del controllo
+    sulla stessa bozza; senza, il controllo si rifà qui."""
     parsed, chosen = read_draft(model_raw, truncated)
-    verdict = check_draft(model_raw, truncated, ctx, duration, retrieved)
+    if verdict is None:
+        verdict = check_draft(model_raw, truncated, ctx, duration, retrieved)
     dropped = ()
     if verdict.ok or verdict.causes == ("invented",):
         protocol_id, dropped = chosen, verdict.invented

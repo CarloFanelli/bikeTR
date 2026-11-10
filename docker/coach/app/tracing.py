@@ -1,7 +1,7 @@
 """Le tracce del Coach in Phoenix: ogni richiesta diventa una traccia, con un passo per ogni nodo
 del grafo (corse, numeri, ricerca dei paper, ogni bozza del modello chat e il suo controllo,
-consegna), ognuno con la sua durata e con ciò che il Coach ha visto, mandato e deciso. Phoenix gira nel suo container (compose.yaml) e le tracce non
-lasciano il computer.
+consegna), ognuno con la sua durata e con ciò che il Coach ha visto, mandato e deciso. Phoenix gira
+nel suo container (compose.yaml) e le tracce non lasciano il computer.
 
 Le tracce partono a gruppi da un thread in background: una richiesta non aspetta mai Phoenix, e
 con Phoenix spento si perdono le tracce, non le risposte. Ogni processo scrive in un suo progetto

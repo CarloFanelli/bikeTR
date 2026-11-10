@@ -139,8 +139,8 @@ async def generate_workout(request: Request):
             with tracing.request(req.duration):
                 async with provider.client(chat) as chat_client:
                     await graph.run(req, events.put_nowait, rides=rides, chat=chat, chat_client=chat_client,
-                                      embed=search.encode, load_index=load_index, now_ms=time.time() * 1000,
-                                      spending=cloud_spending)
+                                    embed=search.encode, load_index=load_index, now_ms=time.time() * 1000,
+                                    spending=cloud_spending)
         except CoachError as e:
             events.put_nowait({"type": "error", "error": e.code, "message": e.message})
         except Exception:
