@@ -3,5 +3,5 @@
 01-library-section: DONE
 02-add-by-pmid: DONE
 03-remove-and-restore: DONE
-04-reencode-added: TODO
+04-reencode-added: DONE
 05-evaluation-on-library: TODO

@@ -363,3 +363,17 @@ def test_an_unreadable_library_refuses_removing_and_restoring(service, saved_lib
     for res in (remove(service, WHITTY), restore(service, WHITTY)):
         assert (res.status_code, res.json()["error"]) == (500, "library_unreadable")
     assert saved_library.path.read_text() == "{"
+
+
+def test_a_library_encoded_by_another_search_model_is_refused_until_reencoded(service, saved_library):
+    saved_library.path.write_text(json.dumps({"model": "nomic-embed-text", "added": [{**FULL_TEXT, "pmid": "333"}]}))
+    with pytest.raises(papers.PaperIndexError, match=f"Ricodificala con: {papers.REENCODE}"):
+        asyncio.run(main.load_index())
+    res = service.get("/coach/library")
+    assert (res.status_code, res.json()["error"]) == (502, "retrieval")
+    assert "è codificata con nomic-embed-text" in res.json()["message"]
+
+
+def test_a_library_with_nothing_added_works_whatever_its_model_name(service, saved_library):
+    saved_library.path.write_text(json.dumps({"model": "nomic-embed-text", "added": [], "removed": [WHITTY]}))
+    assert WHITTY not in [p["pmid"] for p in asyncio.run(main.load_index())["papers"]]

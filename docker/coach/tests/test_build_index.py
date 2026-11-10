@@ -10,12 +10,13 @@ import asyncio
 import json
 import re
 import socket
+import threading
 import xml.etree.ElementTree as ET
 
 import httpx
 import pytest
 
-from app import build_index, papers, project_files, search
+from app import build_index, papers, project_files, search, shared_files
 from app.protocols import PROTOCOLS
 from fixture_data import FIXTURES, load
 
@@ -366,3 +367,56 @@ def test_every_supporting_paper_has_a_search_that_fetches_it():
 def test_each_paper_has_one_search_so_a_shared_supporting_paper_is_in_the_index_once():
     pmids = [pmid for _, _, pmid in build_index.SEARCHES]
     assert len(pmids) == len(set(pmids))
+
+
+# --- Ricodifica dei paper aggiunti alla libreria ------------------------------------------------
+
+def added_library(saved_library, model="nomic-embed-text") -> bytes:
+    paper = {**INDEX["papers"][0], "pmid": "111", "passages": INDEX["papers"][0]["passages"][:2]}
+    saved_library.path.write_text(json.dumps({"model": model, "added": [paper], "removed": ["16430681"]}),
+                                  encoding="utf-8")
+    return saved_library.path.read_bytes()
+
+
+def test_reencoding_also_reencodes_the_added_papers_without_internet(index_file, saved_library, monkeypatch, capsys):
+    before = json.loads(added_library(saved_library))
+    monkeypatch.setattr(socket.socket, "connect", lambda *args: pytest.fail("la ricodifica non deve usare la rete"))
+    assert build_index.main(["--reencode"], path=index_file) == 0
+    after = json.loads(saved_library.path.read_text(encoding="utf-8"))
+    assert after["model"] == search.SEARCH_MODEL and after["removed"] == ["16430681"]
+    assert without_vectors({"papers": after["added"]}) == without_vectors({"papers": before["added"]})
+    assert all(len(s["embedding"]) == 384 for s in after["added"][0]["passages"])
+    out = capsys.readouterr().out
+    assert "Ricodifico 2 passaggi di 1 paper aggiunti" in out and "libreria: 1 paper aggiunti, 2 passaggi" in out
+
+
+def test_reencoding_without_a_saved_library_reencodes_only_the_base_papers(index_file, saved_library, capsys):
+    assert build_index.main(["--reencode"], path=index_file) == 0
+    assert not saved_library.path.exists() and "aggiunti" not in capsys.readouterr().out
+
+
+def test_an_unreadable_library_stops_the_reencoding_and_changes_neither_file(index_file, saved_library, capsys):
+    saved_library.path.write_text("{")
+    before = index_file.read_bytes()
+    assert build_index.main(["--reencode"], path=index_file) == 1
+    assert index_file.read_bytes() == before and saved_library.path.read_text() == "{"
+    assert f"La libreria salvata in {saved_library.path} non si legge" in capsys.readouterr().err
+
+
+def test_a_failing_base_index_leaves_the_library_unchanged(index_file, saved_library, monkeypatch):
+    before = added_library(saved_library)
+    monkeypatch.setattr(project_files.os, "replace", lambda *args: (_ for _ in ()).throw(KeyboardInterrupt))
+    with pytest.raises(KeyboardInterrupt):
+        build_index.main(["--reencode"], path=index_file)
+    assert saved_library.path.read_bytes() == before
+
+
+def test_reencoding_the_library_waits_for_the_coach_service_writing_it(index_file, saved_library):
+    added_library(saved_library)
+    done = threading.Event()
+    with shared_files.locked(saved_library.path):
+        worker = threading.Thread(target=lambda: build_index.main(["--reencode"], path=index_file) or done.set())
+        worker.start()
+        assert not done.wait(2)
+    worker.join(30)
+    assert done.is_set() and json.loads(saved_library.path.read_text())["model"] == search.SEARCH_MODEL

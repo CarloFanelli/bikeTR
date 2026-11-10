@@ -77,12 +77,12 @@ async def load_index() -> dict:
 
 async def library_view() -> tuple[dict, dict, str | None]:
     """Per la schermata Libreria: i paper di base, quelli che il Coach cerca e l'eventuale messaggio
-    sulla libreria salvata. Un indice di base inutilizzabile la rifiuta con il messaggio del Coach."""
+    sulla libreria salvata. Un indice inutilizzabile la rifiuta con il messaggio del Coach."""
     try:
         base = await papers.load_index(http)
+        index, warning = library.searched(base, saved_library)
     except papers.PaperIndexError as e:
         raise CoachError(502, "retrieval", str(e)) from e
-    index, warning = library.searched(base, saved_library)
     return base, index, warning
 
 
