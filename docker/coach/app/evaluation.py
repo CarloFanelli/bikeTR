@@ -3,8 +3,12 @@ in ogni situazione di evaluation/situations.json, tante volte quante chiede --re
 risultati in un file nuovo di eval-runs/, da portare in git e valutare su un altro computer. Dalla
 cartella del progetto:
 
-  docker compose run --rm coach-tools python -m app.evaluation [--repeat N]
-  docker compose run --rm coach-tools python -m app.evaluation --search-only
+  docker compose run --rm coach-tools python -m app.evaluation [--repeat N] [--library]
+  docker compose run --rm coach-tools python -m app.evaluation --search-only [--library]
+
+Il Coach cerca nei paper di base (papers_index.json), così i punteggi restano confrontabili; con
+--library cerca nella libreria dell'atleta: i paper di base meno quelli tolti, più quelli aggiunti.
+Il file dei risultati dice quali paper sono stati cercati.
 
 Ogni situazione parte dai numeri dell'atleta, già pronti, e passa dagli stessi passi di una
 richiesta del Coach (paper, modello, scelta del protocollo), senza Strava né browser, e lascia
@@ -27,7 +31,7 @@ from pathlib import Path
 
 import httpx
 
-from app import prompts, provider, search, tracing, workout
+from app import library, papers, prompts, provider, search, tracing, workout
 from app.errors import CoachError
 from app.grading import SITUATIONS_FILE, grade, report, search_score, search_score_line
 from app.live_check import INDEX_FILE, coach_answer, file_stem, index_from, money, summary, write_results
@@ -70,11 +74,22 @@ async def run_answers(situations: list[dict], repeat: int, chat: provider.ChatSe
     return answers
 
 
-def search_only(situations_file: Path, index_file: Path) -> int:
-    """In ogni situazione la stessa ricerca dei paper del Coach, poi il punteggio della ricerca.
-    0 con il punteggio stampato, 2 con l'indice dei paper rifiutato."""
+def papers_searched(index_file: Path, with_library: bool):
+    """L'indice da cercare in tutta la corsa, letto una volta all'inizio, e quali paper sono: "base" o
+    "library" e i loro PMID. Un indice o una libreria rifiutati: PaperIndexError, prima di ogni file."""
+    load = index_from(index_file)
+    if with_library:
+        load = library.saved_loader(load)
+    index = asyncio.run(load())
+
+    async def load_index() -> dict:
+        return index
+    return load_index, {"source": "library" if with_library else "base", "pmids": [p["pmid"] for p in index["papers"]]}
+
+
+def search_only(situations_file: Path, load_index, searched: dict) -> int:
+    """In ogni situazione la stessa ricerca dei paper del Coach, poi il punteggio della ricerca."""
     situations = json.loads(situations_file.read_text(encoding="utf-8"))
-    load_index = index_from(index_file)
 
     async def search_all() -> dict[str, set[str]]:
         found = {}
@@ -84,12 +99,10 @@ def search_only(situations_file: Path, index_file: Path) -> int:
             found[s["name"]] = {p["pmid"] for p in retrieved}
         return found
 
-    try:
-        found = asyncio.run(search_all())
-    except CoachError as e:
-        print(f"✗ {e.message}", file=sys.stderr)
-        return 2
+    found = asyncio.run(search_all())
     print(f"Sola ricerca dei paper: {len(situations)} situazioni, modello di ricerca {search.SEARCH_MODEL}")
+    source = "libreria" if searched["source"] == "library" else "paper di base"
+    print(f"Paper cercati: {source}, {len(searched['pmids'])} paper ({', '.join(searched['pmids'])})")
     print(search_score_line(search_score(situations, found)))
     return 0
 
@@ -99,19 +112,26 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
          clock=lambda: datetime.now(timezone.utc)) -> int:
     """0 se almeno una risposta ha dato un workout, 1 se tutte sono fallite, 2 se la corsa non
     parte (ripetizioni non valide, .env sbagliato, costo massimo oltre il tetto: nessuna chiamata,
-    nessun file; con --search-only, indice dei paper rifiutato), 130 se la si ferma con Ctrl+C."""
+    nessun file; anche con l'indice dei paper o la libreria rifiutati), 130 se la si ferma con Ctrl+C."""
     parser = argparse.ArgumentParser(prog="python -m app.evaluation", description=__doc__.splitlines()[0])
     parser.add_argument("--repeat", default="1", help="quante volte rispondere a ogni situazione (1 se manca)")
     parser.add_argument("--search-only", action="store_true",
                         help="solo la ricerca dei paper, senza modello chat: stampa il punteggio della ricerca")
+    parser.add_argument("--library", action="store_true",
+                        help="cerca nella libreria (paper di base meno i tolti, più gli aggiunti) invece che nei paper di base")
     args = parser.parse_args(argv)
     if not re.fullmatch(r"[0-9]+", args.repeat) or int(args.repeat) < 1:
         print(f"✗ --repeat vuole un numero intero da 1 in su, non «{args.repeat}»", file=sys.stderr)
         return 2
     repeat = int(args.repeat)
+    try:
+        load_index, searched = papers_searched(index_file, args.library)
+    except papers.PaperIndexError as e:
+        print(f"✗ {e}", file=sys.stderr)
+        return 2
     # Prima di leggere .env: la sola ricerca non usa il modello chat, né la sua chiave.
     if args.search_only:
-        return search_only(situations_file, index_file)
+        return search_only(situations_file, load_index, searched)
     try:
         chat = provider.settings()
         spending = spending or Spending(SPENDING_FILE)
@@ -125,7 +145,7 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
     started = clock()
     run = {"kind": "evaluation", "startedAt": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "provider": chat.provider,
            "model": chat.model, "searchModel": search.SEARCH_MODEL, "promptVersion": prompts.prompt_version(),
-           "repeat": repeat, "complete": False, "totalCost": 0.0 if chat.prices else None, "answers": []}
+           "papers": searched, "repeat": repeat, "complete": False, "totalCost": 0.0 if chat.prices else None, "answers": []}
     path = write_results(results_dir, file_stem(started, chat.model), run)
 
     def save(answers: list[dict], complete: bool = False) -> None:
@@ -136,7 +156,7 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
 
     traces = tracing.setup("evaluation")
     try:
-        answers = asyncio.run(run_answers(situations, repeat, chat, spending, index_from(index_file), save))
+        answers = asyncio.run(run_answers(situations, repeat, chat, spending, load_index, save))
     except KeyboardInterrupt:
         print(f"\nCorsa interrotta: le risposte finite sono in {results_dir.name}/{path.name}, "
               "segnata incompleta.", file=sys.stderr)

@@ -101,6 +101,17 @@ def searched(base: dict, library: Library) -> tuple[dict, str | None]:
     return index, None
 
 
+def saved_loader(load_base):
+    """Per i comandi: l'indice di load_base con sopra la libreria salvata. Una libreria illeggibile
+    ferma il comando (PaperIndexError) invece di ripiegare sui paper di base, che non sono quelli chiesti."""
+    async def load_index() -> dict:
+        index, warning = searched(await load_base(), Library(LIBRARY_FILE))
+        if warning:
+            raise papers.PaperIndexError(warning)
+        return index
+    return load_index
+
+
 def supports(pmid: str) -> dict:
     """I workout (per nome) e le regole di selezione (in italiano) di cui il paper è il paper di supporto."""
     return {"workouts": [p.name for p in PROTOCOLS.values() if p.source_pmid == pmid],
