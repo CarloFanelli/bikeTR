@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fmtDate, fmtKm, fmtTime, isoDay } from '../../src/core/format.ts';
+import { fmtClock, fmtDate, fmtKm, fmtTime, isoDay } from '../../src/core/format.ts';
 
 describe('formattazione', () => {
   it('distanze in km con un decimale', () => {
@@ -11,6 +11,14 @@ describe('formattazione', () => {
     expect(fmtTime(3900)).toBe('1h 5m');
     expect(fmtTime(3599)).toBe('59m');
     expect(fmtTime(7200)).toBe('2h 0m');
+  });
+
+  it('tempi di segmenti e km all\'orologio, con i secondi', () => {
+    expect(fmtClock(598)).toBe('9:58');
+    expect(fmtClock(65)).toBe('1:05');
+    expect(fmtClock(42)).toBe('0:42');
+    expect(fmtClock(3723)).toBe('1:02:03');
+    expect(fmtClock(599.6)).toBe('10:00');
   });
 
   it('date in italiano, con anno intero o a due cifre', () => {

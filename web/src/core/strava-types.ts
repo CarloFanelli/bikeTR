@@ -111,6 +111,9 @@ export interface Segment {
   state?: string | null;
   country?: string | null;
   starred?: boolean;
+  // Solo nei preferiti: il miglior tentativo dell'atleta, anche quando l'elenco dei tentativi
+  // non lo contiene.
+  athlete_pr_effort?: { id: number; elapsed_time: number; distance: number; start_date: string } | null;
 }
 
 export interface SegmentEffort {

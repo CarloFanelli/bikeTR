@@ -51,8 +51,8 @@ describe('dettaglio attività', () => {
       { moving_time: 240 },
     ] as Split[];
     expect(splitRows(splits)).toEqual([
-      { km: 'km 1', pct: 50, value: '2m · 30.0 km/h · 150 bpm' },
-      { km: 'km 2', pct: 100, value: '4m · — km/h' },
+      { km: 'km 1', pct: 50, value: '2:00 · 30.0 km/h · 150 bpm' },
+      { km: 'km 2', pct: 100, value: '4:00 · — km/h' },
     ]);
   });
 
@@ -64,9 +64,9 @@ describe('dettaglio attività', () => {
       { id: 3, name: '', distance: 500, moving_time: 60, elapsed_time: 60, segment: { id: 444 } },
     ] as SegmentEffort[];
     expect(segmentRows(efforts)).toEqual([
-      { id: 2, name: '<b>Muro</b>', kom: 3, pr: 1, meta: '2.15 km · 172 bpm · 289 W', time: '10m' },
-      { id: 1, name: 'Breve', kom: null, pr: null, meta: '0.80 km', time: '1m' },
-      { id: 3, name: '#444', kom: null, pr: null, meta: '0.50 km', time: '1m' },
+      { id: 2, name: '<b>Muro</b>', kom: 3, pr: 1, meta: '2.15 km · 172 bpm · 289 W', time: '10:10' },
+      { id: 1, name: 'Breve', kom: null, pr: null, meta: '0.80 km', time: '1:35' },
+      { id: 3, name: '#444', kom: null, pr: null, meta: '0.50 km', time: '1:00' },
     ]);
   });
 });

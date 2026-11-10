@@ -1,7 +1,7 @@
 // Le righe della lista Attività e del dettaglio di un'attività, con i loro testi e
 // arrotondamenti. I nomi da Strava restano come sono scritti.
 
-import { fmtDate, fmtKm, fmtTime, kmh, TYPE_EMOJI } from './format.ts';
+import { fmtClock, fmtDate, fmtKm, fmtTime, kmh, TYPE_EMOJI } from './format.ts';
 import type { Activity, ActivityDetail, SegmentEffort, Split } from './strava-types.ts';
 
 // Un nome vuoto mostra il numero dell'attività.
@@ -44,7 +44,7 @@ export function splitRows(splits: Split[]) {
   return splits.map((s, i) => ({
     km: `km ${i + 1}`,
     pct: (s.moving_time / slowest) * 100,
-    value: `${fmtTime(s.moving_time)} · ${s.average_speed ? kmh(s.average_speed) : '—'} km/h${bpm(s.average_heartrate)}`,
+    value: `${fmtClock(s.moving_time)} · ${s.average_speed ? kmh(s.average_speed) : '—'} km/h${bpm(s.average_heartrate)}`,
   }));
 }
 
@@ -56,6 +56,6 @@ export function segmentRows(efforts: SegmentEffort[]) {
     kom: s.kom_rank || null,
     pr: s.pr_rank || null,
     meta: `${(s.distance / 1000).toFixed(2)} km${bpm(s.average_heartrate)}${s.average_watts ? ` · ${Math.round(s.average_watts)} W` : ''}`,
-    time: fmtTime(s.moving_time || s.elapsed_time),
+    time: fmtClock(s.moving_time || s.elapsed_time),
   }));
 }
