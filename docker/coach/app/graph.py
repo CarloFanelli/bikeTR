@@ -84,7 +84,8 @@ async def papers_node(state: State, runtime: Runtime[Request]) -> State:
 def messages_for(state: State) -> list[dict]:
     """Il prompt di sistema e i numeri dell'atleta; da una bozza rimandata in poi anche l'ultima
     risposta del modello e i motivi del controllo."""
-    messages = [{"role": "system", "content": prompts.system_prompt(state["retrieved"])},
+    system = prompts.system_prompt(state["retrieved"], state["ctx"], state["duration"])
+    messages = [{"role": "system", "content": system},
                 {"role": "user", "content": prompts.user_prompt(state["ctx"], state["duration"])}]
     if state["drafts"]:
         last = state["drafts"][-1]

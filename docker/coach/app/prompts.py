@@ -1,37 +1,31 @@
 """Prompt del Coach e query per la ricerca dei paper, carattere per carattere come
-li scriveva il browser, tranne le regole di selezione e i protocolli ammessi in fondo alla query,
-che vengono da selection_rules, e dai paper in fondo, che danno i passaggi e chiedono di citarli per
-etichetta: i test li confrontano con il vecchio codice."""
+li scriveva il browser, tranne i protocolli e la regola di selezione, che sono solo quelli ammessi oggi
+e vengono da selection_rules, i protocolli ammessi in fondo alla query, e i paper in fondo, che danno i
+passaggi e chiedono di citarli per etichetta: i test li confrontano con il vecchio codice."""
 
 import hashlib
 
 from app.jscompat import js_str
 from app.protocols import PROTOCOLS
-from app.selection_rules import RULES, minimum_minutes, select
+from app.selection_rules import RULES, select
 
-# Le regole di selezione nell'ordine in cui valgono, poi i minuti che servono ai protocolli che non
-# entrano in ogni durata: la lista ammessa toglie quelli che non ci stanno.
-RULES_SECTION = (
-    "\n".join(f"{n}. {rule.sentence()}" for n, rule in enumerate(RULES, 1))
-    + "\nScegli solo un protocollo che entra nella durata disponibile. Durata minima: "
-    + ", ".join(f"{pid} {m}'" for pid in PROTOCOLS if (m := minimum_minutes(pid)) > 0) + "."
-)
+# Le differenze tra i giorni Z2, una riga per protocollo: il prompt mostra solo quelle dei Z2 ammessi oggi.
+Z2_DIFFERENCES = {
+    "z2_endurance": "piatto e costante, base pura, scelta neutra.",
+    "z2_cadence_drills": "Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.",
+    "z2_progressive": "build-up 65→75→85% FTP — utile come pre-gara o per testare la base.",
+}
 
 # Testo fisso del prompt di sistema; i segnaposto si sostituiscono con .replace
 # (con un f-string le graffe dell'esempio JSON andrebbero raddoppiate).
 SYSTEM_TEMPLATE = """Sei un coach di ciclismo evidence-based. Devi scegliere UN protocollo dal catalogo basandoti sullo stato fisico dell'atleta e sui paper scientifici recuperati.
 
-CATALOGO PROTOCOLLI (devi scegliere SOLO uno di questi id):
+CATALOGO PROTOCOLLI AMMESSI OGGI (devi scegliere SOLO uno di questi id):
 <PROTOCOL_LIST>
 
-REGOLE DI SELEZIONE (applica in ordine, vale la prima che si applica). Tra parentesi quadre la fonte della regola: il paper che ne dà il numero, o [pratica] quando nessun paper lo dà. È solo un'informazione: nel razionale cita solo i passaggi dei paper recuperati qui sotto.
+REGOLA DI SELEZIONE DI OGGI (vale per la forma, la quota dura e la durata disponibile dell'atleta; i protocolli che non entrano nella durata sono già tolti). Tra parentesi quadre la fonte della regola: il paper che ne dà il numero, o [pratica] quando nessun paper lo dà. È solo un'informazione: nel razionale cita solo i passaggi dei paper recuperati qui sotto.
 <SELECTION_RULES>
-
-DIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):
-- z2_endurance: piatto e costante, base pura, scelta neutra.
-- z2_cadence_drills: Z2 + 3×5' cadenza alta — aggiunge stimolo neuromuscolare senza intensità cardio.
-- z2_progressive: build-up 65→75→85% FTP — utile come pre-gara o per testare la base.
-
+<Z2_DIFFERENCES>
 PAPER SCIENTIFICI RECUPERATI (cita SOLO questi passaggi, con la loro etichetta, mai altri):
 <PAPERS_BLOCK>
 
@@ -45,9 +39,11 @@ Vincoli:
 - Non inventare etichette: usa solo quelle dei passaggi forniti sopra"""
 
 
-# Un paper d'esempio fisso: con lui anche la forma della sezione dei paper entra nella versione del prompt.
+# Un paper, una situazione e una durata d'esempio fissi: con loro anche la forma della sezione dei paper
+# entra nella versione del prompt. Quota dura sconosciuta: la regola della ripresa, con i tre giorni Z2.
 VERSION_SAMPLE = {"pmid": "1", "authors": "Autori", "year": "2000", "title": "Titolo.",
                   "passages": [{"label": "PMID:1 §1", "text": "Passaggio."}]}
+VERSION_CONTEXT, VERSION_MINUTES = {"tsb": 0, "polarizzazione": {"hardPct": None}}, 60
 
 
 def paper_entry(p: dict) -> str:
@@ -56,19 +52,28 @@ def paper_entry(p: dict) -> str:
     return f"[PMID:{p['pmid']}] {js_str(p['authors'])} {js_str(p['year'])}. {js_str(p['title'])}\n{passages}"
 
 
-def system_prompt(papers: list) -> str:
-    protocol_list = "\n".join(f"- {pid}: {proto.name}" for pid, proto in PROTOCOLS.items())
+def system_prompt(papers: list, ctx: dict, duration: int) -> str:
+    """Il prompt di sistema per la situazione di oggi: solo i protocolli che la regola di selezione
+    ammette nei minuti, la regola con la sua fonte, le differenze tra i Z2 ammessi, e i paper."""
+    rule, allowed = select(ctx, duration)
+    protocol_list = "\n".join(f"- {pid}: {PROTOCOLS[pid].name}" for pid in allowed)
+    z2 = [f"- {pid}: {Z2_DIFFERENCES[pid]}" for pid in allowed if pid in Z2_DIFFERENCES]
+    z2_block = ("\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n" + "\n".join(z2) + "\n") if z2 else ""
     papers_block = "\n\n".join(paper_entry(p) for p in papers)
     # I paper vanno inseriti per ultimi: un passaggio potrebbe contenere "<PROTOCOL_LIST>".
-    return (SYSTEM_TEMPLATE.replace("<PROTOCOL_LIST>", protocol_list).replace("<SELECTION_RULES>", RULES_SECTION)
+    return (SYSTEM_TEMPLATE.replace("<PROTOCOL_LIST>", protocol_list)
+            .replace("<SELECTION_RULES>", rule.sentence(allowed)).replace("<Z2_DIFFERENCES>", z2_block)
             .replace("<PAPERS_BLOCK>", papers_block))
 
 
 def prompt_version() -> str:
-    """Le prime 8 cifre dell'impronta SHA-256 del prompt di sistema con il paper d'esempio: lo
-    stesso testo dà sempre la stessa versione, due testi diversi mai la stessa (salvo una
-    coincidenza su quattro miliardi). Così i risultati di due prompt non si confondono."""
-    return hashlib.sha256(system_prompt([VERSION_SAMPLE]).encode("utf-8")).hexdigest()[:8]
+    """Le prime 8 cifre dell'impronta SHA-256 del prompt di sistema d'esempio, di ogni regola di
+    selezione e del nome di ogni protocollo: il prompt d'esempio ne mostra solo uno, ma ognuno può
+    finire in un prompt. Lo stesso testo dà sempre la stessa versione, due testi diversi mai la stessa
+    (salvo una coincidenza su quattro miliardi). Così i risultati di due prompt non si confondono."""
+    text = "\n".join([system_prompt([VERSION_SAMPLE], VERSION_CONTEXT, VERSION_MINUTES),
+                      *(rule.sentence() for rule in RULES), *(f"{pid}: {p.name}" for pid, p in PROTOCOLS.items())])
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:8]
 
 
 def or_dash(value) -> str:

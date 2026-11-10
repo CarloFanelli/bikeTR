@@ -1,7 +1,7 @@
 """Dati dei test letti da fixtures/: attività, profili e stream inventati, e i risultati
-del codice del browser (reference/make_reference.mjs), con le regole di selezione e i passaggi
-dei paper del servizio al posto delle regole e degli abstract del browser, e la query di ricerca
-del browser seguita dai protocolli che le regole ammettono."""
+del codice del browser (reference/make_reference.mjs), con i protocolli e la regola di selezione
+ammessi oggi e i passaggi dei paper del servizio al posto del catalogo, delle regole e degli abstract
+del browser, e la query di ricerca del browser seguita dai protocolli che le regole ammettono."""
 
 import json
 from pathlib import Path
@@ -53,17 +53,11 @@ def service_query(browser: str, ctx: dict, minutes: int) -> str:
     return " ".join([browser, *(PROTOCOLS[pid].name for pid in select(ctx, minutes)[1])])
 
 
-def rules_section(text: str) -> str:
-    """Dalle regole di selezione fino alla spiegazione dei protocolli Z2."""
-    return text[text.index("REGOLE DI SELEZIONE"):text.index("DIFFERENZE TRA PROTOCOLLI Z2")]
-
-
-def with_service_sections(browser: str, papers: list) -> str:
-    """Il prompt di sistema del browser con le regole del servizio al posto delle sue otto, senza la
-    sua regola negativa, e dai paper in fondo quello del servizio: i paper con i loro passaggi al posto
-    degli abstract, e la risposta che cita i passaggi per etichetta. Il resto resta carattere per
-    carattere quello del browser."""
-    papers_title = "PAPER SCIENTIFICI RECUPERATI"
-    service = system_prompt(papers)
-    browser = browser[:browser.index("REGOLA NEGATIVA")] + service[service.index(papers_title):]
-    return browser.replace(rules_section(browser), rules_section(service))
+def with_service_sections(browser: str, papers: list, ctx: dict, minutes: int) -> str:
+    """Il prompt di sistema del browser con quello del servizio dal catalogo dei protocolli in poi: i
+    protocolli e la regola di selezione ammessi oggi, le differenze tra i Z2 ammessi, i paper con i loro
+    passaggi al posto degli abstract, e la risposta che cita i passaggi per etichetta. L'inizio resta
+    carattere per carattere quello del browser."""
+    catalog = "CATALOGO PROTOCOLLI"
+    service = system_prompt(papers, ctx, minutes)
+    return browser[:browser.index(catalog)] + service[service.index(catalog):]

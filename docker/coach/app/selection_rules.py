@@ -35,8 +35,9 @@ class Rule:
                 and (self.minutes_below is None or minutes < self.minutes_below)
                 and (self.minutes_from is None or minutes >= self.minutes_from))
 
-    def sentence(self) -> str:
-        """La regola in italiano, con i nomi che il modello vede nel prompt (TSB, hard, durata)."""
+    def sentence(self, protocols: list[str] | None = None) -> str:
+        """La regola in italiano, con i nomi che il modello vede nel prompt (TSB, hard, durata); con
+        `protocols`, solo quelli al posto di tutti i protocolli della regola."""
         when = []
         if self.tsb_below is not None:
             when.append(f"TSB sotto {self.tsb_below:+d}")
@@ -53,10 +54,10 @@ class Rule:
         if self.minutes_from is not None:
             when.append(f"durata da {self.minutes_from} minuti in su")
         condition = " e ".join(when) if when else "in tutti gli altri casi"
-        *others, last = self.protocols
-        protocols = f"{', '.join(others)} o {last}" if others else last
+        *others, last = self.protocols if protocols is None else protocols
+        listed = f"{', '.join(others)} o {last}" if others else last
         source = f"[PMID:{self.source_pmid}]" if self.source_pmid else "[pratica]"
-        return f"{condition[0].upper()}{condition[1:]}: {protocols} {source}"
+        return f"{condition[0].upper()}{condition[1:]}: {listed} {source}"
 
 
 Z2_DAYS = ("z2_endurance", "z2_cadence_drills", "z2_progressive")
