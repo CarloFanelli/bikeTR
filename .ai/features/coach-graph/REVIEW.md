@@ -1,14 +1,14 @@
 ---
 feature: coach-graph
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-10
-head: 018cc1ebcc73c4d40ed499a23b68b8e4cfbc6551
+head: 3036ab99171b59416e406019fb4e33fb82788bb4
 ---
 
 # Review — coach-graph
 
 **Scope**: 33 files (primary — diff since base `5f8edc05`; 12 workflow artifacts under `.ai/` excluded)
-**Findings**: 0 must-fix · 3 should-fix · 7 nit
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
@@ -66,4 +66,4 @@ head: 018cc1ebcc73c4d40ed499a23b68b8e4cfbc6551
 
 ## Runtime observations
 
-- Gates skipped: no gate command in CLAUDE.md (there is no CLAUDE.md). The coach suite (761 tests) and the web `npm run check` were green at the end of `/dev`.
+- Gates skipped: no gate command in CLAUDE.md (there is no CLAUDE.md). After the fixes the full coach suite (764 tests) is green, and the web `npm run check` was green at the end of `/dev`.
