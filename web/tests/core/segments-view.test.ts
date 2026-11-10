@@ -23,8 +23,8 @@ describe('previsioni sui segmenti', () => {
     const cards = predictionCards([slower, steady, faster], null);
     expect(cards.map(c => c.name)).toEqual(['<b>Muro</b> & "co" 🚴', 'Piano', 'Strappo']);
     expect(cards[0]).toMatchObject({
-      id: 1, meta: '2.35 km · 142m · 6.0%', pr: '9m', last: '9m', attempts: 4,
-      trend: { kind: 'good', text: '−7.0 s/sett' }, predicted: '9m', vsBest: 'possibile nuovo PR 🔥', formAdj: null, best: 598,
+      id: 1, meta: '2.35 km · 142m · 6.0%', pr: '9:58', last: '9:58', attempts: 4,
+      trend: { kind: 'good', text: '−7.0 s/sett' }, predicted: '9:44', vsBest: 'possibile nuovo PR 🔥', formAdj: null, best: 598,
     });
     expect(cards[1]).toMatchObject({ meta: '2.35 km · 142m · —', trend: { kind: 'neutral', text: '→ stabile' } });
     expect(cards[2]).toMatchObject({ trend: { kind: 'bad', text: '+2.0 s/sett' }, vsBest: '+6s da PR' });
@@ -58,7 +58,7 @@ describe('workout mirati', () => {
       segmentStats: { name: 'x', prTime: 600, targetTime: 590, bestWatts: 280, targetWatts: null, distance: 2346, grade: 6.04, attempts: 4, recentTrend: -2 },
     } as SegmentWorkout;
     expect(workoutCards([{ segment: seg(1, '<i>Salita</i>'), workout }])).toEqual([{
-      id: 1, name: '<i>Salita</i>', target: 'PR 10m → target 9m', detail: 'd', reason: 'r',
+      id: 1, name: '<i>Salita</i>', target: 'PR 10:00 → target 9:50', detail: 'd', reason: 'r',
       rows: [['Distanza', '2.35 km'], ['Pendenza', '6.0%'], ['Tentativi', '4'], ['Trend', '📈 in miglioramento'], ['Best W', '280W']],
     }]);
   });

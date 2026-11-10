@@ -1,7 +1,7 @@
 // Segmenti preferiti: stime di FTP e soglia dai tentativi, previsione del prossimo
 // tempo (regressione lineare) e allenamenti mirati a un segmento.
 
-import { fmtTime } from './format.ts';
+import { fmtClock } from './format.ts';
 import type { Segment, SegmentEffort } from './strava-types.ts';
 
 // I dati del segmento salvati con i suoi tentativi.
@@ -310,19 +310,19 @@ export function segmentTargetedWorkout(
     const reps = Math.max(4, Math.round(segMinutes * 1.5));
     workout = {
       title: `🎯 Specifico per "${seg.name}" (${segMinutes.toFixed(0)}')`,
-      detail: `Obiettivo: migliorare il PR di ${fmtTime(segDuration)} → ${fmtTime(targetTime)}.
+      detail: `Obiettivo: migliorare il PR di ${fmtClock(segDuration)} → ${fmtClock(targetTime)}.
 Risc 20'.
 ${reps}×${Math.round(segMinutes)}' @ intensità gara segmento${targetWatts ? ` (~${targetWatts}W)` : ''}, rec ${Math.round(segMinutes)}' Z1.
 Simula: pendenza ${segGrade}% · distanza ${segKm.toFixed(1)} km.
 Defat 10'. Totale ~${20 + reps * segMinutes * 2 + 10} min.`,
-      reason: `Ripetute alla durata esatta del segmento target. L'obiettivo è abituare il corpo a sostenere la potenza necessaria per ${fmtTime(targetTime)}.`,
+      reason: `Ripetute alla durata esatta del segmento target. L'obiettivo è abituare il corpo a sostenere la potenza necessaria per ${fmtClock(targetTime)}.`,
     };
   } else if (segMinutes <= 15) {
     // Segmento medio: lavoro soglia/VO2 specifico
     const reps = Math.max(3, Math.round(15 / segMinutes));
     workout = {
       title: `🎯 Specifico per "${seg.name}" (${segMinutes.toFixed(0)}')`,
-      detail: `Obiettivo: migliorare il PR di ${fmtTime(segDuration)} → ${fmtTime(targetTime)}.
+      detail: `Obiettivo: migliorare il PR di ${fmtClock(segDuration)} → ${fmtClock(targetTime)}.
 Risc 20'.
 ${reps}×${Math.round(segMinutes * 0.8)}' @ 100-105% della potenza gara${targetWatts ? ` (~${Math.round(targetWatts * 1.02)}W)` : ''}, rec ${Math.max(3, Math.round(segMinutes * 0.4))}' Z1.
 Finale: 1×${Math.round(segMinutes)}' simulazione completa (ritmo gara). Pendenza target: ${segGrade}%.
@@ -334,7 +334,7 @@ Defat 10'. Totale ~${30 + reps * segMinutes * 1.2 + segMinutes + 10} min.`,
     const blockMin = Math.round(segMinutes / 3);
     workout = {
       title: `🎯 Specifico per "${seg.name}" (${segMinutes.toFixed(0)}')`,
-      detail: `Obiettivo: migliorare il PR di ${fmtTime(segDuration)} → ${fmtTime(targetTime)}.
+      detail: `Obiettivo: migliorare il PR di ${fmtClock(segDuration)} → ${fmtClock(targetTime)}.
 Risc 20'.
 Blocco 1: 3×${blockMin}' @ 95% della potenza gara${targetWatts ? ` (~${Math.round(targetWatts * 0.95)}W)` : ''}, rec ${Math.max(3, Math.round(blockMin * 0.3))}' Z1.
 Blocco 2 (se senti le gambe): 1×${Math.round(segMinutes * 0.6)}' progressione da 90% a 105% potenza gara.

@@ -3,7 +3,7 @@
 // autenticazione spento) si salva quanto scaricato, ci si ferma e si lancia l'errore.
 
 import type { SegmentCache, SegmentEntry } from '../core/segments.ts';
-import type { Activity, SegmentEffort } from '../core/strava-types.ts';
+import type { Activity, Segment, SegmentEffort } from '../core/strava-types.ts';
 import { AuthError } from './auth.ts';
 import { loadSegmentCache, saveSegmentCache } from './storage.ts';
 import { fetchActivity, fetchSegmentEfforts, fetchStarredSegments, sleep, StravaError } from './strava.ts';
@@ -41,6 +41,7 @@ export async function loadSegmentPredictions(
     const ttl = cached?.efforts?.length ? CACHE_TTL_OK : CACHE_TTL_EMPTY;
     if (cached?.efforts && now - (cached._fetched ?? 0) < ttl) {
       diag.fromCache++;
+      cached.efforts = withPr(seg, cached.efforts);
       if (cached.efforts.length > 0) {
         list.push({ segment: seg, efforts: cached.efforts });
         diag.withEfforts++;
@@ -50,7 +51,7 @@ export async function loadSegmentPredictions(
       continue;
     }
     try {
-      const efforts = await fetchSegmentEfforts(seg.id);
+      const efforts = withPr(seg, merged(await fetchSegmentEfforts(seg.id), cached?.efforts ?? []));
       cache[seg.id] = {
         efforts, _fetched: now, _segment: {
           average_grade: seg.average_grade, elevation_difference: (seg.elevation_high ?? 0) - (seg.elevation_low ?? 0),
@@ -77,6 +78,21 @@ export async function loadSegmentPredictions(
   }
   saveSegmentCache(cache);
   return { list, diag };
+}
+
+// Strava non elenca i tentativi delle uscite visibili solo ai follower: quelli già salvati (da
+// "Completa da dettagli attività") restano, e il PR che Strava indica sul preferito si aggiunge
+// se manca.
+const merged = (fresh: SegmentEffort[], saved: SegmentEffort[]): SegmentEffort[] =>
+  [...fresh, ...saved.filter(s => !fresh.some(f => f.id === s.id))];
+
+function withPr(seg: Segment, efforts: SegmentEffort[]): SegmentEffort[] {
+  const pr = seg.athlete_pr_effort;
+  if (!pr || efforts.some(e => e.id === pr.id)) return efforts;
+  // Del PR Strava dà solo il tempo totale: vale anche come tempo in movimento.
+  return [...efforts, {
+    id: pr.id, elapsed_time: pr.elapsed_time, moving_time: pr.elapsed_time, start_date: pr.start_date, distance: pr.distance,
+  }];
 }
 
 // Aggiunge ai preferiti i tentativi letti nei dettagli delle uscite in bici: costa una

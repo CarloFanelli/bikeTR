@@ -1,7 +1,7 @@
 // Testi e numeri delle previsioni sui segmenti preferiti e dei workout mirati. I nomi
 // dei segmenti restano come li ha scritti l'atleta: le schermate li mostrano come testo.
 
-import { fmtTime } from './format.ts';
+import { fmtClock } from './format.ts';
 import { computePrediction, type FormContext, type Point, type SegmentEntry, type SegmentWorkout } from './segments.ts';
 import type { Segment } from './strava-types.ts';
 
@@ -40,14 +40,14 @@ export function predictionCards(list: SegmentEntry[], formCtx: FormContext | nul
           (e.segment.average_grade != null ? e.segment.average_grade.toFixed(1) + '%' : '—'),
         points: p.points,
         best: p.best.elapsed_time,
-        pr: fmtTime(p.best.elapsed_time),
-        last: fmtTime(p.last.elapsed_time),
+        pr: fmtClock(p.best.elapsed_time),
+        last: fmtClock(p.last.elapsed_time),
         attempts: p.attempts,
         trend: {
           kind: trend < -0.5 ? 'good' : trend > 0.5 ? 'bad' : 'neutral',
           text: trend < -0.1 ? `−${Math.abs(trend).toFixed(1)} s/sett` : trend > 0.1 ? `+${trend.toFixed(1)} s/sett` : '→ stabile',
         },
-        predicted: fmtTime(p.predictedForm),
+        predicted: fmtClock(p.predictedForm),
         vsBest: predDelta > 0 ? `+${Math.round(predDelta)}s da PR` : 'possibile nuovo PR 🔥',
         formAdj: Math.abs(formDelta) < 1 ? null
           : formDelta < 0 ? { good: true, text: `forma: −${Math.abs(Math.round(formDelta))}s` }
@@ -68,7 +68,7 @@ export function workoutCards(workouts: { segment: Segment; workout: SegmentWorko
       ...(s.targetWatts ? [['Target W', `${s.targetWatts}W`] as [string, string]] : []),
     ];
     return {
-      id: segment.id, name: segment.name, target: `PR ${fmtTime(s.prTime)} → target ${fmtTime(s.targetTime)}`,
+      id: segment.id, name: segment.name, target: `PR ${fmtClock(s.prTime)} → target ${fmtClock(s.targetTime)}`,
       rows, detail: workout.detail, reason: workout.reason,
     };
   });

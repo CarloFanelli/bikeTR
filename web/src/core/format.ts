@@ -15,6 +15,16 @@ export function fmtTime(seconds: number): string {
   return h ? `${h}h ${m}m` : `${m}m`;
 }
 
+// Tempi di segmenti e km all'orologio, con i secondi: "9:58", "1:02:03". I tempi dei segmenti
+// differiscono di pochi secondi: "9m" li renderebbe tutti uguali.
+export function fmtClock(seconds: number): string {
+  const total = Math.round(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const ss = String(total % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
+}
+
 // "07 mag 2026"; con `year: '2-digit'` "07 mag 26".
 export function fmtDate(date: DateInput, { year = 'numeric' }: { year?: 'numeric' | '2-digit' } = {}): string {
   return new Date(date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year });

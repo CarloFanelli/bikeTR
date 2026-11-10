@@ -61,6 +61,36 @@ describe('previsioni sui segmenti preferiti', () => {
     });
   });
 
+  it('il PR che Strava indica sul preferito si aggiunge quando manca dai tentativi', async () => {
+    // Strava non elenca i tentativi delle uscite visibili solo ai follower, ma il PR sì.
+    store.set('biketr_segments_cache_v2', JSON.stringify({ 2: { efforts: [effort(1)], _fetched: NOW - HOUR } }));
+    const pr = { id: 99, activity_id: 7, elapsed_time: 2941, distance: 10106.2, start_date: '2026-09-26T11:52:54Z' };
+    vi.mocked(fetchStarredSegments).mockResolvedValue([
+      { ...seg(1), athlete_pr_effort: pr }, { ...seg(2), athlete_pr_effort: { ...pr, id: 98 } },
+      { ...seg(3), athlete_pr_effort: { ...pr, id: 5, elapsed_time: 405 } },
+    ]);
+    vi.mocked(fetchSegmentEfforts).mockImplementation(async (id) => (id === 1 ? [effort(4)] : [effort(5)]));
+    const run = loadSegmentPredictions();
+    await vi.runAllTimersAsync();
+    const { list } = await run;
+    expect(list.map((e) => e.efforts.map((x) => [x.id, x.elapsed_time]))).toEqual([
+      [[4, 404], [99, 2941]], [[1, 401], [98, 2941]], [[5, 405]],
+    ]);
+    expect(list[0].efforts[1]).toMatchObject({ start_date: '2026-09-26T11:52:54Z', distance: 10106.2, moving_time: 2941 });
+    expect(loadSegmentCache()[1].efforts?.map((e) => e.id)).toEqual([4, 99]);
+  });
+
+  it('scaricando di nuovo si tengono i tentativi già salvati che Strava non elenca', async () => {
+    store.set('biketr_segments_cache_v2', JSON.stringify({ 1: { efforts: [effort(1), effort(2)], _fetched: NOW - 25 * HOUR } }));
+    vi.mocked(fetchStarredSegments).mockResolvedValue([seg(1)]);
+    vi.mocked(fetchSegmentEfforts).mockResolvedValue([{ ...effort(2), elapsed_time: 500 }, effort(3)]);
+    const run = loadSegmentPredictions();
+    await vi.runAllTimersAsync();
+    const { list } = await run;
+    expect(list[0].efforts.map((e) => [e.id, e.elapsed_time])).toEqual([[2, 500], [3, 403], [1, 401]]);
+    expect(loadSegmentCache()[1].efforts?.map((e) => e.id)).toEqual([2, 3, 1]);
+  });
+
   it('un segmento che fallisce finisce nella lista degli errori col suo nome e si riprova la volta dopo', async () => {
     vi.mocked(fetchStarredSegments).mockResolvedValue([seg(1, '<b>Muro</b> & "co"'), seg(2)]);
     vi.mocked(fetchSegmentEfforts).mockRejectedValueOnce(new StravaError('API x: 500', 500)).mockResolvedValue([effort(5)]);
