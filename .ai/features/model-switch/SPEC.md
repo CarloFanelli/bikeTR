@@ -2,7 +2,7 @@
 feature: model-switch
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: 02f2edf7e37991bb50492db607a3e101224e6a0a
 ---
 
