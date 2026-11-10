@@ -19,12 +19,11 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
-from app import papers
-from app.jscompat import js_round, js_str
+from app.jscompat import js_round
 from app.live_check import money
 from app.protocols import PROTOCOLS
 from app.selection_rules import RULES
-from app.check import read_draft
+from app.check import cited, not_given, read_draft
 
 PROJECT_DIR = Path("/project")
 SITUATIONS_FILE = Path(__file__).resolve().parents[1] / "evaluation" / "situations.json"
@@ -61,26 +60,14 @@ class Scores:
     not_run: list[str]
 
 
-def cited_in(parsed: dict | None, model_raw: str) -> set[tuple[str, int | None]]:
-    """Le citazioni della risposta, ognuna una volta: le voci della lista dei passaggi usati
-    (paperUsati nei file di prima dei passaggi) e ogni etichetta o PMID scritti nel testo, razionale
-    compreso. (PMID, numero del passaggio), o (PMID, None) per un paper senza passaggio. Il razionale
-    si legge anche decodificato: nel testo grezzo il JSON può scrivere "§" come \\u00a7."""
-    lists = [parsed.get(key) for key in ("passaggiUsati", "paperUsati")] if parsed else []
-    text = f"{model_raw}\n{js_str(parsed.get('razionale'))}" if parsed else model_raw
-    return set(papers.citations([e for listed in lists if isinstance(listed, list) for e in listed], text))
-
-
-def invented(cited: set[tuple[str, int | None]], answer: dict) -> bool:
+def invented(citations: list[tuple[str, int | None]], answer: dict) -> bool:
     """Una citazione che il modello non ha ricevuto: un'etichetta fuori dai passaggi dati, o il PMID
     di un paper non dato e non fonte di una regola. Un file di prima dei passaggi non registra i
     passaggi dati: si contano solo i PMID, come allora."""
     pmids_given = {p["pmid"] for p in answer["papersFound"]} | RULE_SOURCES
     if "passagesFound" not in answer:
-        return any(pmid not in pmids_given for pmid, _ in cited)
-    labels_given = {s["label"] for s in answer["passagesFound"]}
-    return any(papers.label(pmid, number) not in labels_given if number is not None else pmid not in pmids_given
-               for pmid, number in cited)
+        return any(pmid not in pmids_given for pmid, _ in citations)
+    return bool(not_given(citations, {s["label"] for s in answer["passagesFound"]}, pmids_given))
 
 
 def search_score(situations: list[dict], found: dict[str, set[str]]) -> tuple[int, int]:
@@ -110,10 +97,10 @@ def grade(run: dict, situations: list[dict]) -> Scores:
     for a in answered:
         parsed, choice = read_draft(a["modelRaw"], a["truncated"])
         given = {p["pmid"] for p in a["papersFound"]}
-        cited = cited_in(parsed, a["modelRaw"])
+        citations = cited(parsed, a["modelRaw"])
         count["followed"] += choice in allowed[a["situation"]]
         count["readable"] += parsed is not None
-        count["invented"] += invented(cited, a)
+        count["invented"] += invented(citations, a)
         count["fallback"] += a["fellBack"]
         # Il paper di supporto del protocollo scelto dal modello; i protocolli di pratica non ne hanno.
         source = PROTOCOLS[choice].source_pmid if choice in PROTOCOLS else None
@@ -121,7 +108,7 @@ def grade(run: dict, situations: list[dict]) -> Scores:
             count["supported"] += 1
             if source in given:
                 count["given"] += 1
-                count["cited"] += source in {pmid for pmid, _ in cited}
+                count["cited"] += source in {pmid for pmid, _ in citations}
     # La ricerca è la stessa a ogni ripetizione: ogni situazione conta una volta, con i paper della
     # sua prima risposta riuscita. Una risposta fallita non registra paper trovati.
     found = {}

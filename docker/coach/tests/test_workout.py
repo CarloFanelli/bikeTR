@@ -18,22 +18,34 @@ from app.errors import CoachError
 from app.jscompat import js_str
 from app.papers import PaperIndexError
 from app.protocols import PROTOCOLS
-from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, INDEX, FakeCloud, FakeOllama, FakeRides, FakeSearch, fixture_index
+from app.selection_rules import select
+from fakes import (CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, INDEX, FakeCloud, FakeOllama, FakeRides, FakeSearch, fixture_clock,
+                   fixture_index)
 from fixture_data import NOW_MS, RIDES, activities, case_context, load, scenario, service_query, with_service_sections
 
 CASES = load("coach_cases.json")
 EXPECTED = load("coach_expected.json")
 CASE = {c["name"]: c for c in CASES["cases"]}
+
+
+def allowed_answer(case: dict) -> str:
+    """Una risposta che il controllo accetta nella situazione del caso: il primo protocollo che la regola
+    di oggi ammette, citando il primo passaggio dato al modello."""
+    label = papers.top_papers(INDEX, CASES["queries"][case["query"]])[0]["passages"][0]["label"]
+    protocol_id = select(case_context(case), case["duration"])[1][0]
+    return json.dumps({"protocolId": protocol_id, "razionale": f"Forma bassa, serve recupero [{label}].",
+                       "passaggiUsati": [label]}, ensure_ascii=False)
+
+
+# La risposta valida del browser sceglie 4×8 Seiler in un giorno di recupero e cita un PMID che il modello
+# non ha ricevuto: il controllo la rimanda. Le prove del servizio usano la stessa situazione con una
+# risposta che il controllo accetta.
+CASE["allowed-answer"] = {**CASE["valid-answer"], "name": "allowed-answer", "answer": allowed_answer(CASE["valid-answer"])}
 WORKOUT_CASES = [c for c in CASES["cases"] if "built" in EXPECTED["cases"][c["name"]]]
-# Il browser aggiungeva ai paper citati la fonte del protocollo, che qui era un paper su altro
-# (20861519); il paper di supporto che la sostituisce non è nell'indice di prova.
-# I paper citati che il servizio dà diversi dal browser. Il browser prendeva la lista paperUsati, con i
-# doppioni; il servizio legge passaggiUsati e il razionale, ogni paper una volta: della risposta valida
-# resta il paper citato nel razionale.
-SERVICE_PAPER_REFS = {"json-in-text": [], "valid-answer": ["20861519"]}
-# Il browser dava Z2 a un protocollo troppo lungo per i minuti, con razionale e paper del modello;
-# qui ha il workout di una risposta illeggibile nella stessa situazione.
-TOO_LONG = {"too-short", "too-short-keeps-source"}
+# Il browser dava Z2 a un protocollo troppo lungo per i minuti, e prendeva un protocollo che la regola di
+# oggi non ammette; qui il controllo rimanda la risposta, e con la stessa risposta a ogni bozza si ha il
+# workout di una risposta illeggibile nella stessa situazione.
+SENT_BACK = {"too-short", "too-short-keeps-source", "valid-answer", "json-in-text", "source-already-cited"}
 SAME_ORIGIN = {"Sec-Fetch-Site": "same-origin"}
 BODY = {"duration": 60, "timeZone": "Europe/Rome", "profile": RIDES["profiles"]["base"]}
 
@@ -96,13 +108,13 @@ def chat_request(fake: FakeOllama | FakeCloud, messages: list) -> None:
 @pytest.mark.parametrize("case", WORKOUT_CASES, ids=lambda c: c["name"])
 def test_model_answer_gives_the_browser_workout(case, provider):
     exp, fake, finder = EXPECTED["cases"][case["name"]], fake_model(provider, case), fake_search(case)
-    if case["name"] in TOO_LONG:
+    if case["name"] in SENT_BACK:
         exp = {**exp, **workout_of_an_unreadable_answer(case, provider)}
     result = asyncio.run(run_case(case, fake, finder=finder))[-1]
     assert result["type"] == "result"
     assert {k: result[k] for k in ("title", "targetWatt", "struttura")} == exp["built"]
     assert result["razionale"] == js_str(exp["razionale"])
-    assert [p["pmid"] for p in result["paperRefs"]] == SERVICE_PAPER_REFS.get(case["name"], exp["paperRefs"])
+    assert [p["pmid"] for p in result["paperRefs"]] == exp["paperRefs"]
     # Gli stessi paper del browser: nell'indice di prova i passaggi di un paper hanno il suo vettore.
     assert [p["pmid"] for p in result["retrievedPapers"]] == [p["pmid"] for p in exp["retrieved"]]
     assert result["fellBack"] == exp["fellBack"]
@@ -113,8 +125,11 @@ def test_model_answer_gives_the_browser_workout(case, provider):
     chat_request(fake, [{**system, "content": with_service_sections(system["content"], found)}, user])
 
 
-# Quanto basta a decide: FTP per i watt, forma e quota dura per la scelta di ripiego.
+# Quanto basta a decide: FTP per i watt, forma e quota dura per la regola di oggi e la scelta di ripiego.
+# Forma 0 e 20% di lavoro duro: la regola base, che ammette sweet spot, soglia, tempo e cadenze Z2.
 CONTEXT = {"ftp": 250, "tsb": 0, "polarizzazione": {"hardPct": 20}}
+# Forma +12: la regola "fresco", che ammette Seiler, Rønnestad e Over-Under.
+FRESH = {**CONTEXT, "tsb": 12}
 
 
 def index_with_supporting_paper(protocol_id: str, index: dict = INDEX) -> tuple[dict, str]:
@@ -132,9 +147,9 @@ def test_a_protocol_too_long_for_the_minutes_gets_the_choice_of_the_fallback_rul
 
 
 @pytest.mark.parametrize("duration, protocol_id, fell_back", [(64, "over_under", False),
-                                                              (63, "sweet_spot_3x15", True)])
+                                                              (63, "seiler_4x8", True)])
 def test_a_protocol_fits_from_its_minimum_minutes(duration, protocol_id, fell_back):
-    result = workout.decide('{"protocolId":"over_under","razionale":"x","passaggiUsati":[]}', CONTEXT, duration, INDEX,
+    result = workout.decide('{"protocolId":"over_under","razionale":"x","passaggiUsati":[]}', FRESH, duration, INDEX,
                             [])
     assert (result["protocolId"], result["fellBack"]) == (protocol_id, fell_back)
 
@@ -148,11 +163,12 @@ def test_a_protocol_too_long_cites_the_supporting_paper_of_the_protocol_given():
     assert (result["protocolId"], [p["pmid"] for p in result["paperRefs"]]) == ("z2_endurance", [given_source])
 
 
-def test_a_protocol_that_fits_is_used_even_when_the_selection_rule_does_not_allow_it():
-    # Forma 0 e 20% di lavoro duro: la regola base non ammette Rønnestad, ma entra in 60 minuti.
+def test_a_protocol_that_fits_but_the_rule_of_today_does_not_allow_gets_the_choice_of_the_fallback_rules():
+    # La regola base non ammette Rønnestad, anche se entra in 60 minuti.
     result = workout.decide('{"protocolId":"ronnestad_30_15","razionale":"x","passaggiUsati":[]}', CONTEXT, 60, INDEX,
                             [])
-    assert (result["protocolId"], result["fellBack"]) == ("ronnestad_30_15", False)
+    assert (result["protocolId"], result["fellBack"], result["fallbackCause"]) == ("sweet_spot_3x15", True,
+                                                                                  "not_allowed")
 
 
 UNREADABLE = "⚠️ La risposta del modello non era leggibile: il Coach ha scelto con le regole di selezione."
@@ -180,16 +196,19 @@ NOT_IN_CATALOG = ("⚠️ Il modello non ha indicato un protocollo del catalogo:
      "almeno 55 minuti: con 40 minuti il Coach ha scelto con le regole di selezione."),
     ('{"protocolId":"tempo_2x20","razionale":"x"}', 59, "⚠️ Il modello ha scelto Tempo 2×20', che richiede almeno 60 "
      "minuti: con 59 minuti il Coach ha scelto con le regole di selezione."),
-    ('{"protocolId":"seiler_4x8","razionale":"x","passaggiUsati":[]}', 60, None),
+    ('{"protocolId":"seiler_4x8","razionale":"x","passaggiUsati":[]}', 60, "⚠️ Il modello ha scelto Seiler 4×8' "
+     "(FTP/VO2), che non è ammesso oggi: il Coach ha scelto con le regole di selezione."),
+    ('{"protocolId":"sweet_spot_3x15","razionale":"x","passaggiUsati":[]}', 60, None),
 ])
 def test_the_warning_says_why_the_fallback_rules_chose(answer, duration, warning):
     assert workout.decide(answer, CONTEXT, duration, INDEX, [])["fallbackWarning"] == warning
 
 
 def test_supporting_paper_already_cited_by_the_model_is_not_repeated():
-    index, pmid = index_with_supporting_paper("seiler_4x8")
+    source = found_paper("seiler_4x8", 0.5)
+    index, pmid = {**INDEX, "papers": [*INDEX["papers"], source]}, source["pmid"]
     answer = f'{{"protocolId":"seiler_4x8","razionale":"Forma buona [PMID:{pmid}].","passaggiUsati":["{pmid}"]}}'
-    result = workout.decide(answer, CONTEXT, 60, index, [])
+    result = workout.decide(answer, FRESH, 60, index, [source])
     assert (result["protocolId"], [p["pmid"] for p in result["paperRefs"]]) == ("seiler_4x8", [pmid])
 
 
@@ -218,13 +237,23 @@ def test_each_cited_paper_is_shown_once_with_its_cited_passages_quoted_in_label_
                                       "passages": [{"label": s["label"], "text": s["text"]} for s in first["passages"]]}
 
 
-def test_a_label_not_given_to_the_model_never_reaches_the_card():
+def test_citations_not_given_to_the_model_are_dropped_and_the_protocol_and_rationale_are_kept():
     pmid, given = RETRIEVED[0]["pmid"], {s["label"] for s in RETRIEVED[0]["passages"]}
     in_index = next(p for p in INDEX["papers"] if p["pmid"] == pmid)
     not_given = next(s["label"] for s in in_index["passages"] if s["label"] not in given)
-    answer = cite(not_given, f"PMID:{pmid} §99", "PMID:99999999 §1", rationale="Forma alta [PMID:99999999].")
-    # Il paper dato resta citato, senza i passaggi che il modello non ha ricevuto; quello fuori dall'indice sparisce.
-    assert card(workout.decide(answer, CONTEXT, 60, INDEX, RETRIEVED)) == [(pmid, [])]
+    kept = RETRIEVED[1]["passages"][0]["label"]
+    answer = cite(not_given, f"PMID:{pmid} §99", "PMID:99999999 §1", kept, rationale="Forma alta [PMID:99999999].")
+    result = workout.decide(answer, CONTEXT, 60, INDEX, RETRIEVED)
+    assert (result["protocolId"], result["razionale"], result["fellBack"]) == ("sweet_spot_3x15", "Forma alta "
+                                                                               "[PMID:99999999].", False)
+    assert card(result) == [(RETRIEVED[1]["pmid"], [kept])]
+    assert result["citationsDropped"] == [not_given, f"PMID:{pmid} §99", "PMID:99999999 §1", "PMID:99999999"]
+
+
+def test_an_answer_breaking_the_rule_and_inventing_citations_gets_the_fallback_rules():
+    answer = cite("PMID:99999999 §1", protocol="seiler_4x8")
+    result = workout.decide(answer, CONTEXT, 60, INDEX, RETRIEVED)
+    assert (result["fellBack"], result["fallbackCause"], result["citationsDropped"]) == (True, "not_allowed", [])
 
 
 def found_paper(protocol_id: str, *scores: float, **fields) -> dict:
@@ -237,7 +266,7 @@ def found_paper(protocol_id: str, *scores: float, **fields) -> dict:
 
 
 @pytest.mark.parametrize("answer, ctx, protocol_id", [
-    (cite(protocol="seiler_4x8"), CONTEXT, "seiler_4x8"),
+    (cite(protocol="seiler_4x8"), FRESH, "seiler_4x8"),
     # Risposta illeggibile, atleta un po' stanco: le regole di ripiego danno Z2, e si aggiunge il suo paper.
     ("", {**CONTEXT, "tsb": -12}, "z2_endurance"),
 ], ids=["model-choice", "fallback-rules"])
@@ -256,17 +285,17 @@ def test_a_quoted_full_text_carries_its_license_and_an_abstract_does_not():
     index = {**INDEX, "papers": [*INDEX["papers"], full]}
     abstract = RETRIEVED[0]
     answer = cite(abstract["passages"][0]["label"], f"PMID:{full['pmid']} §1", protocol="seiler_4x8")
-    refs = {p["pmid"]: p for p in workout.decide(answer, CONTEXT, 60, index, [abstract, full])["paperRefs"]}
+    refs = {p["pmid"]: p for p in workout.decide(answer, FRESH, 60, index, [abstract, full])["paperRefs"]}
     assert (refs[full["pmid"]]["license"], refs[full["pmid"]]["licenseUrl"]) == ("CC BY", url)
     assert "license" not in refs[abstract["pmid"]] and "licenseUrl" not in refs[abstract["pmid"]]
     # Un testo completo senza passaggi citati non ha niente da accreditare.
-    [ref] = workout.decide(cite(protocol="seiler_4x8"), CONTEXT, 60, index, [abstract])["paperRefs"]
+    [ref] = workout.decide(cite(protocol="seiler_4x8"), FRESH, 60, index, [abstract])["paperRefs"]
     assert (ref["pmid"], ref["passages"]) == (full["pmid"], []) and "license" not in ref
 
 
 @pytest.mark.parametrize("provider", FAKES)
 def test_answer_stopped_at_the_token_limit_uses_the_fallback_rules(provider):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fake = fake_model(provider, case)
     # Ollama si è fermato a num_predict (1.000 token), il cloud a max_tokens (4.000).
     fake.done_reason = fake.finish_reason = "length"
@@ -280,16 +309,16 @@ def test_answer_stopped_at_the_token_limit_uses_the_fallback_rules(provider):
 
 @pytest.mark.parametrize("provider", FAKES)
 def test_result_carries_everything_the_card_shows(provider):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fake = fake_model(provider, case)
     result = asyncio.run(run_case(case, fake))[-1]
-    paper = next(p for p in INDEX["papers"] if p["pmid"] == "20861519")
+    found = papers.top_papers(INDEX, CASES["queries"][case["query"]])
+    paper, passage = next(p for p in INDEX["papers"] if p["pmid"] == found[0]["pmid"]), found[0]["passages"][0]
     assert result["paperRefs"][0] == {**{k: paper[k] for k in ("pmid", "title", "authors", "year", "journal")},
-                                      "passages": []}
+                                      "passages": [{"label": passage["label"], "text": passage["text"]}]}
     assert set(result["retrievedPapers"][0]) == {"pmid", "title", "authors", "year", "score", "passages"}
     # Il punteggio di ogni paper trovato è quello del suo passaggio più vicino; i passaggi dati, con etichetta
     # e punteggio, finiscono nei file dei risultati.
-    found = papers.top_papers(INDEX, CASES["queries"][case["query"]])
     assert [(p["pmid"], p["score"], p["passages"]) for p in result["retrievedPapers"]] == [
         (p["pmid"], max(s["score"] for s in p["passages"]), [{"label": s["label"], "score": s["score"]}
                                                              for s in p["passages"]]) for p in found]
@@ -303,7 +332,7 @@ def test_result_carries_everything_the_card_shows(provider):
 
 @pytest.mark.parametrize("provider", FAKES)
 def test_events_name_each_step_and_stream_the_model_text(provider):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     events = asyncio.run(run_case(case, fake_model(provider, case)))
     names = [e.get("step", e["type"]) for e in events]
     assert names[:6] == ["rides", "details", "details", "context", "papers", "model"]
@@ -317,7 +346,7 @@ def test_events_name_each_step_and_stream_the_model_text(provider):
 
 @pytest.mark.parametrize("provider", FAKES)
 def test_two_tabs_at_the_same_time_are_both_served(provider):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fake = fake_model(provider, case)
 
     async def both():
@@ -332,7 +361,7 @@ def test_two_tabs_at_the_same_time_are_both_served(provider):
 def test_half_a_surrogate_pair_reaches_the_model_escaped_as_from_the_browser(provider):
     # Un nome di modello incollato può contenere mezza coppia surrogata; JSON.stringify la
     # mandava come \ud835.
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fake = fake_model(provider, case)
     fake.chat = dataclasses.replace(fake.chat, model="qwen\ud835")
     assert asyncio.run(run_case(case, fake))[-1]["type"] == "result"
@@ -343,12 +372,13 @@ def test_half_a_surrogate_pair_reaches_the_model_escaped_as_from_the_browser(pro
 
 def make_service(monkeypatch, env: dict) -> SimpleNamespace:
     """Il servizio Coach con .env, Strava, indice, modello di ricerca e i due provider finti."""
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fakes = SimpleNamespace(ollama=FakeOllama(case["answer"]), cloud=FakeCloud(case["answer"]),
                             search=fake_search(case), rides=FakeRides(RIDES["activities"]))
     for name, value in env.items():
         monkeypatch.setenv(name, value)
     monkeypatch.setattr(main, "rides", fakes.rides)
+    fixture_clock(monkeypatch)
     monkeypatch.setattr(main, "load_index", fixture_index)
     monkeypatch.setattr(ollama, "client", fakes.ollama.client)
     monkeypatch.setattr(cloud, "client", fakes.cloud.client)
@@ -378,7 +408,8 @@ def test_generate_streams_the_workout(service):
     assert res.status_code == 200 and res.headers["content-type"] == "application/x-ndjson"
     result = events_of(res)[-1]
     assert result["type"] == "result"
-    assert result["title"] == EXPECTED["cases"]["valid-answer"]["built"]["title"]
+    assert (result["protocolId"], result["fellBack"]) == (json.loads(CASE["allowed-answer"]["answer"])["protocolId"],
+                                                          False)
 
 
 def test_empty_profile_values_use_the_defaults(service):
