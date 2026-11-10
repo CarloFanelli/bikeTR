@@ -1,14 +1,14 @@
 ---
 feature: model-switch
-status: DRAFT
-reviewed: 2026-11-07
-head: dc0c3392dbdcd1820dbaae4e5fd1d6e233abc440
+status: APPROVED
+reviewed: 2026-11-10
+head: 12d4228818d2f6a1353a6f2a32f329581e25caf4
 ---
 
 # Review — model-switch
 
-**Scope**: 47 files (primary — diff since base `02f2edf7`; 14 workflow artifacts under `.ai/` excluded)
-**Findings**: 0 must-fix · 3 should-fix · 2 nit
+**Scope**: 13 files (re-verification — the fix commit `9c524474` since the review of `dc0c3392`, checked against `HEAD`; the other 33 commits since then belong to eval-set, fallback-reason, tracing and passage-search, each closed by its own review; 4 workflow artifacts under `.ai/` excluded)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
@@ -41,3 +41,7 @@ head: dc0c3392dbdcd1820dbaae4e5fd1d6e233abc440
 **Issue**: `is_amount` calls `math.isfinite` on a JSON integer without catching `OverflowError`, so a spending file holding an integer too large for a float (a hand edit, about 400 digits) raises instead of giving the `spending_unreadable` refusal: the status and workout routes answer a bare 500 and the live check crashes.
 **Change**: Guard `math.isfinite` with the same `OverflowError` catch as `workout.is_number` (`docker/coach/app/workout.py:40-46`); `spending.py` cannot import it, since `workout.py` already imports `spending.py`.
 **Why**: Spec edge case: an unreadable total refuses cloud requests with a message.
+
+## Runtime observations
+
+- Gates skipped: no gate command in CLAUDE.md (the project has none). Run by hand on `HEAD` the same day: `docker compose run --rm --no-deps -T coach pytest -q` → 670 passed; `docker compose run --rm --no-deps -T app npm run check` → 908 passed, structure check clean.
