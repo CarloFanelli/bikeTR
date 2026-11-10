@@ -2,7 +2,7 @@
 feature: coach-graph
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: 5f8edc0536792b9bdd7f03ee7e147d4f416edd7c
 ---
 

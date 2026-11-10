@@ -69,7 +69,7 @@ The Coach's fixed choice of protocol when the **Coach graph** runs out of **Draf
 _Avoid_: "backup choice" (used once in an interview; the README says fallback).
 
 ### Coach graph
-The Coach's request as a LangGraph graph: rides, metrics, papers, **Draft**, **Check**, deliver, with the check sending a rejected draft back to the model, up to 3 drafts. The **Live check** and the **Evaluation set** enter it at papers.
+The Coach's request as a LangGraph graph: rides, metrics, papers, **Draft**, **Check**, deliver, with the check sending a rejected draft back to the model, up to 3 drafts. The **Evaluation set** enters it at papers, with the athlete numbers already computed; the Coach screen and the **Live check** enter at rides.
 _Avoid_: "pipeline" (it has a loop back), "agent" (the model chooses no steps; that is the tool-calling step).
 
 ### Draft
@@ -122,4 +122,5 @@ _Avoid_: "log" (the service's log is lines of text, a trace has steps and durati
 - **Europe PMC answers HTTP 500, not 404, for a full text it does not have**: `/{PMCID}/fullTextXML` with a PMCID it holds no text for returns 500, the same as a real outage. The rebuild asks for a full text only when the search record says `inEPMC: "Y"` and gives a `pmcid`, so a 500 there always stops the build as Europe PMC failing.
 - **A model's raw JSON can hide a passage label**: JSON may write "§" as `\u00a7`, so a label read from `modelRaw` as text loses its passage number and looks like a bare PMID. Read citations from the decoded fields too (`grading.cited_in` adds the decoded `razionale`); the card reads only decoded fields.
 - **sqlite-vec does not keep insertion order between equal distances**: its KNN query returned 12 equal vectors in reverse rowid order, so papers with the same score would swap places. `papers.nearest_passages` sorts the hits again by score, then by position in the index; keep that sort whenever the query changes (`tests/test_papers.py` checks ties).
+- **Coach HTTP tests must pin the service clock**: today's **Selection rules** rule depends on the rides of the last days, counted from the real time in `main.py`, so a fixture made on a past date drifts to another rule and its answer gets sent back. Use `fixture_clock(monkeypatch)` from `docker/coach/tests/fakes.py`, which sets the time to the fixture's "now".
 - **A new field in the Coach result may be missing in the browser**: after an update Vite reloads the browser app at once, while the Coach service keeps its old code until `docker compose up -d --force-recreate`. Declare the field optional in `web/src/core/coach-types.ts` and give the screen a behavior when it is absent, as the fallback warning does (no warning).
