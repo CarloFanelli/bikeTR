@@ -66,7 +66,7 @@ def test_the_rides_step_says_where_the_rides_come_from_and_the_metrics_step_hold
 
 
 def test_saved_rides_used_when_strava_is_unreachable_show_in_the_rides_step(phoenix):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     saved = FakeRides(RIDES["activities"])
     saved.data = RideData(activities=saved.data.activities, details=saved.data.details, downloaded_at=NOW_MS,
                           from_saved=True, missing_details=0)
@@ -96,7 +96,7 @@ def sent_messages(fake) -> list:
 
 @pytest.mark.parametrize("provider", FAKES)
 def test_the_model_step_holds_what_was_sent_and_answered(provider, phoenix):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fake = FAKES[provider](case["answer"])
     result = run_traced(case, fake)[-1]
     model = step_of(phoenix, "draft").attributes
@@ -118,7 +118,7 @@ def test_the_model_step_holds_what_was_sent_and_answered(provider, phoenix):
 
 
 def test_the_model_step_never_holds_the_cloud_key(phoenix):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fake = FakeCloud(case["answer"])
     run_traced(case, fake)
     spans = phoenix.spans()
@@ -129,7 +129,7 @@ def test_the_model_step_never_holds_the_cloud_key(phoenix):
 
 @pytest.mark.parametrize("provider", FAKES)
 def test_an_answer_cut_off_at_the_token_limit_is_recorded_as_cut_off(provider, phoenix):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fake = FAKES[provider](case["answer"])
     fake.done_reason = fake.finish_reason = "length"
     run_traced(case, fake)
@@ -137,7 +137,7 @@ def test_an_answer_cut_off_at_the_token_limit_is_recorded_as_cut_off(provider, p
 
 
 def test_tokens_and_cost_the_provider_does_not_report_stay_unknown(phoenix):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fake = FakeCloud(case["answer"])
     fake.usage = None
     run_traced(case, fake)
@@ -146,7 +146,9 @@ def test_tokens_and_cost_the_provider_does_not_report_stay_unknown(phoenix):
 
 
 @pytest.mark.parametrize("case_name, answer, chosen, fell_back", [
-    ("valid-answer", None, "seiler_4x8", False),
+    ("allowed-answer", None, "z1_recovery", False),
+    # Non ammesso oggi: in un giorno di recupero il modello sceglie Seiler a ogni bozza.
+    ("valid-answer", None, "seiler_4x8", True),
     # Illeggibile: nessun protocollo scelto, quello dato dalle regole di ripiego.
     ("valid-answer", "", None, True),
     # Troppo lungo per i 45 minuti: il protocollo scelto e quello dato sono diversi.
@@ -164,7 +166,7 @@ def test_the_decision_step_holds_the_chosen_and_the_given_protocol(case_name, an
 
 
 def test_two_tabs_at_the_same_time_leave_two_separate_traces(phoenix):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     fake = FakeOllama(case["answer"])
 
     async def one(minutes: int):
@@ -279,7 +281,7 @@ def test_stop_before_the_provider_accepted_is_stopped_with_nothing_charged(monke
 
 
 def test_an_ollama_answer_charges_nothing_to_the_cloud_total(phoenix):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     run_traced(case, FakeOllama(case["answer"]))
     assert "coach.charged" not in step_of(phoenix, "draft").attributes
 
@@ -328,7 +330,7 @@ def test_a_trace_receiver_that_never_answers_delays_no_coach_result(service, mon
 
 
 def test_with_phoenix_down_the_log_gets_one_line_until_a_trace_gets_through(capsys):
-    case = CASE["valid-answer"]
+    case = CASE["allowed-answer"]
     phoenix = DownPhoenix()
     provider = tracing.setup(tracing.COACH_SCREEN, phoenix)
 

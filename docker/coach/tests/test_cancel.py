@@ -16,10 +16,10 @@ import uvicorn
 
 from app import graph, main, ollama, provider, search, workout
 from app.errors import CoachError
-from fakes import CLOUD_PRICES, FakeRides, FakeSearch, fixture_index
+from fakes import CLOUD_PRICES, FakeRides, FakeSearch, fixture_clock, fixture_index
 from fixture_data import NOW_MS, RIDES
 
-ANSWER = '{"protocolId":"z2_endurance","razionale":"Giornata facile.","paperUsati":[]}'
+ANSWER = '{"protocolId":"z1_recovery","razionale":"Giornata facile.","passaggiUsati":[]}'
 PIECES = [ANSWER[i:i + 4] for i in range(0, len(ANSWER), 4)]
 SAME_ORIGIN = {"Sec-Fetch-Site": "same-origin"}
 PROVIDERS = ("ollama", "cloud")
@@ -183,6 +183,7 @@ class CoachServer:
 
     def __init__(self, monkeypatch, kind: str, model: str, url: str):
         monkeypatch.setattr(main, "rides", FakeRides(RIDES["activities"]))
+        fixture_clock(monkeypatch)
         monkeypatch.setattr(search, "encode", FakeSearch([1] * 10).encode)
         monkeypatch.setattr(main, "load_index", fixture_index)
         monkeypatch.setattr(ollama, "OLLAMA_URL", url)

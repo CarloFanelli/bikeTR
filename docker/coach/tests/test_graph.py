@@ -12,7 +12,7 @@ from app.spending import charge
 from fakes import CLOUD_PRICES, FakeCloud, FakeOllama
 from test_workout import CASE, run_case
 
-CASE_OK = CASE["valid-answer"]
+CASE_OK = CASE["allowed-answer"]
 GOOD = CASE_OK["answer"]
 UNREADABLE = "Oggi ti consiglio un bel giro facile."
 UNREADABLE_REASON = ("La risposta non era un oggetto JSON leggibile: rispondi con il solo oggetto JSON, "
@@ -42,12 +42,12 @@ def test_an_unreadable_draft_goes_back_with_its_reason_and_the_second_draft_is_d
         {"role": "assistant", "content": UNREADABLE},
         {"role": "user", "content": f"La tua risposta non va bene:\n- {UNREADABLE_REASON}\n"
                                     "Scegli di nuovo e restituisci SOLO il JSON."}]
-    assert result["protocolId"] == "seiler_4x8" and result["fellBack"] is False
+    assert result["protocolId"] == "z1_recovery" and result["fellBack"] is False
     assert result["fallbackCause"] is None and result["modelRaw"] == GOOD
     assert [d["check"] for d in result["drafts"]] == [
         {"ok": False, "causes": ["unreadable"], "reasons": [UNREADABLE_REASON]},
         {"ok": True, "causes": [], "reasons": []}]
-    assert [d["protocolId"] for d in result["drafts"]] == [None, "seiler_4x8"]
+    assert [d["protocolId"] for d in result["drafts"]] == [None, "z1_recovery"]
     # Il passo "modello" compare una volta sola, alla prima bozza.
     assert sum(1 for e in events if e.get("step") == "model") == 1
 

@@ -8,7 +8,7 @@ from typing import Awaitable, Callable
 from zoneinfo import ZoneInfo
 
 from app import papers, prompts, tracing
-from app.check import read_draft, usable
+from app.check import check_draft, citation_label, read_draft
 from app.errors import CoachError
 from app.jscompat import is_number, js_str, js_truthy
 from app.metrics import Profile
@@ -87,19 +87,20 @@ def paper_ref(p: dict, quoted: list) -> dict:
     return ref
 
 
-def card_papers(listed, razionale: str, protocol_id: str, index: dict, retrieved: list) -> list[dict]:
+def card_papers(listed, razionale: str, protocol_id: str, index: dict, retrieved: list,
+                dropped: tuple = ()) -> list[dict]:
     """I paper della scheda: ogni paper citato una volta, nell'ordine della prima citazione (la lista
     dei passaggi usati, poi il razionale), con i passaggi citati tra quelli dati al modello, in ordine
     di etichetta; poi il paper di supporto del protocollo, se manca, con il suo passaggio più vicino
     quando la ricerca l'ha trovato. Solo paper dell'indice e passaggi dati: un'etichetta inventata
-    non arriva alla scheda."""
+    non arriva alla scheda, né una citazione tolta dal controllo (`dropped`)."""
     by_pmid = {}
     for p in index["papers"]:
         by_pmid.setdefault(p["pmid"], p)
     given = {s["label"]: s for p in retrieved for s in p["passages"]}
     quoted: dict[str, dict[str, dict]] = {}
     for pmid, number in papers.citations(listed, razionale):
-        if pmid in by_pmid:
+        if pmid in by_pmid and (pmid, number) not in dropped:
             chosen = quoted.setdefault(pmid, {})
             cited = papers.label(pmid, number) if number is not None else None
             if cited in given:
@@ -124,20 +125,24 @@ def fallback_warning(cause: str, chosen: str | None, duration: int) -> str:
         return f"⚠️ La risposta del modello non era leggibile: {by_rules}"
     if cause == "not_in_catalog":
         return f"⚠️ Il modello non ha indicato un protocollo del catalogo: {by_rules}"
+    if cause == "not_allowed":
+        return f"⚠️ Il modello ha scelto {PROTOCOLS[chosen].name}, che non è ammesso oggi: {by_rules}"
     return (f"⚠️ Il modello ha scelto {PROTOCOLS[chosen].name}, che richiede almeno {minimum_minutes(chosen)} "
             f"minuti: con {duration} minuti {by_rules}")
 
 
 def decide(model_raw: str, ctx: dict, duration: int, index: dict, retrieved: list, truncated: bool = False) -> dict:
     """Dall'ultima bozza del modello al workout, con i paper trovati dalla ricerca (`retrieved`): i
-    loro passaggi sono quelli che la scheda può citare. Una bozza che non si può usare (troncata,
-    illeggibile, senza un protocollo del catalogo o con un protocollo che non entra nei minuti) lascia
-    la scelta al primo protocollo che le regole ammettono, con il razionale di ripiego, senza i paper
-    del modello e con la causa."""
+    loro passaggi sono quelli che la scheda può citare. Una bozza che sbaglia solo le citazioni tiene
+    protocollo e razionale, senza le citazioni inventate. Una bozza che non si può usare (troncata,
+    illeggibile, senza un protocollo del catalogo, con un protocollo che non entra nei minuti o che la
+    regola di oggi non ammette) lascia la scelta al primo protocollo che le regole ammettono, con il
+    razionale di ripiego, senza i paper del modello e con la causa."""
     parsed, chosen = read_draft(model_raw, truncated)
-    verdict = usable(parsed, chosen, truncated, duration)
-    if verdict.ok:
-        protocol_id = chosen
+    verdict = check_draft(model_raw, truncated, ctx, duration, retrieved)
+    dropped = ()
+    if verdict.ok or verdict.causes == ("invented",):
+        protocol_id, dropped = chosen, verdict.invented
         razionale = js_str(parsed.get("razionale")) if js_truthy(parsed.get("razionale")) else NO_RATIONALE
         listed, cause, warning = parsed.get("passaggiUsati"), None, None
     else:
@@ -149,8 +154,9 @@ def decide(model_raw: str, ctx: dict, duration: int, index: dict, retrieved: lis
         listed, warning = [], fallback_warning(cause, chosen, duration)
     tracing.note_decision(chosen, protocol_id, warning)
     return {"protocolId": protocol_id, **PROTOCOLS[protocol_id].build(ctx["ftp"], duration), "razionale": razionale,
-            "paperRefs": card_papers(listed, razionale, protocol_id, index, retrieved),
-            "fellBack": warning is not None, "fallbackCause": cause, "fallbackWarning": warning}
+            "paperRefs": card_papers(listed, razionale, protocol_id, index, retrieved, dropped),
+            "fellBack": warning is not None, "fallbackCause": cause, "fallbackWarning": warning,
+            "citationsDropped": [citation_label(*c) for c in dropped]}
 
 
 def step(name: str, message: str, **extra) -> dict:

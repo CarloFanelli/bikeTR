@@ -36,3 +36,8 @@ Adds the two checks the evaluation set already measures ("Rules followed", "Inve
 - Model chooses a catalog protocol not shown in the narrowed prompt → rejected as not allowed today (REQ-3)
 - Draft has an empty citation list → passes the citation check (REQ-4)
 - Citation of the shown rule's source PMID that was not retrieved → counts as given (REQ-4)
+
+## Notes from implementation
+
+- **Known limitation**: a citation of a given paper with a passage label it was not given is now dropped whole, so that paper no longer shows on the card without passages, as it did before. This follows REQ-7 (invented citations are dropped).
+- **Known limitation**: three browser reference cases (valid-answer, json-in-text, source-already-cited) choose a protocol the rule of their situation does not allow; their reference test now expects the fallback workout, as for the too-long cases. Service tests use a new "allowed-answer" case in the same situation, and the HTTP tests pin the service clock to the fixture's "now" so today's rule does not drift with the real date.

@@ -23,7 +23,7 @@ def cloud_service(monkeypatch):
 def test_cloud_text_reaches_the_screen_as_it_arrives(cloud_service):
     events = events_of(post(cloud_service, BODY))
     tokens = [e["text"] for e in events if e["type"] == "token"]
-    assert len(tokens) > 1 and "".join(tokens) == CASE["valid-answer"]["answer"]
+    assert len(tokens) > 1 and "".join(tokens) == CASE["allowed-answer"]["answer"]
     result = events[-1]
     assert {k: result[k] for k in ("type", "provider", "model", "inputTokens", "outputTokens")} == {
         "type": "result", "provider": "cloud", "model": CLOUD_MODEL, "inputTokens": 900, "outputTokens": 42}
@@ -57,7 +57,7 @@ def test_unreachable_provider_names_its_address(cloud_service):
 def test_stream_dropping_mid_answer_keeps_the_text_then_shows_the_error(cloud_service):
     cloud_service.cloud.drop_after = 3
     events = events_of(post(cloud_service, BODY))
-    assert [e["text"] for e in events if e["type"] == "token"] == [CASE["valid-answer"]["answer"][:21][i:i + 7]
+    assert [e["text"] for e in events if e["type"] == "token"] == [CASE["allowed-answer"]["answer"][:21][i:i + 7]
                                                                    for i in range(0, 21, 7)]
     assert events[-1] == {"type": "error", "error": "model",
                           "message": "Connessione con il provider cloud interrotta (ReadError)"}

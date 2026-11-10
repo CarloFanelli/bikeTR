@@ -16,7 +16,7 @@ from langgraph.runtime import Runtime
 
 from app import prompts, provider, tracing
 from app.chat import Accepted, ChatEnd, ModelError
-from app.check import MAX_DRAFTS, read_draft, retry_message, usable
+from app.check import MAX_DRAFTS, check_draft, read_draft, retry_message
 from app.errors import CoachError
 from app.metrics import coach_context
 from app.spending import Spending, charge, cost
@@ -129,8 +129,8 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
 async def check_node(state: State, runtime: Runtime[Request]) -> State:
     *earlier, last = state["drafts"]
     with tracing.step("check"):
-        parsed, chosen = read_draft(last["modelRaw"], last["truncated"])
-        verdict = usable(parsed, chosen, last["truncated"], state["duration"])
+        _, chosen = read_draft(last["modelRaw"], last["truncated"])
+        verdict = check_draft(last["modelRaw"], last["truncated"], state["ctx"], state["duration"], state["retrieved"])
         tracing.note_check(len(state["drafts"]), verdict.causes)
     return {"drafts": [*earlier, {**last, "protocolId": chosen, "verdict": verdict}]}
 

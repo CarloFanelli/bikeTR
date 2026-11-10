@@ -1,15 +1,18 @@
 """Sostituti di Strava, del modello di ricerca, dell'indice dei paper, dei due provider del
-modello chat (Ollama e un provider cloud compatibile con OpenAI) e di Phoenix per i test del workout."""
+modello chat (Ollama e un provider cloud compatibile con OpenAI), di Phoenix e dell'orologio del servizio
+per i test del workout."""
 
 import asyncio
 import json
 import threading
+import time
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import httpx
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
-from app import cloud, tracing
+from app import cloud, main, tracing
 from app.provider import ChatSettings
 from app.spending import Prices
 from app.strava import RideData
@@ -45,6 +48,12 @@ class FakeRides:
         for done in (1, 2):
             progress(done, 2)
         return self.data
+
+
+def fixture_clock(monkeypatch) -> None:
+    """L'orologio del servizio segna il "now" delle corse inventate: la regola di selezione di oggi non
+    cambia con la data vera."""
+    monkeypatch.setattr(main, "time", SimpleNamespace(time=lambda: NOW_MS / 1000, monotonic=time.monotonic))
 
 
 async def fixture_index() -> dict:

@@ -18,7 +18,9 @@ from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, DownPhoenix, FakeCloud, Fak
 from fixture_data import FIXTURES, load
 
 CASES = load("coach_cases.json")
-ANSWER = next(c for c in CASES["cases"] if c["name"] == "valid-answer")["answer"]
+# Riposo: la regola di oggi lo ammette in ogni situazione provata qui, e senza citazioni il controllo
+# accetta la prima bozza.
+ANSWER = '{"protocolId":"rest","razionale":"Forma molto bassa: riposo.","passaggiUsati":[]}'
 CLOCK = datetime(2026, 11, 8, 9, 15, 0, tzinfo=timezone.utc)
 COACH_DIR = Path(__file__).resolve().parents[1]
 SITUATIONS = json.loads(evaluation.SITUATIONS_FILE.read_text(encoding="utf-8"))
