@@ -4,19 +4,19 @@
 import type {
   CoachEvent, CoachRefusal, CoachStatus, ConnectionCheck, WorkoutRequest,
 } from '../core/coach-types.ts';
-import type { AddedPaper, LibraryPaper, LibraryPassages, PaperPreview } from '../core/library-types.ts';
+import type { AddedPaper, Library, LibraryPassages, PaperPreview } from '../core/library-types.ts';
 
 export const COACH_UNREACHABLE = 'Coach non raggiungibile: avvia BikeTR con docker compose up -d';
 
 export type CoachAnswer<T> = { ok: true; value: T } | { ok: false; msg: string };
 
 // Il servizio risponde con i dati oppure con {error, message}. Senza una risposta del
-// servizio, il Coach non è avviato. Con un corpo, la richiesta è un POST in JSON.
-async function askCoach<T>(path: string, payload?: unknown): Promise<CoachAnswer<T>> {
+// servizio, il Coach non è avviato. Un corpo viaggia in JSON.
+async function askCoach<T>(path: string, method = 'GET', payload?: unknown): Promise<CoachAnswer<T>> {
   let res: Response;
   try {
-    res = await fetch(path, payload === undefined ? undefined : {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    res = await fetch(path, payload === undefined ? { method } : {
+      method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
     });
   } catch {
     return { ok: false, msg: COACH_UNREACHABLE };
@@ -33,15 +33,21 @@ export const coachStatus = () => askCoach<CoachStatus>('/coach/status');
 export const checkConnection = () => askCoach<ConnectionCheck>('/coach/ping');
 
 // I paper che il Coach cerca, senza passaggi; i passaggi di un paper si chiedono aprendolo.
-export const libraryPapers = () => askCoach<{ papers: LibraryPaper[]; warning: string | null }>('/coach/library');
+export const libraryPapers = () => askCoach<Library>('/coach/library');
 export const libraryPassages = (pmid: string) =>
   askCoach<LibraryPassages>(`/coach/library/${encodeURIComponent(pmid)}`);
 
 // Il paper da PubMed come entrerebbe in libreria: il servizio non salva nulla.
-export const previewPaper = (pmid: string) => askCoach<PaperPreview>('/coach/library/preview', { pmid });
+export const previewPaper = (pmid: string) => askCoach<PaperPreview>('/coach/library/preview', 'POST', { pmid });
 
 // Scarica, taglia e codifica il paper e lo salva nella libreria: qualche secondo.
-export const addPaper = (pmid: string) => askCoach<AddedPaper>('/coach/library', { pmid });
+export const addPaper = (pmid: string) => askCoach<AddedPaper>('/coach/library', 'POST', { pmid });
+
+// Un paper aggiunto si cancella; uno di base si toglie e resta nell'elenco dei tolti, da cui si ripristina.
+export const removePaper = (pmid: string) =>
+  askCoach<{ pmid: string }>(`/coach/library/${encodeURIComponent(pmid)}`, 'DELETE');
+export const restorePaper = (pmid: string) =>
+  askCoach<{ pmid: string }>(`/coach/library/${encodeURIComponent(pmid)}/restore`, 'POST');
 
 // Le corse salvate dal servizio appartengono al collegamento con Strava: dopo lo
 // scollegamento nessuna richiesta del Coach può ottenere un nuovo token.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LibraryPaper } from '../../src/core/library-types.ts';
 import {
-  addedLine, dependencyLines, europePmcUrl, originLabel, passageCount, pmidError, textUsed,
+  addedLine, dependencyLines, europePmcUrl, originLabel, passageCount, pmidError, removalQuestion, textUsed,
 } from '../../src/core/library-view.ts';
 
 const whitty: LibraryPaper = {
@@ -51,5 +51,17 @@ describe('testi della Libreria', () => {
 
   it('esito dell\'aggiunta: passaggi salvati e secondi', () => {
     expect(addedLine({ pmid: '1', passageCount: 62, seconds: 4.5 })).toBe('✅ Aggiunto: 62 passaggi salvati in 4,5 s.');
+  });
+
+  it('togliere un paper di supporto nomina chi lo perde', () => {
+    expect(removalQuestion(whitty)).toBe(
+      'Togliere dalla libreria Whitty et al. (2016), PMID 27175601?\n\n'
+      + 'È il paper di supporto di workout o regole del Coach, che lo perdono:\n- Paper di supporto di: Z2 + cadence drills',
+    );
+  });
+
+  it('togliere un paper che nessuno nomina chiede solo conferma; un aggiunto si cancella', () => {
+    expect(removalQuestion({ ...fullText, origin: 'added' }))
+      .toBe('Cancellare dalla libreria Whitty et al. (2016), PMID 24550842?');
   });
 });

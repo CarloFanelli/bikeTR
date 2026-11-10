@@ -11,7 +11,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app import library, main, papers, search
+from app import library, main, papers, search, workout
 from app.protocols import PROTOCOLS, Protocol, z2_endurance
 from fakes import INDEX
 from test_build_index import ARTICLES, OPEN_111, RECORDS, client, fake_pubmed, services  # noqa: F401 (fixture)
@@ -267,3 +267,99 @@ def test_a_slow_pubmed_does_not_hold_up_the_other_requests(service, monkeypatch)
             await slow_preview
             return status_took
     assert asyncio.run(both()) < 0.5
+
+
+# --- Togliere e ripristinare -------------------------------------------------------------------
+
+def remove(service, pmid):
+    return service.delete(f"/coach/library/{pmid}")
+
+
+def restore(service, pmid):
+    return service.post(f"/coach/library/{pmid}/restore")
+
+
+def test_removing_an_added_paper_deletes_it(service, saved_library):
+    add(service, "333")
+    assert remove(service, "333").status_code == 200
+    assert "333" not in listed(service) and saved(saved_library)["added"] == []
+
+
+def test_removing_a_base_paper_moves_it_to_the_removed_list_until_restored(service, saved_library):
+    assert remove(service, WHITTY).status_code == 200
+    body = service.get("/coach/library").json()
+    assert WHITTY not in [p["pmid"] for p in body["papers"]]
+    assert [(p["pmid"], p["title"]) for p in body["removed"]] == [(WHITTY, ONE_PASSAGE["title"])]
+    assert saved(saved_library)["removed"] == [WHITTY]
+    assert restore(service, WHITTY).status_code == 200
+    body = service.get("/coach/library").json()
+    assert [p["pmid"] for p in body["papers"]] == [p["pmid"] for p in LIBRARY_INDEX["papers"]] and body["removed"] == []
+
+
+def test_the_next_coach_request_does_not_search_a_removed_paper(service):
+    before = asyncio.run(main.load_index())
+    remove(service, WHITTY)
+    assert WHITTY in [p["pmid"] for p in before["papers"]]
+    assert WHITTY not in [p["pmid"] for p in asyncio.run(main.load_index())["papers"]]
+    restore(service, WHITTY)
+    assert WHITTY in [p["pmid"] for p in asyncio.run(main.load_index())["papers"]]
+
+
+def test_a_removed_supporting_paper_does_not_reach_the_workout_card(service):
+    remove(service, WHITTY)
+    index = asyncio.run(main.load_index())
+    assert workout.card_papers([], "", "z2_cadence_drills", index, []) == []
+    restore(service, WHITTY)
+    index = asyncio.run(main.load_index())
+    assert [p["pmid"] for p in workout.card_papers([], "", "z2_cadence_drills", index, [])] == [WHITTY]
+
+
+def test_the_last_paper_cannot_be_removed(service, monkeypatch, saved_library):
+    async def one_paper(http):
+        return {**LIBRARY_INDEX, "papers": [ONE_PASSAGE]}
+    monkeypatch.setattr(papers, "load_index", one_paper)
+    res = remove(service, WHITTY)
+    assert (res.status_code, res.json()) == (409, {
+        "error": "last_paper", "message": "È l'ultimo paper della libreria: il Coach ne ha bisogno di almeno uno"})
+    assert not saved_library.path.exists()
+
+
+def test_restoring_twice_or_removing_twice_changes_nothing_more(service, saved_library):
+    remove(service, WHITTY)
+    assert remove(service, WHITTY).status_code == 200 and saved(saved_library)["removed"] == [WHITTY]
+    restore(service, WHITTY)
+    assert restore(service, WHITTY).status_code == 200 and saved(saved_library)["removed"] == []
+
+
+def test_a_paper_not_in_the_library_cannot_be_removed(service):
+    res = remove(service, "1")
+    assert (res.status_code, res.json()["error"]) == (404, "not_found")
+
+
+def test_a_removed_base_paper_is_restored_not_added_again(service, monkeypatch):
+    monkeypatch.setattr(library, "sources", lambda: pytest.fail("PubMed contattato"))
+    remove(service, WHITTY)
+    res = preview(service, WHITTY)
+    assert (res.status_code, res.json()) == (409, {
+        "error": "removed_base",
+        "message": "È un paper di base che hai tolto: ripristinalo dall'elenco dei paper tolti"})
+
+
+def test_removals_of_pmids_no_longer_among_the_base_papers_are_ignored(service, saved_library):
+    saved_library.path.write_text(json.dumps({"model": search.SEARCH_MODEL, "added": [], "removed": ["1", WHITTY]}))
+    body = service.get("/coach/library").json()
+    assert [p["pmid"] for p in body["removed"]] == [WHITTY]
+    assert len(body["papers"]) == len(LIBRARY_INDEX["papers"]) - 1
+
+
+def test_a_library_saved_before_removals_reads_as_nothing_removed(service, saved_library):
+    saved_library.path.write_text(json.dumps({"model": search.SEARCH_MODEL, "added": []}))
+    assert service.get("/coach/library").json()["removed"] == []
+    assert remove(service, WHITTY).status_code == 200
+
+
+def test_an_unreadable_library_refuses_removing_and_restoring(service, saved_library):
+    saved_library.path.write_text("{")
+    for res in (remove(service, WHITTY), restore(service, WHITTY)):
+        assert (res.status_code, res.json()["error"]) == (500, "library_unreadable")
+    assert saved_library.path.read_text() == "{"
