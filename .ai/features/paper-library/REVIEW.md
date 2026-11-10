@@ -1,14 +1,14 @@
 ---
 feature: paper-library
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-10
-head: 1b3f2f5e0a41fbd0b486b8c38fc12c6c35cf4ccb
+head: ffc9398c5d32927a2878c6f938582b30d6d91702
 ---
 
 # Review — paper-library
 
-**Scope**: 24 files (primary — diff since base `12d42288`; 15 workflow artifacts under `.ai/` excluded)
-**Findings**: 1 must-fix · 0 should-fix · 0 nit
+**Scope**: 6 files (re-verification — delta since review head `1b3f2f5e`; 1 workflow artifact under `.ai/` excluded)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
