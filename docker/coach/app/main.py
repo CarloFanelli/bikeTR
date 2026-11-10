@@ -175,7 +175,7 @@ async def forget():
 @app.get("/coach/library")
 async def library_papers():
     base, index, warning = await library_view()
-    return {**library.listing(base, index), "warning": warning}
+    return {**library.listing(base, index, saved_library), "warning": warning}
 
 
 @app.get("/coach/library/{pmid}")

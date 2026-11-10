@@ -11,6 +11,8 @@ export interface LibraryPaper {
   journal: string | null;
   // "base": dal file dell'indice del progetto; "added": aggiunto dall'atleta.
   origin: 'base' | 'added';
+  // Un paper di base che l'atleta aveva aggiunto: un git pull l'ha portato tra quelli di base.
+  wasAdded: boolean;
   textUsed: 'abstract' | 'fullText';
   passageCount: number;
   license: string | null;
@@ -32,7 +34,7 @@ export interface LibraryPassages {
 }
 
 // Il paper come entrerebbe in libreria, prima della conferma: reason dice perché il testo usato.
-export type PaperPreview = Omit<LibraryPaper, 'origin' | 'supports'> & { reason: string };
+export type PaperPreview = Omit<LibraryPaper, 'origin' | 'wasAdded' | 'supports'> & { reason: string };
 
 export interface AddedPaper {
   pmid: string;

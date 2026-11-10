@@ -6,7 +6,7 @@ import {
 
 const whitty: LibraryPaper = {
   pmid: '27175601', title: 'The effect of low- vs high-cadence interval training.', authors: 'Whitty et al.',
-  year: '2016', journal: 'Applied physiology', origin: 'base', textUsed: 'abstract', passageCount: 4,
+  year: '2016', journal: 'Applied physiology', origin: 'base', wasAdded: false, textUsed: 'abstract', passageCount: 4,
   license: null, licenseUrl: null, supports: { workouts: ['Z2 + cadence drills'], rules: [] },
 };
 const ccBy = { license: 'CC BY', licenseUrl: 'http://creativecommons.org/licenses/by/4.0/' };
@@ -15,6 +15,10 @@ const fullText: LibraryPaper = { ...whitty, pmid: '24550842', textUsed: 'fullTex
 describe('testi della Libreria', () => {
   it('paper di base o aggiunto', () => {
     expect([originLabel(whitty), originLabel({ ...whitty, origin: 'added' })]).toEqual(['paper di base', 'aggiunto']);
+  });
+
+  it('un paper aggiunto che è diventato di base lo dice', () => {
+    expect(originLabel({ ...whitty, wasAdded: true })).toBe('ora tra i paper di base');
   });
 
   it('numero dei passaggi, al singolare per uno', () => {

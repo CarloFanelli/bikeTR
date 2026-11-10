@@ -250,7 +250,9 @@ def test_an_unreadable_library_leaves_the_base_papers_and_the_file_untouched(ser
 def test_an_added_paper_that_became_a_base_paper_is_listed_once_as_base(service, saved_library):
     saved_library.path.write_text(json.dumps({"model": search.SEARCH_MODEL, "added": [{**FULL_TEXT, "pmid": WHITTY}]}))
     pmids = [p["pmid"] for p in service.get("/coach/library").json()["papers"]]
-    assert pmids.count(WHITTY) == 1 and listed(service)[WHITTY]["origin"] == "base"
+    whitty = listed(service)[WHITTY]
+    assert pmids.count(WHITTY) == 1 and (whitty["origin"], whitty["wasAdded"]) == ("base", True)
+    assert listed(service)[SEILER_2010]["wasAdded"] is False
     assert [p["pmid"] for p in asyncio.run(main.load_index())["papers"]].count(WHITTY) == 1
 
 
