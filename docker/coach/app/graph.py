@@ -16,7 +16,7 @@ from langgraph.runtime import Runtime
 
 from app import prompts, provider, tracing
 from app.chat import Accepted, ChatEnd, ModelError
-from app.check import MAX_DRAFTS, check_draft, read_draft, retry_message
+from app.check import MAX_DRAFTS, check_draft, read_draft, retry_message, retry_step
 from app.errors import CoachError
 from app.metrics import coach_context
 from app.spending import Spending, charge, cost
@@ -98,6 +98,9 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
     r, chat = runtime.context, runtime.context.chat
     if not state["drafts"]:
         r.emit(step("model", "Il modello sta scegliendo il protocollo…"))
+    else:
+        attempt = len(state["drafts"]) + 1
+        r.emit(step("draft", retry_step(state["drafts"][-1]["verdict"], attempt), attempt=attempt, of=MAX_DRAFTS))
     messages = messages_for(state)
     answer, end, accepted = [], ChatEnd(None, None, False), False
     with tracing.step("draft"):

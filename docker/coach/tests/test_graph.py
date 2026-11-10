@@ -48,17 +48,26 @@ def test_an_unreadable_draft_goes_back_with_its_reason_and_the_second_draft_is_d
         {"ok": False, "causes": ["unreadable"], "reasons": [UNREADABLE_REASON]},
         {"ok": True, "causes": [], "reasons": []}]
     assert [d["protocolId"] for d in result["drafts"]] == [None, "z1_recovery"]
-    # Il passo "modello" compare una volta sola, alla prima bozza.
+    # Il passo "modello" compare una volta sola, alla prima bozza; prima della seconda, il motivo e il tentativo.
     assert sum(1 for e in events if e.get("step") == "model") == 1
+    retry = next(e for e in events if e.get("step") == "draft")
+    assert retry == {"type": "step", "step": "draft", "attempt": 2, "of": 3,
+                     "message": "La risposta non era leggibile: il modello riprova, tentativo 2 di 3"}
+    tokens = [i for i, e in enumerate(events) if e["type"] == "token"]
+    assert tokens[0] < events.index(retry) < tokens[-1]
 
 
 def test_three_unusable_drafts_end_in_the_fallback_rules_with_the_last_cause():
     fake = FakeOllama(['{"protocolId":"inventato"}', UNREADABLE, ""])
-    result = run(fake)[-1]
+    events = run(fake)
+    result = events[-1]
     assert len(chat_bodies(fake)) == MAX_DRAFTS
     assert result["fellBack"] is True and result["fallbackCause"] == "unreadable"
     assert result["fallbackWarning"].startswith("⚠️ La risposta del modello non era leggibile")
     assert [d["check"]["causes"] for d in result["drafts"]] == [["not_in_catalog"], ["unreadable"], ["unreadable"]]
+    assert [e["message"] for e in events if e.get("step") == "draft"] == [
+        "Il protocollo scelto non è nel catalogo: il modello riprova, tentativo 2 di 3",
+        "La risposta non era leggibile: il modello riprova, tentativo 3 di 3"]
     assert result["title"] and result["struttura"]
 
 

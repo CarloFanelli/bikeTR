@@ -52,6 +52,11 @@ export interface CoachWorkout {
   // Perché il servizio ha scelto con le regole di ripiego al posto del modello; null se ha usato
   // la scelta del modello. Manca nelle risposte di un servizio avviato prima di questo campo.
   fallbackWarning?: string | null;
+  // Una voce per ogni bozza che il modello ha scritto, la prima compresa; la schermata ne conta solo il
+  // numero. Manca nelle risposte di un servizio avviato prima delle bozze: vale come una bozza.
+  drafts?: { protocolId: string | null }[];
+  // Le citazioni a passaggi non dati al modello, tolte dalla scheda dell'ultima bozza.
+  citationsDropped?: string[];
   // Il modello chat scelto in .env del servizio: Ollama (locale) o un provider cloud.
   provider: 'ollama' | 'cloud';
   model: string;
@@ -93,7 +98,8 @@ export interface CoachRefusal {
 }
 
 export type CoachEvent =
-  | { type: 'step'; step?: string; message: string }
+  // Da "draft" in poi `attempt` e `of`: la bozza che il modello sta per scrivere, su quante al massimo.
+  | { type: 'step'; step?: string; message: string; attempt?: number; of?: number }
   | { type: 'context'; context: unknown }
   | { type: 'token'; text: string }
   | ({ type: 'result' } & CoachWorkout)

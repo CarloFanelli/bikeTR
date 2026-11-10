@@ -68,6 +68,17 @@ export function ridesNotes(rides: CoachWorkout['rides']): string[] {
   return notes;
 }
 
+// Quante bozze ci sono volute, se più di una, e le citazioni tolte dalla scheda.
+export function draftsNotes(w: CoachWorkout): string[] {
+  const notes: string[] = [];
+  const drafts = w.drafts?.length ?? 1;
+  if (drafts > 1) notes.push(`🔁 Ci sono voluti ${drafts} tentativi del modello.`);
+  if (w.citationsDropped?.length) {
+    notes.push(`✂️ Tolte le citazioni a passaggi non forniti al modello: ${w.citationsDropped.join(', ')}.`);
+  }
+  return notes;
+}
+
 // Locale o cloud, modello, secondi, token letti e scritti e, per il cloud, il costo in dollari
 // con 4 decimali ("—" per ciò che il provider non dice). Ollama non costa nulla: nessun costo.
 const tokens = (n: number | null) => (n == null ? '—' : String(n));

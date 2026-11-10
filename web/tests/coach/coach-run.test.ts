@@ -131,6 +131,35 @@ describe('richiesta al Coach', () => {
   });
 });
 
+describe('bozze rimandate dal controllo', () => {
+  it('la seconda bozza toglie il testo della prima e la riga del passo dice il motivo e il tentativo', async () => {
+    void generateWorkout(request);
+    answer(0);
+    call(0).send({ type: 'step', step: 'model', message: 'Il modello sta scegliendo il protocollo…' });
+    call(0).send({ type: 'token', text: 'prima bozza' });
+    await settle();
+    expect(coachRun.live).toBe('prima bozza');
+    const message = 'Il protocollo scelto non è ammesso oggi: il modello riprova, tentativo 2 di 3';
+    call(0).send({ type: 'step', step: 'draft', message, attempt: 2, of: 3 });
+    await settle();
+    expect(coachRun).toMatchObject({ step: `⏳ ${message}`, live: '' });
+    call(0).send({ type: 'token', text: 'seconda' });
+    await settle();
+    expect(coachRun.live).toBe('seconda');
+  });
+
+  it('Stop durante la seconda bozza tiene il suo testo', async () => {
+    void generateWorkout(request);
+    answer(0);
+    call(0).send({ type: 'token', text: 'prima' });
+    call(0).send({ type: 'step', step: 'draft', message: 'Riprova', attempt: 2, of: 3 });
+    call(0).send({ type: 'token', text: 'seconda' });
+    await settle();
+    stopWorkout();
+    expect(coachRun).toMatchObject({ running: false, stopped: true, live: 'seconda' });
+  });
+});
+
 describe('una nuova richiesta interrompe la precedente', () => {
   it('gli eventi tardivi della vecchia non si disegnano', async () => {
     void generateWorkout(request);
