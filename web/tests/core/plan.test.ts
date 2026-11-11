@@ -6,7 +6,7 @@ import { loadChartDays, type LoadChartDay } from '../../src/core/plan/load-chart
 import { buildTrainingModel } from '../../src/core/plan/model.ts';
 import { buildMonthPlan, synthFromWorkout } from '../../src/core/plan/month.ts';
 import {
-  computeMetrics, findNextNonSkipOffset, recommend, restStreak,
+  computeMetrics, recommend, restStreak,
 } from '../../src/core/plan/recommend.ts';
 import { buildDoneRec, buildWeekPlan } from '../../src/core/plan/week.ts';
 import {
@@ -29,7 +29,6 @@ describe.each(planCases)('piano di allenamento, caso $name', c => {
   const { inputs, settings, acts, profile, expected: exp } = planCase(c);
   const { now } = inputs;
   const hr = planHr(settings, acts, inputs);
-  const plannedSet = new Set(c.plannedRests);
   const days: RecordedDay[] = exp.days;
 
   it.each(days)('consiglio e numeri del giorno +$offset', d => {
@@ -41,11 +40,6 @@ describe.each(planCases)('piano di allenamento, caso $name', c => {
     }
     expect(displayed(computeMetrics(acts, hr, d.offset, now))).toEqual(displayed(d.metrics));
     expect(restStreak(acts, d.offset, now)).toBe(d.restStreak);
-  });
-
-  it('prossimo giorno non saltato', () => {
-    expect([findNextNonSkipOffset(plannedSet, 7, now), findNextNonSkipOffset(plannedSet, 1, now)])
-      .toEqual(exp.nextNonSkip);
   });
 
   // La registrazione ha il grafico disegnato: ogni barra ha il titolo "giorno: carico N · tipo".

@@ -30,6 +30,10 @@ export function fmtDate(date: DateInput, { year = 'numeric' }: { year?: 'numeric
   return new Date(date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year });
 }
 
+// "1 settembre" da "2026-09-01".
+export const dayMonth = (iso: string): string =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+
 // "2026-05-07", nel fuso orario del browser.
 export function isoDay(date: DateInput): string {
   const x = new Date(date);

@@ -35,5 +35,12 @@ export function dayOffsetIso(n: number, now: Date): string {
   return isoDay(d);
 }
 
+// Il lunedì della settimana di un giorno AAAA-MM-GG, nello stesso formato.
+export function mondayIso(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return isoDay(d);
+}
+
 // Nomi brevi dei giorni nell'ordine dei numeri ISO (1 = lunedì … 7 = domenica).
 export const WEEKDAYS_ISO = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];

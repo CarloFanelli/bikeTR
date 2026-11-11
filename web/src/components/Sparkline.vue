@@ -25,6 +25,6 @@ const line = computed(() => sparkline(props.points, props.best, W, H));
   width: 120px;
   height: 40px;
   border-radius: 4px;
-  background: #14171d;
+  background: rgb(var(--v-theme-subtle));
 }
 </style>

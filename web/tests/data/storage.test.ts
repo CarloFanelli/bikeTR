@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Activity } from '../../src/core/strava-types.ts';
 import {
   applyCachedStreams, clearSegmentCache, cycleDayState, loadCoachSettings, loadPlannedRests, loadRainyDays,
-  loadSegmentCache, loadSettings, loadSidebarCollapsed, loadStreamsCache, purgeLegacyStrava, recordFtpPoint, safeLoad,
+  loadSegmentCache, loadSettings, loadStreamsCache, purgeLegacyStrava, recordFtpPoint, safeLoad,
   safeSave,
-  saveCoachSettings, saveSegmentCache, saveSettings, saveSidebarCollapsed,
+  saveCoachSettings, saveSegmentCache, saveSettings, loadThemeChoice, saveThemeChoice,
+  loadActivitiesView, loadAnalysisTab, saveActivitiesView, saveAnalysisTab,
 } from '../../src/data/storage.ts';
 
 // localStorage simulato, ispezionabile dal test.
@@ -121,27 +122,109 @@ describe('segmenti preferiti già scaricati', () => {
   });
 });
 
-describe('barra laterale ridotta a icone', () => {
-  it('senza scelta salvata è espansa', () => {
-    expect(loadSidebarCollapsed()).toBe(false);
+describe('tema scelto', () => {
+  it('senza scelta salvata segue il computer', () => {
+    expect(loadThemeChoice()).toBe('system');
   });
 
   it('la scelta si salva sotto biketr_ui e vale alla ricarica', () => {
-    saveSidebarCollapsed(true);
-    expect(store.get('biketr_ui')).toBe('{"sidebarCollapsed":true}');
-    expect(loadSidebarCollapsed()).toBe(true);
-    saveSidebarCollapsed(false);
-    expect(loadSidebarCollapsed()).toBe(false);
+    saveThemeChoice('dark');
+    expect(store.get('biketr_ui')).toBe('{"theme":"dark"}');
+    expect(loadThemeChoice()).toBe('dark');
+    saveThemeChoice('light');
+    expect(loadThemeChoice()).toBe('light');
   });
 
-  it('una scelta illeggibile apre la barra espansa', () => {
-    store.set('biketr_ui', '{"sidebarCollapsed":tr');
-    expect(loadSidebarCollapsed()).toBe(false);
-    expect(store.get('biketr_ui.broken')).toBe('{"sidebarCollapsed":tr');
-    store.set('biketr_ui', '[true]');
-    expect(loadSidebarCollapsed()).toBe(false);
-    store.set('biketr_ui', '{"sidebarCollapsed":"sì"}');
-    expect(loadSidebarCollapsed()).toBe(false);
+  it('il valore della vecchia barra laterale vale come "segue il computer", senza copia .broken', () => {
+    store.set('biketr_ui', '{"sidebarCollapsed":true}');
+    expect(loadThemeChoice()).toBe('system');
+    expect(store.has('biketr_ui.broken')).toBe(false);
+  });
+
+  it('con i dati del browser bloccati segue il computer, e salvare non si interrompe', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => { throw new Error('SecurityError'); },
+      setItem: () => { throw new Error('SecurityError'); },
+      removeItem: () => {},
+    });
+    expect(loadThemeChoice()).toBe('system');
+    expect(saveThemeChoice('dark')).toBe(false);
+  });
+
+  it('un tema sconosciuto o illeggibile vale come "segue il computer"', () => {
+    store.set('biketr_ui', '{"theme":"blu"}');
+    expect(loadThemeChoice()).toBe('system');
+    store.set('biketr_ui', '{"theme":"da');
+    expect(loadThemeChoice()).toBe('system');
+  });
+});
+
+describe('scheda di Analisi', () => {
+  it('senza scelta salvata apre Forma e carico', () => {
+    expect(loadAnalysisTab()).toBe('forma');
+  });
+
+  it('la scheda scelta vale alla ricarica', () => {
+    saveAnalysisTab('soglie');
+    expect(loadAnalysisTab()).toBe('soglie');
+  });
+
+  it('tema e scheda stanno insieme sotto biketr_ui: salvare uno non cancella l\'altro', () => {
+    saveThemeChoice('dark');
+    saveAnalysisTab('potenza');
+    expect(loadThemeChoice()).toBe('dark');
+    saveThemeChoice('light');
+    expect(loadAnalysisTab()).toBe('potenza');
+  });
+
+  it('Profilo e dati vale alla ricarica come le altre schede', () => {
+    saveThemeChoice('dark');
+    saveActivitiesView('table');
+    saveAnalysisTab('profilo');
+    expect([loadThemeChoice(), loadAnalysisTab(), loadActivitiesView()]).toEqual(['dark', 'profilo', 'table']);
+  });
+
+  it('una scheda sconosciuta, illeggibile o i dati bloccati aprono Forma e carico', () => {
+    store.set('biketr_ui', '{"analysisTab":"meteo"}');
+    expect(loadAnalysisTab()).toBe('forma');
+    store.set('biketr_ui', '{"analysisTab":"so');
+    expect(loadAnalysisTab()).toBe('forma');
+    vi.stubGlobal('localStorage', {
+      getItem: () => { throw new Error('SecurityError'); },
+      setItem: () => { throw new Error('SecurityError'); },
+      removeItem: () => {},
+    });
+    expect(loadAnalysisTab()).toBe('forma');
+    expect(saveAnalysisTab('segmenti')).toBe(false);
+  });
+});
+
+describe('vista di Attività', () => {
+  it('senza scelta salvata apre le card; la scelta vale alla ricarica', () => {
+    expect(loadActivitiesView()).toBe('cards');
+    saveActivitiesView('table');
+    expect(loadActivitiesView()).toBe('table');
+  });
+
+  it('tema, scheda di Analisi e vista stanno insieme: salvarne una non cancella le altre', () => {
+    saveThemeChoice('dark');
+    saveAnalysisTab('soglie');
+    saveActivitiesView('table');
+    expect([loadThemeChoice(), loadAnalysisTab(), loadActivitiesView()]).toEqual(['dark', 'soglie', 'table']);
+  });
+
+  it('una vista sconosciuta, illeggibile o i dati bloccati aprono le card', () => {
+    store.set('biketr_ui', '{"activitiesView":"mappa"}');
+    expect(loadActivitiesView()).toBe('cards');
+    store.set('biketr_ui', '{"activitiesView":"ta');
+    expect(loadActivitiesView()).toBe('cards');
+    vi.stubGlobal('localStorage', {
+      getItem: () => { throw new Error('SecurityError'); },
+      setItem: () => { throw new Error('SecurityError'); },
+      removeItem: () => {},
+    });
+    expect(loadActivitiesView()).toBe('cards');
+    expect(saveActivitiesView('table')).toBe(false);
   });
 });
 

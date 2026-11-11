@@ -41,3 +41,8 @@ None
 - Connect screen and loading message, before Strava data → shown in the active theme (REQ-9)
 - Load-type colours on charts in light theme → bars still distinguishable by lightness, not hue alone (REQ-10)
 - Theme changes while a chart is shown → chart redraws in the new theme without reload (REQ-10)
+
+## Notes from implementation
+
+- **Known limitation**: series colours of Analisi's charts and cards (training zones, plan roles, FTP and power lines, gold "best" marks, map route) keep their fixed hues; they are lines and bars, not text or backgrounds, but gold is pale on the light theme. To refine when Analisi is redesigned. /dev, 2026-11-10.
+- **Impacts Task 02**: the `biketr_ui` row of README §7 still describes the sidebar; update it to `{theme}` when the sidebar is removed. /dev, 2026-11-10.

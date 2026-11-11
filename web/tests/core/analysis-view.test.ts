@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  formView, ftpCard, ftpLthrView, ftpTrendRows, hrZonesView, powerCurveView, powerProfileView,
+  formSummary, formView, ftpCard, ftpLthrView, ftpTrendRows, ftpTrendSummary, hrZonesView, powerCurveSummary,
+  powerCurveView, powerProfileView,
 } from '../../src/core/analysis-view.ts';
 import type { FormTrend } from '../../src/core/form.ts';
 import type { FtpTrend } from '../../src/core/ftp.ts';
@@ -168,5 +169,52 @@ describe('calcolo FTP / LTHR', () => {
       ],
     });
     expect(ftpLthrView(null, null, {}, hr({ lthrEst: 168, hrLthr: 168 })).lthr).toEqual({ value: '168 bpm', kind: 'stimata', table: null });
+  });
+});
+
+// Le frasi sotto i grafici: al massimo 25 parole, con almeno un numero del grafico.
+describe('frasi riassuntive dei grafici', () => {
+  const words = (text: string) => text.split(/\s+/).filter(Boolean).length;
+  const ok = (text: string) => {
+    expect(words(text)).toBeLessThanOrEqual(25);
+    expect(text).toMatch(/\d/);
+  };
+
+  it('forma: i valori di oggi e quanto è cambiata la fitness in 4 settimane', () => {
+    const ctl = Array.from({ length: 30 }, (_, i) => 30 + i * 0.5);
+    const form = { DAYS: 30, ctl, atl: ctl.map(v => v + 4), tsb: ctl.map(() => -4), daily: ctl.map(() => 50) } as FormTrend;
+    const text = formSummary(form);
+    expect(text).toBe('Forma oggi −4: fitness 45, fatica 49. In 4 settimane la fitness è salita di 14.');
+    ok(text);
+  });
+
+  it('forma senza carico: lo dice', () => {
+    const zero = Array.from({ length: 90 }, () => 0);
+    expect(formSummary({ DAYS: 90, ctl: zero, atl: zero, tsb: zero, daily: zero } as FormTrend))
+      .toBe('Nessun carico negli ultimi 90 giorni: fitness e fatica sono a zero.');
+  });
+
+  it('FTP: l\'ultimo valore, la differenza dal primo punto e il picco', () => {
+    const trend = { history: [{ date: '2026-09-01', ftp: 240 }, { date: '2026-11-01', ftp: 252 }], peakFtp: 255 } as FtpTrend;
+    const text = ftpTrendSummary(trend);
+    expect(text).toBe('FTP 252 W, +12 W dal 1 settembre; picco storico 255 W.');
+    ok(text);
+  });
+
+  it('curva di potenza: dalla durata più breve alla più lunga; senza potenza lo dice', () => {
+    const view = { rows: [], points: [{ y: 410, title: '5-15 min' }, { y: 220, title: '>2h' }] } as unknown as ReturnType<typeof powerCurveView>;
+    const text = powerCurveSummary(view);
+    expect(text).toBe('Migliore potenza da 410 W su 5-15 min a 220 W su >2h.');
+    ok(text);
+    expect(powerCurveSummary({ rows: [], points: [] })).toBe('Nessuna uscita con potenza tra le ultime 60 attività.');
+  });
+
+  it('zone FC: la parte facile e quella dura delle ultime 4 settimane', () => {
+    const view = hrZonesView({
+      zones: [100, 200, 50, 30, 20].map((minutes, i) => ({ label: `Z${i + 1}`, color: 'x', min: 0, max: 1, minutes })) as HrZone[],
+      total: 400,
+    });
+    expect(view.summary).toBe('Nelle ultime 4 settimane il 75% del tempo è facile (Z1-Z2) e il 25% duro (Z3-Z5).');
+    ok(view.summary ?? '');
   });
 });

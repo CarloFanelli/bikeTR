@@ -1,7 +1,7 @@
 # Task Progress - ui-redesign
 
-01-theme-foundation: TODO
-02-top-bar-shell: TODO
-03-info-explanations: TODO
-04-allenamento-redesign: TODO
-05-home-overview: TODO
+01-theme-foundation: DONE
+02-top-bar-shell: DONE
+03-info-explanations: DONE
+04-allenamento-redesign: DONE
+05-home-overview: DONE

@@ -1,8 +1,11 @@
-// Quello che mostra Home: precisione dei dati, profilo, record e totali dell'atleta,
-// con i loro testi e arrotondamenti.
+// I testi e gli arrotondamenti di Home (settimana, ultima uscita) e della scheda Profilo e
+// dati di Analisi (precisione dei dati, profilo, record e totali dell'atleta).
 
-import { fmtKm, fmtTime, kmh } from './format.ts';
+import { displayName } from './activity-view.ts';
+import { dayOffsetIso, mondayIso } from './dates.ts';
+import { fmtDate, fmtKm, fmtTime, isoDay, kmh } from './format.ts';
 import type { HrProfile } from './hr.ts';
+import { activityLoad } from './load.ts';
 import type { buildProfile, personalRecords } from './profile.ts';
 import type { Activity, AthleteStats } from './strava-types.ts';
 
@@ -107,4 +110,53 @@ export function athleteTotals(stats: AthleteStats | null) {
     ['🏊 Nuoto (all-time)', stats?.all_swim_totals],
   ] as const;
   return totals.flatMap(([label, t]) => t?.count ? [{ label, distance: fmtKm(t.distance), count: t.count }] : []);
+}
+
+// L'ultima uscita in bici: la più recente per data, perché la lista di Strava non garantisce
+// l'ordine. Senza uscite in bici il messaggio dice se mancano solo fra quelle caricate.
+export function lastRide(activities: Activity[]) {
+  const rides = activities.filter(a => a.type?.includes('Ride'));
+  if (!rides.length) {
+    const empty = activities.length ? `Nessuna uscita in bici tra le ultime ${activities.length} attività` : 'Nessuna uscita ancora';
+    return { ride: null, empty };
+  }
+  const a = rides.reduce((last, r) => (r.start_date > last.start_date ? r : last));
+  return {
+    ride: {
+      id: a.id, name: displayName(a.name, a.id), date: fmtDate(a.start_date_local),
+      distance: fmtKm(a.distance), time: fmtTime(a.moving_time),
+    },
+    empty: null,
+  };
+}
+
+// Le tre caselle in cima a Home: km, ore e carico da lunedì a oggi, e quanto cambiano dagli
+// stessi giorni della settimana prima (da lunedì allo stesso giorno). Il carico è quello di
+// ogni attività in tutta l'app. La differenza ha sempre il segno, mai una percentuale: una
+// settimana prima vuota non è un caso a parte.
+export function weekTiles(activities: Activity[], hr: Pick<HrProfile, 'hrMax' | 'hrLthr' | 'ftp'>, now: Date) {
+  const today = isoDay(now);
+  const monday = mondayIso(today);
+  const back = (iso: string) => dayOffsetIso(-7, new Date(`${iso}T00:00:00`));
+  const within = (from: string, to: string) => activities.filter(a => {
+    const day = isoDay(a.start_date_local);
+    return day >= from && day <= to;
+  });
+  const totals = (acts: Activity[]) => ({
+    km: acts.reduce((s, a) => s + (a.distance || 0), 0) / 1000,
+    seconds: acts.reduce((s, a) => s + (a.moving_time || 0), 0),
+    load: Math.round(acts.reduce((s, a) => s + activityLoad(a, hr.hrMax, hr.hrLthr, hr.ftp), 0)),
+  });
+  const cur = totals(within(monday, today));
+  const prev = totals(within(back(monday), back(today)));
+  // Il segno viene dalla differenza già arrotondata come si mostra: mai "−0.0 km".
+  const sign = (n: number) => (n < 0 ? '−' : '+');
+  const km = Math.round((cur.km - prev.km) * 10) / 10;
+  const minutes = Math.round((cur.seconds - prev.seconds) / 60);
+  const load = cur.load - prev.load;
+  return [
+    { label: 'Km', value: `${cur.km.toFixed(1)} km`, change: `${sign(km)}${Math.abs(km).toFixed(1)} km` },
+    { label: 'Ore', value: fmtTime(cur.seconds), change: `${sign(minutes)}${fmtTime(Math.abs(minutes) * 60)}` },
+    { label: 'Carico', value: String(cur.load), change: `${sign(load)}${Math.abs(load)}` },
+  ];
 }

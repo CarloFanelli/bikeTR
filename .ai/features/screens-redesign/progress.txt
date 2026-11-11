@@ -1,0 +1,7 @@
+# Task Progress - screens-redesign
+
+01-analisi-tabs: DONE
+02-activities-redesign: DONE
+03-coach-redesign: DONE
+04-library-redesign: DONE
+05-settings-and-connect: DONE

@@ -3,7 +3,7 @@
 // Considera: carico 7/28gg, freschezza, sessioni dure recenti, riposi pianificati.
 // Supporta "perspective shift" con dayOffset: 0 = oggi, 1 = domani, ecc.
 
-import { buildDateHelpers, dayOffsetIso } from '../dates.ts';
+import { buildDateHelpers } from '../dates.ts';
 import { buildFormTrend, compositeFatigueScore } from '../form.ts';
 import { isoDay } from '../format.ts';
 import { buildFtpTrend } from '../ftp.ts';
@@ -27,14 +27,6 @@ export function restStreak(allActs: Activity[], dayOffset: number, now: Date): n
     streak++;
   }
   return streak;
-}
-
-// Il primo giorno dopo oggi non segnato come salto, entro `maxAhead` giorni (altrimenti domani).
-export function findNextNonSkipOffset(plannedSet: Set<string>, maxAhead: number, now: Date): number {
-  for (let i = 1; i <= maxAhead; i++) {
-    if (!plannedSet.has(dayOffsetIso(i, now))) return i;
-  }
-  return 1;
 }
 
 // Il consiglio del giorno `dayOffset` (0 = oggi). Il testo è semplice: chi lo mostra lo

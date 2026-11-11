@@ -5,8 +5,9 @@ import vue from '@vitejs/plugin-vue';
 // connessione del live reload, sulla rete interna di Docker.
 export default defineConfig({
   plugins: [vue()],
-  // Solo file veri: un indirizzo che non esiste risponde 404, non con una pagina dell'app.
-  appType: 'mpa',
+  // Un indirizzo che non è un file (/analisi, /attivita/123) riceve la pagina dell'app: il
+  // router apre la sezione, o Home se l'indirizzo non esiste. File mancanti restano 404.
+  appType: 'spa',
   server: {
     host: '0.0.0.0',
     port: 5173,

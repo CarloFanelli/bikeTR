@@ -1,0 +1,5 @@
+# Task Progress - training-layout
+
+01-page-order-layout: DONE
+02-plan-day-types: DONE
+03-calendar-hint-legend: DONE

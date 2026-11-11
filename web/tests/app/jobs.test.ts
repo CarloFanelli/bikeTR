@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed } from 'vue';
-import { countForExport, exportJob, refreshStreams, runExport, streamsJob } from '../../src/app/jobs.ts';
+import { countForExport, exportJob, refreshStreams, retryExport, runExport, streamsJob } from '../../src/app/jobs.ts';
 import { hrProfile, session } from '../../src/app/session.ts';
 import { dataPrecision } from '../../src/core/home.ts';
 import type { Activity, ActivityDetail } from '../../src/core/strava-types.ts';
@@ -112,6 +112,24 @@ describe('Esporta allenamenti', () => {
     expect(downloadJson).toHaveBeenCalledWith(
       expect.objectContaining({ athlete: expect.objectContaining({ id: 7 }) }), 'biketr-export-detailed-2026-11-07.json',
     );
+  });
+
+  it('Riprova rifà lo stesso export già confermato; senza un export prima non fa niente', async () => {
+    vi.mocked(fetchActivities).mockResolvedValue([ride(1), ride(2)]);
+    await countForExport();
+    exportJob.lastChoice = null;
+    await retryExport();
+    expect(downloadJson).not.toHaveBeenCalled();
+
+    vi.mocked(downloadJson).mockImplementationOnce(() => { throw new Error('disco pieno'); });
+    await runExport({ mode: 'compact', from: '', to: '', onlyRides: true });
+    expect(exportJob.error).toBe('❌ disco pieno');
+
+    await retryExport();
+    expect(exportJob).toMatchObject({ error: '', done: { count: 2 } });
+    expect(vi.mocked(downloadJson).mock.calls.map(c => c[1])).toEqual([
+      expect.stringContaining('compact'), expect.stringContaining('compact'),
+    ]);
   });
 
   it('Strava non risponde mentre conta: il messaggio che lo spiega', async () => {

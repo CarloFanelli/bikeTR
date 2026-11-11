@@ -22,10 +22,16 @@ const UI = 'biketr_ui';
 const SEGMENTS_CACHE = 'biketr_segments_cache_v2';
 const COACH_SETTINGS = 'biketr_coach_settings';
 
-// Chiave assente: `fallback`, senza log. JSON illeggibile o rifiutato da `validator`:
-// copia in "<chiave>.broken", avviso in console e `fallback`. Non lancia mai.
+// Chiave assente o dati del browser bloccati (alcune finestre private): `fallback`, senza log.
+// JSON illeggibile o rifiutato da `validator`: copia in "<chiave>.broken", avviso in
+// console e `fallback`. Non lancia mai.
 export function safeLoad<T>(key: string, fallback: T, validator?: (x: unknown) => boolean): T {
-  const raw = localStorage.getItem(key);
+  let raw: string | null;
+  try {
+    raw = localStorage.getItem(key);
+  } catch {
+    return fallback;
+  }
   if (raw == null) return fallback;
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -118,10 +124,40 @@ export function loadCoachSettings(): CoachSettings {
 export const saveCoachSettings = (changes: CoachSettings): boolean =>
   safeSave(COACH_SETTINGS, { ...loadCoachSettings(), ...changes });
 
-// Barra laterale ridotta a icone; senza una scelta leggibile resta espansa.
-export const loadSidebarCollapsed = (): boolean =>
-  safeLoad<{ sidebarCollapsed?: unknown }>(UI, {}, isPlainObject).sidebarCollapsed === true;
-export const saveSidebarCollapsed = (collapsed: boolean): boolean => safeSave(UI, { sidebarCollapsed: collapsed });
+// Le scelte dell'interfaccia (tema, scheda di Analisi) stanno insieme sotto biketr_ui:
+// ogni salvataggio cambia solo la sua voce e tiene le altre.
+const loadUi = () => safeLoad<Record<string, unknown>>(UI, {}, isPlainObject);
+const saveUi = (changes: Record<string, unknown>): boolean => safeSave(UI, { ...loadUi(), ...changes });
+
+// Tema scelto dall'atleta; "system" segue il chiaro o scuro del computer. Un valore
+// senza tema (quello della vecchia barra laterale) o sconosciuto vale "system".
+export type ThemeChoice = 'system' | 'light' | 'dark';
+const THEME_CHOICES: readonly string[] = ['system', 'light', 'dark'];
+
+export function loadThemeChoice(): ThemeChoice {
+  const { theme } = loadUi();
+  return typeof theme === 'string' && THEME_CHOICES.includes(theme) ? theme as ThemeChoice : 'system';
+}
+export const saveThemeChoice = (theme: ThemeChoice): boolean => saveUi({ theme });
+
+// La scheda di Analisi aperta per ultima; senza una scelta leggibile, Forma e carico.
+export type AnalysisTab = 'forma' | 'potenza' | 'soglie' | 'segmenti' | 'profilo';
+const ANALYSIS_TABS: readonly string[] = ['forma', 'potenza', 'soglie', 'segmenti', 'profilo'];
+
+export function loadAnalysisTab(): AnalysisTab {
+  const { analysisTab } = loadUi();
+  return typeof analysisTab === 'string' && ANALYSIS_TABS.includes(analysisTab) ? analysisTab as AnalysisTab : 'forma';
+}
+export const saveAnalysisTab = (tab: AnalysisTab): boolean => saveUi({ analysisTab: tab });
+
+// La vista di Attività scelta per ultima, card o tabella; senza una scelta leggibile, le card.
+export type ActivitiesView = 'cards' | 'table';
+
+export function loadActivitiesView(): ActivitiesView {
+  const { activitiesView } = loadUi();
+  return activitiesView === 'table' ? 'table' : 'cards';
+}
+export const saveActivitiesView = (view: ActivitiesView): boolean => saveUi({ activitiesView: view });
 
 // Un punto alla settimana, al massimo 52 (vedi nextFtpHistory).
 export const loadFtpHistory = (): FtpPoint[] => safeLoad<FtpPoint[]>(FTP_HISTORY, [], Array.isArray);

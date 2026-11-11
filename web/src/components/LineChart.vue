@@ -7,6 +7,7 @@ import {
 } from 'chart.js';
 import { computed } from 'vue';
 import { Chart } from 'vue-chartjs';
+import { useThemeColor } from '../app/theme-color.ts';
 
 ChartJS.register(
   BarController, BarElement, CategoryScale, LinearScale, LineController, LineElement, LogarithmicScale, PointElement, Tooltip,
@@ -24,10 +25,13 @@ const props = withDefaults(defineProps<{
   beginAtZero?: boolean;
 }>(), { tooltip: () => ({}), height: 220, logX: undefined, beginAtZero: true });
 
-const MUTED = '#9aa0aa';
-const GRID = '#2a2e38';
+// Colori di tacche, righe e riquadro dal tema attivo: cambiando tema il grafico si ridisegna.
+const color = useThemeColor();
 
-const options = computed<ChartOptions>(() => ({
+const options = computed<ChartOptions>(() => {
+  const muted = color('muted');
+  const grid = color('grid');
+  return {
   responsive: true,
   maintainAspectRatio: false,
   animation: false,
@@ -35,6 +39,8 @@ const options = computed<ChartOptions>(() => ({
   plugins: {
     legend: { display: false },
     tooltip: {
+      backgroundColor: color('surface'), titleColor: color('on-surface'), bodyColor: color('on-surface'),
+      borderColor: grid, borderWidth: 1,
       // Righe nell'ordine delle serie, non in quello di disegno.
       itemSort: (a, b) => a.datasetIndex - b.datasetIndex,
       callbacks: {
@@ -46,20 +52,23 @@ const options = computed<ChartOptions>(() => ({
     },
   },
   scales: {
-    x: props.logX ? logAxis(props.logX) : { ticks: { color: MUTED, maxRotation: 0, autoSkipPadding: 12 }, grid: { display: false } },
-    y: { beginAtZero: props.beginAtZero, ticks: { color: MUTED }, grid: { color: GRID } },
+    x: props.logX
+      ? logAxis(props.logX, muted, grid)
+      : { ticks: { color: muted, maxRotation: 0, autoSkipPadding: 12 }, grid: { display: false } },
+    y: { beginAtZero: props.beginAtZero, ticks: { color: muted }, grid: { color: grid } },
   },
-}));
+  };
+});
 
 // Solo le tacche date, con il loro nome, tra il minimo e il massimo dell'asse.
-function logAxis(ticks: { value: number; label: string }[]) {
+function logAxis(ticks: { value: number; label: string }[], muted: string, grid: string) {
   return {
     type: 'logarithmic' as const,
     afterBuildTicks: (axis: { min: number; max: number; ticks: { value: number }[] }) => {
       axis.ticks = ticks.filter(t => t.value >= axis.min && t.value <= axis.max).map(t => ({ value: t.value }));
     },
-    ticks: { color: MUTED, callback: (value: number | string) => ticks.find(t => t.value === value)?.label ?? '' },
-    grid: { color: GRID },
+    ticks: { color: muted, callback: (value: number | string) => ticks.find(t => t.value === value)?.label ?? '' },
+    grid: { color: grid },
   };
 }
 </script>

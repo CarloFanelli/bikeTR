@@ -1,21 +1,77 @@
 // Le righe della lista Attività e del dettaglio di un'attività, con i loro testi e
 // arrotondamenti. I nomi da Strava restano come sono scritti.
 
-import { fmtClock, fmtDate, fmtKm, fmtTime, kmh, TYPE_EMOJI } from './format.ts';
+import { mondayIso } from './dates.ts';
+import { emojiIcon, type IconName } from './emoji.ts';
+import { fmtClock, fmtDate, fmtKm, fmtTime, isoDay, kmh, TYPE_EMOJI } from './format.ts';
 import type { Activity, ActivityDetail, SegmentEffort, Split } from './strava-types.ts';
 
 // Un nome vuoto mostra il numero dell'attività.
 export const displayName = (name: string | undefined, id: number): string => name || '#' + id;
 
+// La ricerca di Attività: una parte del nome mostrato, senza badare a maiuscole e accenti
+// ("giro" trova "GIRÒ"). Vuota o fatta di spazi tiene tutto.
+const plain = (text: string): string => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+export function nameMatches(name: string | undefined, id: number, query: string): boolean {
+  const q = plain(query.trim());
+  return !q || plain(displayName(name, id)).includes(q);
+}
+
 const bpm = (hr: number | undefined): string => hr ? ` · ${Math.round(hr)} bpm` : '';
 
+// L'icona dello sport; uno sport senza icona (yoga, kitesurf…) ha quella generica.
+export const sportIcon = (type: string): IconName => emojiIcon(TYPE_EMOJI[type] ?? '') ?? 'activity';
+
+// Una riga della tabella o una card di Attività. Senza distanza (forza, yoga) o dislivello un
+// trattino; `route` è il percorso come lo dà Strava, null senza GPS (rulli, palestra).
 export function activityRow(a: Activity) {
+  const climb = Math.round(a.total_elevation_gain || 0);
   return {
-    title: `${TYPE_EMOJI[a.type] || '•'} ${displayName(a.name, a.id)}`,
-    meta: `${fmtDate(a.start_date_local)} · ${a.type}${a.average_heartrate ? ' · FC ' + Math.round(a.average_heartrate) : ''}`,
-    distance: fmtKm(a.distance),
-    sub: `${fmtTime(a.moving_time)} · ↑${Math.round(a.total_elevation_gain)}m`,
+    id: a.id,
+    icon: sportIcon(a.type),
+    name: displayName(a.name, a.id),
+    date: fmtDate(a.start_date_local),
+    distance: a.distance ? fmtKm(a.distance) : '—',
+    time: fmtTime(a.moving_time),
+    climb: climb ? `↑${climb} m` : '—',
+    route: a.map?.summary_polyline || null,
   };
+}
+
+// Il gruppo del filtro di Attività: ogni variante di bici (rulli, gravel, MTB, e-bike) è
+// Bici, ogni corsa è Corsa, il resto (camminate, nuoto, forza…) è Altro.
+export type SportGroup = 'bike' | 'run' | 'other';
+export const sportGroup = (type: string): SportGroup =>
+  type.includes('Ride') ? 'bike' : type.includes('Run') ? 'run' : 'other';
+
+const shortDay = (d: Date) => d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+
+// Le attività per settimana, da lunedì a domenica, nell'ordine in cui arrivano (dalla più
+// recente). Ogni settimana ha le date, fino a oggi per quella in corso, e i totali delle sue
+// attività. Il giorno è quello locale, come nel resto dell'app (vedi `isoDay`).
+export function weekGroups(activities: Activity[], now: Date) {
+  const weeks = new Map<string, Activity[]>();
+  for (const a of activities) {
+    const key = mondayIso(isoDay(a.start_date_local));
+    weeks.set(key, [...(weeks.get(key) ?? []), a]);
+  }
+  return [...weeks].map(([key, acts]) => {
+    const monday = new Date(`${key}T00:00:00`);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+    const end = sunday < now ? sunday : now;
+    const days = isoDay(end) === key ? shortDay(monday) : `${shortDay(monday)} – ${shortDay(end)}`;
+    const sum = (f: (a: Activity) => number) => acts.reduce((s, a) => s + (f(a) || 0), 0);
+    const climb = Math.round(sum(a => a.total_elevation_gain));
+    return {
+      key,
+      label: days,
+      distance: fmtKm(sum(a => a.distance)),
+      time: fmtTime(sum(a => a.moving_time)),
+      climb: climb ? `↑${climb} m` : '—',
+      activities: acts,
+    };
+  });
 }
 
 // I numeri in testa al dettaglio: [nome, valore].

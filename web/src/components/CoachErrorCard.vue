@@ -1,65 +1,33 @@
 <script setup lang="ts">
-// Errore del Coach: FTP mancante e ricerca dei paper hanno la loro spiegazione, gli
-// altri mostrano il messaggio del servizio. Il modello in uso e la verifica della connessione
-// stanno in Impostazioni.
-import { RouterLink } from 'vue-router';
+// Errore del Coach in una riga: il titolo apre la spiegazione (il messaggio del servizio e,
+// per la ricerca dei paper, i comandi in "Dettagli tecnici"). Senza FTP, il link a Impostazioni.
+// Il messaggio del servizio si mostra come testo.
+import { computed } from 'vue';
+import { VAlert, VBtn } from 'vuetify/components';
 import type { CoachRefusal } from '../core/coach-types.ts';
-import { errorHeading } from '../core/coach-view.ts';
+import { errorTopic } from '../core/explanations/coach.ts';
+import InfoLabel from './InfoLabel.vue';
 
-defineProps<{ refusal: CoachRefusal }>();
+const props = defineProps<{ refusal: CoachRefusal }>();
 
+const topic = computed(() => errorTopic(props.refusal));
 const settings = { name: 'impostazioni' };
 </script>
 
 <template>
-  <div class="coach-error">
-    <template v-if="refusal.error === 'no_ftp'">
-      <b>❌ FTP non disponibile</b>
-      <p class="my-2">Il Coach AI ha bisogno della FTP per calcolare i watt target.</p>
-      <p class="hint text-medium-emphasis">
-        Vai su <RouterLink :to="settings">Impostazioni</RouterLink> → <b>Zone e soglie</b> e dichiara l'FTP, oppure registra qualche attività con power meter su Strava.
-      </p>
-    </template>
-    <template v-else-if="refusal.error === 'retrieval'">
-      <b>❌ Errore retrieval paper</b>
-      <p class="my-2">{{ refusal.message }}</p>
-      <p class="hint text-medium-emphasis">Verifica:</p>
-      <ul class="hint text-medium-emphasis">
-        <li>Indice paper presente? Se <code>papers_index.json</code> manca, ripristinalo da git: <code>git restore papers_index.json</code></li>
-        <li>Indice codificato con un altro modello di ricerca? Il messaggio qui sopra dà il comando che lo ricodifica.</li>
-      </ul>
-    </template>
-    <template v-else>
-      <b>❌ {{ errorHeading(refusal.error) }}</b>
-      <p class="my-2">{{ refusal.message }}</p>
-    </template>
-  </div>
+  <VAlert type="error" variant="tonal" density="comfortable" class="mb-4">
+    <div class="d-flex flex-wrap align-center ga-2">
+      <InfoLabel :topic="topic" />
+      <VBtn
+        v-if="refusal.error === 'no_ftp'"
+        :to="settings"
+        variant="text"
+        color="primary"
+        class="action"
+        min-height="44"
+      >
+        Vai a Impostazioni
+      </VBtn>
+    </div>
+  </VAlert>
 </template>
-
-<style scoped>
-.coach-error {
-  padding: 1rem 1.25rem;
-  border-left: 3px solid rgb(var(--v-theme-error));
-  border-radius: 8px;
-  background: #2a1a1a;
-}
-
-.hint {
-  font-size: 0.85rem;
-}
-
-ul.hint {
-  padding-left: 1.2rem;
-}
-
-code {
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  background: #0f1115;
-  font-size: 0.85rem;
-}
-
-a {
-  color: rgb(var(--v-theme-primary));
-}
-</style>
