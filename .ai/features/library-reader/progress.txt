@@ -1,0 +1,5 @@
+# Task Progress - library-reader
+
+01-split-reader-layout: DONE
+02-add-flow-in-reader: DONE
+03-search-by-words: DONE
