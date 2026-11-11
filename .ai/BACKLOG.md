@@ -142,9 +142,10 @@
 - **What**: Find open-license (CC BY, CC BY-SA, CC0) studies behind the same workouts, so more papers are searched by their full text: today only 2 of the 17 qualify. Measured with the search-only run of the evaluation set.
 - **From**: passage-search (dev task 03, 2026-11-09)
 
-### B-32 · open
+### B-32 · picked-up
 - **What**: In the paper library, search PubMed by title or author and pick the paper from the results, instead of having to know its PMID.
 - **From**: paper-library (interview, 2026-11-10)
+- **Picked up by**: library-reader (2026-11-11)
 
 ### B-33 · open
 - **What**: A Coach check that rules out hard work when fitness (CTL) rises too fast in a week, with a source (paper or declared practice) to find first, measured with the evaluation set.
