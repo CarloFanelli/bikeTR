@@ -2,6 +2,7 @@
 // del carico e piano del mese, con i loro testi e arrotondamenti.
 
 import { dayOffsetIso } from './dates.ts';
+import { dayMonth } from './format.ts';
 import type { compositeFatigueScore } from './form.ts';
 import type { HrProfile } from './hr.ts';
 import { getWeekRoleInBlock, MESO_BLOCKS, type Mesocycle, type WeekRole } from './meso.ts';
@@ -10,7 +11,7 @@ import { type Advice, type PlanInputs, type PlanProfile, planHr } from './plan/i
 import type { LoadChartDay } from './plan/load-chart.ts';
 import type { buildTrainingModel } from './plan/model.ts';
 import type { WeekPlan } from './plan/month.ts';
-import { computeMetrics, findNextNonSkipOffset, recommend } from './plan/recommend.ts';
+import { computeMetrics, recommend } from './plan/recommend.ts';
 import type { Settings } from './settings.ts';
 import type { Activity } from './strava-types.ts';
 
@@ -19,17 +20,16 @@ import type { Activity } from './strava-types.ts';
 type DayMetrics = ReturnType<typeof computeMetrics>;
 
 export interface DayAdvice {
-  // null per oggi; per l'anteprima il giorno ("venerdì 6 nov").
+  // null per oggi; "Domani" per domani.
   label: string | null;
   rec: Advice;
   metrics: DayMetrics;
 }
 
-// Il consiglio di oggi; se oggi è segnato "salto", anche l'anteprima del prossimo giorno
-// non saltato (al massimo fra una settimana).
+// Il consiglio di oggi e quello di domani, sempre: un giorno segnato "salto" ha il riposo pianificato.
 export function dailyAdvice(
   activities: Activity[], settings: Settings, rests: string[], profile: PlanProfile | null, inputs: PlanInputs,
-): { today: DayAdvice; next: DayAdvice | null } {
+): { today: DayAdvice; tomorrow: DayAdvice } {
   const { now } = inputs;
   const hr = planHr(settings, activities, inputs);
   const day = (offset: number, label: string | null): DayAdvice => ({
@@ -37,11 +37,7 @@ export function dailyAdvice(
     rec: recommend(activities, settings, rests, offset, profile, inputs),
     metrics: computeMetrics(activities, hr, offset, now),
   });
-  const today = day(0, null);
-  const skipped = new Set(rests);
-  if (!skipped.has(dayOffsetIso(0, now))) return { today, next: null };
-  const nextOffset = findNextNonSkipOffset(skipped, 7, now);
-  return { today, next: day(nextOffset, offsetLabel(nextOffset, now)) };
+  return { today: day(0, null), tomorrow: day(1, offsetLabel(1, now)) };
 }
 
 type Fatigue = Pick<ReturnType<typeof compositeFatigueScore>, 'composite' | 'muscularFatigue'>;
@@ -100,12 +96,15 @@ export function restCalendar(skip: string[], rain: string[], now: Date) {
 
 // ---- Grafico del carico degli ultimi 30 giorni ----
 
-export const LOAD_KINDS = [
-  { tag: 'bici easy', color: '#4ade80' },
-  { tag: 'bici dura', color: '#ff6b6b' },
-  { tag: 'lunga', color: '#fc5200' },
-  { tag: 'cross-training', color: '#8b5cf6' },
-  { tag: 'riposo', color: '#2a2e38' },
+// `color` è il nome di un colore del tema: cambia fra chiaro e scuro. `pattern` distingue
+// dure e lunghe anche senza colori (daltonismo, stampa).
+export type LoadPattern = 'stripes' | 'dots' | null;
+export const LOAD_KINDS: { tag: string; color: string; pattern: LoadPattern }[] = [
+  { tag: 'bici easy', color: 'load-easy', pattern: null },
+  { tag: 'bici dura', color: 'load-hard', pattern: 'stripes' },
+  { tag: 'lunga', color: 'load-long', pattern: 'dots' },
+  { tag: 'cross-training', color: 'load-cross', pattern: null },
+  { tag: 'riposo', color: 'load-rest', pattern: null },
 ];
 
 const kindOf = (b: LoadChartDay) => LOAD_KINDS[b.long ? 2 : b.hard ? 1 : b.bike ? 0 : b.nonBike ? 3 : 4];
@@ -116,8 +115,18 @@ export function loadChartView(days: LoadChartDay[]) {
     loads: days.map(d => d.load),
     colors: days.map(d => kindOf(d).color),
     tags: days.map(d => kindOf(d).tag),
+    patterns: days.map(d => kindOf(d).pattern),
     average: days.reduce((s, d) => s + d.load, 0) / days.length,
   };
+}
+
+// La frase sotto il grafico: la media giornaliera e il giorno più carico, senza emoji.
+export function loadSummary(view: ReturnType<typeof loadChartView>): string {
+  const n = view.labels.length;
+  const max = Math.max(0, ...view.loads);
+  if (!max) return `Nessun carico negli ultimi ${n} giorni.`;
+  const day = dayMonth(view.labels[view.loads.indexOf(max)]);
+  return `Media di ${Math.round(view.average)} al giorno negli ultimi ${n} giorni; il giorno più carico è il ${day}, con ${Math.round(max)}.`;
 }
 
 // ---- Piano del mese ----
@@ -222,7 +231,18 @@ export function weekBlock(wp: WeekPlan, index: number, raceName: string | undefi
 
 // Un giorno per riga: l'icona è il primo pezzo del titolo ("🔴 Soglia" → "🔴", "Soglia").
 // Un giorno passato con un'attività porta al suo dettaglio.
-export function planRows(days: Pick<WeekPlan['days'][number], 'label' | 'rec' | 'isPast'>[]) {
+// Il tipo di un giorno del piano, con i colori del grafico del carico: dura, lunga, facile,
+// forza o mobilità, riposo. Un giorno fatto prende il tipo dell'uscita, scritto all'inizio del dettaglio.
+const PLAN_KIND: Record<string, number> = {
+  EASY: 0, RECOVERY: 0, HARD: 1, LONG: 2, STRENGTH: 3, MOBILITY: 3,
+};
+const DONE_KIND: Record<string, number> = { '🟢': 0, '🔴': 1, '🟠': 2, '💪': 3 };
+function planKind(category: string | null, detail: string) {
+  const i = category === 'DONE' ? DONE_KIND[detail.split(' ')[0]] : PLAN_KIND[category ?? ''];
+  return LOAD_KINDS[i ?? 4];
+}
+
+export function planRows(days: Pick<WeekPlan['days'][number], 'label' | 'rec' | 'isPast' | 'offset' | 'category'>[]) {
   return days.map(d => {
     const icon = d.rec.title.match(/^(\S+)\s/)?.[1] || '•';
     return {
@@ -231,7 +251,9 @@ export function planRows(days: Pick<WeekPlan['days'][number], 'label' | 'rec' | 
       title: d.rec.title.replace(/^\S+\s/, ''),
       detail: d.rec.detail,
       past: d.isPast,
+      today: d.offset === 0,
       activityId: d.rec._isDone ? d.rec._activityId ?? null : null,
+      kind: planKind(d.category, d.rec.detail),
     };
   });
 }

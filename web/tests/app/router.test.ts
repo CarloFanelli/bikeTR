@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory } from 'vue-router';
-import { createAppRouter } from '../../src/app/router.ts';
+import { addressFromHash, createAppRouter } from '../../src/app/router.ts';
 
 // Qui contano gli indirizzi, non le schermate: schermate vuote al posto di quelle vere.
 vi.mock('../../src/screens/SettingsScreen.vue', () => ({ default: {} }));
@@ -40,5 +40,19 @@ describe('indirizzi dell\'app', () => {
 
   it.each(['/', '/hoem', '/attivita/1/altro', '/impostazioni/zone'])('%s, sconosciuto, apre Home', async (address) => {
     expect((await open(address)).path).toBe('/home');
+  });
+});
+
+describe('vecchi indirizzi con il #', () => {
+  it('un segnalibro con il # apre lo stesso indirizzo senza', () => {
+    expect(addressFromHash('#/analisi')).toBe('/analisi');
+    expect(addressFromHash('#/attivita/1234567')).toBe('/attivita/1234567');
+    expect(addressFromHash('#/home?x=1')).toBe('/home?x=1');
+  });
+
+  it('senza un indirizzo dopo il # non cambia nulla', () => {
+    expect(addressFromHash('')).toBeNull();
+    expect(addressFromHash('#')).toBeNull();
+    expect(addressFromHash('#sezione')).toBeNull();
   });
 });

@@ -6,8 +6,9 @@ import {
   VBtn, VCard, VCardActions, VCardText, VCardTitle, VCheckbox, VCol, VDialog, VProgressLinear, VRadio, VRadioGroup,
   VRow, VTextField,
 } from 'vuetify/components';
-import { countForExport, exportJob, runExport } from '../app/jobs.ts';
+import { countForExport, exportJob, retryExport, runExport } from '../app/jobs.ts';
 import { estimate, type ExportMode, exportRange, filterForExport } from '../data/export.ts';
+import ErrorNotice from './ErrorNotice.vue';
 
 const open = defineModel<boolean>({ required: true });
 const mode = ref<ExportMode>('compact');
@@ -68,9 +69,17 @@ function start(): void {
       <VCardTitle>📥 Esporta allenamenti</VCardTitle>
       <VCardText>
         <p class="text-medium-emphasis mb-3">JSON pronto da incollare in chat con Claude.</p>
-        <p class="text-body-2 mb-3">
-          <span v-if="exportJob.countError" class="text-error">{{ exportJob.countError }}</span>
-          <span v-else-if="exportJob.counting">{{ exportJob.countText }}</span>
+        <ErrorNotice
+          v-if="exportJob.countError"
+          summary="Non riesco a contare le tue attività su Strava, quindi l'export non può partire."
+          :detail="exportJob.countError"
+          retry
+          :busy="exportJob.counting"
+          class="mb-3"
+          @retry="countForExport"
+        />
+        <p v-else class="text-body-2 mb-3">
+          <span v-if="exportJob.counting">{{ exportJob.countText }}</span>
           <span v-else-if="exportJob.all && range">
             Trovate <b>{{ exportJob.all.length }}</b> attività totali. Range: {{ range.first }} → {{ range.last }}.
           </span>
@@ -110,9 +119,17 @@ function start(): void {
           Vuoto = tutto lo storico. Utile per ridurre il file in modalità "Massimo".
         </div>
 
-        <div class="text-body-2 mb-2">
-          <span v-if="exportJob.error" class="text-error">{{ exportJob.error }}</span>
-          <span v-else-if="exportJob.done">
+        <ErrorNotice
+          v-if="exportJob.error"
+          summary="L'export non è riuscito e nessun file è stato scaricato. Puoi rifarlo con le stesse scelte."
+          :detail="exportJob.error"
+          retry
+          :busy="exportJob.running"
+          class="mb-2"
+          @retry="retryExport"
+        />
+        <div v-else class="text-body-2 mb-2">
+          <span v-if="exportJob.done">
             ✅ Esportato <b>{{ exportJob.done.fname }}</b> ({{ exportJob.done.size }}, {{ exportJob.done.count }} attività)
           </span>
           <span v-else>{{ exportJob.progress }}</span>

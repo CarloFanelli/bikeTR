@@ -1,18 +1,26 @@
 <script setup lang="ts">
 // Curva di potenza: la FTP usata in tutta l'app con le sue sorgenti, il grafico della
 // miglior potenza per durata (asse logaritmico) e una riga per fascia, che porta all'uscita.
+// La regola che sceglie la FTP sta nella spiegazione del titolo.
+import { mdiLightningBolt } from '@mdi/js';
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
-import { VCard, VCardText, VCardTitle } from 'vuetify/components';
-import { type ftpCard, POWER_CURVE_TICKS, type powerCurveView } from '../core/analysis-view.ts';
+import { VCard, VCardText } from 'vuetify/components';
+import { useThemeColor } from '../app/theme-color.ts';
+import { type ftpCard, POWER_CURVE_TICKS, powerCurveSummary, type powerCurveView } from '../core/analysis-view.ts';
+import { ANALYSIS_EXPLANATIONS as EXPLAIN } from '../core/explanations/analysis.ts';
+import CardHeading from './CardHeading.vue';
+import InfoLabel from './InfoLabel.vue';
 import LineChart from './LineChart.vue';
 
 const props = defineProps<{ curve: ReturnType<typeof powerCurveView> | null; ftp: ReturnType<typeof ftpCard> }>();
 
+const colorOf = useThemeColor();
+const summary = computed(() => (props.curve ? powerCurveSummary(props.curve) : ''));
 const data = computed(() => ({
   datasets: [{
     type: 'line' as const, data: (props.curve?.points ?? []).map(p => ({ x: p.x, y: p.y })),
-    borderColor: '#fc5200', backgroundColor: '#fc5200', borderWidth: 2, pointRadius: 4,
+    borderColor: colorOf('series-orange'), backgroundColor: colorOf('series-orange'), borderWidth: 2, pointRadius: 4,
   }],
 }));
 
@@ -28,7 +36,7 @@ const tooltip = {
 
 <template>
   <VCard>
-    <VCardTitle>⚡ Curva di potenza & FTP stimato</VCardTitle>
+    <CardHeading :icon="mdiLightningBolt" class="px-4 pt-4 pb-2"><InfoLabel :topic="EXPLAIN.powerCurve" label="Curva di potenza e FTP" /></CardHeading>
     <VCardText>
       <p v-if="!curve" class="text-medium-emphasis">
         Nessuna attività con dati di potenza. Serve un misuratore di potenza sulla bici.
@@ -44,12 +52,9 @@ const tooltip = {
               {{ i ? ' · ' : '' }}<b v-if="source.strong">{{ source.text }}</b><template v-else>{{ source.text }}</template>
             </template>
           </div>
-          <div class="text-caption text-medium-emphasis mt-2">
-            Regola: FTP dichiarata prevale. Altrimenti prendo il MAX tra attività (best WAP 20-60' × 0.95) e segmenti
-            (best avg W 15-30' × 0.95). Per la precisione massima: test FTP dedicato di 20' all-out.
-          </div>
         </div>
         <LineChart :data="data" :tooltip="tooltip" :log-x="POWER_CURVE_TICKS" :height="200" />
+        <p class="text-body-2 mt-2">{{ summary }}</p>
         <div class="pdc mt-3">
           <div v-for="row in curve.rows" :key="row.label" class="pdc-row">
             <span class="text-medium-emphasis">{{ row.label }}</span>
@@ -72,8 +77,8 @@ const tooltip = {
 .ftp-card {
   padding: 0.75rem 1rem;
   border-left: 4px solid rgb(var(--v-theme-primary));
-  border-radius: 8px;
-  background: #0f1115;
+  border-radius: var(--radius-control);
+  background: rgb(var(--v-theme-subtle));
 }
 
 .ftp-value {
@@ -85,7 +90,7 @@ const tooltip = {
 
 .pdc {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
   gap: 0.4rem 1.5rem;
 }
 

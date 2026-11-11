@@ -164,11 +164,11 @@ export function buildHrZones(activities: Activity[], hrLthr: number | null | und
   const { ago } = buildDateHelpers(0, now);
   const recent = bikes.filter(a => ago(a.start_date_local) < 28);
   const zones: HrZone[] = [
-    { label: 'Z1 Recupero', color: '#4ade80', min: 0, max: 0.75, minutes: 0 },
-    { label: 'Z2 Aerobico', color: '#22c55e', min: 0.75, max: 0.88, minutes: 0 },
-    { label: 'Z3 Tempo', color: '#facc15', min: 0.88, max: 0.94, minutes: 0 },
-    { label: 'Z4 Soglia', color: '#fc5200', min: 0.94, max: 1.05, minutes: 0 },
-    { label: 'Z5 VO2+', color: '#ff6b6b', min: 1.05, max: 99, minutes: 0 },
+    { label: 'Z1 Recupero', color: 'series-z1', min: 0, max: 0.75, minutes: 0 },
+    { label: 'Z2 Aerobico', color: 'series-z2', min: 0.75, max: 0.88, minutes: 0 },
+    { label: 'Z3 Tempo', color: 'series-z3', min: 0.88, max: 0.94, minutes: 0 },
+    { label: 'Z4 Soglia', color: 'series-z4', min: 0.94, max: 1.05, minutes: 0 },
+    { label: 'Z5 VO2+', color: 'series-z5', min: 1.05, max: 99, minutes: 0 },
   ];
   recent.forEach(a => {
     const r = (a.average_heartrate || 0) / hrLthr;

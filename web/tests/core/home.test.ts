@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { HrProfile } from '../../src/core/hr.ts';
-import { athleteTotals, dataPrecision, profileRows, recordRows } from '../../src/core/home.ts';
+import { athleteTotals, dataPrecision, lastRide, profileRows, recordRows, weekTiles } from '../../src/core/home.ts';
+import { activityLoad } from '../../src/core/load.ts';
 import type { buildProfile } from '../../src/core/profile.ts';
 import type { Activity, AthleteStats } from '../../src/core/strava-types.ts';
+// I giorni dipendono dal fuso orario: i test girano in quello della registrazione.
+import './reference.ts';
 
 const noProfile: HrProfile = {
   hrMax: undefined, hrLthr: null, ftp: null, lthrDecl: null, lthrEst: null, lthrSource: null,
@@ -110,5 +113,71 @@ describe('Atleta', () => {
       { label: '🏊 Nuoto (all-time)', distance: '4.5 km', count: 3 },
     ]);
     expect(athleteTotals(null)).toEqual([]);
+  });
+});
+
+describe('ultima uscita in bici', () => {
+  const at = (id: number, date: string, extra: Partial<Activity> = {}) =>
+    ride(id, { start_date: date, start_date_local: date, distance: 42_000, moving_time: 5400, name: `Giro ${id}`, ...extra });
+
+  it('la più recente per data, anche se la lista non è in ordine', () => {
+    const view = lastRide([at(1, '2026-11-01T08:00:00Z'), at(2, '2026-11-09T08:00:00Z'), at(3, '2026-11-05T08:00:00Z')]);
+    expect(view.ride).toMatchObject({ id: 2, name: 'Giro 2', distance: '42.0 km', time: '1h 30m' });
+  });
+
+  it('corse e nuotate non contano', () => {
+    const view = lastRide([at(1, '2026-11-01T08:00:00Z'), at(2, '2026-11-09T08:00:00Z', { type: 'Run' })]);
+    expect(view.ride?.id).toBe(1);
+  });
+
+  it('un\'uscita senza nome usa il nome di riserva', () => {
+    expect(lastRide([at(7, '2026-11-01T08:00:00Z', { name: '' })]).ride?.name).toBe('#7');
+  });
+
+  it('nessuna attività: nessuna uscita ancora', () => {
+    expect(lastRide([])).toEqual({ ride: null, empty: 'Nessuna uscita ancora' });
+  });
+
+  it('solo corse fra quelle caricate: lo dice, senza dire che non sei mai uscito in bici', () => {
+    const runs = Array.from({ length: 60 }, (_, i) => at(i, '2026-11-01T08:00:00Z', { type: 'Run' }));
+    expect(lastRide(runs)).toEqual({ ride: null, empty: 'Nessuna uscita in bici tra le ultime 60 attività' });
+  });
+});
+
+describe('la settimana in corso', () => {
+  // Mercoledì 11 novembre 2026: questa settimana va da lunedì 9, quella prima da lunedì 2 a mercoledì 4.
+  const now = new Date(2026, 10, 11, 18);
+  const hr = { ...noProfile, hrMax: 190, hrLthr: 170 };
+  const act = (id: number, day: string, km: number, minutes: number) => ride(id, {
+    start_date_local: `${day}T09:00:00Z`, distance: km * 1000, moving_time: minutes * 60, average_heartrate: 140,
+  });
+
+  it('km, ore e carico da lunedì a oggi, con la differenza dagli stessi giorni della settimana prima', () => {
+    const thisWeek = [act(1, '2026-11-09', 40, 90), act(2, '2026-11-11', 20, 60)];
+    // Giovedì 5 è dopo il mercoledì della settimana prima: non conta.
+    const lastWeek = [act(3, '2026-11-03', 30, 60), act(4, '2026-11-05', 100, 240)];
+    const load = (acts: Activity[]) => Math.round(acts.reduce((s, a) => s + activityLoad(a, 190, 170, null), 0));
+    const delta = load(thisWeek) - load(lastWeek.slice(0, 1));
+    expect(weekTiles([...thisWeek, ...lastWeek], hr, now)).toEqual([
+      { label: 'Km', value: '60.0 km', change: '+30.0 km' },
+      { label: 'Ore', value: '2h 30m', change: '+1h 30m' },
+      { label: 'Carico', value: String(load(thisWeek)), change: `${delta >= 0 ? '+' : '−'}${Math.abs(delta)}` },
+    ]);
+  });
+
+  it('nessuna attività questa settimana: zero, con la differenza in meno', () => {
+    expect(weekTiles([act(3, '2026-11-03', 30, 60)], hr, now).slice(0, 2)).toEqual([
+      { label: 'Km', value: '0.0 km', change: '−30.0 km' },
+      { label: 'Ore', value: '0m', change: '−1h 0m' },
+    ]);
+  });
+
+  it('una differenza che arrotondata è zero ha il più, mai "−0.0 km" o "−0m"', () => {
+    const tiles = weekTiles([act(1, '2026-11-10', 10.02, 60), act(3, '2026-11-03', 10.05, 60.25)], hr, now);
+    expect(tiles.slice(0, 2).map(t => t.change)).toEqual(['+0.0 km', '+0m']);
+  });
+
+  it('niente negli stessi giorni della settimana prima: la differenza è tutto il valore, con il più', () => {
+    expect(weekTiles([act(1, '2026-11-10', 25, 45)], hr, now)[0]).toEqual({ label: 'Km', value: '25.0 km', change: '+25.0 km' });
   });
 });

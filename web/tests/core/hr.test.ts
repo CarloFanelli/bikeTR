@@ -18,8 +18,14 @@ describe('FTP e soglia cardiaca', () => {
       expect(displayed(withoutActivities)).toEqual(displayed(exp.profileWithoutActivities));
     });
 
+    // I colori registrati sono quelli fissi della vecchia app: ora ogni zona nomina un colore
+    // del tema, quindi si confrontano minuti e fasce, e i colori a parte.
     it('minuti nelle zone FC delle ultime 4 settimane', () => {
-      expect(displayed(buildHrZones(acts, withoutActivities.hrLthr, NOW))).toEqual(displayed(exp.hrZones));
+      type Zones = { zones: { color: string }[] } | null;
+      const noColor = (z: Zones) => z && { ...z, zones: z.zones.map(({ color: _, ...rest }) => rest) };
+      const zones = buildHrZones(acts, withoutActivities.hrLthr, NOW);
+      expect(displayed(noColor(zones))).toEqual(displayed(noColor(exp.hrZones as Zones)));
+      if (zones) expect(zones.zones.map(z => z.color)).toEqual(['series-z1', 'series-z2', 'series-z3', 'series-z4', 'series-z5']);
     });
   });
 

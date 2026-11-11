@@ -46,11 +46,13 @@ interface ExportJob {
   pct: number | null;
   done: { fname: string; size: string; count: number } | null;
   error: string;
+  // L'ultima scelta confermata: "Riprova" rifà lo stesso export, mai un'altra modalità.
+  lastChoice: (ExportFilter & { mode: ExportMode }) | null;
 }
 
 export const exportJob = reactive<ExportJob>({
   counting: false, countText: '', countError: '', all: null,
-  running: false, progress: '', pct: null, done: null, error: '',
+  running: false, progress: '', pct: null, done: null, error: '', lastChoice: null,
 });
 
 // All'apertura della finestra conta di nuovo lo storico; non durante un export.
@@ -76,7 +78,7 @@ export async function countForExport(): Promise<void> {
 export async function runExport(choice: ExportFilter & { mode: ExportMode }): Promise<void> {
   if (exportJob.running || !exportJob.all) return;
   const activities = filterForExport(exportJob.all, choice);
-  Object.assign(exportJob, { running: true, progress: '', pct: 0, done: null, error: '' });
+  Object.assign(exportJob, { running: true, progress: '', pct: 0, done: null, error: '', lastChoice: choice });
   try {
     const { payload, fname } = await buildExport({
       mode: choice.mode, activities, athlete: session.athlete, stats: session.stats, settings: loadSettings(),
@@ -88,6 +90,11 @@ export async function runExport(choice: ExportFilter & { mode: ExportMode }): Pr
   } finally {
     exportJob.running = false;
   }
+}
+
+// Dopo un errore: lo stesso export, con la scelta già confermata. Senza un export prima, niente.
+export async function retryExport(): Promise<void> {
+  if (exportJob.lastChoice) await runExport(exportJob.lastChoice);
 }
 
 interface SegmentsJob {

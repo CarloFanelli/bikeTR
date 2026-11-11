@@ -1,0 +1,163 @@
+/* Caratteri serviti dall'app stessa: Inter per il testo, Space Grotesk per i titoli.
+   Vuetify li legge da queste due variabili. Se i file non arrivano, vale il sans-serif del sistema. */
+:root {
+  --v-font-body: 'Inter Variable', system-ui, sans-serif;
+  --v-font-heading: 'Space Grotesk', system-ui, sans-serif;
+}
+
+/* Cifre tutte larghe uguali: i numeri non si spostano quando cambiano e stanno in colonna. */
+body {
+  font-family: var(--v-font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chi usa la tastiera vede sempre dove si trova: un anello di 2 px fuori dal controllo, solo
+   con la tastiera (un clic non lo mostra). I campi di testo hanno già il bordo del campo acceso. */
+:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
+.v-field input:focus-visible,
+.v-field textarea:focus-visible {
+  outline: none;
+}
+
+/* Con "riduci movimento" nel sistema: pannelli, menu, segnaposto e cambi di pagina senza
+   animazioni. Vale subito, anche se l'impostazione cambia con l'app aperta. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none;
+    transition: none;
+    scroll-behavior: auto;
+  }
+
+  /* Gli indicatori di caricamento continuano a girare: dicono che il lavoro è in corso. */
+  .v-progress-circular--indeterminate,
+  .v-progress-circular--indeterminate * {
+    animation: revert-layer;
+  }
+}
+
+/* Righe e puntini sopra un colore: distinguono i giorni duri e lunghi anche senza colori
+   (legenda del grafico del carico, giorni del piano). */
+.pattern-stripes {
+  background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0 2px, transparent 2px 4px);
+}
+
+.pattern-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.75) 1px, transparent 1.5px);
+  background-size: 4px 4px;
+}
+
+/* Pulsanti con il testo com'è scritto, senza maiuscolo né spaziatura larga. */
+.action {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* Una data come "martedì 11 novembre" con la prima lettera maiuscola. */
+.first-capital::first-letter {
+  text-transform: uppercase;
+}
+
+/* Angoli: 16 px per card, pannelli, avvisi, finestre e menu; 12 px per pulsanti, campi,
+   chip e gruppi di pulsanti. Vuetify mette i suoi stili dentro @layer: queste regole,
+   fuori dai layer, vincono senza !important. La sua scala (2, 4, 8, 24 px) non ha 12 né 16. */
+:root {
+  --radius-panel: 16px;
+  --radius-control: 12px;
+}
+
+.v-card,
+.v-alert,
+.v-expansion-panels,
+.v-expansion-panels:not(.v-expansion-panels--variant-accordion) > .v-expansion-panel,
+.v-menu > .v-overlay__content,
+.v-dialog > .v-overlay__content > .v-card,
+.v-skeleton-loader {
+  border-radius: var(--radius-panel);
+}
+
+/* Il pannello delle spiegazioni da destra: angoli tondi solo sul lato della pagina. A schermo
+   intero (telefono) resta squadrato: occupa tutto lo schermo. */
+.v-navigation-drawer--right.v-navigation-drawer--temporary {
+  border-radius: var(--radius-panel) 0 0 var(--radius-panel);
+}
+
+.v-dialog--fullscreen > .v-overlay__content > .v-card {
+  border-radius: 0;
+}
+
+.v-btn:not(.v-btn--icon),
+.v-btn-group,
+.v-field,
+.v-chip,
+.v-snackbar__wrapper {
+  border-radius: var(--radius-control);
+}
+
+/* Dentro un gruppo i pulsanti restano squadrati: arrotonda il gruppo intero. */
+.v-btn-group .v-btn {
+  border-radius: 0;
+}
+
+/* Pagine a card (Home, Allenamento, Analisi, Coach AI): larghe fino a 1440 px, con 24 px ai
+   lati (16 del contenitore + 8 qui). Le card stanno in 3 colonne da 1280 px, 2 da 768, 1 sotto;
+   l'ordine nel codice è quello di una colonna. Le card con grafico, tabella o mappa occupano
+   tutta la riga (`span-all`). Le card di una stessa riga sono alte uguali, come la più alta. */
+.page-wide {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-inline: 8px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+/* Un grafico o una tabella larga non allarga la sua cella: scorre dentro la card. */
+.card-grid > * {
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .span-2 {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 1280px) {
+  .card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.span-all {
+  grid-column: 1 / -1;
+}
+
+/* Il colore della sezione aperta: titoli della pagina e delle card, icone dei titoli. App.vue
+   mette la classe `section-…` sul contenuto; senza (Impostazioni) vale l'accento. */
+.v-application {
+  --section: var(--v-theme-primary);
+}
+
+.section-home { --section: var(--v-theme-section-home); }
+.section-allenamento { --section: var(--v-theme-section-allenamento); }
+.section-analisi { --section: var(--v-theme-section-analisi); }
+.section-attivita { --section: var(--v-theme-section-attivita); }
+.section-coach { --section: var(--v-theme-section-coach); }
+.section-libreria { --section: var(--v-theme-section-libreria); }
+
+.v-main h1 {
+  color: rgb(var(--section));
+}

@@ -1,11 +1,16 @@
 <script setup lang="ts">
 // Workout mirati sui segmenti preferiti con almeno 3 tentativi: uno per pannello, con PR e
-// obiettivo nel titolo. I nomi dei segmenti sono testo, come li ha scritti l'atleta.
+// obiettivo nel titolo. I nomi dei segmenti sono testo, come li ha scritti l'atleta. Come
+// sono costruiti sta nella spiegazione del titolo.
+import { mdiArmFlexOutline } from '@mdi/js';
 import {
-  VCard, VCardSubtitle, VCardText, VCardTitle, VExpansionPanel, VExpansionPanels, VExpansionPanelText,
-  VExpansionPanelTitle,
+  VCard, VCardText, VExpansionPanel, VExpansionPanels, VExpansionPanelText, VExpansionPanelTitle,
 } from 'vuetify/components';
+import { withoutEmoji } from '../core/emoji.ts';
+import { ANALYSIS_EXPLANATIONS as EXPLAIN } from '../core/explanations/analysis.ts';
 import type { workoutCards } from '../core/segments-view.ts';
+import CardHeading from './CardHeading.vue';
+import InfoLabel from './InfoLabel.vue';
 import MetricGrid from './MetricGrid.vue';
 
 defineProps<{ cards: ReturnType<typeof workoutCards> }>();
@@ -13,19 +18,18 @@ defineProps<{ cards: ReturnType<typeof workoutCards> }>();
 
 <template>
   <VCard>
-    <VCardTitle>🎯 Workout mirati per i tuoi segmenti</VCardTitle>
-    <VCardSubtitle>Intervalli costruiti sulla potenza e durata dei tuoi segmenti preferiti.</VCardSubtitle>
+    <CardHeading :icon="mdiArmFlexOutline" class="px-4 pt-4 pb-2"><InfoLabel :topic="EXPLAIN.segmentWorkouts" /></CardHeading>
     <VCardText>
       <p v-if="!cards.length" class="text-medium-emphasis">
         Servono almeno 3 tentativi su un segmento per generare workout mirati.
       </p>
       <VExpansionPanels v-else multiple>
         <VExpansionPanel v-for="card in cards" :key="card.id">
-          <VExpansionPanelTitle class="font-weight-bold text-body-2">🎯 {{ card.name }} — {{ card.target }}</VExpansionPanelTitle>
+          <VExpansionPanelTitle class="font-weight-bold text-body-2">{{ card.name }} — {{ withoutEmoji(card.target) }}</VExpansionPanelTitle>
           <VExpansionPanelText>
             <MetricGrid :items="card.rows" class="my-2" />
-            <div class="detail mt-2">{{ card.detail }}</div>
-            <div class="text-caption text-medium-emphasis mt-2">{{ card.reason }}</div>
+            <div class="detail mt-2">{{ withoutEmoji(card.detail) }}</div>
+            <div class="text-caption text-medium-emphasis mt-2">{{ withoutEmoji(card.reason) }}</div>
           </VExpansionPanelText>
         </VExpansionPanel>
       </VExpansionPanels>

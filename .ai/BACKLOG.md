@@ -150,26 +150,36 @@
 - **What**: A Coach check that rules out hard work when fitness (CTL) rises too fast in a week, with a source (paper or declared practice) to find first, measured with the evaluation set.
 - **From**: coach-graph (interview, 2026-11-10)
 
-### B-34 · open
+### B-34 · picked-up
 - **What**: Redesign Analisi in direction B, with Info popovers and panels replacing its on-page explanations, reusing the ui-redesign foundation.
 - **From**: ui-redesign (interview, 2026-11-10)
+- **Picked up by**: screens-redesign (2026-11-11)
 
-### B-35 · open
+### B-35 · picked-up
 - **What**: Redesign the Attività list and the Dettaglio attività screen in direction B, reusing the ui-redesign foundation.
 - **From**: ui-redesign (interview, 2026-11-10)
+- **Picked up by**: screens-redesign (2026-11-11)
 
-### B-36 · open
+### B-36 · picked-up
 - **What**: Redesign Coach AI in direction B, with the workout's reasoning and supporting papers in Info panels, reusing the ui-redesign foundation.
 - **From**: ui-redesign (interview, 2026-11-10)
+- **Picked up by**: screens-redesign (2026-11-11)
 
-### B-37 · open
+### B-37 · picked-up
 - **What**: Redesign Libreria in direction B, reusing the ui-redesign foundation.
 - **From**: ui-redesign (interview, 2026-11-10)
+- **Picked up by**: screens-redesign (2026-11-11)
 
-### B-38 · open
+### B-38 · picked-up
 - **What**: Redesign Impostazioni and the Collega Strava screen in direction B, reusing the ui-redesign foundation.
 - **From**: ui-redesign (interview, 2026-11-10)
+- **Picked up by**: screens-redesign (2026-11-11)
 
 ### B-39 · open
 - **What**: Show today's workout as a chart of its blocks (warm-up, intervals, recoveries) on Allenamento; needs the advice to provide durations and target power for each block.
 - **From**: ui-redesign (interview, 2026-11-10)
+
+### B-40 · picked-up
+- **What**: Overall design changes across the whole app, decided once every screen is in direction B (the user's request that follows the screens' redesign).
+- **From**: screens-redesign (interview, 2026-11-11)
+- **Picked up by**: design-refresh (2026-11-11)

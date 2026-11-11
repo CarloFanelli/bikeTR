@@ -1,16 +1,31 @@
 <script setup lang="ts">
 // I prossimi 28 giorni, da lunedì: un clic su un giorno passa da normale a "salto" a
-// "pioggia" e torna normale. Vuetify non ha un calendario così: sono pulsanti in griglia,
-// uno per giorno.
+// "pioggia" e torna normale, come dice la riga in alto con la legenda. Vuetify non ha
+// un calendario così: sono pulsanti in griglia, uno per giorno.
 import { VBtn } from 'vuetify/components';
+import { emojiIcon } from '../core/emoji.ts';
 import type { restCalendar } from '../core/training-view.ts';
+import LineIcon from './LineIcon.vue';
 
 defineProps<{ weeks: ReturnType<typeof restCalendar> }>();
 const emit = defineEmits<{ cycle: [iso: string] }>();
+
+const STATE_NAMES = { normal: 'allenamento', skip: 'salto', rain: 'pioggia' };
+const LEGEND = [
+  { state: 'normal', label: 'Allenamento', icon: null },
+  { state: 'skip', label: 'Salto', icon: 'skip' },
+  { state: 'rain', label: 'Pioggia', icon: 'rain' },
+] as const;
 </script>
 
 <template>
   <div>
+    <p class="text-body-2 text-medium-emphasis mb-2">Tocca un giorno per cambiarlo: allenamento, poi salto, poi pioggia.</p>
+    <div class="legend text-caption">
+      <span v-for="item in LEGEND" :key="item.state" :class="['swatch', `rest-day--${item.state}`]">
+        <LineIcon v-if="item.icon" :name="item.icon" :size="14" />{{ item.label }}
+      </span>
+    </div>
     <template v-for="week in weeks" :key="week.label">
       <div class="text-caption text-medium-emphasis mt-3">{{ week.label }}</div>
       <div class="rest-week">
@@ -20,23 +35,35 @@ const emit = defineEmits<{ cycle: [iso: string] }>();
           :class="['rest-day', `rest-day--${day.state}`, { 'rest-day--today': day.today, 'rest-day--past': day.past }]"
           variant="flat"
           height="auto"
-          title="Click: normale → skip → pioggia"
+          :aria-label="`${day.label}: ${STATE_NAMES[day.state]}`"
           @click="emit('cycle', day.iso)"
         >
           <span class="d-flex flex-column align-center ga-1">
             <span>{{ day.label }}</span>
-            <span>{{ day.icon }}</span>
+            <LineIcon v-if="emojiIcon(day.icon)" :name="emojiIcon(day.icon)!" :size="18" />
           </span>
         </VBtn>
       </div>
     </template>
-    <div class="text-caption text-medium-emphasis text-center mt-2">
-      Settimana lun → dom. Click per ciclare: 🚴 allenati → ⏸️ salto → 🌧️ piove (corpo libero).
-    </div>
   </div>
 </template>
 
 <style scoped>
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid rgb(var(--v-theme-grid));
+  border-radius: 999px;
+}
+
 .rest-week {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -46,10 +73,11 @@ const emit = defineEmits<{ cycle: [iso: string] }>();
 
 .rest-day {
   min-width: 0;
-  padding: 0.6rem 0.3rem;
-  border: 1px solid #2a2e38;
-  border-radius: 8px;
-  background: #0f1115;
+  min-height: 48px;
+  padding: 0.375rem 0.2rem;
+  border: 1px solid rgb(var(--v-theme-grid));
+  border-radius: var(--radius-control);
+  background: rgb(var(--v-theme-surface));
   color: rgb(var(--v-theme-on-surface));
   font-size: 0.8rem;
   font-weight: 500;
@@ -62,15 +90,15 @@ const emit = defineEmits<{ cycle: [iso: string] }>();
 }
 
 .rest-day--skip {
-  background: #3a2a10;
-  border-color: rgb(var(--v-theme-primary));
-  color: #ffc98a;
+  background: rgba(var(--v-theme-warning), 0.12);
+  border-color: rgb(var(--v-theme-warning));
+  color: rgb(var(--v-theme-warning));
 }
 
 .rest-day--rain {
-  background: #1a2a3a;
-  border-color: #60a5fa;
-  color: #93c5fd;
+  background: rgba(var(--v-theme-info), 0.12);
+  border-color: rgb(var(--v-theme-info));
+  color: rgb(var(--v-theme-info));
 }
 
 .rest-day--today {

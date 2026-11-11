@@ -1,14 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import {
-  activityRow, detailMetrics, displayName, segmentRows, splitRows,
+  activityRow, detailMetrics, displayName, nameMatches, segmentRows, sportGroup, splitRows, weekGroups,
 } from '../../src/core/activity-view.ts';
 import { fmtDate } from '../../src/core/format.ts';
 import type { Activity, ActivityDetail, SegmentEffort, Split } from '../../src/core/strava-types.ts';
+// Le settimane dipendono dal fuso orario: i test girano in quello della registrazione.
+import './reference.ts';
 
 const base = {
   id: 9, name: 'Giro del lago', type: 'Ride', start_date_local: '2026-11-05T08:00:00Z',
   distance: 42195, moving_time: 5025, elapsed_time: 5400, total_elevation_gain: 512.5,
 } as Activity;
+
+describe('ricerca per nome', () => {
+  it('trova una parte del nome senza badare a maiuscole e accenti', () => {
+    expect(nameMatches('Giro del lago', 1, 'giro')).toBe(true);
+    expect(nameMatches('GIRÒ', 1, 'giro')).toBe(true);
+    expect(nameMatches('Giro del lago', 1, 'LÀGO')).toBe(true);
+    expect(nameMatches('Salita al Ghisallo', 1, 'giro')).toBe(false);
+  });
+
+  it('vuota o fatta di spazi tiene tutto', () => {
+    expect(nameMatches('Giro del lago', 1, '')).toBe(true);
+    expect(nameMatches('Giro del lago', 1, '   ')).toBe(true);
+  });
+
+  it('cerca nel nome mostrato: senza nome, il numero', () => {
+    expect(nameMatches(undefined, 77, '#77')).toBe(true);
+    expect(nameMatches('«Muro» "Salita"', 1, '«muro»')).toBe(true);
+  });
+});
 
 describe('nomi da Strava', () => {
   it('così come sono scritti; vuoto diventa il numero', () => {
@@ -19,13 +40,22 @@ describe('nomi da Strava', () => {
 });
 
 describe('lista attività', () => {
-  it('una riga con icona, data, tipo, FC e numeri', () => {
-    expect(activityRow({ ...base, average_heartrate: 141.6 })).toEqual({
-      title: '🚴 Giro del lago', meta: `${fmtDate(base.start_date_local)} · Ride · FC 142`,
-      distance: '42.2 km', sub: '1h 23m · ↑513m',
+  it('una riga con icona dello sport, nome, data, distanza, tempo, dislivello e percorso', () => {
+    expect(activityRow({ ...base, map: { summary_polyline: '_p~iF~ps|U_ulLnnqC' } })).toEqual({
+      id: 9, icon: 'ride', name: 'Giro del lago', date: fmtDate(base.start_date_local),
+      distance: '42.2 km', time: '1h 23m', climb: '↑513 m', route: '_p~iF~ps|U_ulLnnqC',
     });
-    expect(activityRow({ ...base, type: 'Kitesurf', name: '' }).title).toBe('• #9');
-    expect(activityRow(base).meta).toBe(`${fmtDate(base.start_date_local)} · Ride`);
+  });
+
+  it('icona per ogni sport noto, quella generica per gli altri; senza nome il numero', () => {
+    expect(['Run', 'Swim', 'Walk', 'Hike', 'Workout', 'GravelRide'].map(type => activityRow({ ...base, type }).icon))
+      .toEqual(['run', 'swim', 'walk', 'hike', 'strength', 'ride']);
+    expect(activityRow({ ...base, type: 'Yoga', name: '' })).toMatchObject({ icon: 'activity', name: '#9' });
+  });
+
+  it('senza distanza, dislivello o percorso: un trattino e nessuna mappa', () => {
+    expect(activityRow({ ...base, type: 'Workout', distance: 0, total_elevation_gain: 0, map: { summary_polyline: '' } }))
+      .toMatchObject({ distance: '—', time: '1h 23m', climb: '—', route: null });
   });
 });
 
@@ -68,5 +98,49 @@ describe('dettaglio attività', () => {
       { id: 1, name: 'Breve', kom: null, pr: null, meta: '0.80 km', time: '1:35' },
       { id: 3, name: '#444', kom: null, pr: null, meta: '0.50 km', time: '1:00' },
     ]);
+  });
+});
+
+describe('filtro per sport', () => {
+  it('ogni variante di bici è Bici, ogni corsa è Corsa, il resto Altro', () => {
+    expect(['Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide'].map(sportGroup)).toEqual(Array(5).fill('bike'));
+    expect(['Run', 'TrailRun', 'VirtualRun'].map(sportGroup)).toEqual(['run', 'run', 'run']);
+    expect(['Walk', 'Swim', 'Workout', 'Yoga', ''].map(sportGroup)).toEqual(Array(5).fill('other'));
+  });
+});
+
+describe('settimane della lista', () => {
+  const at = (id: number, day: string, km: number, climb = 0) =>
+    ({ ...base, id, start_date_local: `${day}T09:00:00Z`, distance: km * 1000, moving_time: 3600, total_elevation_gain: climb }) as Activity;
+  // Mercoledì 11 novembre 2026.
+  const now = new Date(2026, 10, 11, 18);
+
+  it('da lunedì a domenica, dalla più recente, con i totali delle attività della settimana', () => {
+    const groups = weekGroups([at(3, '2026-11-10', 30, 200), at(2, '2026-11-09', 20), at(1, '2026-11-08', 50, 900)], now);
+    expect(groups.map(g => g.activities.map(a => a.id))).toEqual([[3, 2], [1]]);
+    expect(groups[1]).toMatchObject({ label: '2 nov – 8 nov', distance: '50.0 km', time: '1h 0m', climb: '↑900 m' });
+  });
+
+  it('la settimana in corso arriva fino a oggi', () => {
+    const [week] = weekGroups([at(3, '2026-11-10', 30, 200), at(2, '2026-11-09', 20)], now);
+    expect(week).toMatchObject({ label: '9 nov – 11 nov', distance: '50.0 km', time: '2h 0m', climb: '↑200 m' });
+  });
+
+  it('di lunedì la settimana in corso mostra una data sola', () => {
+    const [week] = weekGroups([at(2, '2026-11-09', 20)], new Date(2026, 10, 9, 18));
+    expect(week.label).toBe('9 nov');
+  });
+
+  it('senza dislivello un trattino; nessuna attività, nessuna settimana', () => {
+    expect(weekGroups([at(2, '2026-11-09', 20)], now)[0].climb).toBe('—');
+    expect(weekGroups([], now)).toEqual([]);
+  });
+
+  it('il giorno di un\'attività è quello locale, come nel resto dell\'app', () => {
+    // Domenica sera o lunedì: decide il giorno che il resto dell'app le assegna.
+    const late = { ...at(1, '2026-11-08', 10), start_date_local: '2026-11-08T23:59:00Z' } as Activity;
+    const [week] = weekGroups([late], now);
+    const day = new Date(late.start_date_local);
+    expect(week.label.startsWith(day.getDay() === 1 ? '9 nov' : '2 nov')).toBe(true);
   });
 });

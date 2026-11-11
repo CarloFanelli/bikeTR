@@ -1,0 +1,9 @@
+# Task Progress - ux-guidelines
+
+01-chart-contrast-patterns: DONE
+02-chart-summaries: DONE
+03-focus-motion-details: DONE
+04-phone-bottom-bar: DONE
+05-errors-with-retry: DONE
+06-home-and-profile-tab: DONE
+07-activities-search: DONE

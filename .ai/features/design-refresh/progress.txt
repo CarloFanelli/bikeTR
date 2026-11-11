@@ -1,0 +1,8 @@
+# Task Progress - design-refresh
+
+01-rounder-corners: DONE
+02-card-columns: DONE
+03-activities-two-views: DONE
+04-filter-and-weeks: DONE
+05-home-week-tiles: DONE
+06-loading-placeholders: DONE

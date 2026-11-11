@@ -6,7 +6,7 @@ import type { PlanInputs } from '../../src/core/plan/inputs.ts';
 import type { LoadChartDay } from '../../src/core/plan/load-chart.ts';
 import type { WeekPlan } from '../../src/core/plan/month.ts';
 import {
-  adviceRows, dailyAdvice, loadChartView, loadSourceLine, mesoBanner, modelRows, planRows, restCalendar, weekBlock,
+  adviceRows, dailyAdvice, loadChartView, loadSourceLine, loadSummary, mesoBanner, modelRows, planRows, restCalendar, weekBlock,
 } from '../../src/core/training-view.ts';
 
 // Mercoledì 4 novembre 2026, ore 10.
@@ -14,17 +14,19 @@ const NOW = new Date(2026, 10, 4, 10);
 const inputs: PlanInputs = { now: NOW, segmentEstimates: null, ftpHistory: [], meso: null, rainyDays: [] };
 
 describe('consiglio del giorno', () => {
-  it('oggi normale: solo il consiglio di oggi', () => {
+  it('oggi e domani, sempre', () => {
     const advice = dailyAdvice([], {}, [], null, inputs);
     expect(advice.today.label).toBeNull();
     expect(advice.today.rec.title).toBeTruthy();
-    expect(advice.next).toBeNull();
+    expect(advice.tomorrow.label).toBe('Domani');
+    expect(advice.tomorrow.rec.title).toBeTruthy();
+    expect(advice.tomorrow.metrics.restDays).toBeGreaterThanOrEqual(0);
   });
 
-  it('oggi saltato: compare l\'anteprima del prossimo allenamento', () => {
+  it('domani segnato "salto": il suo consiglio è il riposo pianificato', () => {
     const advice = dailyAdvice([], {}, [dayOffsetIso(0, NOW), dayOffsetIso(1, NOW)], null, inputs);
-    expect(advice.next?.label).toBe('venerdì 6 nov');
-    expect(advice.next?.metrics.restDays).toBeGreaterThanOrEqual(0);
+    expect(advice.tomorrow.label).toBe('Domani');
+    expect(advice.tomorrow.rec.title).toMatch(/Riposo pianificato/);
   });
 
   it('i numeri sotto il consiglio, arrotondati', () => {
@@ -71,10 +73,21 @@ describe('grafico del carico', () => {
       day('2026-11-05', {}),
     ]);
     expect(view.labels).toEqual(['2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05']);
-    expect(view.colors).toEqual(['#fc5200', '#ff6b6b', '#4ade80', '#8b5cf6', '#2a2e38']);
+    expect(view.colors).toEqual(['load-long', 'load-hard', 'load-easy', 'load-cross', 'load-rest']);
     expect(view.tags).toEqual(['lunga', 'bici dura', 'bici easy', 'cross-training', 'riposo']);
+    // Dure a righe e lunghe a puntini: si distinguono anche senza colori.
+    expect(view.patterns).toEqual(['dots', 'stripes', null, null, null]);
     expect(view.loads).toEqual([120.4, 80, 40, 30, 0]);
     expect(view.average).toBeCloseTo(54.08);
+  });
+
+  it('la frase sotto il grafico: la media e il giorno più carico; senza carico lo dice', () => {
+    const view = loadChartView([
+      day('2026-11-01', { load: 120.4, long: true, bike: true, hasActivity: true }),
+      day('2026-11-02', { load: 30, bike: true, hasActivity: true }),
+    ]);
+    expect(loadSummary(view)).toBe('Media di 75 al giorno negli ultimi 2 giorni; il giorno più carico è il 1 novembre, con 120.');
+    expect(loadSummary(loadChartView([day('2026-11-01', {}), day('2026-11-02', {})]))).toBe('Nessun carico negli ultimi 2 giorni.');
   });
 });
 
@@ -118,9 +131,10 @@ describe('piano del mese', () => {
   it('una settimana: titolo con le date, ruolo, diagnostica e righe del piano', () => {
     const wp = {
       days: Array.from({ length: 7 }, (_, i) => ({
-        iso: `2026-11-0${i + 2}`, label: i === 0 ? 'lunedì 2 nov' : 'x', isPast: i < 2,
+        iso: `2026-11-0${i + 2}`, label: i === 0 ? 'lunedì 2 nov' : 'x', isPast: i < 2, offset: i - 2,
+        category: ['DONE', 'PAST_REST', 'EASY', 'HARD', 'LONG', 'STRENGTH', 'REST'][i],
         rec: i === 0
-          ? { title: '✅ <b>Muro</b> fatto', detail: '42 km', reason: null, _isDone: true, _activityId: 77 }
+          ? { title: '✅ <b>Muro</b> fatto', detail: '🟠 lunga · 42 km', reason: null, _isDone: true, _activityId: 77 }
           : { title: '🔴 Soglia (Threshold)', detail: 'Risc 15\'', reason: null },
       })),
       isRecoveryWeek: false,
@@ -138,8 +152,14 @@ describe('piano del mese', () => {
       'Composizione: HARD:2 · EASY:3 · DONE:2',
     ]);
     expect(planRows(wp.days)[0]).toEqual({
-      label: 'lunedì 2 nov', icon: '✅', title: '<b>Muro</b> fatto', detail: '42 km', past: true, activityId: 77,
+      label: 'lunedì 2 nov', icon: '✅', title: '<b>Muro</b> fatto', detail: '🟠 lunga · 42 km', past: true, today: false,
+      activityId: 77, kind: { tag: 'lunga', color: 'load-long', pattern: 'dots' },
     });
+    // Il tipo di ogni giorno, con i colori del grafico del carico; un giorno fatto prende quello dell'uscita.
+    expect(planRows(wp.days).map(r => r.kind.tag)).toEqual(
+      ['lunga', 'riposo', 'bici easy', 'bici dura', 'lunga', 'cross-training', 'riposo'],
+    );
+    expect(planRows(wp.days).map(r => r.today)).toEqual([false, false, true, false, false, false, false]);
     expect(planRows(wp.days)[3]).toMatchObject({ icon: '🔴', title: 'Soglia (Threshold)', past: false, activityId: null });
 
     const taper = { ...wp, weekRole: { role: 'taper2', label: 'Taper 2', blockPattern: 'taper', daysToRace: 10, loadMul: 0.6 } };

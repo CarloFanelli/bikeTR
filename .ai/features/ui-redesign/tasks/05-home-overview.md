@@ -60,3 +60,9 @@ Last because it summarises what the other tasks build: today's workout comes fro
 - "Aggiorna con streams" clicked twice → second click ignored while running, as today (REQ-24)
 - Strava rate limit hit during streams → progress shows the wait, as today (REQ-24)
 - Streams job fails (Strava unreachable) → error shown in the section; already downloaded data kept (REQ-24)
+
+## Notes from implementation
+
+- **Known limitation**: "Forma" on Home is the TSB (signed number, as the spec's "zero or negative" edge case implies). The old profile word ("buona", "in costruzione") still lives in the level's Info panel, relabelled "Volume recente" there so the two are not confused.
+- **Known limitation**: the "record's ride no longer in loaded list" case cannot happen today — records are computed from the loaded list itself — so every record keeps its link.
+- **Known limitation**: readiness shows "—" when there is no load at all in the last 90 days (long- and short-term load both zero).

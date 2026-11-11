@@ -4,7 +4,7 @@
 import { displayName } from './activity-view.ts';
 import { dayOffsetIso } from './dates.ts';
 import type { FormTrend } from './form.ts';
-import { fmtDate } from './format.ts';
+import { dayMonth, fmtDate } from './format.ts';
 import type { buildFtpBreakdown, buildLthrBreakdown, FtpTrend } from './ftp.ts';
 import type { buildHrZones, HrProfile } from './hr.ts';
 import type { buildPowerCurve, buildPowerProfile } from './power.ts';
@@ -17,6 +17,29 @@ type PowerProfile = NonNullable<ReturnType<typeof buildPowerProfile>>;
 
 const wkg = (watts: number, weight: number | null | undefined) => (watts && weight) ? ` · ${(watts / weight).toFixed(2)} W/kg` : '';
 const minutes = (sec: number | undefined) => Math.round((sec || 0) / 60);
+const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n)}`;
+
+// Le frasi sotto i grafici dicono a parole quello che il grafico mostra (anche a chi usa un
+// lettore di schermo): al massimo 25 parole, senza emoji.
+
+// Forma, fitness e fatica di oggi, e quanto è cambiata la fitness nelle ultime 4 settimane.
+export function formSummary(form: FormTrend): string {
+  const last = form.DAYS - 1;
+  if (form.ctl.every(v => !v) && form.atl.every(v => !v)) {
+    return `Nessun carico negli ultimi ${form.DAYS} giorni: fitness e fatica sono a zero.`;
+  }
+  const change = Math.round(form.ctl[last] - form.ctl[Math.max(0, last - 28)]);
+  const trend = change > 0 ? `è salita di ${change}` : change < 0 ? `è scesa di ${-change}` : 'è rimasta uguale';
+  return `Forma oggi ${signed(Math.round(form.tsb[last]))}: fitness ${form.ctl[last].toFixed(0)}, `
+    + `fatica ${form.atl[last].toFixed(0)}. In 4 settimane la fitness ${trend}.`;
+}
+
+// L'ultima FTP, la differenza dal primo punto salvato e il picco storico.
+export function ftpTrendSummary(trend: FtpTrend): string {
+  const first = trend.history[0];
+  const last = trend.history[trend.history.length - 1];
+  return `FTP ${last.ftp} W, ${signed(last.ftp - first.ftp)} W dal ${dayMonth(first.date)}; picco storico ${trend.peakFtp} W.`;
+}
 
 // La FTP usata in tutta l'app, con da dove viene; null senza FTP né dichiarata né stimata.
 export function ftpCard(profile: HrProfile, weight: number | null | undefined) {
@@ -52,6 +75,15 @@ export function powerCurveView(data: PowerCurve, weight: number | null | undefin
   return { rows, points };
 }
 
+// Dalla potenza della durata più breve a quella della più lunga.
+export function powerCurveSummary(view: ReturnType<typeof powerCurveView>): string {
+  const [first] = view.points;
+  const last = view.points[view.points.length - 1];
+  if (!first) return 'Nessuna uscita con potenza tra le ultime 60 attività.';
+  if (first === last) return `Migliore potenza ${first.y} W su ${first.title}.`;
+  return `Migliore potenza da ${first.y} W su ${first.title} a ${last.y} W su ${last.title}.`;
+}
+
 // Il trend di forma degli ultimi 90 giorni: un giorno per punto, e i valori di oggi.
 export function formView(form: FormTrend, now: Date) {
   const last = form.DAYS - 1;
@@ -82,7 +114,8 @@ export function hrZonesView(data: ReturnType<typeof buildHrZones>) {
     : easyPct >= 60
       ? `🟡 Distribuzione mista (${easyPct}/${hardPct}). Considera più Z2.`
       : `🔴 Troppa intensità (${easyPct}/${hardPct}). Rischio stallo: aumenta il volume easy.`;
-  return { message: null, rows, note };
+  const summary = `Nelle ultime 4 settimane il ${easyPct}% del tempo è facile (Z1-Z2) e il ${hardPct}% duro (Z3-Z5).`;
+  return { message: null, rows, note, summary };
 }
 
 const PROFILE_LABELS: Record<string, string> = {

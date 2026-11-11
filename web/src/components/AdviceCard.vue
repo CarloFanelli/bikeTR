@@ -1,43 +1,51 @@
 <script setup lang="ts">
-// Un consiglio del piano: titolo, dettaglio e motivo, con i numeri sotto. Il testo può
-// contenere il nome di un'attività: si mostra com'è scritto.
-import { VChip } from 'vuetify/components';
+// Un consiglio del piano: icona, titolo e dettaglio (al massimo 30 parole sulla pagina).
+// "Perché" apre il motivo, il dettaglio intero se tagliato e i numeri da cui nasce. Il
+// testo può contenere il nome di un'attività: si mostra com'è scritto.
+import { mdiCalendarArrowRight } from '@mdi/js';
+import { computed } from 'vue';
+import { splitEmoji } from '../core/emoji.ts';
+import type { Explanation } from '../core/explanations/types.ts';
+import { clipWords } from '../core/text.ts';
 import type { DayAdvice } from '../core/training-view.ts';
-import MetricGrid from './MetricGrid.vue';
+import CardHeading from './CardHeading.vue';
+import InfoLabel from './InfoLabel.vue';
+import LineIcon from './LineIcon.vue';
 
-defineProps<{ advice: DayAdvice; rows: [string, string][]; readiness: string | null }>();
+const props = defineProps<{ advice: DayAdvice; rows: [string, string][]; readiness: string | null; compact?: boolean }>();
 
-const READINESS_COLORS: Record<string, string> = {
-  pronto: '#4ade80', moderato: '#facc15', affaticato: '#fc5200', sovraccarico: '#ef4444',
-};
+const title = computed(() => splitEmoji(props.advice.rec.title));
+const detail = computed(() => clipWords(props.advice.rec.detail, 30));
+
+const why = computed<Explanation>(() => {
+  const { reason, detail: full } = props.advice.rec;
+  return {
+    title: 'Perché questo allenamento',
+    short: reason ? clipWords(reason, 25).visible : 'I numeri da cui nasce il consiglio.',
+    lead: [reason, detail.value.clipped ? full : null].filter((line): line is string => !!line),
+    // Senza emoji ("🟢 alta" → "alta"); la prontezza con il suo stato ("pronto", "affaticato"…).
+    rows: props.rows.map(([label, raw]) => {
+      const value = splitEmoji(raw).text;
+      return [label, label === 'Prontezza' && props.readiness ? `${value} · ${props.readiness}` : value];
+    }),
+  };
+});
 </script>
 
 <template>
-  <div class="advice pa-4 mb-4">
-    <div v-if="advice.label" class="text-caption text-uppercase text-medium-emphasis mb-1">{{ advice.label }}</div>
-    <div class="text-subtitle-1 font-weight-bold mb-1">{{ advice.rec.title }}</div>
-    <div class="my-2">{{ advice.rec.detail }}</div>
-    <div class="text-medium-emphasis font-italic">{{ advice.rec.reason }}</div>
+  <div>
+    <CardHeading v-if="advice.label" :icon="mdiCalendarArrowRight" class="mb-4">{{ advice.label }}</CardHeading>
+    <div class="d-flex align-center ga-2">
+      <LineIcon v-if="title.icon" :name="title.icon" :size="compact ? 20 : 28" />
+      <h2 :class="compact ? 'text-h6' : 'text-h5'">{{ title.text }}</h2>
+    </div>
+    <p class="detail mt-2 mb-3 text-medium-emphasis">{{ detail.visible }}</p>
+    <InfoLabel :topic="why" :label="compact ? 'Perché' : 'Perché questo allenamento'" />
   </div>
-  <MetricGrid :items="rows">
-    <template #before="{ label }">
-      <VChip
-        v-if="label === 'Prontezza' && readiness"
-        :color="READINESS_COLORS[readiness]"
-        size="x-small"
-        label
-        class="mr-1"
-      >
-        {{ readiness }}
-      </VChip>
-    </template>
-  </MetricGrid>
 </template>
 
 <style scoped>
-.advice {
-  background: #0f1115;
-  border-left: 4px solid rgb(var(--v-theme-primary));
-  border-radius: 8px;
+.detail {
+  white-space: pre-line;
 }
 </style>

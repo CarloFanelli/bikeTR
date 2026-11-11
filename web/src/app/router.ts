@@ -1,7 +1,7 @@
-// Indirizzi dell'app. Stanno dopo il # dell'indirizzo (per esempio /#/analisi), così
-// nginx e Vite servono sempre la stessa pagina.
+// Indirizzi dell'app, senza # (per esempio /analisi): per un indirizzo che non è un file
+// Vite risponde con la pagina dell'app, e il router apre la sezione.
 
-import { createRouter, createWebHashHistory, type RouterHistory, type RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory, type RouterHistory, type RouteRecordRaw } from 'vue-router';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -44,4 +44,10 @@ const routes: RouteRecordRaw[] = [
   { path: '/:unknown(.*)*', redirect: '/home' },
 ];
 
-export const createAppRouter = (history: RouterHistory = createWebHashHistory()) => createRouter({ history, routes });
+export const createAppRouter = (history: RouterHistory = createWebHistory()) => createRouter({ history, routes });
+
+// Segnalibri di quando gli indirizzi stavano dopo il # ("#/analisi"): lo stesso indirizzo
+// senza ("/analisi"); null se dopo il # non c'è un indirizzo.
+export function addressFromHash(hash: string): string | null {
+  return hash.startsWith('#/') ? hash.slice(1) : null;
+}

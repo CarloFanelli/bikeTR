@@ -37,6 +37,14 @@ server {
         proxy_pass $auth_upstream;
     }
 
+    # La sezione Coach AI dell'app ha lo stesso nome del servizio: senza questa regola nginx
+    # rimanderebbe /coach a /coach/, cioè al servizio, aprendo o ricaricando la sezione.
+    location = /coach {
+        set $app_upstream http://app:5173;
+        proxy_pass $app_upstream;
+        proxy_set_header Host $host;
+    }
+
     # Servizio Coach: conosce l'indirizzo di Ollama scritto in .env.
     location /coach/ {
         set $coach_upstream http://coach:8080;
@@ -55,7 +63,7 @@ server {
         # Indirizzo relativo: nel container nginx ascolta sulla 80, non sulla porta del browser.
         absolute_redirect off;
         if ($arg_id ~ "^[0-9]+$") {
-            return 302 "/#/attivita/$arg_id";
+            return 302 "/attivita/$arg_id";
         }
         return 302 /;
     }
