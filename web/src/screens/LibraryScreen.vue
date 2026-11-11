@@ -1,26 +1,34 @@
 <script setup lang="ts">
-// Libreria: i paper che il Coach cerca, con cosa ne dipende. Aprendo un paper si chiedono i suoi
-// passaggi, come il Coach li legge e li cita. Un paper si aggiunge per PMID: prima l'anteprima,
-// poi la conferma, che lo scarica di nuovo, lo indicizza e lo salva. Un paper si toglie dopo una
-// conferma che nomina chi lo perde; un paper di base tolto si ripristina dal suo elenco.
-// La riga di un paper ha citazione, origine e passaggi; il resto si vede aprendolo.
-import { computed, onMounted, reactive, ref } from 'vue';
-import {
-  VAlert, VBtn, VCard, VCardText, VChip, VExpansionPanel, VExpansionPanels, VExpansionPanelText, VExpansionPanelTitle,
-  VTextField,
-} from 'vuetify/components';
-import { paperCitation, pubmedUrl } from '../core/coach-view.ts';
+// Libreria: i paper che il Coach cerca, con cosa ne dipende. Da 1280 px l'elenco sta in una colonna
+// a sinistra (25%) e il paper scelto si legge a destra (75%), ognuno con il suo scorrimento; più
+// stretto l'elenco e il paper si alternano a tutta larghezza. Il paper aperto sta nell'indirizzo
+// (/libreria/27175601); i suoi passaggi si chiedono aprendolo, come il Coach li legge e li cita.
+// "Aggiungi un paper", in cima all'elenco, apre nell'area di lettura (/libreria/aggiungi) l'aggiunta:
+// per PMID, o per parole del titolo o degli autori cercate su PubMed tramite il servizio del Coach,
+// scegliendo tra i paper trovati. Prima l'anteprima, poi la conferma, che lo scarica di nuovo, lo indicizza, lo salva e
+// lo apre. Un paper si toglie dopo una conferma che nomina chi lo perde; un paper di
+// base tolto si ripristina dall'elenco.
+import { mdiArrowLeft, mdiPlus } from '@mdi/js';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useDisplay } from 'vuetify';
+import { VAlert, VBtn, VCard, VCardText } from 'vuetify/components';
 import { splitEmoji } from '../core/emoji.ts';
-import type { Library, LibraryPaper, LibraryPassages, PaperPreview } from '../core/library-types.ts';
+import type { Library, LibraryPaper, LibraryPassages, PaperMatch, PaperPreview } from '../core/library-types.ts';
+import AddPaperPanel from '../components/AddPaperPanel.vue';
 import ErrorNotice from '../components/ErrorNotice.vue';
 import LineIcon from '../components/LineIcon.vue';
+import PaperList from '../components/PaperList.vue';
+import PaperReader from '../components/PaperReader.vue';
+import { ADD_PAGE, addedLine, isPmid, paperAt, pmidError, removalQuestion } from '../core/library-view.ts';
 import {
-  FREE_INDEXING, addedLine, dependencyLines, europePmcUrl, originLabel, passageCount, pmidError, removalQuestion,
-  textUsed,
-} from '../core/library-view.ts';
-import {
-  addPaper, libraryPapers, libraryPassages, previewPaper, removePaper, restorePaper, type CoachAnswer,
+  addPaper, libraryPapers, libraryPassages, previewPaper, removePaper, restorePaper, searchPapers, type CoachAnswer,
 } from '../data/coach.ts';
+
+const route = useRoute();
+const router = useRouter();
+const { width } = useDisplay();
+const wide = computed(() => width.value >= 1280);
 
 const papers = ref<CoachAnswer<Library> | null>(null);
 // I passaggi dei paper già aperti, per PMID: si chiedono una volta sola.
@@ -30,6 +38,33 @@ onMounted(async () => {
   papers.value = await libraryPapers();
 });
 
+// Il paper aperto: undefined senza un PMID nell'indirizzo o mentre la libreria arriva, null se il
+// PMID non è tra i paper che il Coach cerca.
+const openPmid = computed(() => (typeof route.params.pmid === 'string' ? route.params.pmid : undefined));
+const library = computed(() => (papers.value?.ok ? papers.value.value : null));
+const current = computed(() => (library.value ? paperAt(library.value.papers, openPmid.value) : undefined));
+const adding = computed(() => openPmid.value === ADD_PAGE);
+// Stretto, l'area di lettura prende il posto dell'elenco quando mostra un paper o l'aggiunta.
+const reading = computed(() => !!current.value || adding.value);
+
+watch(() => current.value?.pmid, async (pmid) => {
+  if (!pmid || passages[pmid]?.ok) return;
+  passages[pmid] = await libraryPassages(pmid);
+}, { immediate: true });
+
+// Stretto, l'elenco e il paper condividono lo scorrimento della finestra: aprendo un paper si
+// ricorda dove stava l'elenco, e tornando all'elenco si riparte da lì.
+let listScroll = 0;
+watch(() => !wide.value && reading.value, async (reading, wasReading) => {
+  if (reading && !wasReading) {
+    listScroll = window.scrollY;
+    window.scrollTo(0, 0);
+  } else if (!reading && wasReading) {
+    await nextTick();
+    window.scrollTo(0, listScroll);
+  }
+});
+
 const pmid = ref('');
 const preview = ref<PaperPreview | null>(null);
 // L'esito dell'ultima azione: un rifiuto o il paper aggiunto.
@@ -37,15 +72,41 @@ const outcome = ref('');
 const busy = ref(false);
 
 // Un paper di base tolto non si aggiunge di nuovo: si ripristina.
-const removedTyped = computed(() =>
-  papers.value?.ok ? papers.value.value.removed.find((p) => p.pmid === pmid.value.trim()) ?? null : null);
+const removedTyped = computed(() => library.value?.removed.find((p) => p.pmid === pmid.value.trim()) ?? null);
+
+// L'ultima ricerca per parole, con il testo cercato. Ogni ricerca ha il suo numero: la risposta di
+// una ricerca superata da un'altra non si mostra.
+const found = ref<{ query: string; answer: CoachAnswer<PaperMatch[]> } | null>(null);
+let searches = 0;
 
 async function lookUp() {
+  const text = pmid.value.trim();
+  if (!text) return;
   preview.value = null;
-  outcome.value = pmidError(pmid.value) ?? '';
+  outcome.value = '';
+  if (!isPmid(text)) return findWords(text);
+  // La ricerca per parole ancora in corso è abbandonata: non tiene più occupato il campo.
+  searches++;
+  busy.value = false;
+  found.value = null;
+  return previewOf(text);
+}
+
+async function findWords(query: string) {
+  const search = ++searches;
+  busy.value = true;
+  const answer = await searchPapers(query);
+  if (search !== searches) return;
+  busy.value = false;
+  found.value = { query, answer };
+}
+
+// Annullando l'anteprima di un paper trovato restano i risultati della stessa ricerca.
+async function previewOf(target: string) {
+  outcome.value = pmidError(target) ?? '';
   if (outcome.value || removedTyped.value) return;
   busy.value = true;
-  const answer = await previewPaper(pmid.value.trim());
+  const answer = await previewPaper(target);
   busy.value = false;
   if (answer.ok) preview.value = answer.value;
   else outcome.value = answer.msg;
@@ -60,14 +121,18 @@ async function confirm() {
   outcome.value = answer.ok ? addedLine(answer.value) : answer.msg;
   if (answer.ok) {
     pmid.value = '';
+    found.value = null;
     papers.value = await libraryPapers();
+    await router.push(`/libreria/${answer.value.pmid}`);
   }
 }
 
+// Il paper tolto è quello aperto: lasciata la libreria, la pagina torna all'elenco.
 async function remove(p: LibraryPaper) {
   if (!window.confirm(removalQuestion(p))) return;
   const answer = await removePaper(p.pmid);
   outcome.value = answer.ok ? '' : answer.msg;
+  if (answer.ok) await router.replace('/libreria');
   papers.value = await libraryPapers();
 }
 
@@ -80,164 +145,84 @@ async function restore(target: string) {
 
 // L'esito di un'aggiunta comincia con un'emoji: sulla pagina diventa un'icona.
 const outcomeLine = computed(() => splitEmoji(outcome.value));
-
-async function open(pmid: string | undefined) {
-  if (!pmid || passages[pmid]?.ok) return;
-  passages[pmid] = await libraryPassages(pmid);
-}
 </script>
 
 <template>
-  <div class="library">
-    <header class="mb-6">
+  <div class="library page-wide" :class="{ wide }">
+    <header class="mb-4">
       <h1 class="text-h4">Libreria</h1>
       <p class="text-medium-emphasis mt-1">I paper in cui il Coach cerca i passaggi da dare al modello.</p>
     </header>
 
-    <div class="d-flex flex-wrap align-center ga-3 mb-3">
-      <VTextField v-model="pmid" label="PMID del paper da aggiungere" hide-details class="pmid" @keyup.enter="lookUp" />
-      <VBtn color="primary" class="action" min-height="44" :loading="busy && !preview" :disabled="busy" @click="lookUp">
-        Cerca su PubMed
-      </VBtn>
-    </div>
-    <div v-if="removedTyped" class="d-flex flex-wrap align-center ga-2 mb-4">
-      <span>È un paper di base che hai tolto: {{ paperCitation(removedTyped) }}</span>
-      <VBtn variant="tonal" class="action" min-height="44" @click="restore(removedTyped.pmid)">Ripristina</VBtn>
-    </div>
-    <VCard v-if="preview" variant="outlined" class="mb-4">
-      <VCardText class="d-flex flex-column ga-1">
-        <div class="font-weight-bold">{{ paperCitation(preview) }}</div>
-        <div v-if="preview.journal"><i>{{ preview.journal }}</i></div>
-        <div class="mt-2">
-          Testo usato: {{ textUsed(preview).label }}<template v-if="textUsed(preview).license"> · licenza <a :href="textUsed(preview).license!.url" target="_blank" rel="noopener">{{ textUsed(preview).license!.name }}</a></template>
-        </div>
-        <div class="text-medium-emphasis">{{ preview.reason }}</div>
-        <div>{{ passageCount(preview.passageCount) }}</div>
-        <div class="text-medium-emphasis text-body-2">{{ FREE_INDEXING }}</div>
-        <div class="d-flex flex-wrap ga-3 mt-3">
-          <VBtn color="primary" class="action" min-height="44" :loading="busy" @click="confirm">Aggiungi alla libreria</VBtn>
-          <VBtn variant="text" class="action" min-height="44" :disabled="busy" @click="preview = null">Annulla</VBtn>
-        </div>
-      </VCardText>
-    </VCard>
     <p v-if="outcome" class="d-flex align-center ga-2 mb-4">
       <LineIcon v-if="outcomeLine.icon" :name="outcomeLine.icon" :size="18" />
       <span>{{ outcomeLine.text }}</span>
     </p>
 
-    <ErrorNotice
-      v-if="papers && !papers.ok"
-      summary="Non riesco a leggere la libreria dal servizio del Coach. Il resto dell'app funziona ancora."
-      :detail="papers.msg"
-      class="mb-4"
-    />
-    <VAlert v-if="papers?.ok && papers.value.warning" type="warning" variant="tonal" class="mb-4">
-      {{ papers.value.warning }}
-    </VAlert>
-    <p v-if="!papers" class="text-medium-emphasis">Carico la libreria…</p>
-    <VExpansionPanels v-if="papers?.ok" variant="accordion" @update:model-value="(pmid) => open(pmid as string | undefined)">
-      <VExpansionPanel v-for="p in papers.value.papers" :key="p.pmid" :value="p.pmid" elevation="0" class="paper">
-        <VExpansionPanelTitle>
-          <div class="paper-row">
-            <div class="citation">{{ paperCitation(p) }}</div>
-            <div class="d-flex flex-wrap align-center ga-2 mt-1 text-medium-emphasis text-body-2">
-              <VChip size="small" variant="tonal">{{ originLabel(p) }}</VChip>
-              <span>{{ passageCount(p.passageCount) }}</span>
-            </div>
-          </div>
-        </VExpansionPanelTitle>
-        <VExpansionPanelText>
-          <div class="d-flex flex-wrap align-center ga-4 mb-2">
-            <a :href="pubmedUrl(p.pmid)" target="_blank" rel="noopener" class="link">PubMed</a>
-            <a v-if="europePmcUrl(p)" :href="europePmcUrl(p)!" target="_blank" rel="noopener" class="link">Europe PMC</a>
-          </div>
-          <dl class="facts text-body-2 mb-3">
-            <template v-if="p.journal"><dt>Rivista</dt><dd><i>{{ p.journal }}</i></dd></template>
-            <dt>Testo usato</dt><dd>{{ textUsed(p).label }}</dd>
-            <template v-if="textUsed(p).license">
-              <dt>Licenza</dt>
-              <dd><a :href="textUsed(p).license!.url" target="_blank" rel="noopener">{{ textUsed(p).license!.name }}</a></dd>
-            </template>
-          </dl>
-          <div v-for="line in dependencyLines(p)" :key="line" class="text-body-2 mb-1">{{ line }}</div>
-          <VBtn variant="text" color="error" class="action px-0 mb-3" min-height="44" @click="remove(p)">
-            {{ p.origin === 'base' ? 'Togli' : 'Cancella' }}
-          </VBtn>
-          <h3 class="part">Passaggi</h3>
-          <p v-if="!passages[p.pmid]" class="text-medium-emphasis">Carico i passaggi…</p>
-          <ErrorNotice
-            v-else-if="!passages[p.pmid].ok"
-            summary="Non riesco a leggere i passaggi di questo studio. Gli altri studi restano consultabili."
-            :detail="(passages[p.pmid] as { msg: string }).msg"
-          />
-          <template v-else>
-            <div v-for="s in (passages[p.pmid] as { value: LibraryPassages }).value.passages" :key="s.label" class="passage">
-              <div class="text-medium-emphasis text-caption">{{ s.label }}</div>
-              <div>{{ s.text }}</div>
-            </div>
-          </template>
-        </VExpansionPanelText>
-      </VExpansionPanel>
-    </VExpansionPanels>
-    <section v-if="papers?.ok && papers.value.removed.length" class="mt-8">
-      <h2 class="text-h6 mb-1">Paper di base tolti</h2>
-      <p class="text-medium-emphasis mb-3">Il Coach non li cerca finché non li ripristini.</p>
-      <div v-for="p in papers.value.removed" :key="p.pmid" class="d-flex flex-wrap align-center ga-2 mb-2">
-        <span class="citation">{{ paperCitation(p) }}</span>
-        <VBtn variant="tonal" class="action" min-height="44" @click="restore(p.pmid)">Ripristina</VBtn>
+    <p v-if="current === null" class="mb-4">Questo paper non è nella libreria.</p>
+
+    <div class="columns">
+      <div v-show="wide || !reading" class="list-column">
+        <VBtn
+          :to="`/libreria/${ADD_PAGE}`" :active="adding" :prepend-icon="mdiPlus" color="primary" variant="tonal"
+          class="action mb-3" min-height="44" block
+        >
+          Aggiungi un paper
+        </VBtn>
+        <ErrorNotice
+          v-if="papers && !papers.ok"
+          summary="Non riesco a leggere la libreria dal servizio del Coach. Il resto dell'app funziona ancora."
+          :detail="papers.msg"
+          class="mb-4"
+        />
+        <VAlert v-if="library?.warning" type="warning" variant="tonal" class="mb-4">{{ library.warning }}</VAlert>
+        <p v-if="!papers" class="text-medium-emphasis">Carico la libreria…</p>
+        <PaperList v-if="library" :library="library" :open="openPmid" @restore="restore" />
       </div>
-    </section>
+
+      <VCard v-if="wide || reading" class="reader-column">
+        <VCardText>
+          <VBtn v-if="!wide" variant="text" :prepend-icon="mdiArrowLeft" to="/libreria" class="action px-2 mb-2" height="44">
+            Torna all'elenco
+          </VBtn>
+          <AddPaperPanel
+            v-if="adding" v-model="pmid" :preview="preview" :removed="removedTyped" :busy="busy" :found="found"
+            :library="library" @search="lookUp" @confirm="confirm" @cancel="preview = null" @restore="restore"
+            @pick="previewOf" @retry="found && findWords(found.query)"
+          />
+          <PaperReader v-else-if="current" :paper="current" :passages="passages[current.pmid]" @remove="remove(current)" />
+          <p v-else class="hint text-medium-emphasis">Scegli un paper dall'elenco per leggerlo</p>
+        </VCardText>
+      </VCard>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.library {
-  max-width: 880px;
-  margin: 0 auto;
+/* Da 1280 px la pagina è alta quanto la finestra sotto la barra in alto (64 px, più 16 + 16 del
+   contenitore): non scorre lei, scorrono l'elenco e l'area di lettura, ognuno per conto suo. */
+.wide {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 96px);
 }
 
-.pmid {
-  flex: 0 1 260px;
-  min-width: 200px;
-}
-
-.paper {
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.paper-row,
-.citation {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
-
-.facts {
+.wide .columns {
+  flex: 1;
+  min-height: 0;
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.25rem 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  gap: 16px;
 }
 
-.facts dt {
-  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+.wide .list-column,
+.wide .reader-column {
+  min-height: 0;
+  overflow-y: auto;
 }
 
-.part {
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.passage {
-  margin-bottom: 0.75rem;
-}
-
-a {
-  color: rgb(var(--v-theme-primary));
+.hint {
+  padding-block: 3rem;
+  text-align: center;
 }
 </style>

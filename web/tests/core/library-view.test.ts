@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { LibraryPaper } from '../../src/core/library-types.ts';
+import type { Library, LibraryPaper } from '../../src/core/library-types.ts';
 import {
-  addedLine, dependencyLines, europePmcUrl, originLabel, passageCount, pmidError, removalQuestion, textUsed,
+  ADD_PAGE, addedLine, dependencyLines, europePmcUrl, isPmid, matchState, noMatchLine, originLabel, paperAt, passageCount,
+  pmidError, removalQuestion, textUsed,
 } from '../../src/core/library-view.ts';
 
 const whitty: LibraryPaper = {
@@ -67,5 +68,36 @@ describe('testi della Libreria', () => {
   it('togliere un paper che nessuno nomina chiede solo conferma; un aggiunto si cancella', () => {
     expect(removalQuestion({ ...fullText, origin: 'added' }))
       .toBe('Cancellare dalla libreria Whitty et al. (2016), PMID 24550842?');
+  });
+
+  it('l\'indirizzo apre il paper che nomina', () => {
+    expect(paperAt([whitty, fullText], '24550842')).toBe(fullText);
+  });
+
+  it('senza un PMID nell\'indirizzo nessun paper è aperto', () => {
+    expect([paperAt([whitty], undefined), paperAt([whitty], '')]).toEqual([undefined, undefined]);
+  });
+
+  it('la pagina per aggiungere un paper non è un paper', () => {
+    expect([ADD_PAGE, paperAt([whitty], 'aggiungi')]).toEqual(['aggiungi', undefined]);
+  });
+
+  it('un PMID sconosciuto, tolto o non numerico non apre nulla', () => {
+    expect(['1', 'abc'].map((pmid) => paperAt([whitty], pmid))).toEqual([null, null]);
+  });
+
+  it('solo cifre è un PMID, il resto sono parole da cercare', () => {
+    expect(['27175601', ' 27175601 ', '0', '123456789012'].map(isPmid)).toEqual([true, true, true, true]);
+    expect(['seiler 2010', '12a', 'PMID:1', ''].map(isPmid)).toEqual([false, false, false, false]);
+  });
+
+  it('un risultato già in libreria, tolto o da aggiungere', () => {
+    const library: Library = { papers: [whitty], removed: [fullText], warning: null };
+    expect(['27175601', '24550842', '111'].map((pmid) => matchState(pmid, library)))
+      .toEqual(['inLibrary', 'removed', 'addable']);
+  });
+
+  it('nessun risultato ripete il testo cercato com\'è scritto', () => {
+    expect(noMatchLine('  «zona» "2" <b> & co ')).toBe('Nessun paper su PubMed per ««zona» "2" <b> & co»');
   });
 });

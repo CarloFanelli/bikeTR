@@ -2,7 +2,7 @@
 // dipende e i suoi link. Ricevono i dati e restituiscono testi, senza leggere il browser.
 
 import { licenseLink } from './coach-view.ts';
-import type { AddedPaper, LibraryPaper } from './library-types.ts';
+import type { AddedPaper, Library, LibraryPaper } from './library-types.ts';
 
 export function originLabel(p: LibraryPaper): string {
   if (p.wasAdded) return 'ora tra i paper di base';
@@ -30,6 +30,29 @@ export function dependencyLines(p: LibraryPaper): string[] {
 // Europe PMC solo per un paper di cui il Coach usa il testo completo, che viene da lì.
 export const europePmcUrl = (p: LibraryPaper) =>
   p.textUsed === 'fullText' ? `https://europepmc.org/article/MED/${p.pmid}` : null;
+
+// L'indirizzo della pagina per aggiungere un paper, nello stesso percorso dei paper: /libreria/aggiungi.
+export const ADD_PAGE = 'aggiungi';
+
+// Il paper che l'indirizzo apre: undefined se l'indirizzo non nomina un paper (la pagina per
+// aggiungerne uno inclusa), null se quello che nomina non è tra i paper che il Coach cerca
+// (sconosciuto, tolto o non un numero).
+export function paperAt(papers: LibraryPaper[], pmid: string | undefined): LibraryPaper | null | undefined {
+  if (!pmid || pmid === ADD_PAGE) return undefined;
+  return papers.find((p) => p.pmid === pmid) ?? null;
+}
+
+// Nel campo per aggiungere un paper, solo cifre sono un PMID; altro sono parole da cercare su PubMed.
+export const isPmid = (text: string) => /^\d+$/.test(text.trim());
+
+// Un paper trovato su PubMed già nella libreria si apre; un paper di base tolto si ripristina,
+// senza scaricarlo di nuovo; gli altri si aggiungono.
+export function matchState(pmid: string, library: Library): 'inLibrary' | 'removed' | 'addable' {
+  if (library.papers.some((p) => p.pmid === pmid)) return 'inLibrary';
+  return library.removed.some((p) => p.pmid === pmid) ? 'removed' : 'addable';
+}
+
+export const noMatchLine = (query: string) => `Nessun paper su PubMed per «${query.trim()}»`;
 
 // Un PMID è un numero: il servizio rifiuta il resto prima di chiedere a PubMed.
 export const pmidError = (text: string) => (/^\d{1,10}$/.test(text.trim()) ? null : 'Il PMID è un numero');
