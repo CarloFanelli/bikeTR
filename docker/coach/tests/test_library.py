@@ -11,7 +11,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app import library, main, papers, search, workout
+from app import build_index, library, main, papers, search, workout
 from app.protocols import PROTOCOLS, Protocol, z2_endurance
 from fakes import INDEX
 from test_build_index import ARTICLES, OPEN_111, RECORDS, client, fake_pubmed, services  # noqa: F401 (fixture)
@@ -379,3 +379,106 @@ def test_a_library_encoded_by_another_search_model_is_refused_until_reencoded(se
 def test_a_library_with_nothing_added_works_whatever_its_model_name(service, saved_library):
     saved_library.path.write_text(json.dumps({"model": "nomic-embed-text", "added": [], "removed": [WHITTY]}))
     assert WHITTY not in [p["pmid"] for p in asyncio.run(main.load_index())["papers"]]
+
+
+# --- Cercare un paper per parole del titolo o degli autori -------------------------------------
+
+SUMMARIES = {
+    "111": {"uid": "111", "pubdate": "2014 Feb", "title": "Block periodization of high-intensity aerobic intervals.",
+            "fulljournalname": "Scandinavian journal of medicine &amp; science in sports",
+            "authors": [{"name": "Rønnestad BR", "authtype": "Author"}, {"name": "Hansen J", "authtype": "Author"},
+                        {"name": "Ellefsen S", "authtype": "Author"}]},
+    "222": {"uid": "222", "pubdate": "2010", "title": "What is best practice for training intensity?",
+            "fulljournalname": "International journal of sports physiology and performance",
+            "authors": [{"name": "Seiler S", "authtype": "Author"}, {"name": "Endurance Group", "authtype": "CollectiveName"}]},
+    "333": {"uid": "333", "pubdate": "2021 Mar 3", "title": "Critical determinants of <i>VO2max</i>.",
+            "fulljournalname": "", "authors": [{"name": "van der Zwaard S", "authtype": "Author"},
+                                               {"name": "Jaspers RT", "authtype": "Author"}]},
+}
+
+
+def searching(found: list[str], seen: list):
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.path.endswith("esearch.fcgi"):
+            return httpx.Response(200, json={"esearchresult": {"idlist": found}})
+        ids = request.url.params["id"].split(",")
+        return httpx.Response(200, json={"result": {"uids": ids, **{i: SUMMARIES[i] for i in ids}}})
+    return client(handler)
+
+
+def search_for(service, query):
+    return service.post("/coach/library/search", json={"query": query})
+
+
+def test_words_list_pubmed_matches_in_best_match_order(service, monkeypatch):
+    seen = []
+    monkeypatch.setattr(library, "finder", lambda: searching(["222", "111", "333"], seen))
+    res = search_for(service, "  block periodization  ")
+    assert res.status_code == 200
+    assert res.json() == [
+        {"pmid": "222", "authors": "Seiler", "year": "2010", "title": "What is best practice for training intensity?",
+         "journal": "International journal of sports physiology and performance"},
+        {"pmid": "111", "authors": "Rønnestad et al.", "year": "2014",
+         "title": "Block periodization of high-intensity aerobic intervals.",
+         "journal": "Scandinavian journal of medicine & science in sports"},
+        {"pmid": "333", "authors": "van der Zwaard & Jaspers", "year": "2021", "title": "Critical determinants of VO2max.",
+         "journal": None}]
+    asked = seen[0].url.params
+    assert (asked["term"], asked["retmax"], asked["sort"]) == ("block periodization", "10", "relevance")
+    assert seen[1].url.params["id"] == "222,111,333"
+
+
+def test_a_pmid_pubmed_cannot_summarize_is_left_out_of_the_matches(service, monkeypatch):
+    monkeypatch.setitem(SUMMARIES, "444", {"uid": "444", "error": "cannot get document summary"})
+    monkeypatch.setattr(library, "finder", lambda: searching(["444", "222"], []))
+    assert [m["pmid"] for m in search_for(service, "seiler").json()] == ["222"]
+
+
+def test_no_match_is_an_empty_list_without_a_second_request(service, monkeypatch):
+    seen = []
+    monkeypatch.setattr(library, "finder", lambda: searching([], seen))
+    assert search_for(service, "nothing like this").json() == []
+    assert len(seen) == 1
+
+
+def test_words_reach_pubmed_as_typed(service, monkeypatch):
+    seen = []
+    monkeypatch.setattr(library, "finder", lambda: searching([], seen))
+    search_for(service, 'Seiler & «polarized» "zone" <2>')
+    assert seen[0].url.params["term"] == 'Seiler & «polarized» "zone" <2>'
+
+
+def test_the_two_pubmed_requests_are_spaced_by_its_rate_limit(service, monkeypatch):
+    slept = []
+    monkeypatch.setattr(build_index, "PAUSE", 0.35)
+    monkeypatch.setattr(library.time, "sleep", slept.append)
+    monkeypatch.setattr(library, "finder", lambda: searching(["111"], []))
+    search_for(service, "block")
+    assert slept == [0.35]
+
+
+@pytest.mark.parametrize("query", ["", "   ", None, 12, "x" * 301])
+def test_a_query_without_words_is_refused_before_pubmed(service, monkeypatch, query):
+    monkeypatch.setattr(library, "finder", lambda: pytest.fail("PubMed contattato"))
+    res = search_for(service, query)
+    assert (res.status_code, res.json()) == (400, {
+        "error": "invalid_query", "message": "Scrivi da 1 a 300 caratteri del titolo o degli autori"})
+
+
+@pytest.mark.parametrize("failure, says", [
+    (httpx.ReadTimeout("lento"), "PubMed non raggiungibile (ReadTimeout)"),
+    (httpx.Response(503), "PubMed ha risposto HTTP 503 a esearch.fcgi")])
+def test_pubmed_unreachable_slow_or_failing_says_so(service, monkeypatch, failure, says):
+    def handler(request):
+        if isinstance(failure, Exception):
+            raise failure
+        return failure
+    monkeypatch.setattr(library, "finder", lambda: client(handler))
+    res = search_for(service, "block")
+    assert (res.status_code, res.json()) == (502, {"error": "source", "message": f"{says}: riprova più tardi"})
+
+
+def test_the_search_waits_ten_seconds_at_most():
+    with library.finder() as http:
+        assert http.timeout.read == 10

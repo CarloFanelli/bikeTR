@@ -36,6 +36,9 @@ export interface LibraryPassages {
 // Il paper come entrerebbe in libreria, prima della conferma: reason dice perché il testo usato.
 export type PaperPreview = Omit<LibraryPaper, 'origin' | 'wasAdded' | 'supports'> & { reason: string };
 
+// Un paper trovato su PubMed cercando per parole, prima dell'anteprima.
+export type PaperMatch = Pick<LibraryPaper, 'pmid' | 'authors' | 'year' | 'title' | 'journal'>;
+
 export interface AddedPaper {
   pmid: string;
   passageCount: number;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Un errore in parole semplici: una frase su cosa non è riuscito, il messaggio tecnico dentro
-// "Dettagli tecnici" (chiuso) e, per i download da Strava, "Riprova". Il messaggio arriva
+// "Dettagli tecnici" (chiuso) e, per i download da Strava e la ricerca su PubMed, "Riprova". Il messaggio arriva
 // spesso con "❌" davanti: qui si mostra senza emoji, come testo.
 import { computed } from 'vue';
 import { VAlert, VBtn } from 'vuetify/components';

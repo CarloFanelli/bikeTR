@@ -8,6 +8,7 @@ Rotte:
                          schermata Coach partite prima (Disconnetti da Strava)
   GET  /coach/library  → i paper che il Coach cerca, senza passaggi, con cosa ne dipende
   GET  /coach/library/{pmid} → i passaggi di un paper, nell'ordine di lettura
+  POST /coach/library/search → {query}: fino a 10 paper di PubMed per parole del titolo o degli autori
   POST /coach/library/preview → {pmid}: il paper da PubMed come entrerebbe in libreria (niente salvato)
   POST /coach/library  → {pmid}: aggiunge il paper alla libreria salvata in /data
   DELETE /coach/library/{pmid} → toglie il paper: cancella un aggiunto, nasconde uno di base
@@ -195,6 +196,12 @@ async def addable(request: Request) -> tuple[str, dict]:
         raise CoachError(500, "library_unreadable", str(e)) from e
     library.check_addable(base, saved, pmid)
     return pmid, base
+
+
+@app.post("/coach/library/search")
+async def library_search(request: Request):
+    query = library.valid_query(await json_body(request))
+    return await asyncio.to_thread(library.matches, query)
 
 
 @app.post("/coach/library/preview")

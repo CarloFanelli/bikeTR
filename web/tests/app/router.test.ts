@@ -38,7 +38,12 @@ describe('indirizzi dell\'app', () => {
     expect([route.name, route.params.id]).toEqual(['attivita-dettaglio', '1234567']);
   });
 
-  it.each(['/', '/hoem', '/attivita/1/altro', '/impostazioni/zone'])('%s, sconosciuto, apre Home', async (address) => {
+  it('un paper della libreria ha il suo indirizzo, nella stessa schermata', async () => {
+    const route = await open('/libreria/27175601');
+    expect([route.name, route.params.pmid]).toEqual(['libreria', '27175601']);
+  });
+
+  it.each(['/', '/hoem', '/attivita/1/altro', '/impostazioni/zone', '/libreria/1/altro'])('%s, sconosciuto, apre Home', async (address) => {
     expect((await open(address)).path).toBe('/home');
   });
 });

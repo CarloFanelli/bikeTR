@@ -111,12 +111,19 @@ def pubmed(client: httpx.Client, path: str, params: dict) -> httpx.Response:
     return get(client, "PubMed", EUTILS, path, params)
 
 
-def first_pmid(client: httpx.Client, query: str) -> str | None:
-    res = pubmed(client, "esearch.fcgi", {"db": "pubmed", "term": query, "retmax": 1, "retmode": "json"})
+def found_pmids(client: httpx.Client, query: str, retmax: int, sort: str | None = None) -> list[str]:
+    """I PMID che PubMed trova per la ricerca, nel suo ordine. Il testo va come parametro: httpx lo
+    codifica, qualunque carattere contenga."""
+    params = {"db": "pubmed", "term": query, "retmax": retmax, "retmode": "json", **({"sort": sort} if sort else {})}
+    res = pubmed(client, "esearch.fcgi", params)
     try:
-        ids = res.json()["esearchresult"]["idlist"]
+        return [str(pmid) for pmid in res.json()["esearchresult"]["idlist"]]
     except (ValueError, KeyError, TypeError) as e:
         raise BuildError("Risposta di PubMed illeggibile (esearch)") from e
+
+
+def first_pmid(client: httpx.Client, query: str) -> str | None:
+    ids = found_pmids(client, query, 1)
     return ids[0] if ids else None
 
 
@@ -130,6 +137,13 @@ def first(pattern: str, xml: str) -> str:
     return m.group(1) if m else ""
 
 
+def author_line(last_names: list[str]) -> str:
+    """Gli autori come li cita l'elenco: "Seiler", "Seiler & Tønnessen", "Seiler et al."."""
+    if len(last_names) > 2:
+        return f"{last_names[0]} et al."
+    return " & ".join(last_names)
+
+
 def parse_article(xml: str) -> dict:
     """Titolo, autori, anno, rivista e abstract dall'XML di PubMed (efetch)."""
     parts = re.findall(r"(<AbstractText[^>]*>)([\s\S]*?)</AbstractText>", xml)
@@ -138,11 +152,9 @@ def parse_article(xml: str) -> dict:
         label = re.search(r'Label="([^"]+)"', tag)
         labelled.append(f"{label.group(1)}: {plain(text)}" if label and len(parts) > 1 else plain(text))
     names = [plain(n) for n in re.findall(r"<LastName>([^<]+)</LastName>", xml)]
-    authors = (names[0] if len(names) == 1 else f"{names[0]} & {names[1]}" if len(names) == 2
-               else f"{names[0]} et al." if names else "")
     return {
         "title": plain(first(r"<ArticleTitle[^>]*>([\s\S]*?)</ArticleTitle>", xml)),
-        "authors": authors,
+        "authors": author_line(names),
         "year": (first(r"<PubDate>[\s\S]*?<Year>(\d{4})</Year>", xml)
                  or first(r"<MedlineDate>(\d{4})", xml)),
         "journal": plain(first(r"<Journal>[\s\S]*?<Title>([\s\S]*?)</Title>", xml)),

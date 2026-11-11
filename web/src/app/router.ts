@@ -32,8 +32,10 @@ const routes: RouteRecordRaw[] = [
     path: '/coach', name: 'coach', component: () => import('../screens/CoachScreen.vue'),
     meta: { title: 'Coach AI' },
   },
+  // Un solo percorso per l'elenco e per il paper aperto (/libreria/27175601): cambiando paper la
+  // schermata resta montata e tiene la libreria e i passaggi già scaricati.
   {
-    path: '/libreria', name: 'libreria', component: () => import('../screens/LibraryScreen.vue'),
+    path: '/libreria/:pmid?', name: 'libreria', component: () => import('../screens/LibraryScreen.vue'),
     meta: { title: 'Libreria' },
   },
   {

@@ -4,7 +4,7 @@
 import type {
   CoachEvent, CoachRefusal, CoachStatus, ConnectionCheck, WorkoutRequest,
 } from '../core/coach-types.ts';
-import type { AddedPaper, Library, LibraryPassages, PaperPreview } from '../core/library-types.ts';
+import type { AddedPaper, Library, LibraryPassages, PaperMatch, PaperPreview } from '../core/library-types.ts';
 
 export const COACH_UNREACHABLE = 'Coach non raggiungibile: avvia BikeTR con docker compose up -d';
 
@@ -36,6 +36,9 @@ export const checkConnection = () => askCoach<ConnectionCheck>('/coach/ping');
 export const libraryPapers = () => askCoach<Library>('/coach/library');
 export const libraryPassages = (pmid: string) =>
   askCoach<LibraryPassages>(`/coach/library/${encodeURIComponent(pmid)}`);
+
+// Fino a 10 paper di PubMed per parole del titolo o degli autori, nell'ordine di pertinenza.
+export const searchPapers = (query: string) => askCoach<PaperMatch[]>('/coach/library/search', 'POST', { query });
 
 // Il paper da PubMed come entrerebbe in libreria: il servizio non salva nulla.
 export const previewPaper = (pmid: string) => askCoach<PaperPreview>('/coach/library/preview', 'POST', { pmid });

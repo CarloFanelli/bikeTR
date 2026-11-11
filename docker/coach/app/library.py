@@ -13,6 +13,7 @@ si chiedono quando lo si apre."""
 
 import json
 import re
+import time
 from pathlib import Path
 
 import httpx
@@ -27,6 +28,8 @@ from app.shared_files import locked
 LIBRARY_FILE = Path("/data/library.json")
 MAX_ADDED = 50
 PMID = re.compile(r"\d{1,10}")
+MAX_MATCHES = 10
+MAX_QUERY = 300
 LISTED_FIELDS = ("pmid", "title", "authors", "year", "journal", "textUsed")
 NO_OPEN_LICENSE = "Europe PMC non ha il testo completo con una licenza che permette di copiarlo (CC BY, CC BY-SA, CC0)"
 
@@ -157,6 +160,14 @@ def valid_pmid(body) -> str:
     return pmid
 
 
+def valid_query(body) -> str:
+    raw = body.get("query") if isinstance(body, dict) else None
+    query = raw.strip() if isinstance(raw, str) else ""
+    if not 0 < len(query) <= MAX_QUERY:
+        raise CoachError(400, "invalid_query", f"Scrivi da 1 a {MAX_QUERY} caratteri del titolo o degli autori")
+    return query
+
+
 def check_addable(base: dict, saved: dict, pmid: str) -> None:
     """Rifiuta un PMID già in libreria, un paper di base tolto (si ripristina) o un paper oltre il
     massimo degli aggiunti."""
@@ -173,6 +184,42 @@ def check_addable(base: dict, saved: dict, pmid: str) -> None:
 
 def sources() -> httpx.Client:
     return httpx.Client(timeout=30)
+
+
+# La ricerca per parole aspetta meno dell'aggiunta: l'atleta aspetta la lista, e PubMed lento si riprova.
+def finder() -> httpx.Client:
+    return httpx.Client(timeout=10)
+
+
+def summary_match(record: dict) -> dict:
+    """Un paper trovato come lo mostra la lista dei risultati. PubMed scrive gli autori "Cognome
+    Iniziali": restano i cognomi, come nell'elenco della libreria."""
+    names = [re.sub(r"\s+[A-Z]{1,4}$", "", build_index.plain(a["name"])) for a in record.get("authors", [])
+             if a.get("authtype", "Author") == "Author"]
+    return {"pmid": str(record["uid"]), "authors": build_index.author_line(names),
+            "year": build_index.first(r"(\d{4})", record.get("pubdate", "")), "title": build_index.plain(record["title"]),
+            "journal": build_index.plain(record.get("fulljournalname", "")) or None}
+
+
+def matches(query: str) -> list[dict]:
+    """Fino a 10 paper di PubMed per parole del titolo o degli autori, nell'ordine di pertinenza di
+    PubMed. Due richieste (i PMID, poi i loro dati) distanziate come vuole PubMed senza chiave.
+    Bloccante: va chiamato in un altro thread."""
+    try:
+        with finder() as client:
+            pmids = build_index.found_pmids(client, query, MAX_MATCHES, sort="relevance")
+            if not pmids:
+                return []
+            time.sleep(build_index.PAUSE)
+            res = build_index.pubmed(client, "esummary.fcgi", {"db": "pubmed", "id": ",".join(pmids), "retmode": "json"})
+            try:
+                found = res.json()["result"]
+                # Un PMID ritirato torna senza dati, solo con "error": resta fuori, gli altri si mostrano.
+                return [summary_match(found[pmid]) for pmid in pmids if "title" in found.get(pmid, {})]
+            except (ValueError, KeyError, TypeError, AttributeError) as e:
+                raise build_index.BuildError("Risposta di PubMed illeggibile (esummary)") from e
+    except build_index.BuildError as e:
+        raise CoachError(502, "source", f"{e}: riprova più tardi") from e
 
 
 def fetch(pmid: str) -> tuple[dict, str]:
