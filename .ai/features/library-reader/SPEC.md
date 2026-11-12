@@ -2,7 +2,7 @@
 feature: library-reader
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: 0566cd587dda6ebffbd2534da97df0f1ff0b14c1
 ---
 

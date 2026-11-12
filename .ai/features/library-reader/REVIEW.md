@@ -1,14 +1,14 @@
 ---
 feature: library-reader
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-11
-head: 0566cd587dda6ebffbd2534da97df0f1ff0b14c1
+head: da4e260bc9dbe0fee3832153a81eb4a30ebbc2ce
 ---
 
 # Review — library-reader
 
-**Scope**: 16 files (primary — diff since base `0566cd58`, working tree included; 8 workflow artifacts under `.ai/` excluded)
-**Findings**: 0 must-fix · 1 should-fix · 2 nit
+**Scope**: 16 files re-verified (delta since review head `0566cd58`, which is the feature's base, so the whole feature; 9 workflow artifacts under `.ai/` excluded)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
