@@ -6,11 +6,15 @@ A browser app (Vue and TypeScript in `web/`, served by a live-reload development
 
 > ⚠️ The app is reachable only from your own computer (`127.0.0.1`), not from other devices on your network. **Do not deploy it to a public website.** The Strava Client ID and client secret live in the `.env` file, which Git ignores: never commit it.
 
+![A tour of BikeTR: Home, Allenamento, Analisi, Attività, Coach AI and Libreria](docs/media/tour.gif)
+
 ---
 
 ## The AI Coach in short
 
 You have an hour today: rest, easy Z2, or intervals? The Coach reads your Strava rides, computes fitness, fatigue and form (CTL/ATL/TSB) and the hard share of the last 28 days, searches 17 sports-science papers for the passages that fit, and asks a language model to pick **one workout from a fixed catalog of 13** and explain why, citing those passages.
+
+![The Coach proposing today's workout with the local model qwen2.5:7b](docs/media/coach.gif)
 
 **The model picks, the code computes.** Watts, repetitions and minutes come from the code, never from the model. Selection rules in the code decide which workouts each athlete is allowed today, and the model sees only those. A check sends an answer back to the model, with the reasons, when it is unreadable, cut off, outside the catalog, too long for the minutes, not allowed today or cites a passage it was not given: three tries at most, then fallback rules choose, and the workout card says why.
 
@@ -31,6 +35,27 @@ The paper search alone finds an expected paper in 14 of 20 situations (9 before 
 Both get measured on the same 27 situations before the README claims anything.
 
 More: [how a request works](#5-ai-coach) · [evaluation set and every score](eval-runs/README.md) · [each decision and its cost](PROCESS.md)
+
+---
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Home: today's workout, form, readiness and this week's numbers](docs/media/home.png) | ![Allenamento: today, tomorrow, the plan and the next 28 days](docs/media/allenamento.png) |
+| **Home**: the daily overview | **Allenamento**: the recommendation and the plan |
+| ![Analisi, Forma e carico: load, fitness and heart-rate zones](docs/media/analisi-forma.png) | ![Analisi, Potenza: the power curve and the FTP in use](docs/media/analisi-potenza.png) |
+| **Analisi**: form and load | **Analisi**: power curve and FTP |
+| ![Attività as a table, grouped by week](docs/media/attivita-tabella.png) | ![An activity's detail with its map](docs/media/attivita-dettaglio.png) |
+| **Attività**: the table view | **Attività**: an activity's detail |
+| ![Coach AI: the proposed workout with its target power and steps](docs/media/coach.png) | ![Libreria: the paper list on the left, a paper and its passages on the right](docs/media/libreria.png) |
+| **Coach AI**: today's workout | **Libreria**: a paper and its passages |
+| ![Home in the dark theme](docs/media/home-scuro.png) | ![Allenamento in the dark theme](docs/media/allenamento-scuro.png) |
+| **Dark theme**: Home | **Dark theme**: Allenamento |
+| ![Impostazioni, in sections](docs/media/impostazioni.png) | <img src="docs/media/telefono-home.png" alt="Home on a phone, with the bottom bar" width="45%"> <img src="docs/media/telefono-allenamento.png" alt="Allenamento on a phone" width="45%"> |
+| **Impostazioni** | **On a phone**: the bottom bar holds the sections |
+
+![Libreria: opening papers, then searching PubMed by words](docs/media/libreria.gif)
 
 ---
 

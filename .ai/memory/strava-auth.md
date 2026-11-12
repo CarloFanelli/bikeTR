@@ -15,3 +15,7 @@ _Avoid_: "keys" (ambiguous between credentials and tokens), "secret" for anythin
 ## Decisions
 
 - **Browser calls Strava directly with short-lived access tokens**: only login and token renewal go through the auth server, not every Strava API call; the browser asks `/auth/token` for a token right before each Strava request (`web/src/data/strava.ts`), so a long job or a tab open for hours never holds an expired one. Why: smallest change for a single-user app reachable only from localhost; the future agent can still reuse the server-held tokens.
+
+## Gotchas
+
+- **Scripted page loads exhaust Strava's rate limit**: every full page load downloads the athlete and the last activities from Strava again, and Strava allows 100 requests per 15 minutes per app. About 30 reloads from a headless browser (for screenshots) were enough to get `API /athlete: 429`, and the athlete's own browser shows the same error until the window resets. A scripted session should load the app once and move between sections by clicking, never with a new page load per screen.
