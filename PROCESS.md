@@ -401,3 +401,53 @@ Before this feature, the Coach searched whole abstracts and gave the model 4 abs
 - **Decision**: each Coach request runs as a LangGraph graph with nodes rides, metrics, papers, draft, check and deliver; the evaluation set enters at papers, with the athlete numbers already computed, while the Coach screen and the live check enter at rides. The check accepts a draft that is whole, readable, a catalog protocol that fits the minutes and that today's selection rule allows, and that cites only passages the model was given (or the PMID of today's rule source). Otherwise the draft goes back to the model with its previous answer and the reasons, written by the code in Italian, up to 3 drafts. After the third, a draft wrong only in its citations keeps its workout and drops them; any other cause goes to the fallback rules, which now also cover "not allowed today". The prompt shows only the workouts today's rule allows, with that rule and its source. Results files record every draft and the fallback cause, and grading reports the rules followed at the first draft and at the last.
 - **Why**: the evaluation runs showed small models following the selection rules in 9 to 15 of 27 situations, and writing all the rules out did not help. The code already knows the allowed workouts, so it can narrow the choice in the prompt and check the answer, instead of hoping the model applies 11 ordered rules. A graph makes the loop back from check to draft explicit, one node per step, each with its own step in the trace. Grading the first and the last draft separately tells what the narrower prompt achieves alone and what the returns add.
 - **Cost**: a sent-back answer costs a full new model call, so a request can take up to three times as long and, with a cloud model, cost up to three times as much; the evaluation's worst case counts 3 drafts per answer. LangGraph is a new package in the Coach image (`docker compose up -d --build` once). The prompt version changes, so earlier runs and new ones do not share a version. A paper cited only through a passage label the model was not given no longer appears on the card at all.
+
+## data-backend — the server keeps every Strava activity in a database (2026-11-13)
+
+### 2026-11-13 · PostgreSQL in its own container, reached only by the Coach service
+
+- **Decision**: a `db` service (PostgreSQL 17, `db-data` volume, no published port) holds the athlete's Strava data; the Coach service is the only one that connects to it, with psycopg 3. Tables come from numbered SQL files in `docker/coach/migrations/`, applied at the Coach's start, each once. Every operation opens its own connection, without a pool.
+- **Why**: the whole history (hundreds of activities, thousands later) and the Coach's ride details need queries a JSON file cannot answer without reading everything. One athlete on one computer makes few requests, so a connection each costs nothing noticeable, and the tests run each in their own event loop, to which a pool would stay bound.
+- **Cost**: one more container and volume; `docker compose down -v` also deletes the activities. The Coach tests need the database running, so their command loses `--no-deps`.
+
+### 2026-11-13 · The whole Strava activity is saved, name and route included
+
+- **Decision**: the database keeps each activity as Strava lists it, replacing the 2026-11-06 rule that kept only the figures the Coach reads. The Coach still reads only those figures.
+- **Why**: Attività will show every activity from the server, with its name and route map, so the server needs them.
+- **Cost**: a copy of the `db-data` volume exposes names, start points and routes, as the browser's saved data already did. "Disconnetti da Strava" deletes them all.
+
+### 2026-11-13 · One sync at a time, at most every 5 minutes, resuming where it stopped
+
+- **Decision**: a sync reads the athlete, the all-time stats and the activity list. The first one pages back through the whole history, 200 at a time, each page continuing before the oldest saved activity; until it reaches the first activity, the next sync resumes from there. Later syncs ask for activities after the newest saved and re-read the last 30 days, replacing changed ones and deleting those Strava no longer lists. A sync asked within 5 minutes of the last check, failed checks included, answers from the database; two syncs at once share one. A "too many requests" answer pauses until the next quarter hour.
+- **Why**: Strava allows 100 requests every 15 minutes; a long history takes a few pages, and an interrupted first sync must not start over. Renames and deletions usually happen soon after a ride, so 30 days catches them without re-reading everything.
+- **Cost**: an activity edited on Strava more than 30 days after its start keeps its old version.
+
+### 2026-11-13 · Ride details download in the background, on their own budget
+
+- **Decision**: the Coach service downloads the ride details of every activity with measured power or heart rate, one at a time, newest first, with failed ones retried after the others. It counts its own requests in the database, at most 60 per Strava quarter hour and 600 per UTC day, and pauses until the next quarter hour when Strava's usage header reaches 80 of 100 or Strava answers "too many requests". A sync wakes it; a restart resumes from the first activity still without details. "Aggiorna con streams" is gone; Profilo e dati shows how many activities have details.
+- **Why**: a full history needs one request per activity, more than Strava's 100 per 15 minutes, so it cannot run behind a button. Its own lower budget, plus the usage header that counts the browser's requests too, leaves room for syncs and segment jobs. Power that Strava estimates without a power meter has no stream, so those rides are not asked.
+- **Cost**: a long history takes a few hours to complete. The browser keeps computing loads from its own saved streams until the Coach computes them from the server's details.
+
+### 2026-11-13 · The app reads the athlete and activities from the server, not from Strava
+
+- **Decision**: on opening, the browser asks the Coach service to sync (at most once every 5 minutes) and then reads the athlete, the all-time stats and the latest 60 activities from it; the browser no longer asks Strava for them. "Aggiorna da Strava" in the athlete's menu syncs at once, sharing a sync already running, and reloads the screens' data without reloading the page. When Strava does not answer, the saved data are shown with a warning saying when they were last updated, or when Strava's pause ends.
+- **Why**: page reloads were each downloading the athlete and 60 activities from Strava and had hit the 100-requests limit; one copy on the server, refreshed on a timer, makes reloads free.
+- **Cost**: a ride uploaded less than 5 minutes after the last check appears only after "Aggiorna da Strava" or the next check. Starred segments, an activity's detail and the export still call Strava from the browser.
+
+### 2026-11-13 · Attività and Home's last ride read the whole history; the rest keeps 60
+
+- **Decision**: Attività shows the whole history saved on the server, 60 activities at a time (rounded up to whole weeks) and 60 more when the end of the list scrolls into view; its search and sport filters look through everything. Home's "Ultima uscita" searches the whole history. The server sends the full list with only the fields the cards use. The power curve, records, level, plan and charts keep reading the latest 60.
+- **Why**: the history is the visible gain of keeping everything on the server, but changing the analysis windows would move values the athlete already knows (user decision).
+- **Cost**: the full list is read once per session and again after each update, a few hundred kilobytes for a few thousand activities.
+
+### 2026-11-13 · The athlete's data lives on the server; display choices stay in the browser
+
+- **Decision**: Impostazioni, the calendar's skipped and rainy days, the FTP history, the mesocycle, the segment cache and the Coach duration are saved in the Coach service's database and read at every opening. The server refuses a value with an unknown field or a wrong type and names it. At the first opening after the update, a browser that finds the server empty sends its old copies, cleaned of fields the app no longer uses, then deletes them; a browser that finds data there deletes its copies without sending them. Theme, last Analisi tab and Attività view stay in each browser. "Disconnetti da Strava" deletes only the segment cache.
+- **Why**: the same data in every browser on this computer, without merging two different histories (user decision); display choices are per device.
+- **Cost**: the first browser to open the updated app decides what the server keeps, so the browser that holds the data must be opened first. A save that fails puts the previous value back and shows the error.
+
+### 2026-11-13 · The Coach service computes each activity's load; the plan keeps a tested copy
+
+- **Decision**: every real activity's training load comes from the Coach service, computed with the ride details it saved and the athlete's current FTP, LTHR and maximum heart rate; the browser asks again when those thresholds change. Fitness, fatigue and form are averaged in the browser from those loads. The four-week plan's simulated workouts keep a browser copy of the formula, and a test compares it with the Coach's expected values.
+- **Why**: one place computes the load of what really happened, with the most precise data (user decision); the plan's simulation stays in the browser to keep the plan unchanged (backlog B-45 moves it later).
+- **Cost**: two copies of the formula until B-45, kept equal by a test; opening the app needs the Coach to answer.

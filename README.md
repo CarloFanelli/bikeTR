@@ -2,7 +2,7 @@
 
 Started on **May 7, 2026**.
 
-A browser app (Vue and TypeScript in `web/`, served by a live-reload development server) for cycling analysis and training recommendations based on the user's Strava data. Designed for **personal, local use**: each person runs their own copy on their own computer, connected to their own Strava app. One Docker command starts everything: a web server, the app's development server, a small auth server that holds the Strava secret, the Coach service (Python), the local AI model used by the Coach (a cloud model such as Claude can be chosen instead), and Phoenix, which shows what the Coach did in each request. Settings and caches stay in the browser's `localStorage`.
+A browser app (Vue and TypeScript in `web/`, served by a live-reload development server) for cycling analysis and training recommendations based on the user's Strava data. Designed for **personal, local use**: each person runs their own copy on their own computer, connected to their own Strava app. One Docker command starts everything: a web server, the app's development server, a small auth server that holds the Strava secret, the Coach service (Python), the local AI model used by the Coach (a cloud model such as Claude can be chosen instead), and Phoenix, which shows what the Coach did in each request. The Coach service keeps your Strava data and your athlete data (Impostazioni, calendar, FTP history, mesocycle) in a PostgreSQL database, so every browser on this computer shows the same data; only display choices and a few caches stay in the browser's `localStorage`.
 
 > ⚠️ The app is reachable only from your own computer (`127.0.0.1`), not from other devices on your network. **Do not deploy it to a public website.** The Strava Client ID and client secret live in the `.env` file, which Git ignores: never commit it.
 
@@ -61,12 +61,12 @@ More: [how a request works](#5-ai-coach) · [evaluation set and every score](eva
 
 ## Features
 
-The top bar lists six sections: **Home**, **Allenamento** (Training), **Analisi** (Analysis), **Attività** (Activities), **Coach AI** and **Libreria** (Library); on a phone a bar at the bottom of the screen holds Home, Allenamento, Analisi, Attività and Coach AI, and Libreria moves into the athlete's menu. The athlete's menu at its right shows the Strava connection and holds **Impostazioni** (Settings), **Esporta allenamenti** (Export workouts) and the theme: **Sistema** follows the computer's light or dark setting, **Chiaro** and **Scuro** fix it, and the choice is kept after a reload.
+The top bar lists six sections: **Home**, **Allenamento** (Training), **Analisi** (Analysis), **Attività** (Activities), **Coach AI** and **Libreria** (Library); on a phone a bar at the bottom of the screen holds Home, Allenamento, Analisi, Attività and Coach AI, and Libreria moves into the athlete's menu. The athlete's menu at its right shows the Strava connection and holds **Aggiorna da Strava** (update from Strava: the server checks Strava at once and the screens show the new rides, with the result under the item), **Impostazioni** (Settings), **Esporta allenamenti** (Export workouts) and the theme: **Sistema** follows the computer's light or dark setting, **Chiaro** and **Scuro** fix it, and the choice is kept after a reload.
 
 - **Home** — the daily overview: today's workout with a link to Allenamento, your form (TSB) and readiness, kilometres, hours and training load this week, each compared with the same days of last week, and the last bike ride. Each label opens a short explanation.
 - **Allenamento** — daily recommendation (rest / Z1 / Z2 / Sweet Spot / Threshold / VO2max / strength / mobility / long ride), based on 7/28-day training load, TSB (CTL-ATL), `hardsLast7`, elevation gain, recent strength activities, and mesocycle status. Includes a 28-day calendar (click a day: skip → rainy → normal), the load chart of the last 30 days, and the plan for the next 7 days and four weeks.
-- **Analisi** — five tabs, and the last one you opened opens again: **Forma e carico** (the load chart, fitness trends CTL/ATL/TSB over the last 90 days, heart-rate zone distribution for the last month), **Potenza** (the Power-Duration Curve and the **Power Profile** with weaknesses and strengths), **Soglie** (weekly **FTP trend** and the **FTP/LTHR breakdown**, showing the exact activities used to determine the values), **Segmenti** (predictions for your starred Strava segments and targeted workouts for them), and **Profilo e dati** (your estimated level with all-time totals and records from the latest ~60 rides, and data precision: FTP, LTHR, where the load comes from and how many activities have second-by-second streams; "Come si stimano FTP e LTHR" opens the full method in a side panel, and "Aggiorna con streams" (refresh with streams) downloads streams for the 40 most recent cycling activities). Each card's title opens a short explanation; methods and formulas are in its side panel. Charts show their values on hover.
-- **Attività** — every activity loaded in the browser (the last 60), as cards or as a table, with a switch that is remembered after a reload, filtered by sport (Tutte, Bici, Corsa, Altro) and by a search on the activity name that ignores capitals and accents, and grouped by week with each week's distance, time and climbing. Each card shows a street map of the route, loaded when the card scrolls into view; each table row shows a mini map, the route line alone without map tiles. Click one to open its detail inside the app, with a Leaflet map, per-kilometer splits, and a segment list with KOM/PR badges.
+- **Analisi** — five tabs, and the last one you opened opens again: **Forma e carico** (the load chart, fitness trends CTL/ATL/TSB over the last 90 days, heart-rate zone distribution for the last month), **Potenza** (the Power-Duration Curve and the **Power Profile** with weaknesses and strengths), **Soglie** (weekly **FTP trend** and the **FTP/LTHR breakdown**, showing the exact activities used to determine the values), **Segmenti** (predictions for your starred Strava segments and targeted workouts for them), and **Profilo e dati** (your estimated level with all-time totals and records from the latest ~60 rides, and data precision: FTP, LTHR, where the load comes from, and how many activities with power or heart rate have their ride details, the second-by-second data the server downloads on its own in the background ("Dettagli completi" once all have them); "Come si stimano FTP e LTHR" opens the full method in a side panel). Each card's title opens a short explanation; methods and formulas are in its side panel. Charts show their values on hover.
+- **Attività** — your whole Strava history, 60 activities at a time with 60 more each time you reach the end of the list (whole weeks, so each week's totals are complete), as cards or as a table, with a switch that is remembered after a reload, filtered by sport (Tutte, Bici, Corsa, Altro) and by a search on the activity name that ignores capitals and accents, both over the whole history, and grouped by week with each week's distance, time and climbing. Each card shows a street map of the route, loaded when the card scrolls into view; each table row shows a mini map, the route line alone without map tiles. Click one to open its detail inside the app, with a Leaflet map, per-kilometer splits, and a segment list with KOM/PR badges.
 - **Coach AI** — a workout suggested by an LLM: by default one **running locally** via [Ollama](https://ollama.com), or a cloud model such as Claude, chosen in `.env` (section 5). The Coach service (Python, in Docker) downloads your rides from Strava, calculates all the context (FTP, LTHR, CTL/ATL/TSB, polarization, recent activities) and performs RAG retrieval from `papers_index.json` (17 endurance-science papers). The model selects a `protocolId` from the deterministic catalog; all calculations (power targets, durations) are performed by the code, never by the model. The screen shows the workout's title, target power and steps, with the start of the reasoning; **Perché questo workout** opens the full reasoning and the cited papers with their quoted passages in a side panel. While a request runs the screen shows its current step, and **Stop** ends it. A closed **Dietro le quinte** section at the bottom holds what is meant for whoever builds the Coach: the context sent to the model, its text as it is written, the raw output, the papers the search found with their scores, the model and timings. With Ollama your rides never leave your computer; with a cloud model, the numbers listed in section 5 go to that provider.
 - **Libreria** — the papers the Coach searches. From 1280 px wide the list sits in a left column (25%) and the chosen paper opens in a reading area on the right (75%), each scrolling on its own; on narrower screens the list and the paper take turns, with a "Torna all'elenco" button. The open paper is in the address (`/libreria/{PMID}`), so a reload or the back button keeps it. Each row shows the citation and whether it is a base paper or one you added. The reading area shows the paper's journal, whether the Coach reads its full text (with its license) or its abstract, the workouts and selection rules it supports, and its passages, labeled as the Coach cites them, with links to PubMed and, for a full text, to Europe PMC. To add a paper, press **Aggiungi un paper** at the top of the list (`/libreria/aggiungi`) and type its PMID in the reading area, or words from its title or authors: words list up to 10 PubMed matches in PubMed's best-match order (a match already in the library is marked **In libreria** and opens it, a removed base paper offers **Ripristina**), and picking one continues with its PMID. A preview shows the paper, the text the Coach will use and why, and its passage count; confirming indexes it for free with the search model and saves it in the Coach's data volume, never in `papers_index.json`, and opens the new paper. The Coach uses the full text only under CC BY, CC BY-SA or CC0, otherwise the abstract. Up to 50 papers can be added. Removing a paper asks first, naming the workouts and selection rules that lose their supporting paper; an added paper is deleted, a base paper moves to a "Tolti" group at the bottom of the list with a restore button.
 - **Impostazioni** — in sections (Soglie, Volume, Disponibilità, Gara, Recupero, Coach, Strava): heart-rate zones and thresholds, weekly volume and available days, an optional race, recovery tools, the chat model the Coach uses (with the money spent, for a cloud model) and **Verifica connessione**, and "Disconnetti da Strava". Any change brings up a bar with **Salva** and **Annulla**; leaving the screen or disconnecting with unsaved changes asks first, and reloading the page shows the browser's own warning.
@@ -126,7 +126,7 @@ Settings are read when the services start: after changing `.env`, run `docker co
 
 ## 4. Start, open, stop
 
-Start everything (web app, auth server, Coach service, AI Coach model, Phoenix):
+Start everything (web app, auth server, Coach service and its PostgreSQL database, AI Coach model, Phoenix):
 
 ```bash
 docker compose up -d
@@ -134,7 +134,7 @@ docker compose up -d
 
 Open <http://localhost:5050> and click **Collega Strava** (Connect to Strava). Strava asks you to authorize the app, then sends you back to BikeTR with your profile and the 60 most recent activities loaded. The auth server keeps the connection, so later visits and restarts load your data without authorizing again.
 
-**Always open `localhost`, never `127.0.0.1`.** The browser keeps saved data per address, so under `127.0.0.1` your settings and caches are not visible, and Strava always sends you back to `localhost`.
+**Always open `localhost`, never `127.0.0.1`.** Strava always sends you back to `localhost`, and the browser keeps its own choices per address: under `127.0.0.1` the theme, the last Analisi tab, the Attività view and the export's streams cache start over. Your athlete data is on the server and is the same at every address.
 
 **First start.** Docker downloads about 2.3 GB of images (Phoenix's is about 330 MB), installs the app's npm packages and builds the Coach service's image with its paper search model (each takes a minute or two), and then downloads the Coach's chat model, about 5 GB. The app opens once its packages are installed, within about a minute; the Coach works once the chat model is downloaded, which takes several minutes. To watch the download:
 
@@ -158,7 +158,7 @@ docker compose down
 docker compose down -v
 ```
 
-**Disconnect** with the "Disconnetti da Strava" button in Impostazioni: it deletes the Strava tokens held by the auth server, the rides and ride details the Coach service saved, and the Coach screen's traces in Phoenix (section 5); the total spent on a cloud model stays. A tab that was already open loses access too: its next Strava download sends it back to the **Collega Strava** screen.
+**Disconnect** with the "Disconnetti da Strava" button in Impostazioni: it deletes the Strava tokens held by the auth server, the activities, ride details, athlete and stats the Coach service saved in its database, the segment cache and the Coach screen's traces in Phoenix (section 5). Impostazioni, the calendar, the FTP history, the mesocycle and the Coach duration stay, and so does the total spent on a cloud model. A tab that was already open loses access too: its next Strava download sends it back to the **Collega Strava** screen.
 
 ## 5. AI Coach
 
@@ -169,7 +169,7 @@ A cyclist has an hour free today and wants to know what to ride: rest, an easy Z
 ```
 Coach AI: "Genera workout di oggi" sends the minutes (30–240), the time zone and the athlete profile
   └─► Coach service (docker/coach)
-        1. rides       downloads your Strava rides, kept in a Docker volume
+        1. rides       reads your Strava rides from the database, downloading new ones first
         2. numbers     CTL, ATL, TSB, easy and hard share of the last 28 days, capacity tier, last 7 days
         3. papers      a search sentence built from those numbers and the names of the workouts the
                        selection rules allow finds the closest passages of papers_index.json in a
@@ -321,7 +321,7 @@ A failed step shows the message the screen showed, and a stopped request is mark
 
 ## 6. Common problems
 
-- **Port 5050 is already in use** (for example an old `python3 -m http.server 5050` from the previous setup is still running): stop that program, or set another `WEB_PORT` in `.env`. Browser data is kept per address, so after changing the port the data saved under the old one is not visible.
+- **Port 5050 is already in use** (for example an old `python3 -m http.server 5050` from the previous setup is still running): stop that program, or set another `WEB_PORT` in `.env`. Your athlete data is on the server and stays; the theme, the last Analisi tab, the Attività view and the export's streams cache are kept per address, so they start over under the new port.
 - **The page shows "502 Bad Gateway"**: the app's development server is not running yet. On the first start, and after an update that changes `web/package-lock.json`, it first installs its npm packages, which needs an internet connection; `docker compose logs app` shows the progress or the error.
 - **"Server di autenticazione non raggiungibile"** (auth server unreachable): in the first second after a start, reload the page. If it persists, look at `docker compose logs auth`.
 - **Strava rejects the connection**: check `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` in `.env` and that the Strava app's callback domain is `localhost`, then run `docker compose up -d` again.
@@ -332,33 +332,39 @@ A failed step shows the message the screen showed, and a stopped request is mark
 
 ---
 
-## 7. localStorage layout
+## 7. Saved data: server and localStorage
 
-All keys written by the app (see `safeLoad`/`safeSave` in `web/src/data/storage.ts`). The Strava tokens are not here: the auth server keeps them.
+**On the server.** The athlete's data lives in the Coach service's database (`athlete_data` table), one entry per key, read at every opening (`GET /coach/athlete-data`) and saved at each change (`PUT /coach/athlete-data/{key}`). The server checks each value and refuses an unknown field or a wrong type, naming the field, without saving anything. A save that fails puts the previous value back on screen and says so.
+
+| Key | Written by | Contents |
+|---|---|---|
+| `settings` | Impostazioni, "Salva" | `{hrMax, hrLthr, ftpDeclared, weeklyHours, weeklyDays, longRides, weight, strengthLevel, lthrSource, ftpSource, …}` |
+| `plannedRests` | Allenamento's 28-day calendar | Days marked as "skip" |
+| `rainyDays` | Allenamento's 28-day calendar | Days marked as "rainy" |
+| `mesocycle` | Opening the app or Allenamento: saved at the first opening, when a new week of the block starts and when a block ends | `{blockId, startDate, blockIndex, weekInBlock, blockHistory[], ftpHistory[]}` |
+| `ftpHistory` | Today's FTP point, at every opening | `[{ftp, date, source}, ...]`, up to 52 entries |
+| `segmentCache` | Starred segments, loaded at start, and "Completa da dettagli attività" | `{segmentId: {efforts[], _fetched, _segment}}`; deleted by "Disconnetti da Strava" |
+| `coachSettings` | Coach AI (duration) | `{lastDuration}` |
+
+**Moving from an older version.** Older versions kept these values in the browser (`biketr_settings`, `biketr_planned_rests`, `biketr_rainy_days`, `biketr_mesocycle`, `biketr_ftp_history`, `biketr_segments_cache_v2`, `biketr_coach_settings`). At its first opening after the update, a browser that finds the server empty sends them (`POST /coach/athlete-data/import`), keeping only the fields the app uses, then deletes its copies and their `.broken` backups. A browser that finds the server already holding data deletes its copies without sending them. **Open the updated app first in the browser that holds your data**: a browser without saved data opened first fills the server with a fresh mesocycle and FTP point, and your data would then be deleted instead of moved.
+
+**In the browser** (see `safeLoad`/`safeSave` in `web/src/data/storage.ts`). The Strava tokens are not here: the auth server keeps them.
 
 | Key | Type | Written by | Contents |
 |---|---|---|---|
-| `biketr_settings` | object | Impostazioni, "Salva impostazioni" | `{hrMax, hrLthr, ftpDeclared, weeklyHours, weeklyDays, longRides, weight, strengthLevel, lthrSource, ftpSource, …}` |
-| `biketr_planned_rests` | ISO date array | Allenamento's 28-day calendar | Days marked as "skip" |
-| `biketr_rainy_days` | ISO date array | Allenamento's 28-day calendar | Days marked as "rainy" |
-| `biketr_streams_cache` | object | "Aggiorna con streams" | `{activityId: {NP, IF, TSS, hrZones, hrTSS, _fetched}}` |
-| `biketr_segments_cache_v2` | object | Starred segments, loaded at start, and "Completa da dettagli attività" | `{segmentId: {efforts[], _fetched, _segment}}` |
-| `biketr_mesocycle` | object | Updated at every start | `{blockId, startDate, blockIndex, weekInBlock, blockHistory[], ftpHistory[]}` |
-| `biketr_ftp_history` | array | Today's FTP point, at every start | `[{ftp, date, source, meso}, ...]`, up to 52 entries |
-| `biketr_coach_settings` | object | Coach AI (duration) | `{lastDuration}`; the `model` and `endpoint` saved by older versions are removed |
+| `biketr_streams_cache` | object | The JSON export in its most detailed mode | `{activityId: {NP, IF, TSS, hrZones, hrTSS, _fetched}}` |
 | `biketr_ui` | object | The theme choice in the athlete's menu and the last Analisi tab | `{theme, analysisTab}`: theme `system`, `light` or `dark` (missing or unknown means `system`); tab `forma`, `potenza`, `soglie` or `segmenti` (missing or unknown means `forma`) |
 
 If a key is corrupted (JSON parsing fails or validation rejects it), a `key.broken` backup is saved and defaults are restored; a warning is logged in the console. Versions before the Docker setup stored the Strava credentials under `biketr_strava`: the app deletes that key (and its `.broken` copy) on first load.
 
-**Full reset of the browser data**: `DevTools → Application → Local Storage → Clear all`. The "Disconnetti da Strava" button only removes the Strava connection.
+**Full reset of the browser data**: `DevTools → Application → Local Storage → Clear all`; it does not touch the data on the server. `docker compose down -v` erases the database too.
 
 ---
 
 ## 8. Runtime configuration
 
-Two download limits are constants in the code; with live reload, a saved change applies at once:
+One download limit is a constant in the code; with live reload, a saved change applies at once:
 
-- `MAX_STREAMS_FETCH` in `web/src/data/streams.ts` (default: 40) — number of cycling activities for which "Aggiorna con streams" downloads streams.
 - `MAX_SEGMENTS_HYDRATE` in `web/src/data/segments.ts` (default: 30) — number of activities "Completa da dettagli attività" analyzes for `segment_efforts`.
 
 ---
@@ -373,8 +379,11 @@ browser ──► web (nginx, http://localhost:5050)
              ├─ /papers_index.json → the paper index, from the project folder (read-only)
              ├─ /auth/    → auth: Strava login, keeps client secret and tokens (docker/auth/server.ts)
              └─ /coach/   → coach: the Coach service, Python with FastAPI (docker/coach);
-                            keeps the rides it downloads from Strava, the cloud spending total
-                            and a trace deletion still waiting for Phoenix in a Docker volume
+                            keeps the cloud spending total and a trace deletion still waiting
+                            for Phoenix in a Docker volume
+                            ├─► db: PostgreSQL, every Strava activity with its ride details, the
+                            │   athlete and the all-time stats, in a Docker volume; only the Coach
+                            │   service reaches it, and downloads the ride details in the background
                             └─► the chat model chosen in .env: ollama, kept in a Docker volume
                                 (or the Ollama on your computer), or a cloud provider such as Claude
 browser ──► phoenix (http://localhost:6006): the traces of each Coach request, kept in a Docker volume;
@@ -385,17 +394,18 @@ coach-tools: starts only when named (docker compose run --rm coach-tools …); r
              runs the live check and the evaluation set and grades its runs, writing into the project folder
 ```
 
-The browser calls the Strava API directly with a short-lived access token it asks `/auth/token` for right before each request, so a tab left open for hours keeps working; the client secret and the refresh token never leave the auth server. The nginx configuration is `docker/nginx/default.conf.template`.
+When the app opens, the Coach service updates its copy of your Strava data (at most once every 5 minutes, so reloading the page does not call Strava again) and the browser reads the athlete, the all-time stats and the latest 60 activities from it; when Strava does not answer, the app shows the saved data with a note saying when they were last updated. For the rest (starred segments, an activity's detail, the export) the browser calls the Strava API directly with a short-lived access token it asks `/auth/token` for right before each request, so a tab left open for hours keeps working; the client secret and the refresh token never leave the auth server. The nginx configuration is `docker/nginx/default.conf.template`.
 
 The app is written in Vue and TypeScript under `web/src/`; Vite's development server turns it into JavaScript for the browser as each file is requested, and there is no separate build. `web/index.html` loads only `src/app/main.ts`. Module flow:
 
 ```
 src/app/        ← start (main.ts), addresses after the # (router.ts), the Strava session, and the long
-                  jobs that keep running when you change section: streams refresh, export, segments, Coach
+                  jobs that keep running when you change section: Strava update, export, segments, Coach
 src/screens/    ← one Vue screen per section, plus the activity detail and "Collega Strava"
 src/components/ ← cards, charts (Chart.js), the map (Leaflet) and the top bar the screens are built from
 src/core/       ← calculations, which get everything as input (no page, saved data or clock):
-                  stream metrics, training load, CTL/ATL/TSB, FTP and LTHR estimates and trend,
+                  stream metrics, the copy of the training load used by the plan's simulated
+                  workouts, CTL/ATL/TSB, FTP and LTHR estimates and trend,
                   power curve and profile, segment predictions; formatting of distances, times and dates;
                   mesocycle and taper (meso.ts), the evidence-based workout catalog (training-v2.ts:
                   Seiler, Rønnestad, Coggan…), the training plan (plan/: daily recommendation,
@@ -422,10 +432,10 @@ The Coach tests (`web/tests/coach/`) feed made-up answers to the browser's answe
 
 The calculation tests (`web/tests/core/`) run on made-up rides, settings and segments (`web/tests/fixtures/rides.json`) and, for the training plan, on made-up days, weeks of rides, settings and saved values (`plan-cases.json`). They compare every result, at two decimals, with the one the JavaScript app gave before it was rewritten in TypeScript (`load-expected.json` and `plan-expected.json` in the same folder). Those files were recorded once from that app and are not regenerated: a test that fails against them means a calculation changed.
 
-**Coach service.** The Coach service's tests check that its numbers (normalized power, training load, fitness, fatigue, form, intensity split, capacity tier) equal those of the browser code, and that for the same model answers it builds the same prompts, papers and workout as the browser Coach did, except where the Coach changed on purpose: the system prompt shows only the workouts today's selection rule allows, with that rule, instead of the whole catalog and the browser's eight rules and gives each paper's 2 closest passages instead of its abstract cut to 1,200 characters, asking the model to cite them by label; the card shows each cited paper once, with the passages cited; the search sentence ends with the names of the workouts the selection rules allow, the fallback rules follow the selection rules and also replace a protocol longer than the minutes (the browser gave Z2 with the model's rationale) or one the rules do not allow today (the browser kept it), after the model has had 3 tries, and each workout names a supporting paper found on PubMed, or none for coaching practice, because the browser's often described other training. They need only Docker: no Ollama, no cloud provider (made-up ones answer instead), no Strava connection, and they can run while BikeTR is running. From the project folder (the same command works in PowerShell):
+**Coach service.** The Coach service's tests check that its numbers (normalized power, training load, fitness, fatigue, form, intensity split, capacity tier) equal those of the browser code, and that for the same model answers it builds the same prompts, papers and workout as the browser Coach did, except where the Coach changed on purpose: the system prompt shows only the workouts today's selection rule allows, with that rule, instead of the whole catalog and the browser's eight rules and gives each paper's 2 closest passages instead of its abstract cut to 1,200 characters, asking the model to cite them by label; the card shows each cited paper once, with the passages cited; the search sentence ends with the names of the workouts the selection rules allow, the fallback rules follow the selection rules and also replace a protocol longer than the minutes (the browser gave Z2 with the model's rationale) or one the rules do not allow today (the browser kept it), after the model has had 3 tries, and each workout names a supporting paper found on PubMed, or none for coaching practice, because the browser's often described other training. They need only Docker: no Ollama, no cloud provider (made-up ones answer instead), no Strava connection, and they can run while BikeTR is running. They start the database service if it is not running, and write only to a separate test database (`biketr_test`), created empty at each run: your saved activities are never touched. From the project folder (the same command works in PowerShell):
 
 ```bash
-docker compose run --rm --no-deps coach pytest
+docker compose run --rm coach pytest
 ```
 
 The tests use made-up activities (`docker/coach/tests/fixtures/rides.json`), made-up Coach requests and model answers (`coach_cases.json`), and the results the browser code gives for them (`metrics_expected.json` and `coach_expected.json` in the same folder). The browser Coach no longer exists: its last version is kept, for these results only, in `docker/coach/tests/reference/coach_before_move.js`. After changing a formula in the browser calculations (`web/src`), the made-up activities or the cases, regenerate those results by running those calculations and the old browser Coach in Node, in each time zone the fixtures list:
@@ -440,8 +450,9 @@ The same command rewrites the tests' paper index (`fixtures/papers_index.json`) 
 
 ## 11. Known limitations
 
-- **Local, single-user only**: no cross-device sync or multi-user support. Settings and caches live in the browser, per address.
-- **Without Strava streams**, TSS and time in zones are approximated from the summary's `weighted_average_watts` or from hrTSS calculated using average heart rate (e.g. a long Z2 ride with 20 minutes at threshold averages out to Z2). Click "Aggiorna con streams" for precise calculations: one API call per activity (Strava rate limit: 100 per 15 minutes).
+- **Local, single-user only**: no multi-user support. Browsers on this computer share the same data; display choices stay per browser.
+- **Training load comes from the Coach service.** At every opening, and again when Impostazioni or the segment estimates change FTP, LTHR or maximum heart rate, the app asks the Coach service for each activity's load (`POST /coach/metrics`), computed with the ride details it has downloaded and the same formula the browser used; fitness, fatigue and form are the 42- and 7-day averages of those loads, by day in the browser's time zone. Only the plan's simulated future workouts are computed in the browser, with a copy of the formula that a test compares with the Coach's (`web/tests/core/load-reference.test.ts`). If the Coach does not answer at opening the app shows an error; if a recalculation fails, the previous loads stay with a warning.
+- **Without Strava streams**, TSS and time in zones are approximated from the summary's `weighted_average_watts` or from hrTSS calculated using average heart rate (e.g. a long Z2 ride with 20 minutes at threshold averages out to Z2). The server downloads each activity's ride details in the background, newest first: one Strava request per activity, at most 60 every 15 minutes and 600 a day, pausing earlier when Strava reports the app near its limit of 100 every 15 minutes, so a long history takes a few hours.
 - **An FTP from a dedicated test is always more reliable** than estimates. The four `estimatesFromSegments` methods mitigate but do not eliminate estimation error (±5–10% compared with the true value). A 20-minute all-out test every 4–6 weeks is recommended.
 - **The chat model did not follow the selection rules reliably**: before the narrower prompt and the check, qwen2.5:7b chose an allowed workout in 12 of the 27 evaluation situations, qwen2.5:3b in 9 (section 5). The check now sends such an answer back and the fallback rules choose after 3 tries, so every workout is one the rules allow; how often the model gets there by itself is not measured yet.
 - **The AI Coach depends on its chat model**: with Ollama, while the model downloads or if Ollama is unavailable, the Coach AI screen shows an error, and on a CPU-only computer the default model is slow (section 5). A cloud model needs internet, costs money, and stops at the spending limit.
