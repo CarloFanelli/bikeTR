@@ -43,7 +43,24 @@ describe('mesociclo e taper', () => {
     }
     const { meso: next, changed } = update();
     expect(displayed(next)).toEqual(displayed(i.result));
-    expect(displayed(changed ? next : stored)).toEqual(displayed(i.stored));
+    // Dopo l'apertura il mesociclo salvato è quello di oggi, settimana compresa.
+    expect(displayed(changed ? next : stored)).toEqual(displayed(i.result));
+  });
+
+  const base: Mesocycle = {
+    startDate: '2026-11-02', blockIndex: 0, blockId: 'base', weekInBlock: 0, blockHistory: [], ftpHistory: [],
+  };
+
+  it('seconda settimana del blocco: la settimana cambia e si salva', () => {
+    const { meso: next, changed } = nextMesocycle(base, [], {}, new Date('2026-11-10T09:00:00'));
+    expect([next.weekInBlock, changed]).toEqual([1, true]);
+    expect(getWeekRoleInBlock(next)?.weekInBlock).toBe(1);
+  });
+
+  it('due aperture lo stesso giorno: la seconda trova la stessa settimana e non salva', () => {
+    const now = new Date('2026-11-10T09:00:00');
+    const first = nextMesocycle(base, [], {}, now).meso;
+    expect(nextMesocycle(first, [], {}, new Date('2026-11-10T18:00:00'))).toEqual({ meso: first, changed: false });
   });
 });
 
