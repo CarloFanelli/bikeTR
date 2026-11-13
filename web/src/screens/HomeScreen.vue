@@ -8,7 +8,7 @@ import {
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { VBtn, VCard, VCardText } from 'vuetify/components';
-import { streamsJob } from '../app/jobs.ts';
+import { allActivities, ensureAllActivities } from '../app/all-activities.ts';
 import { hrProfile, session } from '../app/session.ts';
 import { todayAdvice, trainingContext } from '../app/today.ts';
 import CardHeading from '../components/CardHeading.vue';
@@ -23,9 +23,7 @@ import { lastRide, weekTiles } from '../core/home.ts';
 const athlete = computed(() => session.athlete);
 const location = computed(() => [athlete.value?.city, athlete.value?.country].filter(Boolean).join(', '));
 
-// Si ricalcola quando "Aggiorna con streams" aggiunge le metriche alle attività.
 const day = computed(() => {
-  void streamsJob.running;
   const ctx = trainingContext();
   const { fatigue } = ctx;
   // Nessun carico negli ultimi 90 giorni: la fatica non si può calcolare.
@@ -43,13 +41,12 @@ const day = computed(() => {
 // Senza carico negli ultimi 90 giorni la prontezza spiega perché manca.
 const readinessTopic = computed(() => (day.value.readiness ? TRAINING_EXPLANATIONS.readiness : HOME_EXPLANATIONS.readinessMissing));
 
-// Km, ore e carico della settimana; il carico cambia quando gli streams aggiungono le metriche.
+// Km, ore e carico della settimana.
 const TILE_ICONS: Record<string, string> = { Km: mdiMapMarkerDistance, Ore: mdiClockOutline, Carico: mdiChartBar };
-const week = computed(() => {
-  void streamsJob.running;
-  return weekTiles(session.activities, hrProfile(), new Date());
-});
-const ride = computed(() => lastRide(session.activities));
+const week = computed(() => weekTiles(session.activities, hrProfile(), new Date()));
+// L'ultima uscita in bici di tutto lo storico; finché non è arrivato, tra le ultime 60.
+ensureAllActivities();
+const ride = computed(() => lastRide(allActivities.list ?? session.activities));
 </script>
 
 <template>

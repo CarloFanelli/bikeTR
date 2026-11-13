@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  activityRow, detailMetrics, displayName, nameMatches, segmentRows, sportGroup, splitRows, weekGroups,
+  activityRow, detailMetrics, displayName, firstWeeks, nameMatches, segmentRows, sportGroup, splitRows, weekGroups,
 } from '../../src/core/activity-view.ts';
 import { fmtDate } from '../../src/core/format.ts';
 import type { Activity, ActivityDetail, SegmentEffort, Split } from '../../src/core/strava-types.ts';
@@ -142,5 +142,20 @@ describe('settimane della lista', () => {
     const [week] = weekGroups([late], now);
     const day = new Date(late.start_date_local);
     expect(week.label.startsWith(day.getDay() === 1 ? '9 nov' : '2 nov')).toBe(true);
+  });
+});
+
+describe('Attività a pagine', () => {
+  const week = (n: number) => ({ activities: Array(n).fill(0) });
+
+  it('settimane intere fino ad almeno 60 attività, poi tutte', () => {
+    const weeks = [week(25), week(25), week(25), week(25)];
+    expect(firstWeeks(weeks, 60)).toHaveLength(3);
+    expect(firstWeeks(weeks, 120)).toHaveLength(4);
+  });
+
+  it('meno di 60 attività: tutte', () => {
+    expect(firstWeeks([week(3), week(2)], 60)).toHaveLength(2);
+    expect(firstWeeks([], 60)).toEqual([]);
   });
 });
