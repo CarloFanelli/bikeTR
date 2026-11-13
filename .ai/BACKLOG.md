@@ -48,9 +48,10 @@
 - **From**: docker-setup (interview, 2026-11-05)
 - **Picked up by**: vue-ts-restructure (2026-11-06)
 
-### B-11 · open
+### B-11 · picked-up
 - **What**: Store activities and settings on the server so data survives a browser change and only new activities are downloaded from Strava.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: data-backend (2026-11-13)
 
 ### B-12 · picked-up
 - **What**: The Coach shows the model's answer while it is being written instead of waiting in silence for the whole reply, so a slow computer shows progress and a long answer does not hit the time limit only because it arrives at the end.
@@ -72,9 +73,10 @@
 - **From**: docker-setup (dev task 05, 2026-11-05)
 - **Picked up by**: vue-ts-restructure (2026-11-06)
 
-### B-16 · open
+### B-16 · picked-up
 - **What**: The other tabs read fitness, fatigue, form and training load from the Coach service, so the formulas live in one place.
 - **From**: coach-service (interview, 2026-11-06)
+- **Picked up by**: data-backend (2026-11-13)
 
 ### B-17 · picked-up
 - **What**: The Coach tab gets a Stop button that ends the current request and stops Ollama.
@@ -95,9 +97,10 @@
 - **What**: Build optimized files for the browser app and serve them with nginx, for a possible cloud deployment (the optional Cloud Run step of the roadmap).
 - **From**: vue-ts-restructure (interview, 2026-11-06)
 
-### B-21 · open
+### B-21 · picked-up
 - **What**: Save the mesocycle week when the Training tab opens. Today it is saved only on the first opening and at the end of a block, so the plan and its banner always treat the current week as week 1 of the block.
 - **From**: vue-ts-restructure (dev task 05, 2026-11-06)
+- **Picked up by**: data-backend (2026-11-13)
 
 ### B-22 · open
 - **What**: Stop the daily recommendation from crashing when the FTP history is on a plateau and the power profile shows no deficit. Today it reads a label that does not exist, and the Training tab stops drawing.
@@ -184,3 +187,27 @@
 - **What**: Overall design changes across the whole app, decided once every screen is in direction B (the user's request that follows the screens' redesign).
 - **From**: screens-redesign (interview, 2026-11-11)
 - **Picked up by**: design-refresh (2026-11-11)
+
+### B-41 · open
+- **What**: The power curve, records and estimated level in Profilo e dati use every saved activity instead of the last ~60, so old records appear too.
+- **From**: data-backend (interview, 2026-11-13)
+
+### B-42 · open
+- **What**: A command that saves a copy of the database to a file and restores it, so a damaged Docker volume does not lose the history and settings.
+- **From**: data-backend (interview, 2026-11-13)
+
+### B-43 · open
+- **What**: The Coach service downloads starred segments and their efforts instead of the browser, within the same Strava request budget as the activities.
+- **From**: data-backend (interview, 2026-11-13)
+
+### B-44 · open
+- **What**: The Coach service estimates FTP and LTHR from activities and segments, so the browser stops sending the athlete profile with every request.
+- **From**: data-backend (interview, 2026-11-13)
+
+### B-45 · open
+- **What**: The four-week plan asks the Coach service for the load of its simulated workouts, so the load formula lives only on the server; today the plan keeps a copy checked by a test.
+- **From**: data-backend (prep, 2026-11-13)
+
+### B-46 · open
+- **What**: The automatic saves made at opening (mesocycle, today's FTP point) wait until the browser's old data has been moved to the server, or a server holding only those saves counts as empty, so a browser without old data opened first cannot cause the real data to be deleted.
+- **From**: data-backend (dev task 05, 2026-11-13)
