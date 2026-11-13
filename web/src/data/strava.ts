@@ -4,7 +4,7 @@
 
 import { getAccessToken } from './auth.ts';
 import type {
-  Activity, ActivityDetail, Athlete, AthleteStats, Segment, SegmentEffort, Streams,
+  Activity, ActivityDetail, Segment, SegmentEffort, Streams,
 } from '../core/strava-types.ts';
 
 const API = 'https://www.strava.com/api/v3';
@@ -36,11 +36,6 @@ async function stravaGet<T>(path: string): Promise<T> {
   if (!res.ok) throw new StravaError('API ' + path + ': ' + res.status, res.status);
   return res.json();
 }
-
-export const fetchAthlete = (): Promise<Athlete> => stravaGet('/athlete');
-
-export const fetchAthleteStats = (athleteId: number): Promise<AthleteStats> =>
-  stravaGet(`/athletes/${athleteId}/stats`);
 
 // Una pagina delle attività, dalla più recente (Strava ne dà al massimo 200 per pagina).
 export const fetchActivities = (perPage: number, page = 1): Promise<Activity[]> =>

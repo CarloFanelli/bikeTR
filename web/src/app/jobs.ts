@@ -1,36 +1,35 @@
-// Lavori lunghi che continuano anche cambiando sezione: "Aggiorna con streams",
-// l'export JSON, le previsioni sui segmenti e "Completa da dettagli attività". Lo stato sta qui, fuori dalle schermate, e le schermate lo leggono:
-// tornando su Home si vede l'avanzamento o il risultato. Un secondo avvio mentre uno
+// Lavori lunghi che continuano anche cambiando sezione: "Aggiorna da Strava", l'export JSON,
+// le previsioni sui segmenti e "Completa da dettagli attività". Lo stato sta qui, fuori dalle
+// schermate, e le schermate lo leggono: tornando su Home si vede l'avanzamento o il risultato. Un secondo avvio mentre uno
 // è in corso non fa niente.
 
 import { markRaw, reactive } from 'vue';
 import type { SegmentEntry } from '../core/segments.ts';
 import type { Activity } from '../core/strava-types.ts';
+import { syncResult } from '../core/sync-view.ts';
+import { syncStrava } from '../data/coach.ts';
 import {
   buildExport, downloadJson, type ExportFilter, type ExportMode, fetchAllActivities, filterForExport, formatBytes,
 } from '../data/export.ts';
 import { completeFromActivities, loadSegmentPredictions, MAX_SEGMENTS_HYDRATE, type SegmentDiag } from '../data/segments.ts';
 import { clearSegmentCache, loadSettings } from '../data/storage.ts';
-import { hydrateWithStreams, MAX_STREAMS_FETCH } from '../data/streams.ts';
-import { connectIfDisconnected, hrProfile, session } from './session.ts';
+import { connectIfDisconnected, connectIfUnlinked, loadSaved, refreshLoads, session } from './session.ts';
 
-export const streamsJob = reactive({ running: false, progress: '' });
+// "Aggiorna da Strava": il servizio sincronizza subito, poi l'app rilegge i dati salvati.
+// result: com'è andata, mostrato sotto la voce del menu; error se non è andata.
+export const syncJob = reactive({ running: false, result: '', error: false });
 
-export async function refreshStreams(): Promise<void> {
-  if (streamsJob.running) return;
-  Object.assign(streamsJob, { running: true, progress: 'Avvio…' });
-  try {
-    const { ftp, hrLthr } = hrProfile();
-    // Le metriche finiscono sulle attività della sessione: Home e le altre sezioni ricalcolano da sole.
-    await hydrateWithStreams(session.activities, ftp, hrLthr, MAX_STREAMS_FETCH, (done, total) => {
-      streamsJob.progress = `Scarico streams: ${done}/${total}`;
-    });
-    streamsJob.progress = '✅ Cache aggiornata. Ricalcolo…';
-  } catch (e) {
-    if (!connectIfDisconnected(e)) streamsJob.progress = '❌ ' + (e as Error).message;
-  } finally {
-    streamsJob.running = false;
+export async function refreshFromStrava(): Promise<void> {
+  if (syncJob.running) return;
+  Object.assign(syncJob, { running: true, result: '', error: false });
+  const synced = await syncStrava(true);
+  const loaded = synced.ok ? await loadSaved(synced.value) : synced;
+  if (!loaded.ok) {
+    if (!connectIfUnlinked(loaded)) Object.assign(syncJob, { result: loaded.msg, error: true });
+  } else if (synced.ok) {
+    syncJob.result = syncResult(synced.value);
   }
+  syncJob.running = false;
 }
 
 interface ExportJob {
@@ -122,6 +121,8 @@ export async function loadSegments(): Promise<void> {
       segmentsJob.progress = `Carico segmenti ${done}/${total}${errors ? ' (errori: ' + errors + ')' : ''}…`;
     });
     Object.assign(segmentsJob, { list: markRaw(list), diag: markRaw(diag) });
+    // Le stime dai segmenti possono cambiare FTP e soglia, e quindi il carico.
+    void refreshLoads();
   } catch (e) {
     if (!connectIfDisconnected(e)) segmentsJob.error = 'Errore caricamento segmenti: ' + (e as Error).message;
   } finally {
@@ -131,8 +132,7 @@ export async function loadSegments(): Promise<void> {
 
 export function clearSegmentsAndReload(): void {
   if (segmentsJob.loading || segmentsJob.completing) return;
-  clearSegmentCache();
-  void loadSegments();
+  void clearSegmentCache().then(() => loadSegments());
 }
 
 // Non parte mentre le previsioni caricano: scrivono gli stessi segmenti salvati.

@@ -91,8 +91,10 @@ export interface Activity {
   location_state?: string | null;
   location_country?: string | null;
   map?: { summary_polyline?: string | null; polyline?: string | null };
-  // Aggiunti dall'app: metriche dagli stream salvati, dettaglio già scaricato.
+  // Aggiunti dall'app: metriche dagli stream salvati, carico calcolato dal servizio Coach,
+  // dettaglio già scaricato.
   _metrics?: StreamMetrics;
+  _load?: number;
   _detailFetched?: boolean;
 }
 
