@@ -1,0 +1,9 @@
+# Task Progress - data-backend
+
+01-database-and-first-sync: DONE
+02-ride-details-background: DONE
+03-app-reads-server: DONE
+04-all-activities-screens: DONE
+05-athlete-data-server: DONE
+06-metrics-from-coach: DONE
+07-mesocycle-on-open: DONE
