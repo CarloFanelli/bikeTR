@@ -1,21 +1,32 @@
 <script setup lang="ts">
-// Attività: tutte quelle caricate nel browser (le ultime 60), in card o in tabella, con la
-// scelta ricordata, filtrate per sport e per nome, divise per settimana con i totali. Ogni card ha la mappa delle strade, caricata quando la card entra nello
-// schermo; ogni riga della tabella la mini mappa, solo la linea del percorso. Card e righe
-// aprono il dettaglio dentro l'app.
+// Attività: tutto lo storico salvato dal servizio, in card o in tabella, con la scelta
+// ricordata, filtrato per sport e per nome, diviso per settimana con i totali. Si vedono 60
+// attività (a settimane intere), e altre 60 quando la fine dell'elenco entra nello schermo.
+// Ogni card ha la mappa delle strade, caricata quando la card entra nello schermo; ogni riga
+// della tabella la mini mappa, solo la linea del percorso. Card e righe aprono il dettaglio
+// dentro l'app.
 import { mdiMagnify, mdiTable, mdiViewGridOutline } from '@mdi/js';
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
-import { VBtn, VBtnToggle, VCard, VCardText, VChip, VChipGroup, VLazy, VTable, VTextField } from 'vuetify/components';
+import {
+  VBtn, VBtnToggle, VCard, VCardText, VChip, VChipGroup, VLazy, VProgressCircular, VTable, VTextField,
+} from 'vuetify/components';
+import { allActivities, ensureAllActivities, loadAllActivities } from '../app/all-activities.ts';
 import { session } from '../app/session.ts';
 import ActivityMap from '../components/ActivityMap.vue';
+import ErrorNotice from '../components/ErrorNotice.vue';
 import LineIcon from '../components/LineIcon.vue';
 import MiniMap from '../components/MiniMap.vue';
-import { activityRow, nameMatches, type SportGroup, sportGroup, weekGroups } from '../core/activity-view.ts';
+import { activityRow, firstWeeks, nameMatches, type SportGroup, sportGroup, weekGroups } from '../core/activity-view.ts';
 import { decodePolyline } from '../core/polyline.ts';
 import { type ActivitiesView, loadActivitiesView, saveActivitiesView } from '../data/storage.ts';
 
 const MAP_HEIGHT = 200;
+const PAGE = 60;
+
+// Tutto lo storico; finché non arriva, le ultime 60 già in session.
+ensureAllActivities();
+const activities = computed(() => allActivities.list ?? session.activities);
 
 const view = ref<ActivitiesView>(loadActivitiesView());
 function chooseView(value: unknown): void {
@@ -47,11 +58,28 @@ const FILTERS: { value: SportGroup | 'all'; title: string }[] = [
 const filter = ref<SportGroup | 'all'>('all');
 const search = ref<string | null>('');
 const searched = computed(() => (search.value ?? '').trim());
-const weeks = computed(() => {
-  const shown = session.activities.filter(a => (filter.value === 'all' || sportGroup(a.type) === filter.value)
-    && nameMatches(a.name, a.id, searched.value));
-  return weekGroups(shown, new Date()).map(w => ({ ...w, rows: w.activities.map(row) }));
+const matching = computed(() => weekGroups(activities.value.filter(a =>
+  (filter.value === 'all' || sportGroup(a.type) === filter.value) && nameMatches(a.name, a.id, searched.value)), new Date()));
+const count = ref(PAGE);
+watch([filter, searched], () => { count.value = PAGE; });
+const weeks = computed(() => firstWeeks(matching.value, count.value).map(w => ({ ...w, rows: w.activities.map(row) })));
+const more = computed(() => weeks.value.length < matching.value.length);
+
+// La fine dell'elenco entra nello schermo (o ci resta dopo le nuove 60): altre 60.
+const sentinel = useTemplateRef<HTMLElement>('sentinel');
+const observer = new IntersectionObserver((entries) => {
+  if (!entries.some(e => e.isIntersecting) || !more.value) return;
+  count.value += PAGE;
+  // Osservarla di nuovo la rimisura: se è ancora visibile ne arrivano altre.
+  const el = entries[0].target;
+  observer.unobserve(el);
+  setTimeout(() => observer.observe(el));
+}, { rootMargin: '600px' });
+watch(sentinel, (el, old) => {
+  if (old) observer.unobserve(old);
+  if (el) observer.observe(el);
 });
+onBeforeUnmount(() => observer.disconnect());
 
 const router = useRouter();
 </script>
@@ -61,10 +89,12 @@ const router = useRouter();
     <header class="d-flex flex-wrap align-end justify-space-between ga-3">
       <div>
         <h1 class="text-h4">Attività</h1>
-        <div class="text-body-2 text-medium-emphasis">Le ultime {{ session.activities.length }}, dalla più recente.</div>
+        <div class="text-body-2 text-medium-emphasis">
+          {{ allActivities.list ? `${activities.length} attività` : `Le ultime ${activities.length}` }}, dalla più recente.
+        </div>
       </div>
       <VBtnToggle
-        v-if="session.activities.length"
+        v-if="activities.length"
         :model-value="view"
         mandatory
         divided
@@ -78,11 +108,18 @@ const router = useRouter();
       </VBtnToggle>
     </header>
 
-    <VCard v-if="!session.activities.length">
+    <VCard v-if="!activities.length">
       <VCardText class="text-medium-emphasis">Nessuna attività.</VCardText>
     </VCard>
 
     <template v-else>
+      <ErrorNotice
+        v-if="allActivities.error"
+        summary="Non riesco a leggere tutto lo storico: qui sotto ci sono le ultime attività scaricate."
+        :detail="allActivities.error"
+        retry
+        @retry="loadAllActivities"
+      />
       <VTextField
         v-model="search"
         label="Cerca per nome"
@@ -98,10 +135,8 @@ const router = useRouter();
         <VChip v-for="f in FILTERS" :key="f.value" :value="f.value" variant="outlined" filter class="filter-chip">{{ f.title }}</VChip>
       </VChipGroup>
       <VCard v-if="!weeks.length">
-        <VCardText v-if="searched" class="text-medium-emphasis">
-          Nessuna attività con «{{ searched }}» tra le ultime {{ session.activities.length }}.
-        </VCardText>
-        <VCardText v-else class="text-medium-emphasis">Nessuna attività di questo tipo tra le ultime {{ session.activities.length }}.</VCardText>
+        <VCardText v-if="searched" class="text-medium-emphasis">Nessuna attività con «{{ searched }}».</VCardText>
+        <VCardText v-else class="text-medium-emphasis">Nessuna attività di questo tipo.</VCardText>
       </VCard>
     </template>
 
@@ -178,6 +213,10 @@ const router = useRouter();
         </tbody>
       </VTable>
     </VCard>
+
+    <div v-if="more" ref="sentinel" class="d-flex justify-center py-4">
+      <VProgressCircular indeterminate color="primary" aria-label="Carico altre attività" />
+    </div>
   </div>
 </template>
 

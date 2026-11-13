@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Analisi in cinque schede: Forma e carico (carico, forma, zone FC), Potenza (curva e power
 // profile), Soglie (FTP nel tempo, calcolo di FTP e LTHR), Segmenti (previsioni e workout),
-// Profilo e dati (livello, totali e record, precisione dei dati con "Aggiorna con streams").
+// Profilo e dati (livello, totali e record, precisione dei dati con l'avanzamento dei dettagli corsa).
 // Riapre la scheda scelta per ultima. Le card Forma e
 // Zone FC usano soglia e FTP senza le stime dalle attività, come i risultati registrati
 // dei test; le altre le includono. A fine caricamento dei segmenti tutto si ricalcola:

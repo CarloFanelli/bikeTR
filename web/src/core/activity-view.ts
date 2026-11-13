@@ -74,6 +74,19 @@ export function weekGroups(activities: Activity[], now: Date) {
   });
 }
 
+// Le prime settimane che contengono almeno `count` attività: Attività ne mostra 60 alla volta,
+// sempre a settimane intere, così i totali di ogni settimana mostrata sono completi.
+export function firstWeeks<W extends { activities: unknown[] }>(weeks: W[], count: number): W[] {
+  const shown: W[] = [];
+  let total = 0;
+  for (const w of weeks) {
+    if (total >= count) break;
+    shown.push(w);
+    total += w.activities.length;
+  }
+  return shown;
+}
+
 // I numeri in testa al dettaglio: [nome, valore].
 export function detailMetrics(a: ActivityDetail): [string, string][] {
   const rows: [string, string][] = [
