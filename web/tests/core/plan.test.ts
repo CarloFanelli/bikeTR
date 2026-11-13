@@ -60,7 +60,7 @@ describe.each(planCases)('piano di allenamento, caso $name', c => {
     expect(displayed(buildMonthPlan(acts, settings, c.plannedRests, profile, inputs))).toEqual(displayed(exp.monthPlan));
   });
 
-  // Prima apertura, settimana nel blocco o blocco successivo; si salva solo se cambia.
+  // Prima apertura, settimana nel blocco o blocco successivo; si salva quando cambia, settimana compresa.
   it('mesociclo aggiornato all\'apertura dell\'app', () => {
     const stored = mesocycleOf(c.mesocycle);
     if (throws(exp.mesocycle.result)) {
@@ -70,7 +70,7 @@ describe.each(planCases)('piano di allenamento, caso $name', c => {
     }
     const { meso, changed } = nextMesocycle(stored, acts, settings, now);
     expect(displayed(meso)).toEqual(displayed(exp.mesocycle.result));
-    expect(displayed(changed ? meso : stored)).toEqual(displayed(exp.mesocycle.stored));
+    expect(displayed(changed ? meso : stored)).toEqual(displayed(exp.mesocycle.result));
   });
 });
 
