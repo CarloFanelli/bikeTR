@@ -7,6 +7,7 @@ import { fmtDate, fmtKm, fmtTime, isoDay, kmh } from './format.ts';
 import type { HrProfile } from './hr.ts';
 import { activityLoad } from './load.ts';
 import type { buildProfile, personalRecords } from './profile.ts';
+import type { DetailsProgress } from './coach-types.ts';
 import type { Activity, AthleteStats } from './strava-types.ts';
 
 interface ShownValue {
@@ -22,7 +23,6 @@ interface DataPrecision {
   lthr: ShownValue;
   withPower: string;
   withHr: string;
-  streams: string;
 }
 
 const estimate = (value: number, unit: string, parts: string[]): ShownValue =>
@@ -30,21 +30,16 @@ const estimate = (value: number, unit: string, parts: string[]): ShownValue =>
 
 const NONE: ShownValue = { value: '—', note: '' };
 
-// `maxStreams`: quante uscite al massimo scarica "Aggiorna con streams".
-export function dataPrecision(profile: HrProfile, activities: Activity[], maxStreams: number): DataPrecision {
+export function dataPrecision(profile: HrProfile, activities: Activity[]): DataPrecision {
   const bikes = activities.filter(a => a.type?.includes('Ride'));
-  // Un'uscita con lo scaricamento fallito non conta.
-  const withStreams = bikes.filter(a => a._metrics && !(a._metrics as { _error?: string })._error).length;
   const withPower = bikes.filter(a => a.weighted_average_watts || a.average_watts).length;
   const withHr = bikes.filter(a => a.has_heartrate).length;
 
-  const fromStreams = (name: string) => withStreams > 0
-    ? { label: `${name} da streams`, detail: `(${withStreams} attività) + ${name} approssimato` }
-    : null;
+  // Il carico lo calcola il servizio Coach, dai dettagli corsa che ha scaricato e, senza, dal riepilogo.
   const mode = profile.ftp
-    ? { icon: '🔋', ...(fromStreams('TSS') || { label: 'TSS approssimato', detail: '(Weighted Avg summary)' }) }
+    ? { icon: '🔋', label: 'TSS dai dettagli corsa', detail: '(senza dettagli: Weighted Avg summary)' }
     : profile.hrLthr
-    ? { icon: '❤️', ...(fromStreams('hrTSS') || { label: 'hrTSS approssimato', detail: '' }) }
+    ? { icon: '❤️', label: 'hrTSS dai dettagli corsa', detail: '(senza dettagli: FC media)' }
     : { icon: '⚠️', label: 'Proxy HR-max', detail: '(meno preciso, imposta LTHR per upgrade)' };
 
   const ftpParts = [];
@@ -65,9 +60,12 @@ export function dataPrecision(profile: HrProfile, activities: Activity[], maxStr
     mode, ftp, lthr,
     withPower: `${withPower}/${bikes.length}`,
     withHr: `${withHr}/${bikes.length}`,
-    streams: `${withStreams}/${Math.min(maxStreams, bikes.length)}`,
   };
 }
+
+// L'avanzamento del download in sottofondo dei dettagli corsa, per Profilo e dati.
+export const detailsLine = (p: DetailsProgress): string =>
+  (p.done >= p.total ? 'Dettagli completi' : `${p.done} su ${p.total}`);
 
 // Le righe del profilo atleta: [nome, valore].
 export function profileRows(p: ReturnType<typeof buildProfile>): [string, string][] {
@@ -117,7 +115,7 @@ export function athleteTotals(stats: AthleteStats | null) {
 export function lastRide(activities: Activity[]) {
   const rides = activities.filter(a => a.type?.includes('Ride'));
   if (!rides.length) {
-    const empty = activities.length ? `Nessuna uscita in bici tra le ultime ${activities.length} attività` : 'Nessuna uscita ancora';
+    const empty = activities.length ? `Nessuna uscita in bici tra le tue ${activities.length} attività` : 'Nessuna uscita ancora';
     return { ride: null, empty };
   }
   const a = rides.reduce((last, r) => (r.start_date > last.start_date ? r : last));

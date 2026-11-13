@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HrProfile } from '../../src/core/hr.ts';
-import { athleteTotals, dataPrecision, lastRide, profileRows, recordRows, weekTiles } from '../../src/core/home.ts';
+import { athleteTotals, dataPrecision, detailsLine, lastRide, profileRows, recordRows, weekTiles } from '../../src/core/home.ts';
 import { activityLoad } from '../../src/core/load.ts';
 import type { buildProfile } from '../../src/core/profile.ts';
 import type { Activity, AthleteStats } from '../../src/core/strava-types.ts';
@@ -15,24 +15,16 @@ const noProfile: HrProfile = {
 const ride = (id: number, extra: Partial<Activity> = {}) => ({ id, type: 'Ride', ...extra }) as Activity;
 
 describe('Precisione dati', () => {
-  it('FTP dichiarata senza stream: TSS approssimato', () => {
-    const p = dataPrecision({ ...noProfile, ftp: 250, ftpDecl: 250 }, [ride(1, { weighted_average_watts: 200 })], 40);
-    expect(p.mode).toEqual({ icon: '🔋', label: 'TSS approssimato', detail: '(Weighted Avg summary)' });
+  it('con la FTP il carico è il TSS del Coach, dai dettagli corsa o dal riepilogo', () => {
+    const p = dataPrecision({ ...noProfile, ftp: 250, ftpDecl: 250 }, [ride(1, { weighted_average_watts: 200 })]);
+    expect(p.mode).toEqual({ icon: '🔋', label: 'TSS dai dettagli corsa', detail: '(senza dettagli: Weighted Avg summary)' });
     expect(p.ftp).toEqual({ value: '250 W', note: '(dichiarata)' });
   });
 
-  it('con gli stream scaricati il carico viene da lì', () => {
-    const acts = [ride(1, { _metrics: { TSS: 80 } }), ride(2, { _metrics: { TSS: 60 } }), ride(3)];
-    expect(dataPrecision({ ...noProfile, ftp: 250, ftpDecl: 250 }, acts, 40).mode)
-      .toEqual({ icon: '🔋', label: 'TSS da streams', detail: '(2 attività) + TSS approssimato' });
-    expect(dataPrecision({ ...noProfile, hrLthr: 170, lthrDecl: 170 }, acts, 40).mode)
-      .toEqual({ icon: '❤️', label: 'hrTSS da streams', detail: '(2 attività) + hrTSS approssimato' });
-  });
-
   it('senza FTP: hrTSS da LTHR, altrimenti la stima da FC max', () => {
-    expect(dataPrecision({ ...noProfile, hrLthr: 170 }, [], 40).mode)
-      .toEqual({ icon: '❤️', label: 'hrTSS approssimato', detail: '' });
-    expect(dataPrecision(noProfile, [], 40).mode)
+    expect(dataPrecision({ ...noProfile, hrLthr: 170 }, []).mode)
+      .toEqual({ icon: '❤️', label: 'hrTSS dai dettagli corsa', detail: '(senza dettagli: FC media)' });
+    expect(dataPrecision(noProfile, []).mode)
       .toEqual({ icon: '⚠️', label: 'Proxy HR-max', detail: '(meno preciso, imposta LTHR per upgrade)' });
   });
 
@@ -40,15 +32,15 @@ describe('Precisione dati', () => {
     const p = dataPrecision({
       ...noProfile, ftp: 240, ftpEst: 240, ftpEstFromActivities: 230, ftpEstFromSegments: 240,
       hrLthr: 168, lthrEst: 168, lthrSource: 'estimated', lthrEstFromActivities: 168,
-    }, [], 40);
+    }, []);
     expect(p.ftp).toEqual({ value: '240 W', note: '(230W da attività / 240W da segmenti)' });
     expect(p.lthr).toEqual({ value: '168 bpm', note: '(168 da attività)' });
   });
 
   it('LTHR dichiarata solo se scelta come sorgente', () => {
     const declared = { ...noProfile, lthrDecl: 172, lthrEst: 165, lthrSource: 'declared' };
-    expect(dataPrecision(declared, [], 40).lthr).toEqual({ value: '172 bpm', note: '(dichiarata)' });
-    expect(dataPrecision({ ...declared, lthrSource: 'estimated' }, [], 40).lthr).toEqual({ value: '165 bpm', note: '' });
+    expect(dataPrecision(declared, []).lthr).toEqual({ value: '172 bpm', note: '(dichiarata)' });
+    expect(dataPrecision({ ...declared, lthrSource: 'estimated' }, []).lthr).toEqual({ value: '165 bpm', note: '' });
   });
 
   it('conta solo le uscite in bici; gli stream sono al massimo quelli scaricabili', () => {
@@ -58,16 +50,23 @@ describe('Precisione dati', () => {
       ride(3, { type: 'VirtualRide', weighted_average_watts: 210 }),
       ride(4, { type: 'Run', average_watts: 300, has_heartrate: true }),
     ];
-    expect(dataPrecision(noProfile, acts, 40)).toMatchObject({ withPower: '2/3', withHr: '2/3', streams: '1/3' });
-    expect(dataPrecision(noProfile, acts, 2).streams).toBe('1/2');
+    expect(dataPrecision(noProfile, acts)).toMatchObject({ withPower: '2/3', withHr: '2/3' });
   });
 
   it('nessuna uscita: zeri e trattini', () => {
-    expect(dataPrecision(noProfile, [], 40)).toEqual({
+    expect(dataPrecision(noProfile, [])).toEqual({
       mode: { icon: '⚠️', label: 'Proxy HR-max', detail: '(meno preciso, imposta LTHR per upgrade)' },
       ftp: { value: '—', note: '' }, lthr: { value: '—', note: '' },
-      withPower: '0/0', withHr: '0/0', streams: '0/0',
+      withPower: '0/0', withHr: '0/0',
     });
+  });
+});
+
+describe('Dettagli corsa scaricati dal server', () => {
+  it('quanti su quanti finché ne mancano, poi "Dettagli completi"', () => {
+    expect(detailsLine({ done: 12, total: 124 })).toBe('12 su 124');
+    expect(detailsLine({ done: 124, total: 124 })).toBe('Dettagli completi');
+    expect(detailsLine({ done: 0, total: 0 })).toBe('Dettagli completi');
   });
 });
 
@@ -140,7 +139,7 @@ describe('ultima uscita in bici', () => {
 
   it('solo corse fra quelle caricate: lo dice, senza dire che non sei mai uscito in bici', () => {
     const runs = Array.from({ length: 60 }, (_, i) => at(i, '2026-11-01T08:00:00Z', { type: 'Run' }));
-    expect(lastRide(runs)).toEqual({ ride: null, empty: 'Nessuna uscita in bici tra le ultime 60 attività' });
+    expect(lastRide(runs)).toEqual({ ride: null, empty: 'Nessuna uscita in bici tra le tue 60 attività' });
   });
 });
 

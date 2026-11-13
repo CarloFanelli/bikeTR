@@ -29,11 +29,13 @@ describe('servizio Coach', () => {
     expect(seen).toEqual(['GET /coach/ping']);
   });
 
-  it('un rifiuto del servizio o del provider: il suo messaggio', async () => {
+  it('un rifiuto del servizio o del provider: il suo messaggio e il suo codice', async () => {
     fakeCoach(() => Response.json({ error: 'provider', message: 'Il provider cloud ha rifiutato la chiave' }, { status: 502 }));
-    expect(await checkConnection()).toEqual({ ok: false, msg: 'Il provider cloud ha rifiutato la chiave' });
+    expect(await checkConnection()).toEqual({ ok: false, msg: 'Il provider cloud ha rifiutato la chiave', code: 'provider' });
     fakeCoach(() => Response.json({ error: 'invalid_settings', message: 'Con COACH_PROVIDER=cloud manca in .env: CLOUD_MODEL' }, { status: 500 }));
-    expect(await coachStatus()).toEqual({ ok: false, msg: 'Con COACH_PROVIDER=cloud manca in .env: CLOUD_MODEL' });
+    expect(await coachStatus()).toEqual({
+      ok: false, msg: 'Con COACH_PROVIDER=cloud manca in .env: CLOUD_MODEL', code: 'invalid_settings',
+    });
   });
 
   it('servizio Coach spento: "Coach non raggiungibile"', async () => {

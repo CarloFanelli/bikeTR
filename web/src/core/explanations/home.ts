@@ -34,13 +34,13 @@ export const HOME_EXPLANATIONS = {
     lead: [
       'La FTP è la potenza che reggi per circa un\'ora, la LTHR la frequenza cardiaca alla stessa soglia.',
       'L\'app guarda i tuoi sforzi migliori di 10-90 minuti, nelle uscite e sui segmenti in salita, e tiene la stima più alta.',
-      'Con "Aggiorna con streams" scarica i dati secondo per secondo delle uscite recenti: i calcoli diventano più precisi.',
+      'I dati secondo per secondo (dettagli corsa) di ogni attività con potenza o FC arrivano da soli: il server li scarica in sottofondo, dalla più recente.',
     ],
     technical: [
       'FTP dalle uscite: il miglior sforzo in quattro fasce di durata (10-20, 20-40, 40-90 minuti e sotto i 10), pesato per quanto è recente (dimezza in circa 8 settimane); la fascia 20-40 minuti vale × 0,95.',
       'FTP dai segmenti: fra quattro metodi si tiene quello più affidabile. Miglior sforzo di 15-30 minuti × 0,95 (affidabilità 0,7); lo stesso pesato per quanto è recente, con dimezzamento a 12 settimane (0,75); miglior sforzo di 15-40 minuti su salite del 3-12%, con almeno 40 m di dislivello e 1,5 km (0,9, niente scia né vento); media di cinque fasce di durata con fattori propri (0,85).',
       'LTHR: la più alta fra tre stime. Frequenza massima osservata × 0,91 (in letteratura 88-92%); miglior media di uscite di 20-60 minuti × 0,98, solo se il massimo ha toccato il 90% della frequenza massima; miglior media su segmenti di 15-45 minuti × 0,98.',
-      'Senza streams la potenza normalizzata è quella approssimata da Strava. Con gli streams si calcolano la potenza normalizzata vera (media mobile di 30 secondi), il TSS e i minuti per zona. Ogni uscita costa una chiamata a Strava, che ne concede 100 ogni 15 minuti.',
+      'Senza dettagli corsa la potenza normalizzata è quella approssimata da Strava. Con i dettagli il Coach calcola la potenza normalizzata vera (media mobile di 30 secondi) e il TSS. Ogni uscita costa al server una chiamata a Strava, che ne concede 100 ogni 15 minuti.',
     ],
   },
 } satisfies Record<string, Explanation>;
