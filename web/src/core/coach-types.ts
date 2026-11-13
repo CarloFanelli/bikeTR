@@ -1,6 +1,31 @@
 // Cosa il browser invia al servizio Coach e cosa riceve: il flusso di eventi di
 // docker/coach/app/workout.py, una riga JSON per evento.
 
+import type { Athlete, AthleteStats } from './strava-types.ts';
+
+// Le soglie con cui il servizio calcola il carico delle attività; null se mancano.
+export interface LoadProfile {
+  ftp: number | null;
+  lthr: number | null;
+  hrMax: number | null;
+}
+
+// Una sincronizzazione con Strava fatta dal servizio. updated: arrivata in fondo; recent: l'ultimo
+// controllo ha meno di 5 minuti; unreachable: Strava non risponde; paused: Strava ha chiesto una
+// pausa fino a retryAt. syncedAt: l'ultima arrivata in fondo. Tempi in millisecondi.
+export interface SyncStatus {
+  status: 'updated' | 'recent' | 'unreachable' | 'paused';
+  syncedAt: number | null;
+  retryAt: number | null;
+}
+
+// Atleta e statistiche salvati dal servizio: null finché nessuna sincronizzazione li ha scaricati.
+export interface SavedAthlete {
+  athlete: Athlete | null;
+  stats: AthleteStats | null;
+  syncedAt: number | null;
+}
+
 // Profilo atleta: i valori mancanti viaggiano come null e il servizio usa i suoi default.
 export interface AthleteProfile {
   ftp: number | null;
@@ -80,6 +105,12 @@ export interface CoachStatus {
   model: string;
   spent?: number;
   limit?: number;
+}
+
+// Il download in sottofondo dei dettagli corsa: attività con potenza o FC che li hanno, su quante.
+export interface DetailsProgress {
+  done: number;
+  total: number;
 }
 
 // La verifica della connessione: il provider ha il modello? Se manca in Ollama, il comando

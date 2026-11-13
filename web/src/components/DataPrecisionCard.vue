@@ -1,45 +1,64 @@
 <script setup lang="ts">
 // Quanto sono precisi i dati: da dove viene il carico, FTP e LTHR con la loro origine, quante
-// attività hanno potenza, FC e streams, e "Aggiorna con streams". Il download sta in
-// app/jobs.ts: continua cambiando sezione, e qui se ne vede l'avanzamento.
+// attività hanno potenza e FC, e quante hanno i dettagli corsa che il server scarica in
+// sottofondo: finché non li ha tutti, l'avanzamento si rilegge ogni 30 secondi.
 import { mdiTarget } from '@mdi/js';
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { VBtn, VCard, VCardText } from 'vuetify/components';
 import { openInfoPanel } from '../app/info-panel.ts';
-import { refreshStreams, segmentsJob, streamsJob } from '../app/jobs.ts';
+import { segmentsJob } from '../app/jobs.ts';
 import { hrProfile, session } from '../app/session.ts';
-import { emojiIcon, splitEmoji } from '../core/emoji.ts';
+import type { DetailsProgress } from '../core/coach-types.ts';
+import { emojiIcon } from '../core/emoji.ts';
 import { HOME_EXPLANATIONS } from '../core/explanations/home.ts';
 import { loadSourceTopic } from '../core/explanations/training.ts';
-import { dataPrecision } from '../core/home.ts';
-import { MAX_STREAMS_FETCH } from '../data/streams.ts';
+import { dataPrecision, detailsLine } from '../core/home.ts';
+import { type CoachAnswer, detailsProgress } from '../data/coach.ts';
 import CardHeading from './CardHeading.vue';
 import ErrorNotice from './ErrorNotice.vue';
 import InfoLabel from './InfoLabel.vue';
 import LineIcon from './LineIcon.vue';
 import MetricGrid from './MetricGrid.vue';
 
-// Si ricalcola a fine caricamento dei segmenti (cambiano le stime dai segmenti) e quando
-// "Aggiorna con streams" aggiunge le metriche alle attività.
+const PROGRESS_EVERY_MS = 30_000;
+
+// Si ricalcola a fine caricamento dei segmenti (cambiano le stime dai segmenti).
 const precision = computed(() => {
   void segmentsJob.list;
-  void streamsJob.running;
   const hr = hrProfile();
-  return { ...dataPrecision(hr, session.activities, MAX_STREAMS_FETCH), source: loadSourceTopic(hr) };
+  return { ...dataPrecision(hr, session.activities), source: loadSourceTopic(hr) };
 });
 const thresholds = computed(() => [
   { label: 'FTP', ...precision.value.ftp },
   { label: 'LTHR', ...precision.value.lthr },
 ]);
+
+const details = ref<CoachAnswer<DetailsProgress> | null>(null);
+const reading = ref(false);
+let timer: ReturnType<typeof setTimeout> | undefined;
+// La scheda chiusa mentre una lettura è in corso: quella lettura non ne programma un'altra.
+let closed = false;
+
+async function readDetails(): Promise<void> {
+  clearTimeout(timer);
+  reading.value = true;
+  details.value = await detailsProgress();
+  reading.value = false;
+  if (!closed && details.value.ok && details.value.value.done < details.value.value.total) {
+    timer = setTimeout(readDetails, PROGRESS_EVERY_MS);
+  }
+}
+onMounted(readDetails);
+onBeforeUnmount(() => {
+  closed = true;
+  clearTimeout(timer);
+});
+
 const counts = computed<[string, string][]>(() => [
   ['Attività con potenza', precision.value.withPower],
   ['Attività con FC', precision.value.withHr],
-  ['Streams precisi', precision.value.streams],
+  ['Dettagli corsa', details.value?.ok ? detailsLine(details.value.value) : '—'],
 ]);
-const streamsProgress = computed(() => ({
-  ...splitEmoji(streamsJob.progress),
-  error: streamsJob.progress.startsWith('❌'),
-}));
 
 const openMethod = (e: MouseEvent) => openInfoPanel(HOME_EXPLANATIONS.method, e.currentTarget as HTMLElement);
 </script>
@@ -64,32 +83,15 @@ const openMethod = (e: MouseEvent) => openInfoPanel(HOME_EXPLANATIONS.method, e.
       </div>
       <MetricGrid :items="counts" class="mb-2" />
       <VBtn variant="text" class="px-0 action" @click="openMethod">Come si stimano FTP e LTHR</VBtn>
-      <div class="mt-3">
-        <VBtn
-          color="primary"
-          variant="tonal"
-          class="action"
-          height="44"
-          :loading="streamsJob.running"
-          :disabled="streamsJob.running"
-          @click="refreshStreams"
-        >
-          Aggiorna con streams
-        </VBtn>
-        <ErrorNotice
-          v-if="streamsProgress.error"
-          summary="Non riesco a scaricare gli streams da Strava. FTP, LTHR e carico restano le stime di prima."
-          :detail="streamsJob.progress"
-          retry
-          :busy="streamsJob.running"
-          class="mt-3"
-          @retry="refreshStreams"
-        />
-        <div v-else-if="streamsJob.progress" class="d-flex align-center ga-2 mt-2 text-body-2 text-medium-emphasis">
-          <LineIcon v-if="streamsProgress.icon" :name="streamsProgress.icon" :size="18" />
-          <span>{{ streamsProgress.text }}</span>
-        </div>
-      </div>
+      <ErrorNotice
+        v-if="details && !details.ok"
+        summary="Non riesco a leggere quanti dettagli corsa ha già scaricato il server. FTP, LTHR e carico non cambiano."
+        :detail="details.msg"
+        retry
+        :busy="reading"
+        class="mt-3"
+        @retry="readDetails"
+      />
     </VCardText>
   </VCard>
 </template>
