@@ -1,21 +1,30 @@
-"""Corse da Strava per il Coach: le ultime 60 attività a ogni richiesta e i dettagli corsa
-(stream secondo per secondo) delle ultime 40 uscite in bici, scaricati una volta sola.
+"""Le attività da Strava, salvate nel database: la sincronizzazione (tutta la storia la prima
+volta, poi le attività nuove e la rilettura degli ultimi 30 giorni, al massimo ogni 5 minuti)
+e, per il Coach, le ultime 60 attività con i dettagli corsa (stream secondo per secondo)
+delle ultime 40 uscite in bici, scaricati una volta sola.
 Il token di accesso viene dal server di autenticazione, che tiene i segreti."""
 
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
+from app.activities import ActivityStore
 from app.errors import CoachError
 from app.metrics import is_bike, ride_details
-from app.store import RideStore
 
 AUTH_TOKEN_URL = "http://auth:8080/auth/token"
 STRAVA_API = "https://www.strava.com/api/v3"
 LIST_SIZE = 60
 DETAILED_RIDES = 40
-# Solo le cifre che il Coach legge: niente coordinate, mappe del percorso o titoli.
+PAGE_SIZE = 200
+SYNC_INTERVAL = timedelta(minutes=5)
+# Uso dei 15 minuti, contato da Strava su tutte le richieste dell'app (browser compreso), da
+# cui il download in sottofondo si ferma fino al quarto d'ora dopo: il limite è 100.
+BUSY_USAGE = 80
+REREAD = timedelta(days=30)
+# Le cifre che il Coach legge: il resto dell'attività (nome, percorso) resta per le schermate.
 KEPT_FIELDS = ("id", "type", "start_date_local", "moving_time", "distance",
                "weighted_average_watts", "average_watts", "average_heartrate",
                "has_heartrate", "total_elevation_gain", "suffer_score")
@@ -33,14 +42,36 @@ def log(msg: str):
 
 
 class StravaUnavailable(Exception):
-    """Strava (o il rinnovo del token) non risponde, risponde con un errore o oltre il limite di richieste."""
+    """Strava (o il rinnovo del token) non risponde, risponde con un errore o oltre il limite di
+    richieste; in quel caso `paused_until` è l'inizio del prossimo quarto d'ora, quando Strava
+    azzera il conteggio."""
+
+    def __init__(self, paused_until: datetime | None = None):
+        super().__init__()
+        self.paused_until = paused_until
+
+
+def next_quarter_hour(now: datetime) -> datetime:
+    start = now.replace(minute=now.minute - now.minute % 15, second=0, microsecond=0)
+    return start + timedelta(minutes=15)
+
+
+def to_ms(moment: datetime | None) -> float | None:
+    return round(moment.timestamp() * 1000) if moment else None
+
+
+@dataclass
+class SyncResult:
+    status: str               # "updated", "recent" (controllato da meno di 5 minuti), "unreachable", "paused"
+    synced_at: int | None     # ms: l'ultima sincronizzazione arrivata in fondo
+    retry_at: int | None      # ms, con "paused": quando Strava accetta di nuovo richieste
 
 
 @dataclass
 class RideData:
     activities: list
     details: dict          # id corsa → dettagli, per le ultime 40 uscite in bici scaricate
-    downloaded_at: float   # ms: quando la lista è stata scaricata
+    downloaded_at: int | None  # ms: l'ultima sincronizzazione arrivata in fondo
     from_saved: bool       # Strava non raggiungibile: lista e dettagli sono quelli salvati
     missing_details: int   # uscite fra le ultime 40 senza dettagli: usano le cifre di riepilogo
 
@@ -49,78 +80,158 @@ def latest_rides(activities: list) -> list:
     return [a["id"] for a in activities if is_bike(a)][:DETAILED_RIDES]
 
 
-def ride_data(saved: dict, from_saved: bool) -> RideData:
-    latest = latest_rides(saved["activities"])
-    details = {i: saved["details"][i] for i in latest if i in saved["details"]}
-    return RideData(saved["activities"], details, saved["downloaded_at"], from_saved,
-                    len(latest) - len(details))
+def ride_data(activities: list, details: dict, downloaded_at: int | None, from_saved: bool) -> RideData:
+    latest = latest_rides(activities)
+    kept = {i: details[i] for i in latest if i in details}
+    return RideData(activities, kept, downloaded_at, from_saved, len(latest) - len(kept))
 
 
 class StravaRides:
-    def __init__(self, store: RideStore, client: httpx.AsyncClient):
+    def __init__(self, store: ActivityStore, client: httpx.AsyncClient):
         self.store = store
         self.client = client
-        # Un solo download per corsa: due richieste che vogliono la stessa corsa nuova
-        # aspettano lo stesso download.
+        # Una sola sincronizzazione alla volta: chi arriva durante una in corso aspetta quella.
+        # La sincronizzazione in corso, con la generation in cui è partita.
+        self._sync: tuple[int, asyncio.Task] | None = None
+        # I download in corso, uno per corsa (download_once).
         self._downloading: dict[tuple[int, int], asyncio.Task] = {}
+        # Fino a quando Strava va lasciato in pace: dopo un "troppe richieste" o un uso dei
+        # 15 minuti da BUSY_USAGE in su. Lo legge il download in sottofondo.
+        self.busy_until: datetime | None = None
+        # Chiamata dopo ogni sincronizzazione arrivata in fondo: sveglia il download in sottofondo.
+        self.after_sync = lambda: None
 
-    async def refresh(self, now_ms: float, progress=None) -> RideData:
-        """Scarica la lista e i dettagli mancanti; progress(fatti, totale) dopo ogni dettaglio."""
+    async def sync(self, now_ms: float, force: bool = False) -> SyncResult:
+        """force ("Aggiorna da Strava"): senza aspettare i 5 minuti; una sincronizzazione già in
+        corso resta l'unica, e chi la chiede ne riceve il risultato."""
+        # Una partita prima di "Disconnetti da Strava" non salva più nulla: il nuovo collegamento
+        # ne fa partire un'altra.
+        if self._sync is None or self._sync[1].done() or self._sync[0] != self.store.generation:
+            self._sync = (self.store.generation, asyncio.create_task(self._run_sync(now_ms, force)))
+        # shield: se chi aspetta viene abbandonato, la sincronizzazione finisce e si salva.
+        return await asyncio.shield(self._sync[1])
+
+    async def _run_sync(self, now_ms: float, force: bool) -> SyncResult:
         generation = self.store.generation
-        saved = self.store.load()
+        now = datetime.fromtimestamp(now_ms / 1000, tz=timezone.utc)
+        saved = await self.store.sync_state()
+        if saved and not force and now - saved["checked_at"] < SYNC_INTERVAL:
+            return SyncResult("recent", to_ms(saved["synced_at"]), None)
         try:
             token = await self._access_token()
-            activities, athlete = await self._list(token)
-        except StravaUnavailable:
+            athlete = await self._get(token, "/athlete")
+            stats = await self._get(token, f"/athletes/{athlete['id']}/stats")
+            self._saved(await self.store.start_sync(generation, athlete, stats, now))
+            if (await self.store.sync_state())["history_complete"]:
+                listed = await self._recent_pages(generation, token, now)
+            else:
+                listed = await self._older_pages(generation, token)
+            self._saved(await self.store.finish_sync(generation, now, history_complete=True))
+        except StravaUnavailable as e:
             if self.store.generation != generation:
                 raise CoachError(409, "disconnected", DISCONNECTED)
-            if not saved:
-                raise CoachError(503, "strava_unreachable", STRAVA_UNREACHABLE)
-            log("Strava non raggiungibile: uso le corse salvate")
-            return ride_data(saved, from_saved=True)
+            if saved:
+                await self.store.mark_checked(generation, now)
+            saved = await self.store.sync_state()
+            status = "paused" if e.paused_until else "unreachable"
+            log(f"sincronizzazione non riuscita: Strava {status}")
+            return SyncResult(status, to_ms(saved and saved["synced_at"]), to_ms(e.paused_until))
+        log(f"sincronizzazione: {listed} attività lette da Strava")
+        self.after_sync()
+        return SyncResult("updated", to_ms(now), None)
 
-        keep = set(latest_rides(activities))
+    async def _older_pages(self, generation: int, token: str) -> int:
+        """La storia, dalla più nuova alla prima: ogni pagina continua da prima dell'attività più
+        vecchia salvata, così una sincronizzazione interrotta riparte da dove era arrivata."""
+        listed = 0
+        while True:
+            oldest, _ = await self.store.oldest_and_newest()
+            params = {"per_page": PAGE_SIZE}
+            if oldest:
+                params["before"] = int(oldest.timestamp())
+            page = await self._list(token, params)
+            self._saved(await self.store.save_activities(generation, page))
+            listed += len(page)
+            if len(page) < PAGE_SIZE:
+                return listed
 
-        def replace_list(old):
-            # Un altro atleta, o corse uscite dalle ultime 40: i loro dettagli si scartano.
-            same = old and old.get("athlete_id") == athlete
-            details = {i: d for i, d in (old["details"] if same else {}).items() if i in keep}
-            return {"athlete_id": athlete, "downloaded_at": now_ms,
-                    "activities": activities, "details": details}
-
-        if not await self.store.update(generation, replace_list):
-            raise CoachError(409, "disconnected", DISCONNECTED)
-        saved = self._saved_since(generation)
-        todo = [i for i in latest_rides(activities) if i not in saved["details"]]
-        failed = 0
-        for done, ride_id in enumerate(todo, 1):
-            key = (generation, ride_id)
-            # Un'altra richiesta, con una lista diversa, può averla già scaricata e salvata.
-            if ride_id in self._saved_since(generation)["details"]:
-                result = "saved"
-            else:
-                if key not in self._downloading:
-                    task = asyncio.create_task(self._download(generation, ride_id, token))
-                    task.add_done_callback(lambda _, k=key: self._downloading.pop(k, None))
-                    self._downloading[key] = task
-                # shield: se questa richiesta viene abbandonata, il download in corso finisce e si salva.
-                result = await asyncio.shield(self._downloading[key])
-            if progress:
-                progress(done, len(todo))
-            failed += result != "saved"
-            if result == "stop":
+    async def _recent_pages(self, generation: int, token: str, now: datetime) -> int:
+        """Le attività nuove e quelle degli ultimi 30 giorni: chi ha cambiato nome o tipo si
+        aggiorna, chi non c'è più è stato cancellato su Strava."""
+        _, newest = await self.store.oldest_and_newest()
+        after = min(newest, now - REREAD) if newest else now - REREAD
+        listed: list[dict] = []
+        page_number = 1
+        while True:
+            page = await self._list(token, {"after": int(after.timestamp()), "per_page": PAGE_SIZE,
+                                            "page": page_number})
+            listed += page
+            if len(page) < PAGE_SIZE:
                 break
-        data = ride_data(self._saved_since(generation), from_saved=False)
-        log(f"corse: {len(activities)} attività, {len(todo)} dettagli da scaricare, "
-            f"{failed} non riusciti, {data.missing_details} uscite senza dettagli")
-        return data
+            page_number += 1
+        self._saved(await self.store.save_activities(generation, listed))
+        self._saved(await self.store.remove_missing(generation, after, {a["id"] for a in listed}))
+        return len(listed)
 
-    def _saved_since(self, generation: int) -> dict:
-        """I dati salvati, purché "Disconnetti da Strava" non sia arrivato nel frattempo."""
-        saved = self.store.load()
-        if saved is None or self.store.generation != generation:
+    async def refresh(self, now_ms: float, progress=None) -> RideData:
+        """Per il Coach: sincronizza, poi scarica i dettagli mancanti delle ultime 40 uscite in
+        bici; progress(fatti, totale) dopo ogni dettaglio."""
+        result = await self.sync(now_ms)
+        generation = self.store.generation
+        activities = [{k: a[k] for k in KEPT_FIELDS if k in a} for a in await self.store.latest(LIST_SIZE)]
+        from_saved = result.status in ("unreachable", "paused")
+        if from_saved and not activities:
+            raise CoachError(503, "strava_unreachable", STRAVA_UNREACHABLE)
+        details = await self.store.details(latest_rides(activities))
+        todo = [] if from_saved else [i for i in latest_rides(activities) if i not in details]
+        token = None
+        if todo:
+            try:
+                token = await self._access_token()
+            except StravaUnavailable:
+                # Il server di autenticazione non raggiunge Strava: bastano i dettagli salvati.
+                todo = []
+        if todo:
+            failed = 0
+            for done, ride_id in enumerate(todo, 1):
+                outcome = await self.download_once(generation, ride_id, token)
+                if outcome == "disconnected":
+                    raise CoachError(409, "disconnected", DISCONNECTED)
+                if progress:
+                    progress(done, len(todo))
+                failed += outcome != "saved"
+                if outcome == "stop":
+                    break
+            details = await self.store.details(latest_rides(activities))
+            log(f"corse: {len(todo)} dettagli da scaricare, {failed} non riusciti")
+        return ride_data(activities, details, result.synced_at, from_saved)
+
+    async def download_once(self, generation: int, ride_id: int, token: str) -> str:
+        """I dettagli di una corsa, come _download. Un solo download per corsa: due richieste che
+        vogliono la stessa corsa (il Coach e il download in sottofondo) aspettano lo stesso."""
+        key = (generation, ride_id)
+        if key not in self._downloading:
+            task = asyncio.create_task(self._download(generation, ride_id, token))
+            task.add_done_callback(lambda _, k=key: self._downloading.pop(k, None))
+            self._downloading[key] = task
+        # shield: se chi aspetta viene abbandonato, il download in corso finisce e si salva.
+        return await asyncio.shield(self._downloading[key])
+
+    def _note_usage(self, res: httpx.Response):
+        """Dalle intestazioni di Strava, l'uso dei 15 minuti ("15min,giorno"): oltre BUSY_USAGE,
+        o con un "troppe richieste", il download in sottofondo aspetta il prossimo quarto d'ora."""
+        used = 0
+        for name in ("X-RateLimit-Usage", "X-ReadRateLimit-Usage"):
+            try:
+                used = max(used, int(res.headers.get(name, "").split(",")[0]))
+            except ValueError:
+                pass
+        if res.status_code == 429 or used >= BUSY_USAGE:
+            self.busy_until = next_quarter_hour(datetime.now(timezone.utc))
+
+    def _saved(self, written: bool):
+        if not written:
             raise CoachError(409, "disconnected", DISCONNECTED)
-        return saved
 
     async def _access_token(self) -> str:
         try:
@@ -138,26 +249,33 @@ class StravaRides:
         except (ValueError, KeyError, TypeError):
             raise CoachError(502, "auth_unreachable", AUTH_UNREACHABLE)
 
-    async def _list(self, token: str) -> tuple[list, int | None]:
+    async def _get(self, token: str, path: str, params: dict | None = None):
         try:
-            res = await self.client.get(f"{STRAVA_API}/athlete/activities",
-                                        params={"per_page": LIST_SIZE}, headers=bearer(token))
+            res = await self.client.get(f"{STRAVA_API}{path}", params=params, headers=bearer(token))
         except httpx.HTTPError:
             raise StravaUnavailable()
+        self._note_usage(res)
         if res.status_code in (401, 403):
             raise CoachError(401, "strava_refused", STRAVA_REFUSED)
+        if res.status_code == 429:
+            raise StravaUnavailable(self.busy_until)
         try:
-            raw = res.json() if res.status_code == 200 else None
+            body = res.json() if res.status_code == 200 else None
         except ValueError:
-            raw = None
-        if not isinstance(raw, list):
+            body = None
+        if body is None:
             raise StravaUnavailable()
-        athlete = (raw[0].get("athlete") or {}).get("id") if raw else None
-        return [{k: a[k] for k in KEPT_FIELDS if k in a} for a in raw], athlete
+        return body
+
+    async def _list(self, token: str, params: dict) -> list:
+        page = await self._get(token, "/athlete/activities", params)
+        if not isinstance(page, list):
+            raise StravaUnavailable()
+        return page
 
     async def _download(self, generation: int, ride_id: int, token: str) -> str:
         """"saved"; "failed" (riprova alla prossima richiesta); "stop" (inutile continuare:
-        limite di Strava, rete giù o accesso rifiutato)."""
+        limite di Strava, rete giù o accesso rifiutato); "disconnected" (Disconnetti nel frattempo)."""
         try:
             res = await self.client.get(
                 f"{STRAVA_API}/activities/{ride_id}/streams",
@@ -165,6 +283,7 @@ class StravaRides:
                 headers=bearer(token))
         except httpx.HTTPError:
             return "stop"
+        self._note_usage(res)
         if res.status_code in (401, 403, 429):
             return "stop"
         try:
@@ -175,12 +294,7 @@ class StravaRides:
             details = None
         if details is None:
             return "failed"
-
-        def add(old):
-            return {**old, "details": {**old["details"], ride_id: details}}
-
-        await self.store.update(generation, add)
-        return "saved"
+        return "saved" if await self.store.save_details(generation, ride_id, details) else "disconnected"
 
 
 def bearer(token: str) -> dict:

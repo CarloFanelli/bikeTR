@@ -4,8 +4,23 @@ Rotte:
   GET  /coach/status   → il modello chat di .env e, per il cloud, spesa e tetto (nessuna chiamata)
   GET  /coach/ping     → il provider risponde, accetta la chiave e ha il modello? (nessun token)
   POST /coach/workout  → il workout di oggi, come flusso di eventi (una riga JSON l'uno)
-  POST /coach/forget   → cancella corse e dettagli corsa salvati e, in Phoenix, le tracce della
-                         schermata Coach partite prima (Disconnetti da Strava)
+  POST /coach/sync     → aggiorna le attività da Strava, al massimo ogni 5 minuti (?force=true:
+                         subito, "Aggiorna da Strava"): {status, syncedAt, retryAt}
+  GET  /coach/athlete  → atleta, statistiche e ora dell'ultima sincronizzazione salvati:
+                         {athlete, stats, syncedAt}, null se nulla è salvato
+  GET  /coach/activities?limit=N → le N attività salvate più recenti, come le elenca Strava;
+                         senza limit tutte, con i soli campi delle card di Attività
+  POST /coach/metrics  → {profile, ids}: il carico di ogni attività salvata fra ids, con i
+                         dettagli corsa salvati: {loads: {id: carico}}
+  GET  /coach/details/progress → quante attività con potenza o FC hanno i dettagli corsa:
+                         {done, total}
+  GET  /coach/athlete-data → i dati dell'atleta salvati dall'app, {chiave: valore}
+  PUT  /coach/athlete-data/{key} → salva un dato dell'atleta (controllato campo per campo)
+  POST /coach/athlete-data/import → {chiave: valore}: i dati di un browser, solo se il server
+                         non ne ha (409 not_empty se un altro browser è arrivato prima)
+  POST /coach/forget   → cancella attività, dettagli corsa, atleta, statistiche e segmenti
+                         salvati e, in Phoenix, le tracce della schermata Coach partite prima
+                         (Disconnetti da Strava); impostazioni, calendario, FTP e mesociclo restano
   GET  /coach/library  → i paper che il Coach cerca, senza passaggi, con cosa ne dipende
   GET  /coach/library/{pmid} → i passaggi di un paper, nell'ordine di lettura
   POST /coach/library/search → {query}: fino a 10 paper di PubMed per parole del titolo o degli autori
@@ -26,20 +41,26 @@ import traceback
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import httpx
-from fastapi import Depends, FastAPI, Header, Request, Response
+import psycopg
+from fastapi import Body, Depends, FastAPI, Header, Query, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app import cloud, graph, library, ollama, papers, provider, search, tracing, workout
+from app import cloud, db, graph, library, metrics, ollama, papers, provider, search, tracing, workout
+from app.activities import ActivityStore
+from app.athlete_data import AthleteData
+from app.details import DetailsDownloader
 from app.errors import CoachError
 from app.spending import SPENDING_FILE, Spending
-from app.store import RideStore
-from app.strava import StravaRides
+from app.strava import StravaRides, log, to_ms
 from app.trace_deletion import DELETION_FILE, TraceDeletion
 
-store = RideStore(Path("/data/rides.json"))
+# Il file delle corse delle versioni prima del database: le corse ora stanno nel database.
+OLD_RIDES_FILE = Path("/data/rides.json")
+store = ActivityStore(db.url())
+athlete_data = AthleteData(db.url())
 cloud_spending = Spending(SPENDING_FILE)
 http = httpx.AsyncClient(timeout=15)
 rides = StravaRides(store, http)
@@ -56,9 +77,16 @@ def same_origin_only(sec_fetch_site: Annotated[str | None, Header()] = None):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await db.migrate(store.conninfo)
+    OLD_RIDES_FILE.unlink(missing_ok=True)
     # Una cancellazione delle tracce rimasta in sospeso (Phoenix spento, poi il Coach riavviato) riparte.
     trace_deletion.resume()
+    # Il download in sottofondo dei dettagli corsa riparte dalla prima attività che non li ha.
+    details = DetailsDownloader(store, rides)
+    rides.after_sync = details.poke
+    downloading = asyncio.create_task(details.run())
     yield
+    downloading.cancel()
 
 
 app = FastAPI(dependencies=[Depends(same_origin_only)], lifespan=lifespan)
@@ -67,6 +95,12 @@ app = FastAPI(dependencies=[Depends(same_origin_only)], lifespan=lifespan)
 @app.exception_handler(CoachError)
 async def coach_error(request: Request, e: CoachError):
     return JSONResponse({"error": e.code, "message": e.message}, status_code=e.status)
+
+
+@app.exception_handler(psycopg.OperationalError)
+async def database_unreachable(request: Request, e: psycopg.OperationalError):
+    log(f"database non raggiungibile: {type(e).__name__}")
+    return await coach_error(request, CoachError(503, "database_unreachable", db.DATABASE_UNREACHABLE))
 
 
 async def load_index() -> dict:
@@ -162,6 +196,56 @@ async def generate_workout(request: Request):
     return StreamingResponse(stream(), media_type="application/x-ndjson")
 
 
+@app.post("/coach/sync")
+async def sync(force: bool = False):
+    result = await rides.sync(time.time() * 1000, force)
+    return {"status": result.status, "syncedAt": result.synced_at, "retryAt": result.retry_at}
+
+
+@app.get("/coach/athlete")
+async def athlete():
+    saved = await store.sync_state()
+    if not saved:
+        return {"athlete": None, "stats": None, "syncedAt": None}
+    return {"athlete": saved["athlete"], "stats": saved["stats"], "syncedAt": to_ms(saved["synced_at"])}
+
+
+@app.get("/coach/activities")
+async def activities(limit: Annotated[int | None, Query(ge=1, le=200)] = None):
+    return await store.latest(limit) if limit else await store.cards()
+
+
+@app.post("/coach/metrics")
+async def activity_loads(body: Annotated[Any, Body()]):
+    profile, ids = workout.parse_loads_request(body)
+    acts = await store.summaries(ids)
+    details = await store.details(ids)
+    return {"loads": {str(a["id"]): metrics.activity_load(a, details.get(a["id"]), profile) for a in acts}}
+
+
+@app.get("/coach/details/progress")
+async def details_progress():
+    return await store.details_progress()
+
+
+@app.get("/coach/athlete-data")
+async def read_athlete_data():
+    return await athlete_data.all()
+
+
+@app.put("/coach/athlete-data/{key}", status_code=204)
+async def save_athlete_data(key: str, value: Annotated[Any, Body()]):
+    await athlete_data.save(key, value)
+    return Response(status_code=204)
+
+
+@app.post("/coach/athlete-data/import", status_code=204)
+async def import_athlete_data(data: Annotated[dict[str, Any], Body()]):
+    if not await athlete_data.import_all(data):
+        raise CoachError(409, "not_empty", "Il server ha già i dati dell'atleta: quelli del browser non servono.")
+    return Response(status_code=204)
+
+
 @app.post("/coach/forget", status_code=204)
 async def forget():
     # Le tracce della schermata Coach contengono i numeri delle corse: vanno via con loro, senza
@@ -169,6 +253,7 @@ async def forget():
     disconnected = datetime.now(timezone.utc)
     tracing.forget(disconnected)
     await store.forget()
+    await athlete_data.forget_strava()
     trace_deletion.schedule(disconnected)
     return Response(status_code=204)
 
