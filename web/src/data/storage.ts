@@ -1,26 +1,26 @@
-// Valori salvati nel browser (localStorage), con i nomi e i formati di sempre
-// (README, sezione 7). Un valore illeggibile non blocca l'app: vale il default.
+// I valori che l'app salva. I dati dell'atleta (impostazioni, calendario, FTP, mesociclo,
+// segmenti, durata del Coach) stanno sul server e si leggono dalla copia in memoria di
+// data/athlete-data.ts; un salvataggio risponde se il server l'ha preso. Le scelte di questo
+// browser (tema, scheda di Analisi, vista di Attività) e gli stream restano in localStorage,
+// con i nomi e i formati di sempre (README, sezione 7). Un valore illeggibile non blocca l'app:
+// vale il default.
 
+import { isObject } from '../core/athlete-data.ts';
 import { type FtpPoint, nextFtpHistory } from '../core/ftp.ts';
 import type { HrProfile } from '../core/hr.ts';
 import { type Mesocycle, withFtpPoint } from '../core/meso.ts';
 import type { SegmentCache } from '../core/segments.ts';
 import type { Settings } from '../core/settings.ts';
 import type { Activity, StreamMetrics } from '../core/strava-types.ts';
+import { readAthleteData, writeAthleteData } from './athlete-data.ts';
+import type { CoachAnswer } from './coach.ts';
 
 // Metriche di un'attività calcolate dai suoi stream, o l'errore del download.
 type StreamsCacheEntry = (StreamMetrics & { _fetched: number; _error?: undefined }) | { _error: string; _fetched: number };
 type StreamsCache = Record<string, StreamsCacheEntry>;
 
-const SETTINGS = 'biketr_settings';
-const PLANNED_RESTS = 'biketr_planned_rests';
-const RAINY_DAYS = 'biketr_rainy_days';
 const STREAMS_CACHE = 'biketr_streams_cache';
-const FTP_HISTORY = 'biketr_ftp_history';
-const MESOCYCLE = 'biketr_mesocycle';
 const UI = 'biketr_ui';
-const SEGMENTS_CACHE = 'biketr_segments_cache_v2';
-const COACH_SETTINGS = 'biketr_coach_settings';
 
 // Chiave assente o dati del browser bloccati (alcune finestre private): `fallback`, senza log.
 // JSON illeggibile o rifiutato da `validator`: copia in "<chiave>.broken", avviso in
@@ -54,39 +54,40 @@ export function safeSave(key: string, value: unknown): boolean {
   }
 }
 
-const isPlainObject = (x: unknown): x is Record<string, unknown> =>
-  x !== null && typeof x === 'object' && !Array.isArray(x);
+// Un dato dell'atleta dalla copia in memoria; mancante o di una forma inattesa, il default.
+// Una copia, così chi la cambia non tocca la memoria prima di salvarla.
+function athleteValue<T>(key: Parameters<typeof readAthleteData>[0], fallback: T, valid: (x: unknown) => boolean): T {
+  const value = readAthleteData(key);
+  return valid(value) ? structuredClone(value) as T : fallback;
+}
 
-export const loadSettings = (): Settings => safeLoad<Settings>(SETTINGS, {}, isPlainObject);
-export const saveSettings = (s: Settings): boolean => safeSave(SETTINGS, s);
+export const loadSettings = (): Settings => athleteValue<Settings>('settings', {}, isObject);
+export const saveSettings = (s: Settings): Promise<CoachAnswer<null>> => writeAthleteData('settings', s);
 
-export const loadPlannedRests = (): string[] => safeLoad<string[]>(PLANNED_RESTS, [], Array.isArray);
-const savePlannedRests = (days: string[]): boolean => safeSave(PLANNED_RESTS, days);
-
-export const loadRainyDays = (): string[] => safeLoad<string[]>(RAINY_DAYS, [], Array.isArray);
-const saveRainyDays = (days: string[]): boolean => safeSave(RAINY_DAYS, days);
+export const loadPlannedRests = (): string[] => athleteValue<string[]>('plannedRests', [], Array.isArray);
+export const loadRainyDays = (): string[] => athleteValue<string[]>('rainyDays', [], Array.isArray);
 
 // Stato di un giorno del calendario: normale → saltato → pioggia → normale.
-export function cycleDayState(iso: string): void {
+export async function cycleDayState(iso: string): Promise<CoachAnswer<null>> {
   const skips = loadPlannedRests();
   const rainy = loadRainyDays();
   const si = skips.indexOf(iso);
   const ri = rainy.indexOf(iso);
-  if (si < 0 && ri < 0) {
-    skips.push(iso);
-    savePlannedRests(skips);
-  } else if (si >= 0) {
-    skips.splice(si, 1);
-    savePlannedRests(skips);
-    rainy.push(iso);
-    saveRainyDays(rainy);
-  } else {
-    rainy.splice(ri, 1);
-    saveRainyDays(rainy);
+  if (si < 0 && ri < 0) return writeAthleteData('plannedRests', [...skips, iso]);
+  if (si >= 0) {
+    const [rests, rain] = await Promise.all([
+      writeAthleteData('plannedRests', skips.filter(d => d !== iso)), writeAthleteData('rainyDays', [...rainy, iso]),
+    ]);
+    // Uno solo salvato: anche l'altro torna com'era, così il giorno resta saltato.
+    if (rests.ok && !rain.ok) await writeAthleteData('plannedRests', skips);
+    if (!rests.ok && rain.ok) await writeAthleteData('rainyDays', rainy);
+    return rests.ok ? rain : rests;
   }
+  rainy.splice(ri, 1);
+  return writeAthleteData('rainyDays', rainy);
 }
 
-export const loadStreamsCache = (): StreamsCache => safeLoad<StreamsCache>(STREAMS_CACHE, {}, isPlainObject);
+export const loadStreamsCache = (): StreamsCache => safeLoad<StreamsCache>(STREAMS_CACHE, {}, isObject);
 export const saveStreamsCache = (cache: StreamsCache): boolean => safeSave(STREAMS_CACHE, cache);
 
 // Rimette sulle attività le metriche degli stream già scaricati (di default quelli salvati);
@@ -99,34 +100,24 @@ export function applyCachedStreams(activities: Activity[], cache: StreamsCache =
 }
 
 // Segmenti preferiti con i tentativi già scaricati, per segmento.
-export const loadSegmentCache = (): SegmentCache => safeLoad<SegmentCache>(SEGMENTS_CACHE, {}, isPlainObject);
-export const saveSegmentCache = (cache: SegmentCache): boolean => safeSave(SEGMENTS_CACHE, cache);
-export const clearSegmentCache = (): void => localStorage.removeItem(SEGMENTS_CACHE);
+export const loadSegmentCache = (): SegmentCache => athleteValue<SegmentCache>('segmentCache', {}, isObject);
+export const saveSegmentCache = (cache: SegmentCache): Promise<CoachAnswer<null>> => writeAthleteData('segmentCache', cache);
+export const clearSegmentCache = (): Promise<CoachAnswer<null>> => writeAthleteData('segmentCache', {});
 
 // Durata dell'ultimo workout chiesto al Coach.
 interface CoachSettings {
   lastDuration?: number;
 }
 
-export function loadCoachSettings(): CoachSettings {
-  const s = safeLoad<CoachSettings & { endpoint?: unknown; model?: unknown }>(COACH_SETTINGS, {}, isPlainObject);
-  // Le versioni precedenti salvavano anche l'indirizzo di Ollama e il modello: ora li
-  // sceglie il .env del servizio Coach, e un nome rimasto qui non deve comparire da nessuna parte.
-  if ('endpoint' in s || 'model' in s) {
-    delete s.endpoint;
-    delete s.model;
-    safeSave(COACH_SETTINGS, s);
-  }
-  return s;
-}
+export const loadCoachSettings = (): CoachSettings => athleteValue<CoachSettings>('coachSettings', {}, isObject);
 
 // Aggiorna solo i valori passati, senza cancellare gli altri.
-export const saveCoachSettings = (changes: CoachSettings): boolean =>
-  safeSave(COACH_SETTINGS, { ...loadCoachSettings(), ...changes });
+export const saveCoachSettings = (changes: CoachSettings): Promise<CoachAnswer<null>> =>
+  writeAthleteData('coachSettings', { ...loadCoachSettings(), ...changes });
 
 // Le scelte dell'interfaccia (tema, scheda di Analisi) stanno insieme sotto biketr_ui:
 // ogni salvataggio cambia solo la sua voce e tiene le altre.
-const loadUi = () => safeLoad<Record<string, unknown>>(UI, {}, isPlainObject);
+const loadUi = () => safeLoad<Record<string, unknown>>(UI, {}, isObject);
 const saveUi = (changes: Record<string, unknown>): boolean => safeSave(UI, { ...loadUi(), ...changes });
 
 // Tema scelto dall'atleta; "system" segue il chiaro o scuro del computer. Un valore
@@ -160,25 +151,25 @@ export function loadActivitiesView(): ActivitiesView {
 export const saveActivitiesView = (view: ActivitiesView): boolean => saveUi({ activitiesView: view });
 
 // Un punto alla settimana, al massimo 52 (vedi nextFtpHistory).
-export const loadFtpHistory = (): FtpPoint[] => safeLoad<FtpPoint[]>(FTP_HISTORY, [], Array.isArray);
-const saveFtpHistory = (history: FtpPoint[]): boolean => safeSave(FTP_HISTORY, history);
+export const loadFtpHistory = (): FtpPoint[] => athleteValue<FtpPoint[]>('ftpHistory', [], Array.isArray);
 
 // Il mesociclo in corso (vedi nextMesocycle); null prima della prima apertura dell'app.
-export const loadMesocycle = (): Mesocycle | null =>
-  safeLoad<Mesocycle | null>(MESOCYCLE, null, (x) => x === null || (typeof x === 'object' && !Array.isArray(x)));
-export const saveMesocycle = (meso: Mesocycle): boolean => safeSave(MESOCYCLE, meso);
+export const loadMesocycle = (): Mesocycle | null => athleteValue<Mesocycle | null>('mesocycle', null, isObject);
+export const saveMesocycle = (meso: Mesocycle): Promise<CoachAnswer<null>> => writeAthleteData('mesocycle', meso);
 
 // Il punto FTP di oggi, dato FTP e soglia di adesso: nello storico (al massimo uno ogni
 // 5 giorni) e, se c'è un mesociclo, in fondo ai suoi ultimi 20.
-export function recordFtpPoint(profile: HrProfile, now: Date): void {
+export async function recordFtpPoint(profile: HrProfile, now: Date): Promise<CoachAnswer<null>> {
   const history = nextFtpHistory(loadFtpHistory(), profile, now);
-  if (!history) return;
-  saveFtpHistory(history);
+  if (!history) return { ok: true, value: null };
+  const saves = [writeAthleteData('ftpHistory', history)];
   const meso = loadMesocycle();
   if (meso) {
     const { date, ftp } = history[history.length - 1];
-    saveMesocycle(withFtpPoint(meso, date, ftp));
+    saves.push(saveMesocycle(withFtpPoint(meso, date, ftp)));
   }
+  const saved = await Promise.all(saves);
+  return saved.find(a => !a.ok) ?? saved[0];
 }
 
 // Le versioni prima di Docker salvavano nel browser client secret e token Strava

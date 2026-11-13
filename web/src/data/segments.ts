@@ -11,6 +11,13 @@ import { fetchActivity, fetchSegmentEfforts, fetchStarredSegments, sleep, Strava
 // Uscite lette da "Completa da dettagli attività": una richiesta per uscita.
 export const MAX_SEGMENTS_HYDRATE = 30;
 
+// I tentativi scaricati vanno sul server: se non ci arrivano si riscaricano alla prossima
+// apertura, e le previsioni di adesso restano giuste.
+async function keepSegments(cache: SegmentCache): Promise<void> {
+  const answer = await saveSegmentCache(cache);
+  if (!answer.ok) console.warn('[BikeTR] segmenti scaricati non salvati:', answer.msg);
+}
+
 const CACHE_TTL_OK = 24 * 60 * 60 * 1000; // 24h per risultati con tentativi
 const CACHE_TTL_EMPTY = 2 * 60 * 60 * 1000; // 2h per risultati vuoti (potrebbe essere stato flaky)
 const PAUSE_MS = 150;
@@ -68,7 +75,7 @@ export async function loadSegmentPredictions(
       if (i < starred.length - 1) await sleep(PAUSE_MS);
     } catch (e) {
       if (e instanceof AuthError) {
-        saveSegmentCache(cache);
+        void keepSegments(cache);
         throw e;
       }
       // Gli errori non si salvano: così si riprova alla prossima apertura.
@@ -76,7 +83,7 @@ export async function loadSegmentPredictions(
       if (e instanceof StravaError && e.status === 429) await sleep(RATE_LIMIT_WAIT_MS);
     }
   }
-  saveSegmentCache(cache);
+  void keepSegments(cache);
   return { list, diag };
 }
 
@@ -135,12 +142,12 @@ export async function completeFromActivities(
       if (i < bikes.length - 1) await sleep(PAUSE_MS);
     } catch (e) {
       if (e instanceof AuthError) {
-        saveSegmentCache(cache);
+        void keepSegments(cache);
         throw e;
       }
     }
   }
-  saveSegmentCache(cache);
+  void keepSegments(cache);
   return { fetched, addedEfforts };
 }
 

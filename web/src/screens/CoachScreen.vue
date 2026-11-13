@@ -40,7 +40,10 @@ const showLive = computed(() => run.live && !run.result && !run.error);
 function generate() {
   if (run.running) return;
   const minutes = +duration.value || 60;
-  saveCoachSettings({ lastDuration: minutes });
+  // La durata è solo una comodità per la prossima volta: un salvataggio non riuscito non ferma il Coach.
+  void saveCoachSettings({ lastDuration: minutes }).then((a) => {
+    if (!a.ok) console.warn('[BikeTR] durata del Coach non salvata:', a.msg);
+  });
   void generateWorkout({
     duration: minutes,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,

@@ -7,7 +7,7 @@ import { onBeforeRouteLeave } from 'vue-router';
 import {
   VAlert, VBtn, VCard, VCardActions, VCardText, VCardTitle, VCheckbox, VDialog, VSelect, VSnackbar, VTextField,
 } from 'vuetify/components';
-import { disconnect, hrProfile, session } from '../app/session.ts';
+import { disconnect, hrProfile, refreshLoads, session } from '../app/session.ts';
 import CoachSettingsCard from '../components/CoachSettingsCard.vue';
 import DayToggle from '../components/DayToggle.vue';
 import InfoLabel from '../components/InfoLabel.vue';
@@ -38,16 +38,22 @@ const lastSaved = ref(pending());
 const dirty = computed(() => pending() !== lastSaved.value);
 const saveError = ref('');
 const saved = ref(false);
+const saving = ref(false);
 
-function save(): void {
-  if (invalid.value) return;
-  if (!saveSettings(settingsFromForm(form.value))) {
-    saveError.value = 'Non salvato: il browser non permette di scrivere i dati. Le modifiche restano sullo schermo.';
+async function save(): Promise<void> {
+  if (invalid.value || saving.value) return;
+  saving.value = true;
+  const values = pending();
+  const answer = await saveSettings(settingsFromForm(form.value));
+  saving.value = false;
+  if (!answer.ok) {
+    saveError.value = `Non salvato: ${answer.msg} Le modifiche restano sullo schermo.`;
     return;
   }
-  lastSaved.value = pending();
+  lastSaved.value = values;
   saveError.value = '';
   saved.value = true;
+  void refreshLoads();
 }
 
 function cancel(): void {
@@ -175,7 +181,9 @@ async function disconnectStrava(): Promise<void> {
         {{ saveError || (invalid ? 'Correggi i campi segnati per salvare.' : 'Modifiche non salvate.') }}
       </span>
       <VBtn variant="text" class="action" min-height="44" @click="cancel">Annulla</VBtn>
-      <VBtn color="primary" variant="flat" class="action" min-height="44" :disabled="invalid" @click="save">Salva</VBtn>
+      <VBtn color="primary" variant="flat" class="action" min-height="44" :disabled="invalid" :loading="saving" @click="save">
+        Salva
+      </VBtn>
     </div>
 
     <VSnackbar v-model="saved" :timeout="3000" color="success">Impostazioni salvate.</VSnackbar>

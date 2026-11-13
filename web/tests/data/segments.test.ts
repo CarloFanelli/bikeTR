@@ -4,6 +4,7 @@ import { AuthError } from '../../src/data/auth.ts';
 import { completeFromActivities, loadSegmentPredictions } from '../../src/data/segments.ts';
 import { loadSegmentCache } from '../../src/data/storage.ts';
 import { fetchActivity, fetchSegmentEfforts, fetchStarredSegments, StravaError } from '../../src/data/strava.ts';
+import { athleteServer } from './athlete-server.ts';
 
 vi.mock('../../src/data/strava.ts', async (original) => ({
   ...(await original<typeof import('../../src/data/strava.ts')>()),
@@ -18,16 +19,10 @@ const effort = (id: number, segment?: Segment) =>
   ({ id, elapsed_time: 400 + id, moving_time: 400, start_date: '2026-10-01T08:00:00Z', distance: 2000, segment }) as SegmentEffort;
 const ride = (id: number, type = 'Ride') => ({ id, type }) as Activity;
 
-let store: Map<string, string>;
-
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers({ now: NOW });
-  store = new Map();
-  vi.stubGlobal('localStorage', {
-    getItem: (k: string) => store.get(k) ?? null,
-    setItem: (k: string, v: string) => store.set(k, String(v)),
-    removeItem: (k: string) => store.delete(k),
-  });
+  vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {}, removeItem: () => {} });
+  await athleteServer();
   vi.mocked(fetchStarredSegments).mockReset();
   vi.mocked(fetchSegmentEfforts).mockReset();
   vi.mocked(fetchActivity).mockReset();
@@ -40,11 +35,11 @@ afterEach(() => {
 
 describe('previsioni sui segmenti preferiti', () => {
   it('usa i tentativi salvati ancora freschi e scarica gli altri', async () => {
-    store.set('biketr_segments_cache_v2', JSON.stringify({
+    await athleteServer({ segmentCache: {
       1: { efforts: [effort(1)], _fetched: NOW - 23 * HOUR },
       2: { efforts: [], _fetched: NOW - 3 * HOUR },
       3: { efforts: [], _fetched: NOW - 1 * HOUR },
-    }));
+    } });
     vi.mocked(fetchStarredSegments).mockResolvedValue([seg(1), seg(2), seg(3), seg(4)]);
     vi.mocked(fetchSegmentEfforts).mockImplementation(async (id) => (id === 2 ? [effort(20), effort(21)] : []));
     const progress: string[] = [];
@@ -63,7 +58,7 @@ describe('previsioni sui segmenti preferiti', () => {
 
   it('il PR che Strava indica sul preferito si aggiunge quando manca dai tentativi', async () => {
     // Strava non elenca i tentativi delle uscite visibili solo ai follower, ma il PR sì.
-    store.set('biketr_segments_cache_v2', JSON.stringify({ 2: { efforts: [effort(1)], _fetched: NOW - HOUR } }));
+    await athleteServer({ segmentCache: { 2: { efforts: [effort(1)], _fetched: NOW - HOUR } } });
     const pr = { id: 99, activity_id: 7, elapsed_time: 2941, distance: 10106.2, start_date: '2026-09-26T11:52:54Z' };
     vi.mocked(fetchStarredSegments).mockResolvedValue([
       { ...seg(1), athlete_pr_effort: pr }, { ...seg(2), athlete_pr_effort: { ...pr, id: 98 } },
@@ -81,7 +76,7 @@ describe('previsioni sui segmenti preferiti', () => {
   });
 
   it('scaricando di nuovo si tengono i tentativi già salvati che Strava non elenca', async () => {
-    store.set('biketr_segments_cache_v2', JSON.stringify({ 1: { efforts: [effort(1), effort(2)], _fetched: NOW - 25 * HOUR } }));
+    await athleteServer({ segmentCache: { 1: { efforts: [effort(1), effort(2)], _fetched: NOW - 25 * HOUR } } });
     vi.mocked(fetchStarredSegments).mockResolvedValue([seg(1)]);
     vi.mocked(fetchSegmentEfforts).mockResolvedValue([{ ...effort(2), elapsed_time: 500 }, effort(3)]);
     const run = loadSegmentPredictions();
@@ -127,7 +122,7 @@ describe('previsioni sui segmenti preferiti', () => {
 
 describe('Completa da dettagli attività', () => {
   it('prende i tentativi sui preferiti dai dettagli delle uscite in bici, senza doppioni', async () => {
-    store.set('biketr_segments_cache_v2', JSON.stringify({ 1: { efforts: [effort(10)], _fetched: 1 } }));
+    await athleteServer({ segmentCache: { 1: { efforts: [effort(10)], _fetched: 1 } } });
     const starred = seg(1), other = seg(9);
     vi.mocked(fetchActivity).mockImplementation(async (id) => ({
       ...ride(Number(id)),
