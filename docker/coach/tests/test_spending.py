@@ -13,7 +13,6 @@ import pytest
 from app import main
 from app.errors import CoachError
 from app.spending import Prices, Spending, charge, cost
-from app.store import RideStore
 from fakes import CLOUD_ENV, CLOUD_PRICES, CLOUD_URL
 from test_workout import BODY, SAME_ORIGIN, events_of, make_service, post
 
@@ -60,8 +59,7 @@ def test_total_survives_a_restart(tmp_path):
     assert Spending(tmp_path / "spending.json").total() == 0.75
 
 
-def test_disconnecting_from_strava_keeps_the_total(cloud_service, cloud_spending, monkeypatch, tmp_path):
-    monkeypatch.setattr(main, "store", RideStore(tmp_path / "rides.json"))
+def test_disconnecting_from_strava_keeps_the_total(cloud_service, cloud_spending):
     cloud_spending.add(0.5)
     assert cloud_service.client.post("/coach/forget", headers=SAME_ORIGIN).status_code == 204
     assert cloud_spending.total() == 0.5

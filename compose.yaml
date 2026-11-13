@@ -14,6 +14,8 @@ x-coach-env: &coach-env
   CLOUD_SPENDING_LIMIT: ${CLOUD_SPENDING_LIMIT:-}
   # Dove mandare le tracce: Phoenix, qui sotto. Il Coach risponde anche quando Phoenix è spento.
   PHOENIX_URL: http://phoenix:6006
+  # Il database delle attività, qui sotto: lo raggiunge solo il Coach.
+  DATABASE_URL: postgresql://biketr:${POSTGRES_PASSWORD:-biketr}@db:5432/biketr
 
 services:
   web:
@@ -46,6 +48,9 @@ services:
       - web-modules:/workspace/web/node_modules
       # Codice del server di autenticazione, per il controllo dei tipi e i test.
       - ./docker/auth:/workspace/docker/auth:ro
+      # Attività inventate e carichi attesi dei test del Coach: la copia della formula del carico
+      # nel browser si confronta con quelli (tests/core/load-reference.test.ts).
+      - ./docker/coach/tests/fixtures:/workspace/docker/coach/tests/fixtures:ro
 
   # Login Strava: l'unico servizio che vede il client secret e il refresh token.
   auth:
@@ -71,13 +76,15 @@ services:
     init: true
     volumes:
       - ./docker/coach:/app:ro
-      # Corse e dettagli corsa scaricati da Strava: restano dopo `docker compose down`,
-      # spariscono con `down -v` o con "Disconnetti da Strava". Qui anche il totale speso
-      # per il modello cloud, che "Disconnetti da Strava" non tocca, e la cancellazione delle
-      # tracce che "Disconnetti da Strava" lascia in attesa finché Phoenix non risponde.
+      # Il totale speso per il modello cloud, che "Disconnetti da Strava" non tocca, e la
+      # cancellazione delle tracce che "Disconnetti da Strava" lascia in attesa finché Phoenix
+      # non risponde. Le attività di Strava stanno nel database (servizio db).
       - coach-data:/data
     environment: *coach-env
     depends_on:
+      # All'avvio il Coach crea le tabelle: aspetta che il database accetti connessioni.
+      db:
+        condition: service_healthy
       # Non aspetta i modelli: il Coach parte anche durante il primo download,
       # e anche quando Ollama è spento (OLLAMA_CONTAINERS=0).
       ollama:
@@ -101,6 +108,9 @@ services:
       # Lo stesso totale speso del Coach: i comandi rispettano lo stesso tetto.
       - coach-data:/data
     environment: *coach-env
+    depends_on:
+      db:
+        condition: service_healthy
 
   # Phoenix: le tracce di ogni richiesta del Coach, con passi, prompt, paper, risposta, token e
   # costo. Si apre solo da questo computer, su http://localhost:6006 (PHOENIX_PORT in .env).
@@ -119,6 +129,23 @@ services:
       # Il volume va sulla cartella home dell'utente, che è sua: montato su una cartella che
       # l'immagine non ha, apparterrebbe a root e Phoenix non potrebbe scriverci.
       - phoenix-data:/home/nonroot
+
+  # Il database: tutte le attività di Strava con i dettagli corsa, l'atleta e le statistiche.
+  # Nessuna porta pubblicata: lo raggiunge solo il Coach, dentro Docker. I dati restano dopo
+  # `docker compose down`, spariscono con `down -v`; "Disconnetti da Strava" cancella le attività.
+  db:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_USER: biketr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-biketr}
+      POSTGRES_DB: biketr
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "biketr", "-d", "biketr"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
 
   ollama:
     image: ollama/ollama:0.12.6
@@ -150,5 +177,6 @@ volumes:
   ollama-models:
   auth-data:
   coach-data:
+  db-data:
   phoenix-data:
   web-modules:

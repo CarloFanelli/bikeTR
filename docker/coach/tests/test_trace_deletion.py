@@ -15,7 +15,6 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
 from app import main, tracing
-from app.store import RideStore
 from app.trace_deletion import TraceDeletion
 from fakes import nanoseconds, project_of, quick_sleep
 from test_workout import BODY, SAME_ORIGIN, events_of, make_service, post
@@ -24,11 +23,8 @@ DISCONNECT = datetime(2026, 11, 8, 10, 0, 0, tzinfo=timezone.utc)
 
 
 @pytest.fixture
-def service(monkeypatch, tmp_path):
-    fakes = make_service(monkeypatch, {})
-    # Le corse salvate nella cartella del test: Disconnetti le cancella, mai quelle del volume /data.
-    monkeypatch.setattr(main, "store", RideStore(tmp_path / "rides.json"))
-    return fakes
+def service(monkeypatch):
+    return make_service(monkeypatch, {})
 
 
 def forget(service) -> httpx.Response:

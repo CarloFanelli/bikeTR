@@ -50,8 +50,7 @@ class MadeUpRides:
     def __init__(self, made_up: dict):
         self.now_ms = instant_ms(made_up["now"])
         details = {int(i): ride_details(strava_streams(s)) for i, s in made_up["streams"].items()}
-        self.data = ride_data({"activities": made_up["activities"], "details": details,
-                               "downloaded_at": self.now_ms}, from_saved=False)
+        self.data = ride_data(made_up["activities"], details, self.now_ms, from_saved=False)
 
     async def refresh(self, now_ms: float, progress=None) -> RideData:
         tracing.note_made_up_rides()
