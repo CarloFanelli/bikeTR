@@ -115,6 +115,9 @@ export function muscularFatigueScore(activities: Activity[], daysWindow: number,
   return Math.min(100, Math.round(score));
 }
 
+// Il carico delle attività vere lo calcola il servizio Coach (docker/coach/app/metrics.py) e
+// arriva in `_load`. Questa formula è la sua copia per gli allenamenti simulati del piano:
+// tests/core/load-reference.test.ts fallisce se le due smettono di dare gli stessi numeri.
 // Load di un'attività — cascata di precisione:
 //  0) TSS/hrTSS calcolati da streams (NP vera, time-weighted HR) — MAX precisione
 //  1) TSS approssimato: IF² × hours × 100 (FTP + Weighted Avg Power summary)
@@ -126,6 +129,7 @@ export function muscularFatigueScore(activities: Activity[], daysWindow: number,
 export function activityLoad(
   act: Activity, hrMax: number | null | undefined, hrLthr: number | null | undefined, ftp: number | null | undefined,
 ): number {
+  if (act._load !== undefined) return act._load;
   const w = typeWeight(act);
 
   // Hike/Walk con dislivello significativo: modello specifico

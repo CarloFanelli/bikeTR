@@ -64,6 +64,16 @@ def parse_profile(raw) -> Profile:
                    weekly_days=raw.get("weeklyDays"))
 
 
+def parse_loads_request(body) -> tuple[Profile, list[int]]:
+    """Il profilo e gli id delle attività di cui il browser vuole il carico."""
+    if not isinstance(body, dict):
+        raise CoachError(400, "invalid_request", "Richiesta non valida")
+    ids = body.get("ids")
+    if not isinstance(ids, list) or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):
+        raise CoachError(400, "invalid_request", "Attività richieste non valide")
+    return parse_profile(body.get("profile")), ids
+
+
 def parse_request(body) -> WorkoutRequest:
     """Controlla tutto prima di scaricare corse o chiamare il modello. Il modello lo sceglie
     .env: quello che manda una scheda aperta prima dell'aggiornamento è ignorato."""
