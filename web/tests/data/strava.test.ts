@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthError, getAuthStatus } from '../../src/data/auth.ts';
 import {
-  fetchActivities, fetchActivity, fetchActivityStreams, fetchAthlete, fetchStarredSegments,
+  fetchActivities, fetchActivity, fetchActivityStreams, fetchStarredSegments,
 } from '../../src/data/strava.ts';
 
 interface Seen { url: string; auth: string | null }
@@ -30,22 +30,19 @@ afterEach(() => {
 describe('richieste a Strava', () => {
   it('ogni richiesta chiede un token appena prima di partire e usa quello', async () => {
     const seen = fakeNetwork(() => Response.json({ id: 1 }));
-    await fetchAthlete();
     await fetchActivities(60);
     await fetchActivity(42, { allEfforts: true });
     expect(seen).toEqual([
       { url: '/auth/token', auth: null },
-      { url: 'https://www.strava.com/api/v3/athlete', auth: 'Bearer t1' },
+      { url: 'https://www.strava.com/api/v3/athlete/activities?per_page=60&page=1', auth: 'Bearer t1' },
       { url: '/auth/token', auth: null },
-      { url: 'https://www.strava.com/api/v3/athlete/activities?per_page=60&page=1', auth: 'Bearer t2' },
-      { url: '/auth/token', auth: null },
-      { url: 'https://www.strava.com/api/v3/activities/42?include_all_efforts=true', auth: 'Bearer t3' },
+      { url: 'https://www.strava.com/api/v3/activities/42?include_all_efforts=true', auth: 'Bearer t2' },
     ]);
   });
 
   it('un errore di Strava nomina la richiesta e il codice HTTP', async () => {
     fakeNetwork(() => new Response('{}', { status: 404 }));
-    await expect(fetchAthlete()).rejects.toThrow('API /athlete: 404');
+    await expect(fetchActivities(60)).rejects.toThrow('API /athlete/activities?per_page=60&page=1: 404');
     await expect(fetchActivityStreams(7)).rejects.toThrow('streams 7: 404');
   });
 
@@ -87,7 +84,7 @@ describe('richieste a Strava', () => {
       seen.push(url);
       return Response.json({ error: 'not_connected' }, { status: 401 });
     });
-    const err = await fetchAthlete().catch((e: unknown) => e);
+    const err = await fetchActivities(60).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(AuthError);
     expect(err).toMatchObject({ code: 'not_connected', message: 'Non connesso a Strava.' });
     expect(seen).toEqual(['/auth/token']);
@@ -98,7 +95,7 @@ describe('richieste a Strava', () => {
       if (url.startsWith('https')) throw new Error('Strava non andava chiamato');
       return new Response('<html>502 Bad Gateway</html>', { status: 502 });
     });
-    await expect(fetchAthlete()).rejects.toMatchObject({
+    await expect(fetchActivities(60)).rejects.toMatchObject({
       code: 'unreachable',
       message: 'Server di autenticazione non raggiungibile. Controlla i log con: docker compose logs auth',
     });

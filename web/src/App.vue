@@ -29,11 +29,21 @@ const phone = computed(() => width.value < 768);
     <VMain :class="section">
       <VContainer fluid>
         <VAlert v-if="session.notice" type="error" variant="tonal" class="mb-4" closable>{{ session.notice }}</VAlert>
+        <VAlert
+          v-if="session.phase === 'ready' && session.syncNotice"
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+          closable
+          @click:close="session.syncNotice = null"
+        >
+          {{ session.syncNotice }}
+        </VAlert>
         <LoadingPlaceholder v-if="session.phase === 'loading'" />
         <ConnectScreen v-else-if="session.phase === 'connect'" :missing="session.missing" />
         <ErrorNotice
           v-else-if="session.phase === 'error'"
-          summary="Non riesco a scaricare i tuoi dati da Strava. Le sezioni restano vuote finché il download non riesce."
+          summary="Non riesco a leggere i tuoi dati. Le sezioni restano vuote finché la lettura non riesce."
           :detail="session.error"
           retry
           @retry="startSession"

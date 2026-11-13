@@ -1,15 +1,15 @@
 <script setup lang="ts">
 // Barra in alto: le sei sezioni, quella aperta nel suo colore (sotto 768 px stanno nella barra
 // in basso, e Libreria passa nel menu dell'atleta), l'avanzamento dell'export su ogni schermata
-// e il menu dell'atleta con Impostazioni, export e tema.
-import { mdiClose, mdiCogOutline, mdiDownload } from '@mdi/js';
+// e il menu dell'atleta con "Aggiorna da Strava", Impostazioni, export e tema.
+import { mdiClose, mdiCogOutline, mdiDownload, mdiRefresh } from '@mdi/js';
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useDisplay, useTheme } from 'vuetify';
 import {
   VAppBar, VAvatar, VBtn, VBtnToggle, VChip, VDivider, VList, VListItem, VMenu, VProgressCircular,
 } from 'vuetify/components';
-import { exportJob } from '../app/jobs.ts';
+import { exportJob, refreshFromStrava, syncJob } from '../app/jobs.ts';
 import { SECTIONS, sectionOf } from '../app/sections.ts';
 import type { Athlete } from '../core/strava-types.ts';
 import { loadThemeChoice, saveThemeChoice, type ThemeChoice } from '../data/storage.ts';
@@ -95,6 +95,19 @@ const exportOpen = ref(false);
       <VList min-width="260" max-width="320">
         <VListItem :title="name" subtitle="Collegato a Strava" class="account-name" />
         <VDivider />
+        <VListItem
+          :prepend-icon="mdiRefresh"
+          title="Aggiorna da Strava"
+          :subtitle="syncJob.running ? 'Aggiornamento in corso…' : syncJob.result"
+          :disabled="syncJob.running"
+          :class="{ 'sync-error': syncJob.error }"
+          min-height="48"
+          @click="refreshFromStrava"
+        >
+          <template v-if="syncJob.running" #append>
+            <VProgressCircular indeterminate size="20" width="2" />
+          </template>
+        </VListItem>
         <VListItem v-if="compact && LIBRARY" :to="LIBRARY.to" :prepend-icon="LIBRARY.icon" :title="LIBRARY.title" min-height="48" />
         <VListItem to="/impostazioni" :prepend-icon="mdiCogOutline" title="Impostazioni" min-height="48" />
         <VListItem :prepend-icon="mdiDownload" title="Esporta allenamenti" min-height="48" @click="exportOpen = true" />
@@ -127,6 +140,15 @@ const exportOpen = ref(false);
   font-weight: 600;
   letter-spacing: -0.02em;
   text-decoration: none;
+}
+
+/* Il risultato di "Aggiorna da Strava", anche lungo, va a capo; un errore in rosso. */
+:deep(.v-list-item-subtitle) {
+  white-space: normal;
+}
+.sync-error :deep(.v-list-item-subtitle) {
+  color: rgb(var(--v-theme-error));
+  opacity: 1;
 }
 
 /* Il nome intero, anche lungo, va a capo invece di tagliarsi. */
