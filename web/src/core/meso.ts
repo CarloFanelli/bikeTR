@@ -199,7 +199,8 @@ export function getWeekRoleInBlock(
 
 // Il mesociclo di oggi a partire da quello salvato: alla prima apertura sceglie il blocco
 // dal deficit del power profile, a blocco finito passa al successivo. `changed` dice se va
-// salvato: solo in questi due casi (la settimana nel blocco calcolata qui non si salva).
+// salvato: in questi due casi e quando inizia una nuova settimana del blocco, così piano e
+// banner leggono la settimana di oggi.
 // Un mesociclo salvato senza storico dei blocchi fa lanciare un errore a fine blocco.
 export function nextMesocycle(
   stored: Mesocycle | null, activities: Activity[], settings: { weight?: number } | null | undefined, now: Date,
@@ -241,7 +242,7 @@ export function nextMesocycle(
       changed: true,
     };
   }
-  return { meso: { ...stored, weekInBlock: weeksSinceStart }, changed: false };
+  return { meso: { ...stored, weekInBlock: weeksSinceStart }, changed: stored.weekInBlock !== weeksSinceStart };
 }
 
 export function deficitToBlock(deficit: string | null | undefined): string {

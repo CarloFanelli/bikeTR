@@ -6,6 +6,7 @@
 import { mdiBike, mdiCalendarMonthOutline, mdiCalendarText } from '@mdi/js';
 import { computed, ref } from 'vue';
 import { VBtn, VCard, VCardText } from 'vuetify/components';
+import { session, updateMesocycle } from '../app/session.ts';
 import { attempt, todayAdvice, trainingContext } from '../app/today.ts';
 import CardHeading from '../components/CardHeading.vue';
 import ErrorNotice from '../components/ErrorNotice.vue';
@@ -20,12 +21,21 @@ import { buildMonthPlan } from '../core/plan/month.ts';
 import { adviceRows, loadChartView, restCalendar } from '../core/training-view.ts';
 import { cycleDayState } from '../data/storage.ts';
 
+// L'app può restare aperta oltre la fine di una settimana: aprendo Allenamento il piano parte
+// dalla settimana del blocco di oggi.
+updateMesocycle(session.activities);
+
 // Cambia a ogni giorno segnato: il piano si ricalcola con i giorni salvati.
 const marks = ref(0);
+const markError = ref('');
 
-function cycle(iso: string): void {
-  cycleDayState(iso);
+async function cycle(iso: string): Promise<void> {
+  const saving = cycleDayState(iso);
   marks.value++;
+  const answer = await saving;
+  markError.value = answer.ok ? '' : answer.msg;
+  // Non salvato: il giorno torna com'era.
+  if (!answer.ok) marks.value++;
 }
 
 const view = computed(() => {
@@ -99,7 +109,15 @@ const rowsOf = (metrics: Parameters<typeof adviceRows>[0]) => adviceRows(metrics
 
       <VCard class="calendar">
         <CardHeading :icon="mdiCalendarMonthOutline" class="px-4 pt-4 pb-2"><InfoLabel :topic="TRAINING_EXPLANATIONS.calendar" /></CardHeading>
-        <VCardText><RestCalendar :weeks="view.calendar" @cycle="cycle" /></VCardText>
+        <VCardText>
+          <ErrorNotice
+            v-if="markError"
+            summary="Il giorno non è stato salvato: il calendario mostra quelli salvati."
+            :detail="markError"
+            class="mb-3"
+          />
+          <RestCalendar :weeks="view.calendar" @cycle="cycle" />
+        </VCardText>
       </VCard>
     </div>
 
