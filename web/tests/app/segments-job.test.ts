@@ -12,7 +12,7 @@ vi.mock('../../src/data/segments.ts', async (original) => ({
 }));
 vi.mock('../../src/data/storage.ts', async (original) => ({
   ...await original<typeof import('../../src/data/storage.ts')>(),
-  clearSegmentCache: vi.fn(),
+  clearSegmentCache: vi.fn(async () => ({ ok: true, value: null })),
 }));
 
 const diag = { totalStarred: 1, withEfforts: 1, noEfforts: 0, errors: [], fromCache: 0, fetched: 1 };
@@ -61,9 +61,9 @@ describe('previsioni sui segmenti', () => {
 
   it('"Svuota cache e ricarica" svuota e scarica di nuovo, non mentre carica', async () => {
     clearSegmentsAndReload();
+    await vi.waitFor(() => expect(loadSegmentPredictions).toHaveBeenCalledTimes(1));
     await vi.waitFor(() => expect(segmentsJob.loading).toBe(false));
     expect(clearSegmentCache).toHaveBeenCalledTimes(1);
-    expect(loadSegmentPredictions).toHaveBeenCalledTimes(1);
 
     const slow = pending<never>();
     vi.mocked(loadSegmentPredictions).mockReturnValue(slow.promise);
