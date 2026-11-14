@@ -54,10 +54,13 @@ def test_a_coach_screen_request_leaves_one_trace_with_its_steps_in_order(service
     events = events_of(post(service, BODY))
     assert events[-1]["type"] == "result"
     spans = sorted(phoenix.spans(), key=lambda s: s.start_time)
-    root, *steps = spans
+    root, *inner = spans
+    steps = [s for s in inner if s.parent.span_id == root.context.span_id]
     assert [s.name for s in steps] == STEPS
     assert {s.context.trace_id for s in spans} == {root.context.trace_id}
-    assert all(s.parent.span_id == root.context.span_id for s in steps)
+    # Il resto sono i giri del modello, dentro la loro bozza: uno solo, senza ricerche.
+    (turn,) = [s for s in inner if s not in steps]
+    assert (turn.name, turn.parent.span_id) == ("turn", by_name(steps)["draft"].context.span_id)
     assert all(s.end_time >= s.start_time for s in spans)
     assert root.name == "coach-screen"
     assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "coach-screen",
@@ -106,7 +109,7 @@ def test_the_model_step_holds_what_was_sent_and_answered(provider, phoenix):
     case = CASE["allowed-answer"]
     fake = FAKES[provider](case["answer"])
     result = run_traced(case, fake)[-1]
-    model = step_of(phoenix, "draft").attributes
+    model = step_of(phoenix, "turn").attributes
     assert model["openinference.span.kind"] == "LLM"
     assert (model["llm.provider"], model["llm.model_name"]) == (provider, fake.chat.model)
     messages = [{"role": model[f"llm.input_messages.{i}.message.role"],
@@ -129,7 +132,7 @@ def test_the_model_step_never_holds_the_cloud_key(phoenix):
     fake = FakeCloud(case["answer"])
     run_traced(case, fake)
     spans = phoenix.spans()
-    assert len(spans) == 7
+    assert len(spans) == 8
     for span in spans:
         assert not any(fake.chat.key in str(v) for v in span.attributes.values())
 
@@ -140,7 +143,7 @@ def test_an_answer_cut_off_at_the_token_limit_is_recorded_as_cut_off(provider, p
     fake = FAKES[provider](case["answer"])
     fake.done_reason = fake.finish_reason = "length"
     run_traced(case, fake)
-    assert step_of(phoenix, "draft").attributes["coach.truncated"] is True
+    assert step_of(phoenix, "turn").attributes["coach.truncated"] is True
 
 
 def test_tokens_and_cost_the_provider_does_not_report_stay_unknown(phoenix):
@@ -148,7 +151,7 @@ def test_tokens_and_cost_the_provider_does_not_report_stay_unknown(phoenix):
     fake = FakeCloud(case["answer"])
     fake.usage = None
     run_traced(case, fake)
-    model = step_of(phoenix, "draft").attributes
+    model = step_of(phoenix, "turn").attributes
     assert not {"llm.token_count.prompt", "llm.token_count.completion", "llm.cost.total"} & set(model)
 
 
@@ -187,9 +190,8 @@ def test_two_tabs_at_the_same_time_leave_two_separate_traces(phoenix):
     roots = [s for s in spans if s.parent is None]
     assert sorted(r.attributes["coach.minutes"] for r in roots) == [60, 90]
     for root in roots:
-        steps = [s for s in spans if s.parent is not None and s.context.trace_id == root.context.trace_id]
+        steps = [s for s in spans if s.parent is not None and s.parent.span_id == root.context.span_id]
         assert sorted(s.name for s in steps) == sorted(STEPS)
-        assert all(s.parent.span_id == root.context.span_id for s in steps)
 
 
 # --- Richieste fallite e fermate ---------------------------------------------------------
@@ -264,11 +266,11 @@ def test_stop_after_the_provider_accepted_is_stopped_with_the_partial_answer_and
     asyncio.run(go())
     spans = by_name(phoenix.spans())
     assert spans["coach-screen"].attributes["coach.stopped"] is True
-    model = spans["draft"].attributes
+    model = spans["turn"].attributes
     assert model["coach.stopped"] is True
     assert model["output.value"].startswith("bla ")
     assert model["coach.charged"] == pytest.approx(CEILING["cloud"])
-    assert failed(spans["coach-screen"]) is None and failed(spans["draft"]) is None
+    assert failed(spans["coach-screen"]) is None and failed(spans["turn"]) is None
 
 
 def test_stop_before_the_provider_accepted_is_stopped_with_nothing_charged(monkeypatch, phoenix):
@@ -283,14 +285,14 @@ def test_stop_before_the_provider_accepted_is_stopped_with_nothing_charged(monke
                     await asyncio.sleep(0.01)
             await asyncio.to_thread(root_of, phoenix)
     asyncio.run(go())
-    model = step_of(phoenix, "draft").attributes
+    model = step_of(phoenix, "turn").attributes
     assert (model["coach.stopped"], model["coach.charged"]) == (True, 0)
 
 
 def test_an_ollama_answer_charges_nothing_to_the_cloud_total(phoenix):
     case = CASE["allowed-answer"]
     run_traced(case, FakeOllama(case["answer"]))
-    assert "coach.charged" not in step_of(phoenix, "draft").attributes
+    assert "coach.charged" not in step_of(phoenix, "turn").attributes
 
 
 # --- Phoenix che non risponde ------------------------------------------------------------
@@ -375,6 +377,25 @@ def test_each_model_search_is_a_step_of_its_draft_with_text_passages_and_duratio
     assert [(step[f"retrieval.documents.{i}.document.id"], step[f"retrieval.documents.{i}.document.content"],
              step[f"retrieval.documents.{i}.document.score"]) for i in range(len(given))] == given
     assert all(s.end_time >= s.start_time for s in searches)
+
+
+def test_each_turn_of_a_draft_is_its_own_model_step_and_their_tokens_add_up_to_the_draft(phoenix):
+    case = CASE["allowed-answer"]
+    fake = FakeCloud([asks("polarized recovery"), case["answer"]])
+    fake.chat = dataclasses.replace(fake.chat, search_mode="model")
+    (draft,) = run_traced(case, fake)[-1]["drafts"]
+    spans = sorted(phoenix.spans(), key=lambda s: s.start_time)
+    (draft_step,) = [s for s in spans if s.name == "draft"]
+    turns = [s for s in spans if s.name == "turn"]
+    assert [s.parent.span_id for s in turns] == [draft_step.context.span_id] * 2
+    first, second = (t.attributes for t in turns)
+    assert all(t["openinference.span.kind"] == "LLM" for t in (first, second))
+    # Il secondo giro rilegge la ricerca del primo: ognuno tiene i suoi messaggi, non quelli dell'altro.
+    assert "llm.input_messages.2.message.role" not in first and "llm.input_messages.3.message.role" in second
+    assert first["llm.token_count.prompt"] + second["llm.token_count.prompt"] == draft["inputTokens"]
+    assert first["llm.token_count.completion"] + second["llm.token_count.completion"] == draft["outputTokens"]
+    assert first["llm.cost.total"] + second["llm.cost.total"] == pytest.approx(draft["cost"])
+    assert first["coach.charged"] + second["coach.charged"] == pytest.approx(draft["cost"])
 
 
 def test_the_request_trace_names_its_search_mode_and_that_mode_s_prompt_version(phoenix):

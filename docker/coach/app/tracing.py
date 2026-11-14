@@ -38,7 +38,7 @@ SEND_TIMEOUT = 1
 KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
 # Il tipo di passo per Phoenix: la ricerca dei paper e la chiamata al modello hanno una vista loro.
 KINDS = {"papers": OpenInferenceSpanKindValues.RETRIEVER, "search": OpenInferenceSpanKindValues.RETRIEVER,
-         "draft": OpenInferenceSpanKindValues.LLM}
+         "turn": OpenInferenceSpanKindValues.LLM}
 JSON = OpenInferenceMimeTypeValues.JSON.value
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -151,8 +151,8 @@ def request(minutes: int, situation: str | None = None, repeat: int | None = Non
 
 @contextmanager
 def step(name: str):
-    """Un passo della richiesta, con la sua durata: rides, metrics, papers, draft (con dentro ogni search
-    chiesta dal modello), check o deliver."""
+    """Un passo della richiesta, con la sua durata: rides, metrics, papers, draft (con dentro ogni turn
+    del modello e ogni search che ha chiesto), check o deliver."""
     with _span(name, {KIND: KINDS.get(name, OpenInferenceSpanKindValues.CHAIN).value}):
         yield
 

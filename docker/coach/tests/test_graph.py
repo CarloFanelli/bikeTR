@@ -106,9 +106,10 @@ def test_a_three_draft_request_leaves_three_draft_and_three_check_steps_in_its_t
     asyncio.run(go())
     spans = sorted(phoenix.spans(), key=lambda s: s.start_time)
     assert [s.name for s in spans if s.parent is not None] == [
-        "rides", "metrics", "papers", "draft", "check", "draft", "check", "draft", "check", "deliver"]
+        "rides", "metrics", "papers", "draft", "turn", "check", "draft", "turn", "check", "draft", "turn", "check",
+        "deliver"]
     checks = [s.attributes for s in spans if s.name == "check"]
     assert [(c["coach.check.attempt"], c["coach.check.ok"], tuple(c["coach.check.causes"])) for c in checks] == [
         (1, False, ("unreadable",)), (2, False, ("not_in_catalog",)), (3, True, ())]
-    assert all(s.parent.span_id == spans[0].context.span_id for s in spans[1:])
+    assert all(s.parent.span_id == spans[0].context.span_id for s in spans[1:] if s.name != "turn")
 

@@ -135,7 +135,6 @@ CAUSE_PHRASES = {
     "too_long": "Il protocollo scelto non entra nei minuti",
     "not_allowed": "Il protocollo scelto non è ammesso oggi",
     "invented": "La risposta cita passaggi non forniti",
-    "spending_cap": "Tetto di spesa raggiunto",
 }
 
 

@@ -151,6 +151,13 @@ class Turn:
 
 
 async def model_turn(r: Request, messages: list, tools: list | None) -> Turn:
+    """Un giro del modello, con un passo suo nella traccia: i giri di una bozza restano tutti, ognuno
+    con i suoi messaggi, token e costo."""
+    with tracing.step("turn"):
+        return await _model_turn(r, messages, tools)
+
+
+async def _model_turn(r: Request, messages: list, tools: list | None) -> Turn:
     answer, calls, end, accepted = [], [], ChatEnd(None, None, False), False
     chat = r.chat
     try:
