@@ -108,10 +108,12 @@ def stream(chat: ChatSettings, chat_client: httpx.AsyncClient, messages: list, t
     poi ChatEnd (app/chat.py). Gli strumenti si offrono solo quando ci sono."""
     if chat.provider == "ollama":
         return ollama.chat_stream(chat_client, chat.model, messages, tools)
-    return cloud.chat_stream(chat_client, chat.model, messages, chat.key)
+    return cloud.chat_stream(chat_client, chat.model, messages, chat.key, tools)
 
 
 def tool_turn(chat: ChatSettings, text: str, calls: list, answers: list[str]) -> list[dict]:
     """I messaggi di un giro con strumenti, nel formato del provider: la richiesta del modello, poi
     la risposta a ogni strumento chiesto, nell'ordine."""
-    return ollama.tool_turn(text, calls, answers)
+    if chat.provider == "ollama":
+        return ollama.tool_turn(text, calls, answers)
+    return cloud.tool_turn(text, calls, answers)

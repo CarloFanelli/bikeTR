@@ -186,6 +186,18 @@ def test_cloud_run_whose_worst_case_exceeds_what_is_left_does_not_start(fakes, t
     assert "Il costo massimo supera quanto resta sotto il tetto" in capsys.readouterr().err
 
 
+def test_cloud_run_in_model_search_mode_counts_every_turn_a_draft_can_make(fakes, tmp_path, cloud_spending,
+                                                                          cloud_env, two_situations, capsys,
+                                                                          monkeypatch):
+    monkeypatch.setenv("COACH_SEARCH_MODE", "model")
+    code, files = evaluate(tmp_path, cloud_spending, two_situations)
+    # Ogni bozza fino a 6 giri del modello: 3 ricerche e 3 richieste rifiutate. Non sta sotto il tetto.
+    assert (code, files, fakes["cloud"].requests) == (2, [], [])
+    assert capsys.readouterr().out.splitlines()[0] == (
+        "Costo massimo: $3.0240 per 2 risposte, fino a 3 bozze ciascuna di al massimo 6 giri del modello; "
+        "restano $1.0000 sotto il tetto.")
+
+
 def test_cloud_run_whose_worst_case_is_exactly_what_is_left_starts(fakes, tmp_path, cloud_spending, cloud_env,
                                                                    two_situations):
     cloud_spending.add(1 - 2 * 3 * CEILING_COST)

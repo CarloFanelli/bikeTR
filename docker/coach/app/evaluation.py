@@ -42,12 +42,15 @@ from app.spending import SPENDING_FILE, Prices, Spending, charge
 RESULTS_DIR = Path("/project/eval-runs")
 
 
-def affordable(prices: Prices, answers: int, spending: Spending) -> bool:
-    """Stampa il costo massimo della corsa, ogni risposta con tutte le bozze alla stima alta, e dice se
-    sta in quanto resta sotto il tetto. Un totale della spesa illeggibile ferma la corsa (CoachError)."""
-    worst = answers * MAX_DRAFTS * charge(prices, None, None)
+def affordable(prices: Prices, answers: int, spending: Spending, search_mode: str = "fixed") -> bool:
+    """Stampa il costo massimo della corsa, ogni risposta con tutte le bozze alla stima alta (con il modo
+    model ogni bozza con tutti i suoi giri), e dice se sta in quanto resta sotto il tetto. Un totale della
+    spesa illeggibile ferma la corsa (CoachError)."""
+    turns = prompts.MAX_TURNS if search_mode == "model" else 1
+    worst = answers * MAX_DRAFTS * turns * charge(prices, None, None)
     left = prices.limit - spending.total()
-    print(f"Costo massimo: {money(worst)} per {answers} risposte, fino a {MAX_DRAFTS} bozze ciascuna; "
+    each = f" di al massimo {turns} giri del modello" if turns > 1 else ""
+    print(f"Costo massimo: {money(worst)} per {answers} risposte, fino a {MAX_DRAFTS} bozze ciascuna{each}; "
           f"restano {money(max(left, 0))} sotto il tetto.")
     # Al miliardesimo di dollaro: un costo uguale a quanto resta deve bastare, anche quando la
     # virgola mobile lo sbaglia di poco.
@@ -138,7 +141,7 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
         chat = provider.settings()
         spending = spending or Spending(SPENDING_FILE)
         situations = json.loads(situations_file.read_text(encoding="utf-8"))
-        if chat.prices and not affordable(chat.prices, len(situations) * repeat, spending):
+        if chat.prices and not affordable(chat.prices, len(situations) * repeat, spending, chat.search_mode):
             return 2
     except CoachError as e:
         print(f"✗ {e.message}", file=sys.stderr)

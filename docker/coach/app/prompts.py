@@ -44,6 +44,9 @@ Vincoli:
 # Tre frasi del testo fisso cambiano; il resto è lo stesso, carattere per carattere.
 MAX_SEARCHES = 3
 MAX_SEARCH_TEXT = 300
+# I giri del modello che una bozza può fare: ogni giro che chiede strumenti consuma una delle
+# MAX_SEARCHES ricerche o uno degli altrettanti rifiuti, dopo i quali la bozza finisce.
+MAX_TURNS = 2 * MAX_SEARCHES
 MODEL_SEARCH_CHANGES = (
     ("dei paper recuperati qui sotto", "dei paper che trovi con lo strumento search_papers"),
     ("PAPER SCIENTIFICI RECUPERATI (cita SOLO questi passaggi, con la loro etichetta, mai altri):\n<PAPERS_BLOCK>",

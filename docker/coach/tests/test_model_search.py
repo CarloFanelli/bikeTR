@@ -10,7 +10,8 @@ import pytest
 
 from app import papers, prompts
 from app.check import MAX_DRAFTS
-from fakes import INDEX, FakeOllama, FakeSearch, asks
+from app.spending import charge
+from fakes import CLOUD_PRICES, INDEX, FakeCloud, FakeOllama, FakeSearch, asks
 from test_graph import chat_bodies
 from test_workout import CASE, CASES, run_case
 
@@ -27,12 +28,16 @@ def answer(*labels: str) -> str:
                        "passaggiUsati": list(labels)}, ensure_ascii=False)
 
 
-def model_mode(fake: FakeOllama) -> FakeOllama:
+# Quanto fa pagare un giro del finto provider cloud: 900 token letti e 42 scritti.
+TURN_CHARGE = charge(CLOUD_PRICES, 900, 42)
+
+
+def model_mode(fake: FakeOllama | FakeCloud) -> FakeOllama | FakeCloud:
     fake.chat = dataclasses.replace(fake.chat, search_mode="model")
     return fake
 
 
-def run(fake: FakeOllama, finder: FakeSearch | None = None) -> list:
+def run(fake: FakeOllama | FakeCloud, finder: FakeSearch | None = None) -> list:
     return asyncio.run(run_case(CASE_OK, model_mode(fake), finder or FakeSearch(VECTOR)))
 
 
@@ -147,3 +152,51 @@ def test_the_fixed_mode_sends_no_tools_and_the_papers_in_the_prompt():
     (body,) = chat_bodies(fake)
     assert "tools" not in body and "PAPER SCIENTIFICI RECUPERATI" in body["messages"][0]["content"]
 
+
+
+def test_a_cloud_model_searches_and_reads_the_answers_by_the_id_of_its_ask():
+    fake, finder = FakeCloud([asks("polarized recovery"), answer(LABEL)]), FakeSearch(VECTOR)
+    result = run(fake, finder)[-1]
+    assert finder.texts == ["polarized recovery"]
+    first, second = chat_bodies(fake)
+    assert [t["function"]["name"] for t in first["tools"]] == ["search_papers"]
+    asked, replied = second["messages"][2:4]
+    assert asked["tool_calls"] == [{"id": "call_0", "type": "function", "function": {
+        "name": "search_papers", "arguments": json.dumps({"text": "polarized recovery"})}}]
+    assert replied == {"role": "tool", "tool_call_id": "call_0",
+                       "content": "\n\n".join(prompts.paper_entry(p) for p in FOUND)}
+    assert result["fellBack"] is False
+
+
+def test_every_cloud_turn_of_a_draft_is_charged_and_the_draft_sums_them(cloud_spending):
+    result = run(FakeCloud([asks("a"), asks("b"), answer()]))[-1]
+    (draft,) = result["drafts"]
+    assert (draft["inputTokens"], draft["outputTokens"]) == (2700, 126)
+    assert draft["cost"] == pytest.approx(3 * TURN_CHARGE)
+    assert cloud_spending.total() == pytest.approx(3 * TURN_CHARGE)
+
+
+def test_a_turn_without_token_counts_makes_the_cost_unknown():
+    fake = FakeCloud([asks("a"), answer()])
+    fake.usage = None
+    result = run(fake)[-1]
+    assert result["cost"] is None and result["drafts"][0]["cost"] is None
+
+
+def test_with_the_cap_reached_after_a_search_no_turn_starts_and_the_fallback_rules_say_why(cloud_spending):
+    cloud_spending.add(CLOUD_PRICES.limit - TURN_CHARGE / 2)
+    fake = FakeCloud([asks("a"), answer(LABEL)])
+    result = run(fake)[-1]
+    assert len(chat_bodies(fake)) == 1
+    assert result["fellBack"] is True and result["fallbackCause"] == "spending_cap"
+    assert "tetto di spesa" in result["fallbackWarning"]
+    assert result["title"] and result["struttura"]
+
+
+def test_a_cloud_endpoint_refusing_tools_stops_with_the_message_and_the_provider_text():
+    fake = FakeCloud(answer())
+    fake.status, fake.error = 400, {"error": {"message": "tools are not supported by this model"}}
+    with pytest.raises(Exception) as caught:
+        run(fake)
+    message = str(caught.value)
+    assert "COACH_SEARCH_MODE=fixed" in message and "tools are not supported by this model" in message

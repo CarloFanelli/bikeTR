@@ -34,7 +34,10 @@ PLANS = {
     "mute": lambda n: [(3600, None)],                                 # non risponde nemmeno
     # Una prima bozza illeggibile, che il controllo rimanda; la seconda scrive senza fine.
     "retry": lambda n: [(0, "Non è JSON.")] if n == 1 else itertools.repeat((0.05, "bla ")),
+    # Con COACH_SEARCH_MODE=model: il primo giro chiede una ricerca, il secondo scrive senza fine.
+    "search": lambda n: [(0, SEARCH_ASK)] if n == 1 else itertools.repeat((0.05, "bla ")),
 }
+SEARCH_ASK = {"name": "search_papers", "arguments": {"text": "recovery"}}
 # Piani in cui il provider non manda neppure l'inizio della risposta (HTTP 200).
 NO_ANSWER = {"mute"}
 SILENCE = {
@@ -90,7 +93,15 @@ class FakeModelServer:
             writer.close()
 
     @staticmethod
-    def text(cloud: bool, piece: str) -> bytes:
+    def text(cloud: bool, piece: str | dict) -> bytes:
+        if isinstance(piece, dict):
+            if cloud:
+                call = {"index": 0, "id": "call_0", "type": "function",
+                        "function": {"name": piece["name"], "arguments": json.dumps(piece["arguments"])}}
+                chunk = {"choices": [{"index": 0, "delta": {"tool_calls": [call]}, "finish_reason": None}]}
+                return b"data: %s\n\n" % json.dumps(chunk).encode()
+            message = {"role": "assistant", "content": "", "tool_calls": [{"function": piece}]}
+            return json.dumps({"message": message, "done": False}).encode() + b"\n"
         if cloud:
             chunk = {"choices": [{"index": 0, "delta": {"content": piece}, "finish_reason": None}]}
             return b"data: %s\n\n" % json.dumps(chunk).encode()
@@ -265,6 +276,20 @@ def test_closing_during_the_second_draft_stops_the_provider_and_both_drafts_are_
     closed, fake, total = asyncio.run(go())
     assert closed < 5 and fake.asked == ["retry", "retry"] and fake.finished == ["retry"]
     # Senza i token, ogni bozza accettata dal provider costa la stima alta.
+    assert total == pytest.approx(2 * CEILING[kind])
+
+
+@pytest.mark.parametrize("kind", PROVIDERS)
+def test_closing_after_a_model_search_stops_the_provider_and_both_turns_are_charged(monkeypatch, kind):
+    monkeypatch.setenv("COACH_SEARCH_MODE", "model")
+
+    async def go():
+        async with FakeModelServer() as fake, CoachServer(monkeypatch, kind, "search", fake.url) as client:
+            left = await until_first_token(client)
+            return await fake.wait_closed() - left, fake, await spent(2 * CEILING[kind])
+    closed, fake, total = asyncio.run(go())
+    assert closed < 5 and fake.asked == ["search", "search"] and fake.finished == ["search"]
+    # Senza i token, ogni giro accettato dal provider costa la stima alta; dopo Stop nessuna ricerca.
     assert total == pytest.approx(2 * CEILING[kind])
 
 

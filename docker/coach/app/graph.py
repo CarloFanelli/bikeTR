@@ -17,7 +17,7 @@ from langgraph.runtime import Runtime
 
 from app import prompts, provider, tracing
 from app.chat import Accepted, ChatEnd, ModelError, ToolCall
-from app.check import MAX_DRAFTS, check_draft, read_draft, retry_message, retry_step
+from app.check import MAX_DRAFTS, SPENDING_CAP, check_draft, read_draft, retry_message, retry_step
 from app.errors import CoachError
 from app.metrics import coach_context
 from app.spending import Spending, charge, cost
@@ -184,7 +184,9 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
         r.emit(step("draft", retry_step(state["drafts"][-1]["verdict"], attempt), attempt=attempt, of=MAX_DRAFTS))
     messages = messages_for(state, chat.search_mode)
     tools = [prompts.SEARCH_TOOL] if chat.search_mode == "model" else None
-    turns, done, retrieved, searches, refused = [], [], state["retrieved"], 0, 0
+    turns, done, retrieved, searches, refused, capped = [], [], state["retrieved"], 0, 0, False
+    # La bozza che finisce senza risposta: dopo troppi rifiuti, o con il tetto di spesa raggiunto.
+    unanswered = Turn("", [], ChatEnd(None, None, False), None, None)
     with tracing.step("draft"):
         while True:
             turn = await model_turn(r, messages + turns, tools)
@@ -203,9 +205,13 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
                 answers.append(answer)
             turns += provider.tool_turn(chat, turn.text, turn.calls, answers)
             if refused >= prompts.MAX_SEARCHES:
-                turn = Turn("", [], turn.end, None, None)
+                turn = unanswered
                 break
-    draft = {"modelRaw": turn.text, "truncated": turn.end.truncated, "turns": turns,
+            # Con un modello cloud, nessun altro giro a tetto di spesa raggiunto: decide il ripiego.
+            if chat.prices and r.spending.total() >= chat.prices.limit:
+                turn, capped = unanswered, True
+                break
+    draft = {"modelRaw": turn.text, "truncated": turn.end.truncated, "turns": turns, "capped": capped,
              "inputTokens": summed(t.end.input_tokens for t in done),
              "outputTokens": summed(t.end.output_tokens for t in done),
              "cost": summed(t.cost for t in done), "charged": summed(t.charged for t in done)}
@@ -216,7 +222,8 @@ async def check_node(state: State, runtime: Runtime[Request]) -> State:
     *earlier, last = state["drafts"]
     with tracing.step("check"):
         _, chosen = read_draft(last["modelRaw"], last["truncated"])
-        verdict = check_draft(last["modelRaw"], last["truncated"], state["ctx"], state["duration"], state["retrieved"])
+        verdict = (SPENDING_CAP if last["capped"] else
+                   check_draft(last["modelRaw"], last["truncated"], state["ctx"], state["duration"], state["retrieved"]))
         tracing.note_check(len(state["drafts"]), verdict.causes)
     return {"drafts": [*earlier, {**last, "protocolId": chosen, "verdict": verdict}]}
 

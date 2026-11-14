@@ -135,6 +135,8 @@ def fallback_warning(cause: str, chosen: str | None, duration: int) -> str:
         return f"⚠️ La risposta del modello non era leggibile: {by_rules}"
     if cause == "not_in_catalog":
         return f"⚠️ Il modello non ha indicato un protocollo del catalogo: {by_rules}"
+    if cause == "spending_cap":
+        return f"⚠️ Il tetto di spesa cloud è stato raggiunto prima che il modello rispondesse: {by_rules}"
     if cause == "not_allowed":
         return f"⚠️ Il modello ha scelto {PROTOCOLS[chosen].name}, che non è ammesso oggi: {by_rules}"
     return (f"⚠️ Il modello ha scelto {PROTOCOLS[chosen].name}, che richiede almeno {minimum_minutes(chosen)} "

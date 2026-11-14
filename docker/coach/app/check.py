@@ -122,6 +122,11 @@ def check_draft(model_raw: str, truncated: bool, ctx: dict, duration: int, retri
     return Verdict(tuple(causes), tuple(reasons), tuple(invented))
 
 
+# La bozza fermata dal tetto di spesa cloud tra due giri, prima che il modello rispondesse.
+SPENDING_CAP = Verdict(("spending_cap",), ("Il tetto di spesa cloud è stato raggiunto prima della risposta "
+                                           "del modello.",))
+
+
 # Le cause in breve, per la riga del passo sulla schermata Coach.
 CAUSE_PHRASES = {
     "truncated": "La risposta si è interrotta",
@@ -130,6 +135,7 @@ CAUSE_PHRASES = {
     "too_long": "Il protocollo scelto non entra nei minuti",
     "not_allowed": "Il protocollo scelto non è ammesso oggi",
     "invented": "La risposta cita passaggi non forniti",
+    "spending_cap": "Tetto di spesa raggiunto",
 }
 
 

@@ -39,7 +39,7 @@ TABLE_HEADER = ("| Model | Prompt | Rules followed | Rules at first draft | Read
                 "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
 # Le cause del ripiego nelle righe del voto, nell'ordine in cui il controllo le guarda.
 CAUSE_NAMES = {"truncated": "interrotta", "unreadable": "illeggibile", "not_in_catalog": "fuori catalogo",
-               "too_long": "troppo lungo", "not_allowed": "non ammesso oggi"}
+               "too_long": "troppo lungo", "not_allowed": "non ammesso oggi", "spending_cap": "tetto di spesa"}
 
 
 class Refused(Exception):

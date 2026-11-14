@@ -161,7 +161,7 @@ class FakeCloud(Answers):
     di 7 caratteri, poi finish_reason, i token usati (con choices vuoto) e [DONE]; in mezzo un
     commento e una riga "event:", come fanno i provider veri."""
 
-    def __init__(self, answer: str | list[str]):
+    def __init__(self, answer: str | list):
         super().__init__(answer)
         self.chat = ChatSettings("cloud", CLOUD_MODEL, CLOUD_URL, CLOUD_KEY, CLOUD_PRICES)
         self.finish_reason = "stop"
@@ -184,9 +184,20 @@ class FakeCloud(Answers):
             if not self.listed:
                 return httpx.Response(404, json={"error": {"message": "model not found"}})
             return httpx.Response(200, json={"id": CLOUD_MODEL, "object": "model"})
-        events = [{"choices": [{"index": 0, "delta": {"content": p}, "finish_reason": None}]}
-                  for p in pieces(self.next_answer())]
-        events.append({"choices": [{"index": 0, "delta": {}, "finish_reason": self.finish_reason}]})
+        answer, finish = self.next_answer(), self.finish_reason
+        if isinstance(answer, dict):
+            # Come i provider veri: per ogni strumento prima id e nome, poi gli argomenti a pezzi.
+            events, finish = [], "tool_calls"
+            for i, call in enumerate(answer["calls"]):
+                events.append({"choices": [{"index": 0, "finish_reason": None, "delta": {"tool_calls": [
+                    {"index": i, "id": f"call_{i}", "type": "function",
+                     "function": {"name": call["name"], "arguments": ""}}]}}]})
+                events += [{"choices": [{"index": 0, "finish_reason": None, "delta": {"tool_calls": [
+                    {"index": i, "function": {"arguments": p}}]}}]} for p in pieces(json.dumps(call["arguments"]))]
+        else:
+            events = [{"choices": [{"index": 0, "delta": {"content": p}, "finish_reason": None}]}
+                      for p in pieces(answer)]
+        events.append({"choices": [{"index": 0, "delta": {}, "finish_reason": finish}]})
         if self.usage is not None:
             events.append({"choices": [], "usage": self.usage})
         lines = [": commento del provider", "event: message", *(f"data: {json.dumps(e)}" for e in events),
