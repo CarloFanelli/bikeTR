@@ -2,13 +2,13 @@
 feature: tool-calling
 status: DRAFT
 reviewed: 2026-11-14
-head: 548d6284f84415c9fae6e9281d5caffdaed22047
+head: b79dd8658559606b9b04d2eb6c741d3b54ad8401
 ---
 
 # Review — tool-calling
 
-**Scope**: 30 files (diff since the spec's base `cd7bc5ab`; 11 workflow artifacts under `.ai/` excluded)
-**Findings**: 0 must-fix · 1 should-fix · 1 nit
+**Scope**: 5 files changed since the review of `548d6284` (re-verification; 1 workflow artifact under `.ai/` excluded)
+**Findings**: 0 must-fix · 1 should-fix · 0 nit
 
 ## Findings
 
@@ -22,3 +22,8 @@ head: 548d6284f84415c9fae6e9281d5caffdaed22047
 **File**: `docker/coach/app/check.py:138`
 **Issue**: `CAUSE_PHRASES["spending_cap"]` is read only by `retry_step`, which runs only when `after_check` sends a Draft back, and `after_check` (`docker/coach/app/graph.py`) never sends one back once the spending cap is reached, which is the only way a Draft gets that cause.
 **Change**: Remove the `spending_cap` entry from `CAUSE_PHRASES`.
+
+### F-3 · should-fix · convention · The README still puts the model's data on the draft step   [ADDRESSED]
+**File**: `README.md:317`
+**Issue**: the Phoenix step list says the **draft** step holds the chat model, the messages sent, the raw answer, tokens, cost and the dollars charged, but since the fix of F-1 those live on a **turn** step inside each draft (`docker/coach/app/graph.py:156`), so a reader opening a draft step in Phoenix finds none of them.
+**Change**: Reword the **draft** bullet as the step that groups one draft's model turns and searches, and add a **turn** bullet, once per model turn, carrying the list of values the draft bullet lists today.

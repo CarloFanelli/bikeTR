@@ -314,7 +314,8 @@ The rebuild takes each paper from a PubMed search listed in `docker/coach/app/bu
 - **rides**: whether the rides were just downloaded, saved earlier (Strava unreachable) or made up (live check);
 - **papers**: the search sentence and the 4 papers found, with PMID, title and score;
 - **metrics**: the athlete numbers;
-- **draft**, once per draft: the chat model, the exact messages sent, the raw answer (also the part written before **Stop**), the tokens, the cost and the dollars added to the spending total;
+- **draft**, once per draft: groups that draft's model turns and, with `COACH_SEARCH_MODE=model`, its searches;
+- **turn**, inside its draft, once per model turn: the chat model, the exact messages sent, the raw answer (also the part written before **Stop**), the tokens, the cost and the dollars added to the spending total;
 - **check**, once per draft: which try it was and the causes it was sent back for, none when accepted;
 - **deliver**: the protocol the model chose, the one given and the fallback reason.
 
