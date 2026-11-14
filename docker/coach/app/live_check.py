@@ -116,7 +116,8 @@ async def coach_answer(base: dict, chat: provider.ChatSettings, spending: Spendi
     counted = SituationSpending(spending.path)
     result, failure = None, None
     try:
-        with tracing.request(base["duration"], situation=base["situation"], repeat=base.get("repeat")):
+        with tracing.request(base["duration"], situation=base["situation"], repeat=base.get("repeat"),
+                             search_mode=chat.search_mode):
             if chat.prices:
                 counted.check(chat.prices.limit)
             async with provider.client(chat) as chat_client:

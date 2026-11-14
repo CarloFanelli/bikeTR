@@ -113,8 +113,9 @@ def merged(before: list, found: list) -> list:
     return papers
 
 
-async def model_search(call: ToolCall, index: dict, embed: Callable[[str], Awaitable[list]]) -> tuple[str, list]:
-    """Una ricerca chiesta dal modello: la risposta dello strumento e i paper trovati."""
+async def model_search(r: Request, call: ToolCall, index: dict, draft: int, number: int) -> tuple[str, list]:
+    """Una ricerca chiesta dal modello, la `number`-esima della bozza `draft`: la risposta dello
+    strumento e i paper trovati. Una ricerca vera è un passo sulla schermata Coach e nella traccia."""
     if call.name != prompts.SEARCH_TOOL["function"]["name"]:
         return prompts.SEARCH_UNKNOWN_TOOL, []
     arguments = call.arguments
@@ -128,7 +129,11 @@ async def model_search(call: ToolCall, index: dict, embed: Callable[[str], Await
     text = arguments["text"].strip()[:prompts.MAX_SEARCH_TEXT]
     if not text:
         return prompts.SEARCH_EMPTY, []
-    found = await search_papers(index, text, embed)
+    r.emit(step("search", f"Il modello cerca: «{text}» (ricerca {number} di {prompts.MAX_SEARCHES})",
+                search=number, of=prompts.MAX_SEARCHES))
+    with tracing.step("search"):
+        found = await search_papers(index, text, r.embed)
+        tracing.note_search(draft, text, found)
     return "\n\n".join(prompts.paper_entry(p) for p in found) or prompts.SEARCH_NOTHING, found
 
 
@@ -200,7 +205,7 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
                     answers.append(prompts.SEARCH_LIMIT)
                     continue
                 searches += 1
-                answer, found = await model_search(call, state["index"], r.embed)
+                answer, found = await model_search(r, call, state["index"], len(state["drafts"]) + 1, searches)
                 retrieved = merged(retrieved, found)
                 answers.append(answer)
             turns += provider.tool_turn(chat, turn.text, turn.calls, answers)

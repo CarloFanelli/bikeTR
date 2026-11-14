@@ -200,3 +200,24 @@ def test_a_cloud_endpoint_refusing_tools_stops_with_the_message_and_the_provider
         run(fake)
     message = str(caught.value)
     assert "COACH_SEARCH_MODE=fixed" in message and "tools are not supported by this model" in message
+
+
+def search_steps(events: list) -> list[dict]:
+    return [e for e in events if e.get("step") == "search"]
+
+
+def test_each_model_search_is_a_coach_screen_step_with_its_text_and_number():
+    events = run(FakeOllama([asks("polarized recovery"), asks("   ", "<b>threshold</b>"), answer()]))
+    assert search_steps(events) == [
+        {"type": "step", "step": "search", "search": 1, "of": 3,
+         "message": "Il modello cerca: «polarized recovery» (ricerca 1 di 3)"},
+        # La ricerca vuota conta, ma non cerca nulla: nessun passo. Il testo resta com'è, mai markup.
+        {"type": "step", "step": "search", "search": 3, "of": 3,
+         "message": "Il modello cerca: «<b>threshold</b>» (ricerca 3 di 3)"}]
+    # Il passo arriva prima del giro del modello che legge la risposta.
+    assert events.index(search_steps(events)[0]) < next(i for i, e in enumerate(events) if e["type"] == "token")
+
+
+def test_a_long_search_text_shows_cut_to_300_characters():
+    (shown,) = search_steps(run(FakeOllama([asks("y" * 400), answer()])))
+    assert "«" + "y" * 300 + "»" in shown["message"]

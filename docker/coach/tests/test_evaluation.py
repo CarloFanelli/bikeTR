@@ -133,7 +133,8 @@ def test_every_answer_leaves_its_trace_with_situation_and_repeat_and_no_rides_st
         assert root.resource.attributes["openinference.project.name"] == "evaluation"
         assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "evaluation",
                                          "coach.minutes": s["minutes"], "coach.situation": s["name"],
-                                         "coach.repeat": k, "coach.prompt_version": prompts.prompt_version()}
+                                         "coach.repeat": k, "coach.search_mode": "fixed",
+                                         "coach.prompt_version": prompts.prompt_version()}
         assert_steps_from_the_papers(steps)
 
 

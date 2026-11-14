@@ -228,7 +228,8 @@ def test_every_situation_leaves_its_trace_sent_before_the_command_ends(fakes, tm
     for (root, steps), (name, duration) in zip(traces, live_check.SITUATIONS):
         assert root.resource.attributes["openinference.project.name"] == "live-check"
         assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "live-check",
-                                         "coach.minutes": duration, "coach.prompt_version": prompts.prompt_version(),
+                                         "coach.minutes": duration, "coach.search_mode": "fixed",
+                                         "coach.prompt_version": prompts.prompt_version(),
                                          "coach.situation": name}
         names = [s.name for s in steps]
         assert names[:3] == ["rides", "metrics", "papers"] and names[-1] == "deliver"

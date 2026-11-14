@@ -37,7 +37,8 @@ COACH_SCREEN = "coach-screen"
 SEND_TIMEOUT = 1
 KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
 # Il tipo di passo per Phoenix: la ricerca dei paper e la chiamata al modello hanno una vista loro.
-KINDS = {"papers": OpenInferenceSpanKindValues.RETRIEVER, "draft": OpenInferenceSpanKindValues.LLM}
+KINDS = {"papers": OpenInferenceSpanKindValues.RETRIEVER, "search": OpenInferenceSpanKindValues.RETRIEVER,
+         "draft": OpenInferenceSpanKindValues.LLM}
 JSON = OpenInferenceMimeTypeValues.JSON.value
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -129,14 +130,16 @@ def _span(name: str, attributes: dict):
 
 
 @contextmanager
-def request(minutes: int, situation: str | None = None, repeat: int | None = None):
-    """La traccia di una richiesta del Coach: da dove viene (il progetto), i minuti chiesti, la
-    versione del prompt e, per le corse di prova, la situazione e la ripetizione. Il nome dice
+def request(minutes: int, situation: str | None = None, repeat: int | None = None, search_mode: str = "fixed"):
+    """La traccia di una richiesta del Coach: da dove viene (il progetto), i minuti chiesti, il modo di
+    ricerca dei paper, la versione del prompt di quel modo e, per le corse di prova, la situazione e la
+    ripetizione. Il nome dice
     provenienza e situazione ("evaluation · recupero-mezz-ora #2"), così una risposta di un file dei
     risultati si ritrova in Phoenix. I passi aperti dentro il blocco le appartengono."""
     name = _project if situation is None else f"{_project} · {situation}" + (f" #{repeat}" if repeat else "")
     with _span(name, _known({KIND: OpenInferenceSpanKindValues.CHAIN.value, "coach.source": _project,
-                             "coach.minutes": minutes, "coach.prompt_version": prompts.prompt_version(),
+                             "coach.minutes": minutes, "coach.search_mode": search_mode,
+                             "coach.prompt_version": prompts.prompt_version(search_mode),
                              "coach.situation": situation, "coach.repeat": repeat})):
         trace_id = trace.get_current_span().get_span_context().trace_id
         _running.add(trace_id)
@@ -148,7 +151,8 @@ def request(minutes: int, situation: str | None = None, repeat: int | None = Non
 
 @contextmanager
 def step(name: str):
-    """Un passo della richiesta, con la sua durata: rides, metrics, papers, draft, check o deliver."""
+    """Un passo della richiesta, con la sua durata: rides, metrics, papers, draft (con dentro ogni search
+    chiesta dal modello), check o deliver."""
     with _span(name, {KIND: KINDS.get(name, OpenInferenceSpanKindValues.CHAIN).value}):
         yield
 
@@ -188,6 +192,13 @@ def note_papers(query: str, found: list) -> None:
                        document + DocumentAttributes.DOCUMENT_CONTENT: p["title"],
                        document + DocumentAttributes.DOCUMENT_SCORE: s["score"]}
     _note(attributes)
+
+
+def note_search(draft: int, query: str, found: list) -> None:
+    """Una ricerca chiesta dal modello: la bozza in cui l'ha chiesta, il testo e i passaggi trovati,
+    come il passo papers."""
+    _note({"coach.draft": draft})
+    note_papers(query, found)
 
 
 def _messages(prefix: str, messages: list) -> dict:

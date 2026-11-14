@@ -16,7 +16,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
 from app import main, tracing
 from app.trace_deletion import TraceDeletion
-from fakes import nanoseconds, project_of, quick_sleep
+from fakes import asks, nanoseconds, project_of, quick_sleep
 from test_workout import BODY, SAME_ORIGIN, events_of, make_service, post
 
 DISCONNECT = datetime(2026, 11, 8, 10, 0, 0, tzinfo=timezone.utc)
@@ -164,3 +164,15 @@ def test_the_deletion_waits_5_seconds_then_tries_every_10_with_one_line_while_ph
         f"[coach] Phoenix non risponde su {tracing.PHOENIX_URL}: le tracce della schermata Coach si cancellano "
         "appena torna",
         "[coach] Cancellate in Phoenix le tracce della schermata Coach partite prima di Disconnetti"]
+
+
+def test_disconnect_deletes_the_model_search_steps_with_their_coach_screen_trace(monkeypatch, phoenix,
+                                                                                trace_deletion):
+    service = make_service(monkeypatch, {"COACH_SEARCH_MODE": "model"})
+    service.ollama.queue = [asks("recovery")]
+    with service.client:
+        assert events_of(post(service, BODY))[-1]["type"] == "result"
+        assert any(s.name == "search" for s in phoenix.spans())
+        assert forget(service).status_code == 204
+        until(lambda: trace_deletion.pending() is None)
+    assert [s for s in phoenix.spans() if project_of(s) == "coach-screen"] == []

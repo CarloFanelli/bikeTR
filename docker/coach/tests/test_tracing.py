@@ -3,6 +3,7 @@ durata e ciò che il Coach ha visto, mandato e deciso. Phoenix è sostituito da 
 (conftest.py), che tiene le tracce in memoria."""
 
 import asyncio
+import dataclasses
 import json
 import socket
 import threading
@@ -14,11 +15,11 @@ from opentelemetry.trace import StatusCode
 from app import main, papers, prompts, search, tracing
 from app.errors import CoachError
 from app.strava import STRAVA_REFUSED, RideData
-from fakes import CLOUD_KEY, INDEX, REAL_PHOENIX, DownPhoenix, FakeCloud, FakeOllama, FakeRides
+from fakes import CLOUD_KEY, INDEX, REAL_PHOENIX, DownPhoenix, FakeCloud, FakeOllama, FakeRides, asks
 from fixture_data import NOW_MS, RIDES
 from test_cancel import CEILING, SILENCE, CoachServer, FakeModelServer, chat, run_workout, short_silence_client
 from test_cancel import until_first_token
-from test_workout import BODY, CASE, FAKES, events_of, make_service, post, run_case
+from test_workout import BODY, CASE, CASES, FAKES, events_of, make_service, post, run_case
 
 STEPS = ["rides", "metrics", "papers", "draft", "check", "deliver"]
 
@@ -34,6 +35,11 @@ def by_name(spans) -> dict:
 
 def step_of(phoenix, name: str):
     return by_name(phoenix.spans())[name]
+
+
+def fake_vector(case: dict) -> list:
+    """Il vettore che il finto modello di ricerca dà per ogni testo, nel caso."""
+    return CASES["queries"][case["query"]]
 
 
 def run_traced(case: dict, fake, rides=None) -> list:
@@ -55,7 +61,8 @@ def test_a_coach_screen_request_leaves_one_trace_with_its_steps_in_order(service
     assert all(s.end_time >= s.start_time for s in spans)
     assert root.name == "coach-screen"
     assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "coach-screen",
-                                     "coach.minutes": 60, "coach.prompt_version": prompts.prompt_version()}
+                                     "coach.minutes": 60, "coach.search_mode": "fixed",
+                                     "coach.prompt_version": prompts.prompt_version()}
     assert root.resource.attributes["openinference.project.name"] == "coach-screen"
 
 
@@ -348,3 +355,31 @@ def test_with_phoenix_down_the_log_gets_one_line_until_a_trace_gets_through(caps
     provider.shutdown()
     assert capsys.readouterr().out.splitlines() == [
         f"[coach] Phoenix non risponde su {tracing.PHOENIX_URL}: le tracce vanno perse finché non torna"]
+
+
+def test_each_model_search_is_a_step_of_its_draft_with_text_passages_and_duration(phoenix):
+    case = CASE["allowed-answer"]
+    fake = FakeOllama([asks("polarized recovery"), "non è JSON", asks("threshold"), case["answer"]])
+    fake.chat = dataclasses.replace(fake.chat, search_mode="model")
+    run_traced(case, fake)
+    spans = sorted(phoenix.spans(), key=lambda s: s.start_time)
+    drafts = [s for s in spans if s.name == "draft"]
+    searches = [s for s in spans if s.name == "search"]
+    assert [s.parent.span_id for s in searches] == [d.context.span_id for d in drafts]
+    assert [(s.attributes["coach.draft"], s.attributes["input.value"]) for s in searches] == [
+        (1, "polarized recovery"), (2, "threshold")]
+    step = searches[0].attributes
+    assert step["openinference.span.kind"] == "RETRIEVER"
+    given = [(s["label"], p["title"], s["score"]) for p in papers.top_papers(INDEX, fake_vector(case))
+             for s in p["passages"]]
+    assert [(step[f"retrieval.documents.{i}.document.id"], step[f"retrieval.documents.{i}.document.content"],
+             step[f"retrieval.documents.{i}.document.score"]) for i in range(len(given))] == given
+    assert all(s.end_time >= s.start_time for s in searches)
+
+
+def test_the_request_trace_names_its_search_mode_and_that_mode_s_prompt_version(phoenix):
+    with tracing.request(60, search_mode="model"):
+        pass
+    (root,) = phoenix.spans()
+    assert root.attributes["coach.search_mode"] == "model"
+    assert root.attributes["coach.prompt_version"] == prompts.prompt_version("model") != prompts.prompt_version()
