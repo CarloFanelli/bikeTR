@@ -10,9 +10,10 @@
 - **From**: docker-setup (interview, 2026-11-05)
 - **Picked up by**: coach-graph (2026-11-10)
 
-### B-3 · open
+### B-3 · picked-up
 - **What**: Expose Strava, the metrics calculator and the retriever as tools the model calls.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: tool-calling (2026-11-14)
 
 ### B-4 · open
 - **What**: Classify rides as recovery, endurance, intervals or race with a small model, used as input to the graph.
@@ -211,3 +212,11 @@
 ### B-46 · open
 - **What**: The automatic saves made at opening (mesocycle, today's FTP point) wait until the browser's old data has been moved to the server, or a server holding only those saves counts as empty, so a browser without old data opened first cannot cause the real data to be deleted.
 - **From**: data-backend (dev task 05, 2026-11-13)
+
+### B-47 · open
+- **What**: Add ride details and load history to the Evaluation set situations, so tools that read those data can be measured.
+- **From**: tool-calling (interview, 2026-11-14)
+
+### B-48 · open
+- **What**: Give the Chat model tools to open one ride's details (power and heart rate) and the load history, measured with the Evaluation set.
+- **From**: tool-calling (interview, 2026-11-14)

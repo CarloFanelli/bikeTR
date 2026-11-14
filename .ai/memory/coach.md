@@ -73,8 +73,16 @@ The Coach's request as a LangGraph graph: rides, metrics, papers, **Draft**, **C
 _Avoid_: "pipeline" (it has a loop back), "agent" (the model chooses no steps; that is the tool-calling step).
 
 ### Draft
-One answer of the **Chat model** within a Coach request; a request makes at most 3. The Coach screen calls it "tentativo".
+One answer of the **Chat model** within a Coach request; a request makes at most 3. In model **Search mode** it includes the **Model search**es the model asks for while writing it. The Coach screen calls it "tentativo".
 _Avoid_: "retry" for the first one (every request has a first draft), "attempt" in specs (the screen's word only).
+
+### Search mode
+How papers reach a **Draft**, chosen in `.env`: fixed, the code's own search before the Draft (the default), or model, the **Chat model** asking for **Model search**es during it. It applies to the Coach screen, the **Live check** and the **Evaluation set**.
+_Avoid_: "agent mode" (the model still chooses no other step), "RAG mode" (both modes search the same index).
+
+### Model search
+One paper search the **Chat model** asks for within a **Draft**, with a search text it writes; at most 3 per Draft. It returns what the fixed search returns for that text.
+_Avoid_: "tool call" in user-facing text (too technical), "query" alone (the fixed search has one too).
 
 ### Check
 The **Coach graph** node that accepts a **Draft** or sends it back with code-written reasons: unusable answer, protocol not allowed by the **Selection rules** today, or a citation outside the passages given.
