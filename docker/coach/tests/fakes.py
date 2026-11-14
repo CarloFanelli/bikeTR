@@ -78,13 +78,22 @@ def pieces(answer: str) -> list[str]:
 
 class Answers:
     """Le risposte del modello finto: una lista dà una risposta per chiamata, nell'ordine, e
-    l'ultima per le chiamate dopo; un testo solo vale per ogni chiamata."""
+    l'ultima per le chiamate dopo; un testo solo vale per ogni chiamata. Una risposta fatta con
+    asks(...) non è testo ma la richiesta di uno o più strumenti."""
 
-    def __init__(self, answer: str | list[str]):
+    def __init__(self, answer: str | list):
         *self.queue, self.answer = [answer] if isinstance(answer, str) else answer
 
-    def next_answer(self) -> str:
+    def next_answer(self) -> str | dict:
         return self.queue.pop(0) if self.queue else self.answer
+
+
+def asks(*texts: str, name: str = "search_papers", arguments: dict | None = None) -> dict:
+    """Una risposta del modello finto che chiede strumenti: una ricerca per ogni testo, oppure, con
+    `arguments`, una chiamata sola con quegli argomenti."""
+    calls = [{"name": name, "arguments": arguments}] if arguments is not None else \
+        [{"name": name, "arguments": {"text": t}} for t in texts]
+    return {"calls": calls}
 
 
 def drafts_per_answer(bodies: list[dict]) -> list[int]:
@@ -103,12 +112,12 @@ class FakeOllama(Answers):
     """Risponde come Ollama: la risposta del modello a pezzi di 7 caratteri, poi l'ultimo
     pezzo con done, i token letti e scritti e il motivo della fine."""
 
-    def __init__(self, answer: str | list[str], model: str = "qwen2.5:7b"):
+    def __init__(self, answer: str | list, model: str = "qwen2.5:7b"):
         super().__init__(answer)
         self.chat = ChatSettings("ollama", model, "http://ollama:11434")
         self.done_reason = "stop"
         self.requests = []
-        self.status = 200
+        self.status, self.error = 200, "qualcosa non va"
         self.down = False
         self.installed = [model]
 
@@ -120,8 +129,13 @@ class FakeOllama(Answers):
         body = json.loads(request.content)
         self.requests.append((request.url.path, body))
         if self.status != 200:
-            return httpx.Response(self.status, json={"error": "qualcosa non va"})
-        lines = [{"message": {"role": "assistant", "content": p}, "done": False} for p in pieces(self.next_answer())]
+            return httpx.Response(self.status, json={"error": self.error})
+        answer = self.next_answer()
+        if isinstance(answer, dict):
+            lines = [{"message": {"role": "assistant", "content": "",
+                                  "tool_calls": [{"function": c} for c in answer["calls"]]}, "done": False}]
+        else:
+            lines = [{"message": {"role": "assistant", "content": p}, "done": False} for p in pieces(answer)]
         lines.append({"message": {"role": "assistant", "content": ""}, "done": True,
                       "done_reason": self.done_reason, "prompt_eval_count": 900, "eval_count": 42})
         return httpx.Response(200, content="".join(json.dumps(x) + "\n" for x in lines).encode())

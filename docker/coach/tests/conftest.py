@@ -22,7 +22,7 @@ from fakes import FakePhoenix, quick_sleep
 
 @pytest.fixture(autouse=True)
 def default_chat_settings(monkeypatch):
-    for name in ("COACH_PROVIDER", "OLLAMA_CHAT_MODEL", *provider.CLOUD_SETTINGS):
+    for name in ("COACH_PROVIDER", "OLLAMA_CHAT_MODEL", "COACH_SEARCH_MODE", *provider.CLOUD_SETTINGS):
         monkeypatch.delenv(name, raising=False)
 
 

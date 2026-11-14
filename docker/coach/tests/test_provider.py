@@ -72,3 +72,18 @@ def test_a_price_or_limit_that_is_not_a_number_of_dollars_is_refused(monkeypatch
         settings(monkeypatch, **{**CLOUD_ENV, name: raw})
     assert (e.value.code, e.value.message) == (
         "invalid_settings", f'{name} in .env vale "{raw}": serve un numero di dollari, 0 o più, con il punto per i decimali')
+
+
+def test_the_search_mode_is_fixed_unless_env_says_model(monkeypatch):
+    assert provider.settings().search_mode == "fixed"
+    monkeypatch.setenv("COACH_SEARCH_MODE", "")
+    assert provider.settings().search_mode == "fixed"
+    monkeypatch.setenv("COACH_SEARCH_MODE", " Model ")
+    assert provider.settings().search_mode == "model"
+
+
+def test_an_unknown_search_mode_names_the_setting_and_its_two_values(monkeypatch):
+    monkeypatch.setenv("COACH_SEARCH_MODE", "tools")
+    with pytest.raises(CoachError) as e:
+        provider.settings()
+    assert e.value.message == 'COACH_SEARCH_MODE in .env vale "tools": i valori ammessi sono fixed e model'

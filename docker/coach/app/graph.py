@@ -6,6 +6,7 @@ dai paper, con i numeri dell'atleta già pronti.
 Lo stato del grafo tiene solo dati; quello che serve a una richiesta sola (gli eventi per il
 browser, il client del modello, il totale della spesa) arriva nel contesto della corsa del grafo."""
 
+import json
 import time
 from dataclasses import dataclass
 from typing import Awaitable, Callable, TypedDict
@@ -15,13 +16,13 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
 from app import prompts, provider, tracing
-from app.chat import Accepted, ChatEnd, ModelError
+from app.chat import Accepted, ChatEnd, ModelError, ToolCall
 from app.check import MAX_DRAFTS, check_draft, read_draft, retry_message, retry_step
 from app.errors import CoachError
 from app.metrics import coach_context
 from app.spending import Spending, charge, cost
 from app.strava import RideData, StravaRides
-from app.workout import WorkoutRequest, decide, find_papers, step
+from app.workout import WorkoutRequest, decide, find_papers, read_index, search_papers, step
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,9 @@ async def metrics_node(state: State, runtime: Runtime[Request]) -> State:
 
 async def papers_node(state: State, runtime: Runtime[Request]) -> State:
     r = runtime.context
+    if r.chat.search_mode == "model":
+        # I paper li cerca il modello durante la bozza: qui solo l'indice, e nessun paper trovato.
+        return {"started": time.monotonic(), "index": await read_index(r.load_index), "retrieved": [], "drafts": []}
     r.emit(step("papers", "Recupero paper rilevanti…"))
     started = time.monotonic()
     with tracing.step("papers"):
@@ -81,53 +85,131 @@ async def papers_node(state: State, runtime: Runtime[Request]) -> State:
     return {"started": started, "index": index, "retrieved": retrieved, "drafts": []}
 
 
-def messages_for(state: State) -> list[dict]:
+def messages_for(state: State, search_mode: str) -> list[dict]:
     """Il prompt di sistema e i numeri dell'atleta; da una bozza rimandata in poi anche l'ultima
-    risposta del modello e i motivi del controllo."""
-    system = prompts.system_prompt(state["retrieved"], state["ctx"], state["duration"])
+    risposta del modello e i motivi del controllo. Con il modo model ogni bozza precedente, con le
+    sue ricerche: i passaggi trovati restano davanti al modello, che può citarli."""
+    system = prompts.system_prompt(state["retrieved"], state["ctx"], state["duration"], search_mode)
     messages = [{"role": "system", "content": system},
                 {"role": "user", "content": prompts.user_prompt(state["ctx"], state["duration"])}]
-    if state["drafts"]:
-        last = state["drafts"][-1]
-        messages += [{"role": "assistant", "content": last["modelRaw"]},
-                     {"role": "user", "content": retry_message(last["verdict"])}]
+    earlier = state["drafts"] if search_mode == "model" else state["drafts"][-1:]
+    for draft in earlier:
+        messages += [*draft["turns"], {"role": "assistant", "content": draft["modelRaw"]},
+                     {"role": "user", "content": retry_message(draft["verdict"])}]
     return messages
 
 
+def merged(before: list, found: list) -> list:
+    """I paper trovati finora e quelli di una nuova ricerca: un paper trovato di nuovo resta uno,
+    con i suoi passaggi nuovi in fondo."""
+    papers = [{**p, "passages": list(p["passages"])} for p in before]
+    for paper in found:
+        known = next((p for p in papers if p["pmid"] == paper["pmid"]), None)
+        if known is None:
+            papers.append({**paper, "passages": list(paper["passages"])})
+        else:
+            labels = {s["label"] for s in known["passages"]}
+            known["passages"] += [s for s in paper["passages"] if s["label"] not in labels]
+    return papers
+
+
+async def model_search(call: ToolCall, index: dict, embed: Callable[[str], Awaitable[list]]) -> tuple[str, list]:
+    """Una ricerca chiesta dal modello: la risposta dello strumento e i paper trovati."""
+    if call.name != prompts.SEARCH_TOOL["function"]["name"]:
+        return prompts.SEARCH_UNKNOWN_TOOL, []
+    arguments = call.arguments
+    if isinstance(arguments, str):
+        try:
+            arguments = json.loads(arguments)
+        except (ValueError, RecursionError):
+            arguments = None
+    if not isinstance(arguments, dict) or not isinstance(arguments.get("text"), str):
+        return prompts.SEARCH_BAD, []
+    text = arguments["text"].strip()[:prompts.MAX_SEARCH_TEXT]
+    if not text:
+        return prompts.SEARCH_EMPTY, []
+    found = await search_papers(index, text, embed)
+    return "\n\n".join(prompts.paper_entry(p) for p in found) or prompts.SEARCH_NOTHING, found
+
+
+@dataclass
+class Turn:
+    """Un giro del modello dentro una bozza: il testo, gli strumenti chiesti, la fine, il costo e
+    quanto è andato nel totale della spesa."""
+    text: str
+    calls: list
+    end: ChatEnd
+    cost: float | None
+    charged: float | None
+
+
+async def model_turn(r: Request, messages: list, tools: list | None) -> Turn:
+    answer, calls, end, accepted = [], [], ChatEnd(None, None, False), False
+    chat = r.chat
+    try:
+        async for piece in provider.stream(chat, r.chat_client, messages, tools):
+            if isinstance(piece, Accepted):
+                accepted = True
+            elif isinstance(piece, ChatEnd):
+                end = piece
+            elif isinstance(piece, ToolCall):
+                calls.append(piece)
+            else:
+                answer.append(piece)
+                r.emit({"type": "token", "text": piece})
+    except ModelError as e:
+        raise CoachError(502, "model", str(e)) from e
+    finally:
+        model_raw, answer_cost = "".join(answer), cost(chat.prices, end.input_tokens, end.output_tokens)
+        # Anche quando Stop annulla la richiesta: accettata la richiesta, il provider fa pagare
+        # ciò che ha già scritto. Una richiesta rifiutata o mai arrivata non costa nulla.
+        charged = None   # Ollama non costa nulla
+        if chat.prices:
+            charged = charge(chat.prices, end.input_tokens, end.output_tokens) if accepted else 0.0
+            if accepted:
+                r.spending.add(charged)
+        tracing.note_model(chat, messages, model_raw, end, answer_cost, charged)
+    return Turn(model_raw, calls, end, answer_cost, charged)
+
+
 async def draft_node(state: State, runtime: Runtime[Request]) -> State:
+    """Una bozza: un giro del modello; con il modo model, finché il modello chiede ricerche, il Coach
+    risponde e il modello fa un altro giro. Dopo MAX_SEARCHES ricerche le richieste si rifiutano, e
+    dopo altrettanti rifiuti la bozza finisce senza risposta."""
     r, chat = runtime.context, runtime.context.chat
     if not state["drafts"]:
         r.emit(step("model", "Il modello sta scegliendo il protocollo…"))
     else:
         attempt = len(state["drafts"]) + 1
         r.emit(step("draft", retry_step(state["drafts"][-1]["verdict"], attempt), attempt=attempt, of=MAX_DRAFTS))
-    messages = messages_for(state)
-    answer, end, accepted = [], ChatEnd(None, None, False), False
+    messages = messages_for(state, chat.search_mode)
+    tools = [prompts.SEARCH_TOOL] if chat.search_mode == "model" else None
+    turns, done, retrieved, searches, refused = [], [], state["retrieved"], 0, 0
     with tracing.step("draft"):
-        try:
-            async for piece in provider.stream(chat, r.chat_client, messages):
-                if isinstance(piece, Accepted):
-                    accepted = True
-                elif isinstance(piece, ChatEnd):
-                    end = piece
-                else:
-                    answer.append(piece)
-                    r.emit({"type": "token", "text": piece})
-        except ModelError as e:
-            raise CoachError(502, "model", str(e)) from e
-        finally:
-            model_raw, answer_cost = "".join(answer), cost(chat.prices, end.input_tokens, end.output_tokens)
-            # Anche quando Stop annulla la richiesta: accettata la richiesta, il provider fa pagare
-            # ciò che ha già scritto. Una richiesta rifiutata o mai arrivata non costa nulla.
-            charged = None   # Ollama non costa nulla
-            if chat.prices:
-                charged = charge(chat.prices, end.input_tokens, end.output_tokens) if accepted else 0.0
-                if accepted:
-                    r.spending.add(charged)
-            tracing.note_model(chat, messages, model_raw, end, answer_cost, charged)
-    draft = {"modelRaw": model_raw, "truncated": end.truncated, "inputTokens": end.input_tokens,
-             "outputTokens": end.output_tokens, "cost": answer_cost, "charged": charged}
-    return {"drafts": [*state["drafts"], draft]}
+        while True:
+            turn = await model_turn(r, messages + turns, tools)
+            done.append(turn)
+            if not turn.calls or turn.end.truncated:
+                break
+            answers = []
+            for call in turn.calls:
+                if searches >= prompts.MAX_SEARCHES:
+                    refused += 1
+                    answers.append(prompts.SEARCH_LIMIT)
+                    continue
+                searches += 1
+                answer, found = await model_search(call, state["index"], r.embed)
+                retrieved = merged(retrieved, found)
+                answers.append(answer)
+            turns += provider.tool_turn(chat, turn.text, turn.calls, answers)
+            if refused >= prompts.MAX_SEARCHES:
+                turn = Turn("", [], turn.end, None, None)
+                break
+    draft = {"modelRaw": turn.text, "truncated": turn.end.truncated, "turns": turns,
+             "inputTokens": summed(t.end.input_tokens for t in done),
+             "outputTokens": summed(t.end.output_tokens for t in done),
+             "cost": summed(t.cost for t in done), "charged": summed(t.charged for t in done)}
+    return {"drafts": [*state["drafts"], draft], "retrieved": retrieved}
 
 
 async def check_node(state: State, runtime: Runtime[Request]) -> State:
@@ -150,10 +232,15 @@ def after_check(state: State, runtime: Runtime[Request]) -> str:
     return "draft"
 
 
+def summed(values):
+    """La somma; sconosciuta se uno dei valori non è noto."""
+    values = list(values)
+    return None if None in values else sum(values)
+
+
 def total(drafts: list[dict], key: str):
     """La somma di un valore su tutte le bozze; sconosciuta se una bozza non lo conosce."""
-    values = [d[key] for d in drafts]
-    return None if None in values else sum(values)
+    return summed(d[key] for d in drafts)
 
 
 async def deliver_node(state: State, runtime: Runtime[Request]) -> State:

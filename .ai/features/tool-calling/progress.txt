@@ -1,6 +1,6 @@
 # Task Progress - tool-calling
 
-01-model-search-mode: TODO
+01-model-search-mode: DONE
 02-cloud-model-search: TODO
 03-searches-on-screen-traces: TODO
 04-evaluation-by-search-mode: TODO

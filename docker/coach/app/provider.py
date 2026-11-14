@@ -14,6 +14,9 @@ from app.errors import CoachError
 from app.spending import Prices
 
 PROVIDERS = ("ollama", "cloud")
+# Come arrivano i paper alla bozza: fixed, la ricerca del codice prima della bozza; model, le
+# ricerche che il modello chat chiede con lo strumento search_papers.
+SEARCH_MODES = ("fixed", "model")
 CLOUD_SETTINGS = ("CLOUD_URL", "CLOUD_API_KEY", "CLOUD_MODEL", "CLOUD_PRICE_IN", "CLOUD_PRICE_OUT",
                   "CLOUD_SPENDING_LIMIT")
 
@@ -26,6 +29,7 @@ class ChatSettings:
     # Fuori da repr: un errore che stampa le impostazioni non mostra la chiave.
     key: str = field(default="", repr=False)
     prices: Prices | None = None   # None con Ollama: non costa nulla
+    search_mode: str = "fixed"
 
 
 def invalid(message: str) -> CoachError:
@@ -68,29 +72,46 @@ def dollars(name: str) -> float:
     return value
 
 
+def search_mode() -> str:
+    mode = env("COACH_SEARCH_MODE").lower() or "fixed"
+    if mode not in SEARCH_MODES:
+        raise invalid(f'COACH_SEARCH_MODE in .env vale "{env("COACH_SEARCH_MODE")}": i valori ammessi sono '
+                      f'{" e ".join(SEARCH_MODES)}')
+    return mode
+
+
 def settings() -> ChatSettings:
-    """Il modello chat di .env. Senza COACH_PROVIDER: Ollama con OLLAMA_CHAT_MODEL, o qwen2.5:7b."""
+    """Il modello chat di .env, con il modo di ricerca dei paper (COACH_SEARCH_MODE, fixed se manca).
+    Senza COACH_PROVIDER: Ollama con OLLAMA_CHAT_MODEL, o qwen2.5:7b."""
+    mode = search_mode()
     provider = env("COACH_PROVIDER").lower() or "ollama"
     if provider not in PROVIDERS:
         raise invalid(f'COACH_PROVIDER in .env vale "{env("COACH_PROVIDER")}": i valori ammessi sono '
                       f'{" e ".join(PROVIDERS)}')
     if provider == "ollama":
         model = env("OLLAMA_CHAT_MODEL") or ollama.DEFAULT_CHAT_MODEL
-        return ChatSettings("ollama", checked_model(model, "OLLAMA_CHAT_MODEL"), ollama.OLLAMA_URL)
+        return ChatSettings("ollama", checked_model(model, "OLLAMA_CHAT_MODEL"), ollama.OLLAMA_URL, search_mode=mode)
     missing = [name for name in CLOUD_SETTINGS if not env(name)]
     if missing:
         raise invalid(f"Con COACH_PROVIDER=cloud manca in .env: {', '.join(missing)}")
     prices = Prices(dollars("CLOUD_PRICE_IN"), dollars("CLOUD_PRICE_OUT"), dollars("CLOUD_SPENDING_LIMIT"))
     return ChatSettings("cloud", checked_model(env("CLOUD_MODEL"), "CLOUD_MODEL"), checked_url(env("CLOUD_URL")),
-                        env("CLOUD_API_KEY"), prices)
+                        env("CLOUD_API_KEY"), prices, mode)
 
 
 def client(chat: ChatSettings) -> httpx.AsyncClient:
     return ollama.client() if chat.provider == "ollama" else cloud.client(chat.url, chat.key)
 
 
-def stream(chat: ChatSettings, chat_client: httpx.AsyncClient, messages: list):
-    """Accepted, il testo della risposta man mano che arriva, poi ChatEnd (app/chat.py)."""
+def stream(chat: ChatSettings, chat_client: httpx.AsyncClient, messages: list, tools: list | None = None):
+    """Accepted, il testo della risposta man mano che arriva e le richieste di strumenti (ToolCall),
+    poi ChatEnd (app/chat.py). Gli strumenti si offrono solo quando ci sono."""
     if chat.provider == "ollama":
-        return ollama.chat_stream(chat_client, chat.model, messages)
+        return ollama.chat_stream(chat_client, chat.model, messages, tools)
     return cloud.chat_stream(chat_client, chat.model, messages, chat.key)
+
+
+def tool_turn(chat: ChatSettings, text: str, calls: list, answers: list[str]) -> list[dict]:
+    """I messaggi di un giro con strumenti, nel formato del provider: la richiesta del modello, poi
+    la risposta a ogni strumento chiesto, nell'ordine."""
+    return ollama.tool_turn(text, calls, answers)

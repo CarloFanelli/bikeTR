@@ -1,7 +1,7 @@
 """Ciò che Ollama e il provider cloud hanno in comune: il limite di silenzio, l'errore del
 modello e i pezzi della risposta. Ogni provider dà Accepted quando accetta la richiesta, il
-testo man mano che arriva (str), poi un solo ChatEnd; workout.py non conosce i campi di
-Ollama o di OpenAI."""
+testo man mano che arriva (str) e le richieste di strumenti (ToolCall), poi un solo ChatEnd;
+workout.py e graph.py non conoscono i campi di Ollama o di OpenAI."""
 
 from dataclasses import dataclass
 
@@ -37,3 +37,18 @@ class ChatEnd:
 
 def token_count(value) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
+
+
+@dataclass(frozen=True)
+class ToolCall:
+    """Il modello chiede uno strumento: l'id che il provider gli dà (vuoto se non ne dà), il nome e
+    gli argomenti come il modello li ha scritti (un oggetto, o il testo JSON che lo contiene)."""
+    id: str
+    name: str
+    arguments: object
+
+
+def no_tools(model: str) -> str:
+    """Il messaggio per un modello che non sa chiedere strumenti, con COACH_SEARCH_MODE=model."""
+    return (f"Il modello {model} non sa usare gli strumenti, quindi non può cercare da solo i paper: "
+            "scegli un altro modello chat in .env, o metti COACH_SEARCH_MODE=fixed.")

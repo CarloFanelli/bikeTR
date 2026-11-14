@@ -469,6 +469,14 @@ def test_each_request_uses_the_chat_model_named_in_env(service, monkeypatch):
     assert [body["model"] for _, body in service.ollama.requests] == ["qwen2.5:3b", "llama3:8b"]
 
 
+def test_the_search_mode_named_in_env_reaches_the_request(service, monkeypatch):
+    post(service, BODY)
+    assert "tools" not in service.ollama.requests[-1][1]
+    monkeypatch.setenv("COACH_SEARCH_MODE", "model")
+    post(service, BODY)
+    assert [t["function"]["name"] for t in service.ollama.requests[-1][1]["tools"]] == ["search_papers"]
+
+
 @pytest.mark.parametrize("env,message", [
     ({"COACH_PROVIDER": "cloud"}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_URL, CLOUD_API_KEY, CLOUD_MODEL, "
                                   "CLOUD_PRICE_IN, CLOUD_PRICE_OUT, CLOUD_SPENDING_LIMIT"),
@@ -478,11 +486,13 @@ def test_each_request_uses_the_chat_model_named_in_env(service, monkeypatch):
     ({**CLOUD_ENV, "CLOUD_API_KEY": " "}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_API_KEY"),
     ({**CLOUD_ENV, "CLOUD_URL": ""}, "Con COACH_PROVIDER=cloud manca in .env: CLOUD_URL"),
     ({"COACH_PROVIDER": "claud"}, 'COACH_PROVIDER in .env vale "claud": i valori ammessi sono ollama e cloud'),
+    ({"COACH_SEARCH_MODE": "tools"}, 'COACH_SEARCH_MODE in .env vale "tools": i valori ammessi sono fixed e model'),
     ({"OLLAMA_CHAT_MODEL": "x" * 101},
      "Il nome del modello deve avere al massimo 100 caratteri (OLLAMA_CHAT_MODEL in .env)"),
     ({**CLOUD_ENV, "CLOUD_MODEL": "x" * 101},
      "Il nome del modello deve avere al massimo 100 caratteri (CLOUD_MODEL in .env)"),
-], ids=["cloud-empty", "no-limit", "comma-price", "no-key", "no-url", "misspelled", "long-ollama-model", "long-cloud-model"])
+], ids=["cloud-empty", "no-limit", "comma-price", "no-key", "no-url", "misspelled", "unknown-search-mode",
+        "long-ollama-model", "long-cloud-model"])
 def test_wrong_env_refuses_the_request_before_any_call(monkeypatch, env, message):
     service = make_service(monkeypatch, env)
     res = post(service, BODY)

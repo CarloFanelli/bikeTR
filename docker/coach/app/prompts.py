@@ -4,6 +4,7 @@ e vengono da selection_rules, i protocolli ammessi in fondo alla query, e i pape
 passaggi e chiedono di citarli per etichetta: i test li confrontano con il vecchio codice."""
 
 import hashlib
+import json
 
 from app.jscompat import js_str
 from app.protocols import PROTOCOLS
@@ -39,6 +40,39 @@ Vincoli:
 - Non inventare etichette: usa solo quelle dei passaggi forniti sopra"""
 
 
+# Con COACH_SEARCH_MODE=model il prompt non ha i paper: il modello li cerca con lo strumento search_papers.
+# Tre frasi del testo fisso cambiano; il resto è lo stesso, carattere per carattere.
+MAX_SEARCHES = 3
+MAX_SEARCH_TEXT = 300
+MODEL_SEARCH_CHANGES = (
+    ("dei paper recuperati qui sotto", "dei paper che trovi con lo strumento search_papers"),
+    ("PAPER SCIENTIFICI RECUPERATI (cita SOLO questi passaggi, con la loro etichetta, mai altri):\n<PAPERS_BLOCK>",
+     "PAPER SCIENTIFICI: non sono in questo messaggio. Per trovarli usa lo strumento search_papers con un testo di "
+     f"ricerca in inglese, la lingua dei paper; puoi cercare fino a {MAX_SEARCHES} volte. Cita SOLO i passaggi che le "
+     "ricerche ti restituiscono, con la loro etichetta, mai altri; se non cerchi, non citare nulla."),
+    ("usa solo quelle dei passaggi forniti sopra", "usa solo quelle dei passaggi che le ricerche ti hanno restituito"),
+)
+MODEL_SEARCH_TEMPLATE = SYSTEM_TEMPLATE
+for fixed_text, model_text in MODEL_SEARCH_CHANGES:
+    assert fixed_text in MODEL_SEARCH_TEMPLATE, fixed_text
+    MODEL_SEARCH_TEMPLATE = MODEL_SEARCH_TEMPLATE.replace(fixed_text, model_text)
+
+# Lo strumento offerto al modello, nel formato che Ollama e il provider cloud accettano.
+SEARCH_TOOL = {"type": "function", "function": {
+    "name": "search_papers",
+    "description": "Cerca nell'indice dei paper scientifici i passaggi più vicini al testo dato. Restituisce i "
+                   "paper trovati, ognuno con i suoi passaggi e la loro etichetta da citare.",
+    "parameters": {"type": "object", "required": ["text"], "properties": {
+        "text": {"type": "string", "description": "Il testo da cercare, in inglese, al massimo "
+                                                  f"{MAX_SEARCH_TEXT} caratteri."}}}}}
+# Le risposte dello strumento quando non cerca, o non trova nulla.
+SEARCH_LIMIT = f"Limite raggiunto: hai già fatto {MAX_SEARCHES} ricerche, rispondi ora con il solo JSON."
+SEARCH_EMPTY = "Ricerca vuota: scrivi nel campo text il testo da cercare."
+SEARCH_BAD = "Ricerca non valida: lo strumento vuole un solo campo, text, con il testo da cercare."
+SEARCH_UNKNOWN_TOOL = "Strumento sconosciuto: l'unico strumento è search_papers."
+SEARCH_NOTHING = "Nessun paper trovato per questo testo."
+
+
 # Un paper, una situazione e una durata d'esempio fissi: con loro anche la forma della sezione dei paper
 # entra nella versione del prompt. Quota dura sconosciuta: la regola della ripresa, con i tre giorni Z2.
 VERSION_SAMPLE = {"pmid": "1", "authors": "Autori", "year": "2000", "title": "Titolo.",
@@ -52,27 +86,33 @@ def paper_entry(p: dict) -> str:
     return f"[PMID:{p['pmid']}] {js_str(p['authors'])} {js_str(p['year'])}. {js_str(p['title'])}\n{passages}"
 
 
-def system_prompt(papers: list, ctx: dict, duration: int) -> str:
+def system_prompt(papers: list, ctx: dict, duration: int, search_mode: str = "fixed") -> str:
     """Il prompt di sistema per la situazione di oggi: solo i protocolli che la regola di selezione
-    ammette nei minuti, la regola con la sua fonte, le differenze tra i Z2 ammessi, e i paper."""
+    ammette nei minuti, la regola con la sua fonte, le differenze tra i Z2 ammessi, e i paper; con il
+    modo model, al posto dei paper, come cercarli."""
     rule, allowed = select(ctx, duration)
     protocol_list = "\n".join(f"- {pid}: {PROTOCOLS[pid].name}" for pid in allowed)
     z2 = [f"- {pid}: {Z2_DIFFERENCES[pid]}" for pid in allowed if pid in Z2_DIFFERENCES]
     z2_block = ("\nDIFFERENZE TRA PROTOCOLLI Z2 (quando vuoi un giorno facile):\n" + "\n".join(z2) + "\n") if z2 else ""
     papers_block = "\n\n".join(paper_entry(p) for p in papers)
     # I paper vanno inseriti per ultimi: un passaggio potrebbe contenere "<PROTOCOL_LIST>".
-    return (SYSTEM_TEMPLATE.replace("<PROTOCOL_LIST>", protocol_list)
+    template = MODEL_SEARCH_TEMPLATE if search_mode == "model" else SYSTEM_TEMPLATE
+    return (template.replace("<PROTOCOL_LIST>", protocol_list)
             .replace("<SELECTION_RULES>", rule.sentence(allowed)).replace("<Z2_DIFFERENCES>", z2_block)
             .replace("<PAPERS_BLOCK>", papers_block))
 
 
-def prompt_version() -> str:
+def prompt_version(search_mode: str = "fixed") -> str:
     """Le prime 8 cifre dell'impronta SHA-256 del prompt di sistema d'esempio, di ogni regola di
     selezione e del nome di ogni protocollo: il prompt d'esempio ne mostra solo uno, ma ognuno può
     finire in un prompt. Lo stesso testo dà sempre la stessa versione, due testi diversi mai la stessa
-    (salvo una coincidenza su quattro miliardi). Così i risultati di due prompt non si confondono."""
-    text = "\n".join([system_prompt([VERSION_SAMPLE], VERSION_CONTEXT, VERSION_MINUTES),
-                      *(rule.sentence() for rule in RULES), *(f"{pid}: {p.name}" for pid, p in PROTOCOLS.items())])
+    (salvo una coincidenza su quattro miliardi). Così i risultati di due prompt non si confondono.
+    Con il modo model entrano anche lo strumento e le sue risposte, e il prompt è un altro."""
+    tool = [json.dumps(SEARCH_TOOL, ensure_ascii=False, sort_keys=True), SEARCH_LIMIT, SEARCH_EMPTY, SEARCH_BAD,
+            SEARCH_UNKNOWN_TOOL, SEARCH_NOTHING] if search_mode == "model" else []
+    text = "\n".join([system_prompt([VERSION_SAMPLE], VERSION_CONTEXT, VERSION_MINUTES, search_mode),
+                      *(rule.sentence() for rule in RULES), *(f"{pid}: {p.name}" for pid, p in PROTOCOLS.items()),
+                      *tool])
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:8]
 
 

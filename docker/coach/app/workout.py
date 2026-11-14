@@ -176,13 +176,26 @@ def step(name: str, message: str, **extra) -> dict:
     return {"type": "step", "step": name, "message": message, **extra}
 
 
-async def find_papers(ctx: dict, duration: int, *, embed: Callable[[str], Awaitable[list]],
-                      load_index: Callable[[], Awaitable[dict]]) -> tuple[dict, str, list]:
-    """La ricerca dei paper per un atleta: l'indice letto, il testo di ricerca e i paper più
-    vicini. Un indice rifiutato diventa un errore del Coach, con il messaggio che dice come rimediare."""
+async def read_index(load_index: Callable[[], Awaitable[dict]]) -> dict:
+    """L'indice dei paper; un indice rifiutato diventa un errore del Coach, con il messaggio che dice
+    come rimediare."""
     try:
-        index = await load_index()
-        query = prompts.retrieval_query(ctx, duration)
-        return index, query, papers.top_papers(index, await embed(query))
+        return await load_index()
     except papers.PaperIndexError as e:
         raise CoachError(502, "retrieval", str(e)) from e
+
+
+async def search_papers(index: dict, text: str, embed: Callable[[str], Awaitable[list]]) -> list:
+    """I paper più vicini a un testo di ricerca, quello del codice o quello scritto dal modello."""
+    try:
+        return papers.top_papers(index, await embed(text))
+    except papers.PaperIndexError as e:
+        raise CoachError(502, "retrieval", str(e)) from e
+
+
+async def find_papers(ctx: dict, duration: int, *, embed: Callable[[str], Awaitable[list]],
+                      load_index: Callable[[], Awaitable[dict]]) -> tuple[dict, str, list]:
+    """La ricerca dei paper per un atleta: l'indice letto, il testo di ricerca e i paper più vicini."""
+    index = await read_index(load_index)
+    query = prompts.retrieval_query(ctx, duration)
+    return index, query, await search_papers(index, query, embed)
