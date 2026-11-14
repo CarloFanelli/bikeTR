@@ -25,7 +25,7 @@ ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
 CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "duration", "provider", "model", "protocolId", "fellBack", "truncated", "jsonReadable",
           "papersFound", "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds",
-          "modelRaw", "drafts", "fallbackCause", "citationsDropped"}
+          "modelRaw", "drafts", "fallbackCause", "citationsDropped", "modelSearches"}
 
 
 @pytest.fixture
@@ -70,7 +70,8 @@ def test_three_made_up_situations_with_the_env_model(fakes, tmp_path, cloud_spen
         assert all(isinstance(pmid, str) for pmid in s["papersCited"])
         # Ogni bozza legge 900 token e ne scrive 42: la risposta conta tutte le sue bozze.
         assert (s["inputTokens"], s["outputTokens"], s["cost"], s["charged"]) == (900 * n, 42 * n, None, None)
-    lines = capsys.readouterr().out.splitlines()
+    mode, *lines = capsys.readouterr().out.splitlines()
+    assert mode == "Ricerca dei paper: fissa, fatta dal Coach prima della bozza"
     assert lines[0].startswith("base (60 min): ") and " · ripiego: no · " in lines[0]
     assert lines[0].endswith(" · token: 900 in, 42 out · costo: —")
     assert lines[3] == "Costo totale: —"
@@ -260,3 +261,11 @@ def test_the_cloud_model_name_is_written_in_full(fakes, tmp_path, cloud_spending
         monkeypatch.setenv(name, value)
     _, [file] = check(tmp_path, cloud_spending)
     assert file.name == f"2026-11-07_18-30-05_{CLOUD_MODEL}.json" and read(file)["model"] == CLOUD_MODEL
+
+
+def test_the_live_check_names_the_search_mode_in_its_output_and_file(fakes, tmp_path, cloud_spending, capsys,
+                                                                     monkeypatch):
+    monkeypatch.setenv("COACH_SEARCH_MODE", "model")
+    code, [file] = check(tmp_path, cloud_spending)
+    assert code == 0 and read(file)["searchMode"] == "model"
+    assert capsys.readouterr().out.splitlines()[0] == "Ricerca dei paper: chiesta dal modello (COACH_SEARCH_MODE=model)"

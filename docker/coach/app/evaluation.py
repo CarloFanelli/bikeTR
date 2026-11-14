@@ -93,7 +93,8 @@ def papers_searched(index_file: Path, with_library: bool):
 
 
 def search_only(situations_file: Path, load_index, searched: dict) -> int:
-    """In ogni situazione la stessa ricerca dei paper del Coach, poi il punteggio della ricerca."""
+    """In ogni situazione la stessa ricerca dei paper del Coach, poi il punteggio della ricerca. È sempre
+    la ricerca fissa: le ricerche del modello hanno bisogno del modello chat."""
     situations = json.loads(situations_file.read_text(encoding="utf-8"))
 
     async def search_all() -> dict[str, set[str]]:
@@ -106,6 +107,9 @@ def search_only(situations_file: Path, load_index, searched: dict) -> int:
 
     found = asyncio.run(search_all())
     print(f"Sola ricerca dei paper: {len(situations)} situazioni, modello di ricerca {search.SEARCH_MODEL}")
+    if provider.env("COACH_SEARCH_MODE").lower() == "model":
+        print("COACH_SEARCH_MODE=model: qui si misura la ricerca fissa; le ricerche del modello si misurano "
+              "con una corsa completa.")
     source = "libreria" if searched["source"] == "library" else "paper di base"
     print(f"Paper cercati: {source}, {len(searched['pmids'])} paper ({', '.join(searched['pmids'])})")
     print(search_score_line(search_score(situations, found)))
@@ -149,7 +153,8 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
 
     started = clock()
     run = {"kind": "evaluation", "startedAt": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "provider": chat.provider,
-           "model": chat.model, "searchModel": search.SEARCH_MODEL, "promptVersion": prompts.prompt_version(),
+           "model": chat.model, "searchModel": search.SEARCH_MODEL, "searchMode": chat.search_mode,
+           "promptVersion": prompts.prompt_version(chat.search_mode),
            "papers": searched, "repeat": repeat, "complete": False, "totalCost": 0.0 if chat.prices else None, "answers": []}
     path = write_results(results_dir, file_stem(started, chat.model), run)
 

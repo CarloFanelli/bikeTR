@@ -451,3 +451,9 @@ Before this feature, the Coach searched whole abstracts and gave the model 4 abs
 - **Decision**: every real activity's training load comes from the Coach service, computed with the ride details it saved and the athlete's current FTP, LTHR and maximum heart rate; the browser asks again when those thresholds change. Fitness, fatigue and form are averaged in the browser from those loads. The four-week plan's simulated workouts keep a browser copy of the formula, and a test compares it with the Coach's expected values.
 - **Why**: one place computes the load of what really happened, with the most precise data (user decision); the plan's simulation stays in the browser to keep the plan unchanged (backlog B-45 moves it later).
 - **Cost**: two copies of the formula until B-45, kept equal by a test; opening the app needs the Coach to answer.
+
+### 2026-11-14 · The chat model can search the papers itself, behind a setting
+
+- **Decision**: `COACH_SEARCH_MODE` in `.env` picks how papers reach a draft: `fixed` (the default) is the Coach's own search before the draft, `model` gives the chat model one tool, the paper search, with up to 3 searches per draft and no papers in the prompt. Only the paper search is a tool. The mode applies to the Coach screen, the live check and the evaluation set, and every results file and README row names it.
+- **Why**: the point is to measure whether letting the model choose what to search improves the answers or only costs more turns; the evaluation set's situations have athlete numbers and recent rides only, so a Strava or load tool could not be measured (backlog B-47, B-48). Starting without papers keeps the comparison clean: every cited paper comes from the model's own search (user decisions).
+- **Cost**: each search is one more model turn, read in full again: slower with a local model, paid with a cloud one, up to 6 turns per draft in the worst case. A model without tool support cannot use `model` at all.

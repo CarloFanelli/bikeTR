@@ -179,9 +179,15 @@ def causes_line(causes: dict[str, int], names: dict[str, str]) -> str:
     return " · ".join(f"{names[c]} {n}" for c, n in causes.items()) or "—"
 
 
+def model_search(run: dict) -> bool:
+    """Se la corsa è della ricerca chiesta dal modello; un file di prima non dice il modo: ricerca fissa."""
+    return run.get("searchMode") == "model"
+
+
 def report(run: dict, scores: Scores, shown: str) -> list[str]:
     """I punteggi di una corsa, una riga ciascuno, sotto il nome del file."""
-    lines = [f"{shown} — {run['model']} · prompt {run['promptVersion']} · "
+    search = "ricerca del modello" if model_search(run) else "ricerca fissa"
+    lines = [f"{shown} — {run['model']} · prompt {run['promptVersion']} · {search} · "
              f"corsa {'completa' if run['complete'] else 'incompleta'}",
              f"  Risposte valutate: {scores.answered} · errori: {scores.failed}",
              f"  Regole seguite: {ratio(scores.rules_followed)}",
@@ -207,7 +213,8 @@ def report(run: dict, scores: Scores, shown: str) -> list[str]:
 def table_row(run: dict, scores: Scores, link: str) -> str:
     """La riga della tabella del README, con il link al file; una corsa incompleta lo dice."""
     file = f"[{Path(link).name}]({link})" + ("" if run["complete"] else " (incompleta)")
-    cells = [run["model"], run["promptVersion"], ratio(scores.rules_followed), ratio(scores.rules_first),
+    model = f"{run['model']} · model search" if model_search(run) else run["model"]
+    cells = [model, run["promptVersion"], ratio(scores.rules_followed), ratio(scores.rules_first),
              ratio(scores.readable), ratio(scores.invented), ratio(scores.citations_dropped),
              ratio(scores.support_cited), ratio(scores.support_found), ratio(scores.expected_found),
              ratio(scores.fallback), causes_line(scores.fallback_causes, {c: c for c in CAUSE_NAMES}),

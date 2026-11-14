@@ -13,8 +13,9 @@ from pathlib import Path
 import httpx
 import pytest
 
-from app import cloud, evaluation, grading, ollama, prompts, search, tracing
-from fakes import CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, DownPhoenix, FakeCloud, FakeOllama, FakeSearch, drafts_per_answer
+from app import cloud, evaluation, grading, ollama, papers, prompts, search, tracing
+from fakes import (CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, INDEX, DownPhoenix, FakeCloud, FakeOllama, FakeSearch, asks,
+                   drafts_per_answer)
 from fixture_data import FIXTURES, load
 
 CASES = load("coach_cases.json")
@@ -28,7 +29,7 @@ ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
 CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "repeat", "duration", "protocolId", "fellBack", "truncated", "jsonReadable", "papersFound",
           "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds", "modelRaw",
-          "drafts", "fallbackCause", "citationsDropped"}
+          "drafts", "fallbackCause", "citationsDropped", "modelSearches"}
 
 
 @pytest.fixture
@@ -102,7 +103,8 @@ def test_every_situation_of_the_set_runs_like_a_coach_request_and_the_file_is_co
     first = SITUATIONS[0]
     assert lines[0].startswith(f"[1/{len(SITUATIONS)}] {first['name']} ({first['minutes']} min): ")
     # Poi i punteggi della corsa, il costo totale e il nome del file.
-    assert lines[len(SITUATIONS)] == f"eval-runs/{file.name} — qwen2.5:7b · prompt {run['promptVersion']} · corsa completa"
+    assert lines[len(SITUATIONS)] == (f"eval-runs/{file.name} — qwen2.5:7b · prompt {run['promptVersion']} · "
+                                      "ricerca fissa · corsa completa")
     assert f"  Risposte valutate: {len(SITUATIONS)} · errori: 0" in lines and "  Costo per risposta: —" in lines
     assert lines[-2:] == ["Costo totale: —", f"Risultati in eval-runs/{file.name}"]
 
@@ -467,3 +469,35 @@ def test_a_results_file_from_before_the_papers_field_is_graded_as_before(fakes, 
     run = read(file)
     old = {k: v for k, v in run.items() if k != "papers"}
     assert grading.grade(old, SITUATIONS[:2]) == grading.grade(run, SITUATIONS[:2])
+
+
+def test_a_model_search_run_records_the_mode_and_each_answer_s_searches(fakes, tmp_path, cloud_spending,
+                                                                        two_situations, monkeypatch, capsys):
+    monkeypatch.setenv("COACH_SEARCH_MODE", "model")
+    fakes["ollama"].queue = [asks("polarized recovery")]
+    code, [file] = evaluate(tmp_path, cloud_spending, two_situations)
+    run = read(file)
+    assert code == 0 and (run["searchMode"], run["promptVersion"]) == ("model", prompts.prompt_version("model"))
+    first, second = run["answers"]
+    found = [p["pmid"] for p in papers.top_papers(INDEX, CASES["queries"]["middle"])]
+    assert first["modelSearches"] == [{"draft": 1, "text": "polarized recovery", "papersFound": found}]
+    assert [p["pmid"] for p in first["papersFound"]] == found
+    # La seconda risposta non cerca: nessun paper trovato, e il punteggio della ricerca la conta.
+    assert second["modelSearches"] == [] and second["papersFound"] == []
+    assert "ricerca del modello" in capsys.readouterr().out
+
+
+def test_a_fixed_run_records_the_fixed_mode_and_no_model_searches(fakes, tmp_path, cloud_spending, two_situations):
+    _, [file] = evaluate(tmp_path, cloud_spending, two_situations)
+    run = read(file)
+    assert run["searchMode"] == "fixed" and [a["modelSearches"] for a in run["answers"]] == [[], []]
+
+
+def test_search_only_in_model_mode_says_it_measures_the_fixed_search(fakes, tmp_path, cloud_spending,
+                                                                     two_situations, monkeypatch, capsys):
+    monkeypatch.setenv("COACH_SEARCH_MODE", "model")
+    code, files = evaluate(tmp_path, cloud_spending, two_situations, args=["--search-only"])
+    out = capsys.readouterr().out
+    assert code == 0 and files == []
+    assert ("COACH_SEARCH_MODE=model: qui si misura la ricerca fissa; le ricerche del modello si misurano "
+            "con una corsa completa.") in out

@@ -113,11 +113,13 @@ def merged(before: list, found: list) -> list:
     return papers
 
 
-async def model_search(r: Request, call: ToolCall, index: dict, draft: int, number: int) -> tuple[str, list]:
+async def model_search(r: Request, call: ToolCall, index: dict, draft: int,
+                       number: int) -> tuple[str, list, str | None]:
     """Una ricerca chiesta dal modello, la `number`-esima della bozza `draft`: la risposta dello
-    strumento e i paper trovati. Una ricerca vera è un passo sulla schermata Coach e nella traccia."""
+    strumento, i paper trovati e il testo cercato (None se non ha cercato). Una ricerca vera è un passo
+    sulla schermata Coach e nella traccia."""
     if call.name != prompts.SEARCH_TOOL["function"]["name"]:
-        return prompts.SEARCH_UNKNOWN_TOOL, []
+        return prompts.SEARCH_UNKNOWN_TOOL, [], None
     arguments = call.arguments
     if isinstance(arguments, str):
         try:
@@ -125,16 +127,16 @@ async def model_search(r: Request, call: ToolCall, index: dict, draft: int, numb
         except (ValueError, RecursionError):
             arguments = None
     if not isinstance(arguments, dict) or not isinstance(arguments.get("text"), str):
-        return prompts.SEARCH_BAD, []
+        return prompts.SEARCH_BAD, [], None
     text = arguments["text"].strip()[:prompts.MAX_SEARCH_TEXT]
     if not text:
-        return prompts.SEARCH_EMPTY, []
+        return prompts.SEARCH_EMPTY, [], None
     r.emit(step("search", f"Il modello cerca: «{text}» (ricerca {number} di {prompts.MAX_SEARCHES})",
                 search=number, of=prompts.MAX_SEARCHES))
     with tracing.step("search"):
         found = await search_papers(index, text, r.embed)
         tracing.note_search(draft, text, found)
-    return "\n\n".join(prompts.paper_entry(p) for p in found) or prompts.SEARCH_NOTHING, found
+    return "\n\n".join(prompts.paper_entry(p) for p in found) or prompts.SEARCH_NOTHING, found, text
 
 
 @dataclass
@@ -190,6 +192,7 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
     messages = messages_for(state, chat.search_mode)
     tools = [prompts.SEARCH_TOOL] if chat.search_mode == "model" else None
     turns, done, retrieved, searches, refused, capped = [], [], state["retrieved"], 0, 0, False
+    searched = []   # le ricerche vere della bozza: testo e PMID trovati
     # La bozza che finisce senza risposta: dopo troppi rifiuti, o con il tetto di spesa raggiunto.
     unanswered = Turn("", [], ChatEnd(None, None, False), None, None)
     with tracing.step("draft"):
@@ -205,8 +208,10 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
                     answers.append(prompts.SEARCH_LIMIT)
                     continue
                 searches += 1
-                answer, found = await model_search(r, call, state["index"], len(state["drafts"]) + 1, searches)
+                answer, found, text = await model_search(r, call, state["index"], len(state["drafts"]) + 1, searches)
                 retrieved = merged(retrieved, found)
+                if text is not None:
+                    searched.append({"text": text, "papersFound": [p["pmid"] for p in found]})
                 answers.append(answer)
             turns += provider.tool_turn(chat, turn.text, turn.calls, answers)
             if refused >= prompts.MAX_SEARCHES:
@@ -217,6 +222,7 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
                 turn, capped = unanswered, True
                 break
     draft = {"modelRaw": turn.text, "truncated": turn.end.truncated, "turns": turns, "capped": capped,
+             "searches": searched,
              "inputTokens": summed(t.end.input_tokens for t in done),
              "outputTokens": summed(t.end.output_tokens for t in done),
              "cost": summed(t.cost for t in done), "charged": summed(t.charged for t in done)}
@@ -271,6 +277,8 @@ async def deliver_node(state: State, runtime: Runtime[Request]) -> State:
         "provider": chat.provider, "model": chat.model, "seconds": round(time.monotonic() - state["started"], 1),
         "inputTokens": total(drafts, "inputTokens"), "outputTokens": total(drafts, "outputTokens"),
         "truncated": last["truncated"], "cost": total(drafts, "cost"), "modelRaw": last["modelRaw"],
+        # Le ricerche chieste dal modello, con la bozza in cui le ha chieste: nessuna con la ricerca fissa.
+        "modelSearches": [{"draft": n, **s} for n, d in enumerate(drafts, 1) for s in d["searches"]],
         "drafts": [{"protocolId": d["protocolId"], "modelRaw": d["modelRaw"], "truncated": d["truncated"],
                     "inputTokens": d["inputTokens"], "outputTokens": d["outputTokens"], "cost": d["cost"],
                     "check": {"ok": d["verdict"].ok, "causes": list(d["verdict"].causes),

@@ -104,7 +104,9 @@ def record(base: dict, result: dict, charged: float | None) -> dict:
             # Ogni bozza con il suo protocollo, la risposta, l'esito del controllo con i motivi, token e costo;
             # perché le regole di ripiego hanno scelto e le citazioni tolte dalla scheda.
             "drafts": result["drafts"], "fallbackCause": result["fallbackCause"],
-            "citationsDropped": result["citationsDropped"]}
+            "citationsDropped": result["citationsDropped"],
+            # Con COACH_SEARCH_MODE=model, ogni ricerca del modello: bozza, testo e PMID trovati.
+            "modelSearches": result["modelSearches"]}
 
 
 async def coach_answer(base: dict, chat: provider.ChatSettings, spending: Spending,
@@ -156,6 +158,12 @@ def money(dollars: float | None) -> str:
 
 def tokens(n: int | None) -> str:
     return "—" if n is None else str(n)
+
+
+def search_mode_line(search_mode: str) -> str:
+    if search_mode == "model":
+        return "Ricerca dei paper: chiesta dal modello (COACH_SEARCH_MODE=model)"
+    return "Ricerca dei paper: fissa, fatta dal Coach prima della bozza"
 
 
 def summary(r: dict) -> str:
@@ -214,6 +222,7 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
     except CoachError as e:
         print(f"✗ {e.message}", file=sys.stderr)
         return 2
+    print(search_mode_line(chat.search_mode), flush=True)
     started = clock()
     traces = tracing.setup("live-check")
     try:
@@ -224,7 +233,8 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
     # Quanto il controllo ha aggiunto al totale della spesa, stime alte comprese.
     total = sum(r["charged"] for r in records) if chat.prices else None
     run = {"startedAt": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "provider": chat.provider, "model": chat.model,
-           "searchModel": search.SEARCH_MODEL, "totalCost": total, "situations": records}
+           "searchModel": search.SEARCH_MODEL, "searchMode": chat.search_mode, "totalCost": total,
+           "situations": records}
     path = write_results(results_dir, file_stem(started, chat.model), run)
     print(f"Costo totale: {money(run['totalCost'])}")
     print(f"Risultati in {results_dir.name}/{path.name}")

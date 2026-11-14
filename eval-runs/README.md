@@ -66,12 +66,13 @@ The file is rewritten after every answer, so a run stopped halfway (Ctrl+C, the 
 | `kind` | always `evaluation`: tells these files apart from live check files |
 | `startedAt`, `provider`, `model`, `searchModel` | when the run started and which models it used |
 | `promptVersion` | 8 characters that change whenever the Coach's system prompt text changes |
+| `searchMode` | `fixed`, the Coach's own search before the draft, or `model`, the chat model searching itself (see the README's AI Coach section). Files from before this field are `fixed`; the grading names the mode, and a `model` row says so next to the model name |
 | `papers` | which papers the run searched: `source` is `base` (the default) or `library` (`--library`), and `pmids` lists them. Files from before this field searched the base papers |
 | `repeat` | how many times each situation was asked |
 | `complete` | `true` only when every answer arrived without an error; a run stopped halfway, or with a failed answer, stays `false` and is not used for a table row |
 | `totalCost` | the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama. A run stopped with Ctrl+C during an answer leaves that answer out of the file, but the spending total still counts it, so `totalCost` is a little lower than what the run spent |
 | `answers` | one entry per answer, in the order they ran |
 
-Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `passagesFound` (the passages the model was given, by label and score), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds`, `modelRaw` (the whole last draft), `drafts`, `fallbackCause` and `citationsDropped`.
+Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `passagesFound` (the passages the model was given, by label and score), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds`, `modelRaw` (the whole last draft), `drafts`, `fallbackCause`, `citationsDropped` and `modelSearches` (each search the model asked for, with `searchMode` `model`).
 
 A failed answer has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next answer still runs. The command exits with code 1 when every answer fails, with code 2, writing no file, when `.env` or `--repeat` is wrong, the paper index or the saved library is refused, or the worst case exceeds the cap, and with code 130 after Ctrl+C. The cloud key is never written here.

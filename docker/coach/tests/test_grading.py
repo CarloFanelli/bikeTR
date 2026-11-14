@@ -241,7 +241,7 @@ def test_scores_and_readme_rows_one_per_file_even_for_the_same_model_and_prompt(
     # File di prima delle bozze: la prima bozza è la risposta, e la causa del ripiego viene da lei (Over-Under
     # in 60 minuti: troppo lungo).
     assert out[:16] == [
-        "eval-runs/a.json — qwen2.5:7b · prompt abcd1234 · corsa completa",
+        "eval-runs/a.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · corsa completa",
         "  Risposte valutate: 2 · errori: 0",
         "  Regole seguite: 50% (1/2)",
         "  Regole seguite alla prima bozza: 50% (1/2)",
@@ -274,7 +274,7 @@ def test_an_incomplete_run_is_graded_but_its_row_says_it_is_not_for_the_readme(t
     name = write(tmp_path, "fermata.json", run([answer()], complete=False))
     assert grading.main([name], project_dir=tmp_path) == 0
     out = capsys.readouterr().out
-    assert "eval-runs/fermata.json — qwen2.5:7b · prompt abcd1234 · corsa incompleta" in out
+    assert "eval-runs/fermata.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · corsa incompleta" in out
     assert "[fermata.json](eval-runs/fermata.json) (incompleta) |" in out
     assert "Le corse incomplete non vanno nel README" in out
 
@@ -294,3 +294,15 @@ def test_a_live_check_or_unreadable_file_is_refused_by_name_and_the_others_are_g
 def test_no_file_given_is_refused(capsys):
     assert grading.main([]) == 2
     assert "Indica almeno un file dei risultati" in capsys.readouterr().err
+
+
+def test_a_model_search_run_names_its_mode_in_the_report_and_the_readme_row(tmp_path, capsys):
+    model = write(tmp_path, "m.json", run([answer()], searchMode="model"))
+    old = write(tmp_path, "o.json", run([answer()]))
+    assert grading.main([model, old], project_dir=tmp_path) == 0
+    out = capsys.readouterr().out.splitlines()
+    assert "eval-runs/m.json — qwen2.5:7b · prompt abcd1234 · ricerca del modello · corsa completa" in out
+    # Un file di prima della ricerca del modello non dice il modo: è della ricerca fissa.
+    assert "eval-runs/o.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · corsa completa" in out
+    rows = [line for line in out if line.startswith("| qwen2.5:7b")]
+    assert [r.split(" | ")[0] for r in rows] == ["| qwen2.5:7b · model search", "| qwen2.5:7b"]
