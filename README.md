@@ -2,6 +2,8 @@
 
 Started on **May 7, 2026**.
 
+**© 2026 Carlo Fanelli. All rights reserved.** This repository is public only so the project can be read. No license is granted: you may not copy, modify, redistribute or reuse this code, in whole or in part, without written permission.
+
 A browser app (Vue and TypeScript in `web/`, served by a live-reload development server) for cycling analysis and training recommendations based on the user's Strava data. Designed for **personal, local use**: each person runs their own copy on their own computer, connected to their own Strava app. One Docker command starts everything: a web server, the app's development server, a small auth server that holds the Strava secret, the Coach service (Python), the local AI model used by the Coach (a cloud model such as Claude can be chosen instead), and Phoenix, which shows what the Coach did in each request. The Coach service keeps your Strava data and your athlete data (Impostazioni, calendar, FTP history, mesocycle) in a PostgreSQL database, so every browser on this computer shows the same data; only display choices and a few caches stay in the browser's `localStorage`.
 
 > ⚠️ The app is reachable only from your own computer (`127.0.0.1`), not from other devices on your network. **Do not deploy it to a public website.** The Strava Client ID and client secret live in the `.env` file, which Git ignores: never commit it.
