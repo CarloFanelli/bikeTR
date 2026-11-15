@@ -80,6 +80,8 @@ Before this feature, running BikeTR took four manual, macOS-only steps (a Python
 
 ### 2026-11-05 · The paper index stays committed and is not rebuilt by Docker
 
+Replaced on 2026-11-15: the index is no longer committed (see that decision below).
+
 - **Decision**: `papers_index.json` is used as committed; no start or stop command rebuilds it.
 - **Why**: rebuilding needs PubMed and Ollama and changes the Coach's sources; it is a deliberate maintenance step, not part of starting the app.
 - **Cost**: changing the embedding model requires rebuilding the index by hand.
@@ -457,3 +459,9 @@ Before this feature, the Coach searched whole abstracts and gave the model 4 abs
 - **Decision**: `COACH_SEARCH_MODE` in `.env` picks how papers reach a draft: `fixed` (the default) is the Coach's own search before the draft, `model` gives the chat model one tool, the paper search, with up to 3 searches per draft and no papers in the prompt. Only the paper search is a tool. The mode applies to the Coach screen, the live check and the evaluation set, and every results file and README row names it.
 - **Why**: the point is to measure whether letting the model choose what to search improves the answers or only costs more turns; the evaluation set's situations have athlete numbers and recent rides only, so a Strava or load tool could not be measured (backlog B-47, B-48). Starting without papers keeps the comparison clean: every cited paper comes from the model's own search (user decisions).
 - **Cost**: each search is one more model turn, read in full again: slower with a local model, paid with a cloud one, up to 6 turns per draft in the worst case. A model without tool support cannot use `model` at all.
+
+### 2026-11-15 · The paper texts leave the public repository
+
+- **Decision**: `papers_index.json` is no longer committed. On the first `docker compose up` the `papers-index` service builds it from PubMed and Europe PMC when it is missing, then stops. The tests' paper index keeps the real PMIDs and titles but holds made-up texts, and the recorded browser prompts use them too. The README's rights notice covers only the project's own code and text.
+- **Why**: the repository is public, and abstracts belong to their publishers: keeping and searching them on one's own computer is text and data mining, publishing them is redistribution. Open-access texts may be copied, but stay under their own license (user decision).
+- **Cost**: the first start needs internet for PubMed and Europe PMC and takes a few more minutes; two computers can get slightly different indexes if PubMed changes. The old commits still contain the index.

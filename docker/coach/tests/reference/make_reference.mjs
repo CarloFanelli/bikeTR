@@ -216,13 +216,8 @@ if (process.env.REFERENCE_TZ) {
     console.log(`Scritto fixtures/${name}`);
   };
 
-  // Indice dei paper dei test: i paper veri, con embedding inventati (vettori unitari).
-  const real = readJson(path.join(PROJECT, 'papers_index.json'));
-  write('papers_index.json', {
-    model: real.model,
-    papers: real.papers.map(({ embedding, ...meta }, i) =>
-      ({ ...meta, embedding: real.papers.map((_, j) => (i === j ? 1 : 0)) })),
-  });
+  // L'indice dei paper dei test (fixtures/papers_index.json) non si riscrive: ha titoli e PMID veri
+  // ma testi inventati, perché gli abstract veri sono degli editori e la repository è pubblica.
 
   // Il fuso orario di Date si fissa all'avvio del processo: un processo per fuso.
   const metrics = {};

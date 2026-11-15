@@ -180,6 +180,22 @@ def test_rebuild_from_pubmed_takes_each_paper_from_its_search_and_cuts_its_abstr
     assert "[secondo] PMID 333 (2014) Stöggl & Sperlich" in capsys.readouterr().out
 
 
+def test_on_first_start_a_missing_index_is_built_from_pubmed(tmp_path, fake_pubmed):
+    path = tmp_path / "papers_index.json"
+    assert build_index.main(["--if-missing"], path=path, client=client(services)) == 0
+    assert [p["pmid"] for p in json.loads(path.read_text(encoding="utf-8"))["papers"]] == ["111", "333"]
+
+
+def test_an_index_already_there_is_left_alone_without_asking_pubmed(index_file, fake_pubmed, capsys):
+    before = index_file.read_bytes()
+
+    def no_pubmed(request):
+        raise AssertionError("con l'indice presente PubMed non va chiamato")
+    assert build_index.main(["--if-missing"], path=index_file, client=client(no_pubmed)) == 0
+    assert unchanged(index_file, before)
+    assert "papers_index.json c'è già" in capsys.readouterr().out
+
+
 @pytest.mark.parametrize("search, message", [
     (("altro", "q-altro", "333"), "altro: la ricerca trova per primo il PMID 444 invece del PMID 333"),
     (("assente", "q-assente", "333"), "assente: la ricerca trova per primo nessun paper invece del PMID 333"),

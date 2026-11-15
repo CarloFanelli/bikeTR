@@ -174,11 +174,11 @@ def test_index_is_read_from_nginx_as_localhost():
     assert seen == [("http://web/papers_index.json", "localhost")]
 
 
-UNREADABLE = "papers_index.json illeggibile. Ripristinalo da git: git restore papers_index.json"
+UNREADABLE = "papers_index.json illeggibile. Costruiscilo da PubMed con: docker compose run --rm coach-tools python -m app.build_index"
 
 
 @pytest.mark.parametrize("response,message", [
-    (httpx.Response(404), "papers_index.json non trovato (HTTP 404). Ripristinalo da git: git restore papers_index.json"),
+    (httpx.Response(404), "papers_index.json non trovato (HTTP 404). Costruiscilo da PubMed con: docker compose run --rm coach-tools python -m app.build_index"),
     (httpx.Response(200, text="{non json"), UNREADABLE),
     (httpx.Response(200, json={"papers": [{"pmid": "1"}]}), UNREADABLE),
     (httpx.Response(200, json={"model": INDEX["model"], "papers": []}), UNREADABLE),
@@ -204,9 +204,8 @@ def test_an_index_from_before_passages_says_how_to_restore_or_rebuild_it():
                                | {"embedding": p["passages"][0]["embedding"]} for p in INDEX["papers"]]}
     with pytest.raises(PaperIndexError) as e:
         check_index(old)
-    assert str(e.value) == ("papers_index.json è di una versione precedente, senza passaggi. Ripristinalo da git: "
-                            "git restore papers_index.json, o ricostruiscilo con: "
-                            "docker compose run --rm coach-tools python -m app.build_index")
+    assert str(e.value) == ("papers_index.json è di una versione precedente, senza passaggi. Costruiscilo da "
+                            "PubMed con: docker compose run --rm coach-tools python -m app.build_index")
 
 
 @pytest.mark.parametrize("model,named", [("nomic-embed-text", "nomic-embed-text"), (None, "un modello senza nome")])

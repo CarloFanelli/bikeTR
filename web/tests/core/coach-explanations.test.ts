@@ -34,6 +34,6 @@ describe('spiegazioni del Coach', () => {
   });
 
   it('la ricerca dei paper mette i comandi nei dettagli tecnici', () => {
-    expect(errorTopic({ error: 'retrieval', message: 'm' }).technical?.join(' ')).toContain('git restore papers_index.json');
+    expect(errorTopic({ error: 'retrieval', message: 'm' }).technical?.join(' ')).toContain('python -m app.build_index');
   });
 });

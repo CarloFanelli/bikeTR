@@ -5,8 +5,9 @@ ricerca del servizio Coach: non serve Ollama. Dalla cartella del progetto:
       ricodifica i passaggi già nell'indice, senza PubMed (serve dopo un cambio del modello
       di ricerca): cambiano solo i vettori e il nome del modello. Ricodifica anche i paper
       aggiunti alla libreria (/data/library.json), dopo che l'indice è salvato.
-  docker compose run --rm coach-tools python -m app.build_index
-      rifà la lista dei paper da PubMed, prende da Europe PMC il testo completo dei paper con
+  docker compose run --rm coach-tools python -m app.build_index [--if-missing]
+      rifà la lista dei paper da PubMed (con --if-missing solo se l'indice non c'è ancora: lo usa
+      il servizio papers-index al primo avvio, perché l'indice non è nel repository), prende da Europe PMC il testo completo dei paper con
       una licenza che permette di copiarlo, taglia ogni testo in passaggi e li codifica.
 
 Il file si sostituisce solo a lavoro finito: se PubMed o Europe PMC non rispondono, una ricerca
@@ -326,8 +327,8 @@ def reencode(path: Path) -> dict:
         papers = [{**p, "passages": [{k: v for k, v in s.items() if k != "embedding"} for s in p["passages"]]}
                   for p in index["papers"] if "passages" in p]
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as e:
-        raise BuildError(f"{path.name} mancante o illeggibile: ripristinalo con git restore papers_index.json, "
-                         "o ricostruiscilo da PubMed (lo stesso comando senza --reencode)") from e
+        raise BuildError(f"{path.name} mancante o illeggibile: costruiscilo da PubMed "
+                         "(lo stesso comando senza --reencode)") from e
     if old:
         raise BuildError(f"{path.name} è di una versione precedente, senza passaggi: ricostruiscilo da PubMed "
                          "(lo stesso comando senza --reencode)")
@@ -374,7 +375,12 @@ def main(argv: list[str] | None = None, path: Path = INDEX_FILE, client: httpx.C
     parser = argparse.ArgumentParser(prog="python -m app.build_index", description=__doc__.splitlines()[0])
     parser.add_argument("--reencode", action="store_true",
                         help="ricodifica i passaggi già nell'indice, senza PubMed")
+    parser.add_argument("--if-missing", action="store_true",
+                        help="costruisce l'indice da PubMed solo se non esiste ancora")
     args = parser.parse_args(argv)
+    if args.if_missing and path.exists():
+        print(f"{path.name} c'è già: niente da costruire.")
+        return 0
     saved = library.Library(library.LIBRARY_FILE)
     try:
         if args.reencode:

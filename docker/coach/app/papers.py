@@ -4,7 +4,10 @@ cercati in un database vettoriale in memoria (sqlite-vec).
 
 L'indice si legge da nginx, che serve già la cartella del progetto: montarlo nel
 container come singolo file farebbe creare a Docker una cartella vuota al suo posto
-quando il file manca, e `git restore papers_index.json` non funzionerebbe più."""
+quando il file manca, e il comando che lo costruisce non potrebbe più scriverlo.
+
+L'indice non è nel repository, che è pubblico: gli abstract sono degli editori. Si costruisce da
+PubMed sul computer di chi usa BikeTR (servizio papers-index di compose.yaml, o il comando REBUILD)."""
 
 import re
 import sqlite3
@@ -26,8 +29,8 @@ PASSAGE_CHARS = 600
 KNN_LIMIT = 4096
 PAPER_FIELDS = {"pmid", "title", "authors", "year", "abstract", "textUsed", "passages"}
 PASSAGE_FIELDS = {"label", "text", "embedding"}
-RESTORE = "Ripristinalo da git: git restore papers_index.json"
 REBUILD = "docker compose run --rm coach-tools python -m app.build_index"
+RESTORE = f"Costruiscilo da PubMed con: {REBUILD}"
 REENCODE = f"{REBUILD} --reencode"
 
 # La fine di una frase: punto, punto esclamativo o interrogativo (con le eventuali virgolette o
@@ -137,8 +140,7 @@ def check_index(index) -> dict:
         if not index["papers"]:
             raise ValueError("nessun paper")
         if any("passages" not in p and "embedding" in p for p in index["papers"]):
-            raise PaperIndexError(f"papers_index.json è di una versione precedente, senza passaggi. {RESTORE}, "
-                                  f"o ricostruiscilo con: {REBUILD}")
+            raise PaperIndexError(f"papers_index.json è di una versione precedente, senza passaggi. {RESTORE}")
         if not all(usable(p, dim) for p in index["papers"]):
             raise ValueError("campi mancanti")
     except (ValueError, KeyError, TypeError, AttributeError) as e:

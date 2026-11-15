@@ -506,7 +506,7 @@ def test_browser_reference_also_stopped_before_any_call_without_ftp():
 
 
 async def missing_index() -> dict:
-    raise PaperIndexError("papers_index.json non trovato (HTTP 404). Ripristinalo da git: git restore papers_index.json")
+    raise PaperIndexError("papers_index.json non trovato (HTTP 404). Costruiscilo da PubMed con: docker compose run --rm coach-tools python -m app.build_index")
 
 
 def not_connected(service):
@@ -541,7 +541,7 @@ def test_missing_paper_index_says_how_to_restore_it(service, monkeypatch):
     monkeypatch.setattr(main, "load_index", missing_index)
     assert events_of(post(service, BODY))[-1] == {
         "type": "error", "error": "retrieval",
-        "message": "papers_index.json non trovato (HTTP 404). Ripristinalo da git: git restore papers_index.json"}
+        "message": "papers_index.json non trovato (HTTP 404). Costruiscilo da PubMed con: docker compose run --rm coach-tools python -m app.build_index"}
     assert service.ollama.requests == [] and service.search.texts == []
 
 

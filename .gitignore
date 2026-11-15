@@ -4,3 +4,5 @@ node_modules/
 .ai/memory.local/
 learning/
 .env
+# Indice dei paper: si costruisce da PubMed al primo avvio (gli abstract sono degli editori).
+/papers_index.json

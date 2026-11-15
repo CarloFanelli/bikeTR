@@ -44,7 +44,7 @@ export function errorTopic(refusal: CoachRefusal): Explanation {
       short: 'Il Coach non è riuscito a cercare nei paper della libreria.',
       lead: [refusal.message],
       technical: [
-        'Se manca il file papers_index.json, ripristinalo da git: git restore papers_index.json.',
+        'Se manca il file papers_index.json, costruiscilo da PubMed: docker compose run --rm coach-tools python -m app.build_index.',
         'Se l\'indice è stato codificato con un altro modello di ricerca, il messaggio qui sopra dà il comando che lo ricodifica.',
       ],
     };
