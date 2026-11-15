@@ -203,7 +203,8 @@ export function recommend(
 
     // FTP plateau detection: se in plateau, forza un cambio di stimolo
     const ftpTrend = buildFtpTrend(inputs.ftpHistory);
-    if (ftpTrend?.isPlateauDetected && !deficit) {
+    const fromPlateau = !!ftpTrend?.isPlateauDetected && !deficit;
+    if (fromPlateau) {
       // Se in plateau senza deficit chiaro, suggerisci VO2max (il più efficace per sbloccare)
       deficit = 'vo2max';
     }
@@ -257,7 +258,9 @@ export function recommend(
       rec = {
         title: '🔴 VO2max',
         detail: `Risc 20' → 6×3' @ massimo sostenibile (FC > ${hrLthr ? Math.round(hrLthr*1.02) : 'molto alta'} bpm)${wattTarget(1.10, 1.20)}, rec 3' → defat 10'. Totale ~70 min.`,
-        reason: deficit === 'vo2max'
+        reason: fromPlateau
+          ? 'VO2max: la FTP è ferma da diverse settimane, e un nuovo stimolo può sbloccarla.'
+          : deficit === 'vo2max'
           ? 'VO2max prioritario: il tuo power profile mostra un "tetto" aerobico che limita la crescita della soglia.'
           : 'VO2max: alza il tetto da cui la soglia può crescere.',
       };
@@ -265,9 +268,8 @@ export function recommend(
     const extra = [];
     if (freshBonus) extra.push(`${restDays} gg riposo → qualità alta`);
     if (canPushBecauseTomorrowRest && !freshBonus) extra.push('domani riposo → puoi spingere');
-    // Con il deficit scelto dal plateau FTP e nessun deficit nel power profile questa riga
-    // lancia un errore, tenuto finché le formule non si correggono: Allenamento non mostra il consiglio.
-    if (deficit) extra.push(`focus: ${powerProfile!.primaryDeficit!.label}`);
+    // Il deficit viene dal power profile o, senza, dal plateau FTP: in quel caso il focus lo dice.
+    if (deficit) extra.push(`focus: ${fromPlateau ? 'FTP in plateau' : powerProfile?.primaryDeficit?.label}`);
     if (isMuscleFatigued) extra.push(`fatica muscolare ${mFatigue}/100`);
     if (extra.length) rec.reason += ' · ' + extra.join(' · ');
     return rec;

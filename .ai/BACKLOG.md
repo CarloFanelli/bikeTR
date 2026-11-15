@@ -103,9 +103,10 @@
 - **From**: vue-ts-restructure (dev task 05, 2026-11-06)
 - **Picked up by**: data-backend (2026-11-13)
 
-### B-22 · open
+### B-22 · done
 - **What**: Stop the daily recommendation from crashing when the FTP history is on a plateau and the power profile shows no deficit. Today it reads a label that does not exist, and the Training tab stops drawing.
 - **From**: vue-ts-restructure (dev task 05, 2026-11-06)
+- **Done**: fixed outside a feature (2026-11-15): the advice is VO2max with a plateau reason.
 
 ### B-23 · open
 - **What**: Remove or make reachable the "no ride history: start with pure aerobic work" advice. With no bike rides, the "Reactivation" advice always wins first, so this branch never runs.

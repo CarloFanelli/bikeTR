@@ -9227,7 +9227,9 @@
     {
      "offset": 2,
      "recommend": {
-      "throws": true
+      "title": "🔴 VO2max",
+      "detail": "Risc 20' → 6×3' @ massimo sostenibile (FC > 169 bpm) (~281–306 W), rec 3' → defat 10'. Totale ~70 min.",
+      "reason": "VO2max: la FTP è ferma da diverse settimane, e un nuovo stimolo può sbloccarla. · 2 gg riposo → qualità alta · focus: FTP in plateau"
      },
      "synthetic": null,
      "metrics": {
@@ -9243,7 +9245,9 @@
     {
      "offset": 3,
      "recommend": {
-      "throws": true
+      "title": "🔴 VO2max",
+      "detail": "Risc 20' → 6×3' @ massimo sostenibile (FC > 169 bpm) (~281–306 W), rec 3' → defat 10'. Totale ~70 min.",
+      "reason": "VO2max: la FTP è ferma da diverse settimane, e un nuovo stimolo può sbloccarla. · 3 gg riposo → qualità alta · focus: FTP in plateau"
      },
      "synthetic": null,
      "metrics": {
