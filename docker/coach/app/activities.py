@@ -1,5 +1,5 @@
-"""I dati di Strava salvati dal servizio Coach nel database: le attività, i dettagli corsa, le
-etichette date dal modello che etichetta, l'atleta con le statistiche e lo stato della
+"""I dati di Strava salvati dal servizio Coach nel database: le attività, i dettagli corsa con la
+loro serie compatta, le etichette date dal modello che etichetta, l'atleta con le statistiche e lo stato della
 sincronizzazione. Appartengono al collegamento: "Disconnetti da Strava" li cancella.
 
 Ogni scrittura porta la `generation` letta quando il suo download è partito: se nel frattempo
@@ -14,6 +14,7 @@ from app import db
 from app.athlete_data import STRAVA_KEYS
 
 DETAIL_KEYS = ("np", "watts_n", "hr_mean", "hr_n")
+SERIES_KEYS = ("step", "watts", "hr")
 CARD_FIELDS = ("id", "name", "type", "start_date", "start_date_local", "distance", "moving_time",
                "total_elevation_gain")
 # Le attività con potenza misurata o frequenza cardiaca: solo queste hanno dettagli da scaricare.
@@ -84,6 +85,11 @@ class ActivityStore:
         rows = await self._rows("SELECT * FROM ride_details WHERE activity_id = ANY(%s)", (list(ids),))
         return {r["activity_id"]: {k: r[k] for k in DETAIL_KEYS} for r in rows}
 
+    async def series(self, ids: list[int]) -> dict:
+        """Le serie compatte salvate fra `ids`; le corse senza serie mancano."""
+        rows = await self._rows("SELECT * FROM ride_series WHERE activity_id = ANY(%s)", (list(ids),))
+        return {r["activity_id"]: {k: r[k] for k in SERIES_KEYS} for r in rows}
+
     async def ride_labels(self, ids: list[int], model: str) -> dict[int, str]:
         """Le etichette salvate fra `ids` date da `model`; quelle di un altro modello non valgono."""
         rows = await self._rows("SELECT activity_id, label FROM ride_labels WHERE activity_id = ANY(%s) AND model = %s",
@@ -91,13 +97,15 @@ class ActivityStore:
         return {r["activity_id"]: r["label"] for r in rows}
 
     async def next_without_details(self, now: datetime) -> int | None:
-        """L'attività più recente con potenza o FC e senza dettagli; quelle già fallite per ultime,
-        e solo una volta trascorso RETRY_FAILED dal fallimento."""
+        """L'attività più recente con potenza o FC e senza dettagli o senza serie compatta (salvata
+        prima che la serie esistesse); quelle già fallite per ultime, e solo una volta trascorso
+        RETRY_FAILED dal fallimento."""
         rows = await self._rows(
             f"""SELECT a.id FROM strava_activities a
                 LEFT JOIN ride_details d ON d.activity_id = a.id
+                LEFT JOIN ride_series s ON s.activity_id = a.id
                 LEFT JOIN detail_failures f ON f.activity_id = a.id
-                WHERE d.activity_id IS NULL AND ({WITH_DATA}) AND (f.failed_at IS NULL OR f.failed_at <= %s)
+                WHERE (d.activity_id IS NULL OR s.activity_id IS NULL) AND ({WITH_DATA}) AND (f.failed_at IS NULL OR f.failed_at <= %s)
                 ORDER BY f.failed_at ASC NULLS FIRST, a.start_date DESC, a.id DESC LIMIT 1""",
             (now - RETRY_FAILED,))
         return rows[0]["id"] if rows else None
@@ -174,14 +182,23 @@ class ActivityStore:
                                (now, history_complete))
         return await self._write(generation, change)
 
-    async def save_details(self, generation: int, activity_id: int, details: dict) -> bool:
+    async def save_details(self, generation: int, activity_id: int, details: dict,
+                           series: dict | None = None) -> bool:
+        """I dettagli e, se c'è, la serie compatta. Una corsa che ha già i dettagli (scaricata di
+        nuovo per la serie) li tiene com'erano e riceve solo la serie."""
         async def change(conn):
+            # Un'attività cancellata su Strava durante il download non riceve dettagli né serie.
             await conn.execute(
-                # Un'attività cancellata su Strava durante il download non riceve dettagli.
                 """INSERT INTO ride_details (activity_id, np, watts_n, hr_mean, hr_n)
                    SELECT id, %s, %s, %s, %s FROM strava_activities WHERE id = %s
                    ON CONFLICT (activity_id) DO NOTHING""",
                 (*(details[k] for k in DETAIL_KEYS), activity_id))
+            if series is not None:
+                await conn.execute(
+                    """INSERT INTO ride_series (activity_id, step, watts, hr)
+                       SELECT id, %s, %s, %s FROM strava_activities WHERE id = %s
+                       ON CONFLICT (activity_id) DO NOTHING""",
+                    (*(series[k] for k in SERIES_KEYS), activity_id))
         return await self._write(generation, change)
 
     async def save_ride_labels(self, generation: int, model: str, found: dict[int, str]) -> bool:

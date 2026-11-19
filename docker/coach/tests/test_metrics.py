@@ -7,8 +7,8 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from app.jscompat import days_ago, instant_ms, js_round, js_sum
-from app.metrics import (activity_load, capacity_tier, coach_context, details_hrtss, details_tss,
-                         form_trend)
+from app.metrics import (SERIES_STEP, activity_load, capacity_tier, coach_context, details_hrtss, details_tss,
+                         form_trend, ride_series)
 from fixture_data import DETAILS, NOW_MS, RIDES, activities, load, profile
 
 EXPECTED = load("metrics_expected.json")
@@ -102,3 +102,29 @@ def test_fixtures_cover_every_kind_of_activity():
         "ride without details": any("Ride" in a["type"] and i not in DETAILS for i, a in acts.items()),
     }
     assert all(kinds.values()), kinds
+
+
+# ---- Serie compatta di una corsa ----
+
+def test_ride_series_averages_power_and_heart_rate_over_15_second_steps():
+    streams = {"time": {"data": list(range(30))}, "watts": {"data": [100] * 15 + [0] * 15},
+               "heartrate": {"data": [120] * 15 + [140] * 15}}
+    assert ride_series(streams) == {"step": SERIES_STEP, "watts": [100, 0], "hr": [120, 140]}
+
+
+def test_heart_rate_zeros_and_dropouts_are_gaps_not_low_values():
+    streams = {"time": {"data": list(range(45))}, "heartrate": {"data": [150] * 10 + [0] * 5 + [0] * 15 + [None] * 15}}
+    assert ride_series(streams)["hr"] == [150, None, None]
+
+
+def test_a_pause_in_the_recording_leaves_empty_steps():
+    streams = {"time": {"data": [0, 1, 60, 61]}, "watts": {"data": [200, 200, 300, 300]}}
+    assert ride_series(streams)["watts"] == [200, None, None, None, 300]
+
+
+def test_a_missing_signal_is_none_and_a_four_hour_ride_stays_under_1000_points():
+    four_hours = 4 * 3600
+    series = ride_series({"time": {"data": list(range(four_hours))}, "watts": {"data": [210] * four_hours}})
+    assert series["hr"] is None
+    assert len(series["watts"]) < 1000
+    assert ride_series({}) == {"step": SERIES_STEP, "watts": None, "hr": None}

@@ -75,7 +75,7 @@ def test_database() -> str:
 @pytest.fixture(autouse=True)
 def activity_store(monkeypatch, tmp_path, test_database) -> ActivityStore:
     with psycopg.connect(test_database, autocommit=True) as conn:
-        conn.execute("TRUNCATE strava_activities, ride_details, ride_labels, detail_failures, strava_sync, detail_requests, "
+        conn.execute("TRUNCATE strava_activities, ride_details, ride_series, ride_labels, detail_failures, strava_sync, detail_requests, "
                      "athlete_data")
     store = ActivityStore(test_database)
     monkeypatch.setattr(main, "store", store)

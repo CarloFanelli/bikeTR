@@ -56,6 +56,35 @@ def ride_details(streams: dict) -> dict:
     }
 
 
+# Secondi di ogni passo della serie compatta: 4 ore sono 960 passi, un calo di 20 secondi
+# resta visibile in uno o due passi.
+SERIES_STEP = 15
+
+
+def ride_series(streams: dict) -> dict:
+    """Potenza e frequenza cardiaca in medie di SERIES_STEP secondi, sul tempo della
+    registrazione. Un passo senza campioni (pausa) vale None; una FC a zero è la fascia staccata,
+    non un valore basso. Un segnale che la corsa non ha vale None."""
+    time = (streams.get("time") or {}).get("data") or []
+
+    def averaged(key: str, valid) -> list | None:
+        data = (streams.get(key) or {}).get("data") or []
+        if not data:
+            return None
+        seconds = time if len(time) == len(data) else range(len(data))
+        sums = [0.0] * (int(seconds[-1]) // SERIES_STEP + 1)
+        counts = [0] * len(sums)
+        for second, value in zip(seconds, data):
+            if valid(value):
+                sums[int(second) // SERIES_STEP] += value
+                counts[int(second) // SERIES_STEP] += 1
+        return [round(t / n, 1) if n else None for t, n in zip(sums, counts)]
+
+    return {"step": SERIES_STEP,
+            "watts": averaged("watts", lambda w: w is not None),
+            "hr": averaged("heartrate", lambda h: bool(h))}
+
+
 def normalized_power(watts: list) -> float:
     """NP = (media delle medie mobili a 30 s elevate alla quarta) ^ (1/4)."""
     win = 30

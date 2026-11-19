@@ -12,7 +12,7 @@ import httpx
 
 from app.activities import ActivityStore
 from app.errors import CoachError
-from app.metrics import is_bike, ride_details
+from app.metrics import is_bike, ride_details, ride_series
 
 AUTH_TOKEN_URL = "http://auth:8080/auth/token"
 STRAVA_API = "https://www.strava.com/api/v3"
@@ -291,12 +291,15 @@ class StravaRides:
         try:
             streams = res.json() if res.status_code == 200 else None
             # Come nel browser, una risposta che non è un oggetto vale "corsa senza stream".
-            details = None if streams is None else ride_details(streams if isinstance(streams, dict) else {})
+            if streams is not None and not isinstance(streams, dict):
+                streams = {}
+            details = None if streams is None else ride_details(streams)
+            series = None if streams is None else ride_series(streams)
         except (ValueError, AttributeError):
             details = None
         if details is None:
             return "failed"
-        return "saved" if await self.store.save_details(generation, ride_id, details) else "disconnected"
+        return "saved" if await self.store.save_details(generation, ride_id, details, series) else "disconnected"
 
 
 def bearer(token: str) -> dict:

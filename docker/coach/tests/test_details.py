@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from app import main
 from app.activities import ActivityStore
 from app.details import DetailsDownloader
-from test_sync import NOW, SAME_ORIGIN, FakeStrava, activity, rides, saved_details, strava_rides, sync
+from test_sync import NOW, SAME_ORIGIN, FakeStrava, activity, refresh, rides, saved, saved_details, strava_rides, sync
 
 # Il 13 novembre 2026 alle 10:07 UTC: il quarto d'ora è iniziato alle 10:00.
 CLOCK = datetime(2026, 11, 13, 10, 7, tzinfo=timezone.utc)
@@ -220,3 +220,62 @@ def test_progress_route(store):
     sync(store, FakeStrava(rides([1, 2]) + [walk(3)]))
     asyncio.run(store.save_details(store.generation, 1, {"np": 200, "watts_n": 10, "hr_mean": None, "hr_n": 0}))
     assert TestClient(main.app).get("/coach/details/progress", headers=SAME_ORIGIN).json() == {"done": 1, "total": 2}
+
+
+def saved_series(store) -> list:
+    return [r[0] for r in saved(store, "SELECT activity_id FROM ride_series ORDER BY activity_id")]
+
+
+def test_a_download_saves_the_series_with_the_ride_details(store):
+    fake = FakeStrava(rides([1]))
+    sync(store, fake)
+    steps(downloader(store, fake))
+    series = asyncio.run(store.series([1]))[1]
+    assert series["step"] == 15 and len(series["watts"]) == len(series["hr"]) == 8
+
+
+def test_a_ride_with_details_but_no_series_is_downloaded_again_once(store):
+    fake = FakeStrava(rides([1, 2]))
+    sync(store, fake)
+    # Salvati prima della serie compatta: dettagli sì, serie no.
+    for ride_id in (1, 2):
+        asyncio.run(store.save_details(store.generation, ride_id, {"np": 200, "watts_n": 10, "hr_mean": None,
+                                                                    "hr_n": 0}))
+    assert steps(downloader(store, fake))[-1] is None
+    assert fake.stream_calls() == [1, 2]
+    assert saved_series(store) == [1, 2]
+    # I dettagli già salvati restano quelli di prima.
+    assert asyncio.run(store.details([1]))[1]["np"] == 200
+    assert steps(downloader(store, fake))[-1] is None
+    assert fake.stream_calls() == [1, 2]
+
+
+def test_a_ride_without_power_or_heart_rate_gets_an_empty_series_and_is_not_downloaded_again(store):
+    fake = FakeStrava(rides([1]))
+    fake.streams[1] = {"time": {"data": [0, 1, 2]}, "cadence": {"data": [80, 81, 82]}}
+    sync(store, fake)
+    steps(downloader(store, fake))
+    steps(downloader(store, fake))
+    assert fake.stream_calls() == [1]
+    assert asyncio.run(store.series([1])) == {1: {"step": 15, "watts": None, "hr": None}}
+
+
+def test_downloading_series_again_stops_at_the_budget_and_resumes_in_the_next_quarter_hour(store):
+    fake = FakeStrava(rides([1, 2]))
+    sync(store, fake)
+    for ride_id in (1, 2):
+        asyncio.run(store.save_details(store.generation, ride_id, {"np": 200, "watts_n": 10, "hr_mean": None,
+                                                                    "hr_n": 0}))
+    record_requests(store, CLOCK - timedelta(minutes=1), 59)
+    assert steps(downloader(store, fake))[-1] == timedelta(minutes=8)
+    assert fake.stream_calls() == [1]
+    steps(downloader(store, fake, clock=lambda: CLOCK + timedelta(minutes=8)))
+    assert fake.stream_calls() == [1, 2]
+
+
+def test_disconnecting_deletes_the_saved_series(store):
+    fake = FakeStrava(rides([1, 2]))
+    refresh(store, fake)
+    assert saved_series(store) == [1, 2]
+    assert TestClient(main.app).post("/coach/forget", headers=SAME_ORIGIN).status_code == 204
+    assert saved_series(store) == []
