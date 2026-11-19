@@ -116,6 +116,14 @@ _Avoid_: "training set" (nothing is trained, only tuned by hand).
 About 40 more **Labeled rides**, sharing no ride with the **Tuning set**, labelled by the user without proposals and never used to tune. Ride labels count as reliable only when they reach the bar on it: at least 80% right and at least half of each label present.
 _Avoid_: "test set" (the automated tests are something else).
 
+### Hard block
+A stretch of at least 1 minute above Z2 in a ride: heart rate from 85% of LTHR, or measured power from 76% of FTP. Two or more of similar length, each followed by a recovery, make a ride ripetute; one block, or irregular climbs on a long ride, leave it fondo.
+_Avoid_: "interval" alone (a block is found in the data, an interval is planned), "effort" (vague).
+
+### Ride shape
+A ride's **Hard blocks** (duration, zone), the recoveries between them and its minutes per zone, computed from the compact series of its **Ride details** with today's FTP and LTHR. The **Label rule** and the **Label model** read it beside the averages.
+_Avoid_: "pattern" alone (says nothing about what is measured), "streams" (Strava's API name).
+
 ## Decisions
 
 - **The browser sends the athlete profile instead of the service estimating it**: FTP and heart-rate values travel with each Coach request. Why: the estimates use segment data only the browser has, and the Coach must use the same numbers the app shows.

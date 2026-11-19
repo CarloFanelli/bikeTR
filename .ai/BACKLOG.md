@@ -243,3 +243,11 @@
 - **What**: Make Ride labels reliable before the Coach uses them: separate Label rule thresholds for heart rate and for rides with only Strava's estimated power, and a Label model prompt that labels every ride and tells endurance from recovery. The first measurement gave the rule 23% and qwen2.5:3b 33% on the 40 Labeled rides.
 - **From**: ride-classifier (label measurement, 2026-11-19)
 - **Picked up by**: reliable-ride-labels (2026-11-19)
+
+### B-53 · open
+- **What**: Show a ride's Hard blocks and recoveries on its chart in Attività, once Ride labels pass the Check set.
+- **From**: ride-shape-labels (interview, 2026-11-19)
+
+### B-54 · open
+- **What**: Turn Ride labels on by default in the Coach, once they pass the Check set and the Evaluation set shows better answers with them.
+- **From**: ride-shape-labels (interview, 2026-11-19)
