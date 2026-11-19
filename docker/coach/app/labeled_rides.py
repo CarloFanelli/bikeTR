@@ -15,6 +15,13 @@ un'etichetta vuota. L'etichetta giusta la scrive una persona: una proposta della
 modello darebbe un vantaggio proprio a chi poi si misura. Corretta e riletta, la bozza diventa
 docker/coach/evaluation/labeled_rides.json, che il repository pubblica.
 
+Ogni corsa porta anche la sua serie compatta (potenza e frequenza cardiaca in medie di 15 secondi),
+senza orari né punti GPS e spostata come le altre cifre. Ai due set già etichettati la aggiunge:
+
+  docker compose run --rm coach-tools python -m app.labeled_rides --add-series
+
+ritrovando ogni corsa in labeled-rides-sources.json, nello stesso ordine.
+
 Le corse salvate restano intatte: il comando legge soltanto."""
 
 import argparse
@@ -39,6 +46,8 @@ DRAFT_FILES = {"tuning": Path("/project/labeled-rides-draft.json"),
 SOURCES_FILE = Path("/project/labeled-rides-sources.json")
 # Dove va la bozza corretta, dalla cartella del progetto: il file che la misura delle etichette legge.
 FINAL_FILES = {name: f"docker/coach/{path.relative_to(path.parents[1])}" for name, path in LABELED_FILES.items()}
+# I due set, scrivibili: la cartella del Coach in coach-tools è di sola lettura.
+SET_FILES = {name: Path("/project") / final for name, final in FINAL_FILES.items()}
 WANTED = 40
 # Le attività più recenti fra cui scegliere, distribuite su tutto il periodo: corse di ogni tipo.
 LOOKED_AT = 600
@@ -89,7 +98,21 @@ def tuning_ids(rides: list, tuning: list) -> list[int] | None:
     return [a["id"] for a in again]
 
 
-def anonymized(index: int, a: dict, details: dict, rng: random.Random) -> dict:
+def moved_series(series: dict | None, rng: random.Random) -> dict | None:
+    """La serie compatta con ogni segnale spostato di un solo fattore a caso entro JITTER: la forma
+    dell'uscita resta, i valori veri no."""
+    if series is None:
+        return None
+
+    def moved(values):
+        if values is None:
+            return None
+        factor = rng.uniform(1 - JITTER, 1 + JITTER)
+        return [None if v is None else round(v * factor) for v in values]
+    return {"step": series["step"], "watts": moved(series["watts"]), "hr": moved(series["hr"])}
+
+
+def anonymized(index: int, a: dict, details: dict, series: dict, rng: random.Random) -> dict:
     def moved(value, digits: int = 0):
         if not value:
             return None
@@ -103,7 +126,8 @@ def anonymized(index: int, a: dict, details: dict, rng: random.Random) -> dict:
             "avgHr": moved(a.get("average_heartrate")), "nome": training_name(a.get("name")),
             "gara": a.get("workout_type") == RACE_WORKOUT_TYPE, "np": moved(np_),
             "maxWatts": moved(a.get("max_watts")), "maxHr": moved(a.get("max_heartrate")),
-            "potenzaMisurata": bool(a.get("device_watts")), "label": ""}
+            "potenzaMisurata": bool(a.get("device_watts")), "serie": moved_series(series.get(a["id"]), rng),
+            "label": ""}
 
 
 def athlete_numbers(saved: dict, rng: random.Random) -> tuple[int | None, int | None]:
@@ -117,6 +141,40 @@ def athlete_numbers(saved: dict, rng: random.Random) -> tuple[int | None, int | 
 
 class Overlap(Exception):
     """Non si sa quali uscite sono nel Tuning set: il Check set potrebbe ripeterle."""
+
+
+class Missing(Exception):
+    """Una corsa etichettata non si ritrova fra le uscite salvate, o non ha ancora la serie."""
+
+
+def dumped(data: dict) -> str:
+    """Il JSON indentato, con le liste di numeri su una riga: una serie non occupa mille righe."""
+    text = json.dumps(data, ensure_ascii=False, indent=2)
+    return re.sub(r"\[\s*([-\d.,\snul]*?)\s*\]",
+                  lambda m: "[" + ", ".join(v.strip() for v in m.group(1).split(",") if v.strip()) + "]", text) + "\n"
+
+
+async def with_series(store: ActivityStore, sets: dict, sources: dict, rng: random.Random) -> dict:
+    """I set con la serie compatta su ogni corsa, ritrovata in `sources` nella stessa posizione; ferma
+    (Missing) con la prima corsa che non si ritrova o che non ha ancora la serie."""
+    found = {}
+    for name, data in sets.items():
+        ids = sources.get(name) or []
+        if len(ids) != len(data["rides"]):
+            raise Missing(f"{SOURCES_FILE.name} non ha le {len(data['rides'])} uscite del set {name}")
+        saved = {a["id"]: a for a in await store.summaries(ids)}
+        series = await store.series(ids)
+        rides = []
+        for ride, i in zip(data["rides"], ids):
+            if i not in saved or not matches(ride, saved[i]):
+                raise Missing(f"la corsa {ride['id']} del set {name} non è più fra le uscite salvate")
+            if i not in series:
+                raise Missing(f"la corsa {ride['id']} del set {name} non ha ancora la serie: aspetta il "
+                              "download in sottofondo del Coach e riprova")
+            kept = {k: v for k, v in ride.items() if k not in ("serie", "label")}
+            rides.append({**kept, "serie": moved_series(series[i], rng), "label": ride.get("label", "")})
+        found[name] = {**data, "rides": rides}
+    return found
 
 
 async def draft(store: ActivityStore, athlete: AthleteData, rng: random.Random, chosen: str,
@@ -142,30 +200,48 @@ async def draft(store: ActivityStore, athlete: AthleteData, rng: random.Random, 
         latest = [a for a in latest if a["id"] not in set(tuning)]
     rides = picked(latest)
     details = await store.details([a["id"] for a in rides])
+    series = await store.series([a["id"] for a in rides])
     ftp, lthr = athlete_numbers(await athlete.all(), rng)
     return ({"_comment": "Corse inventate a partire da uscite vere: data, cifre e nome cambiati. "
                          "label: recupero, fondo, ripetute o gara, scritta da una persona.",
              "ftp": ftp, "lthr": lthr,
-             "rides": [anonymized(i, a, details, rng) for i, a in enumerate(rides, 1)]},
+             "rides": [anonymized(i, a, details, series, rng) for i, a in enumerate(rides, 1)]},
             [a["id"] for a in rides])
 
 
 def main(argv: list[str] | None = None, *, store: ActivityStore | None = None, athlete: AthleteData | None = None,
          out: Path | None = None, sources_file: Path = SOURCES_FILE, tuning_file: Path = LABELED_FILES["tuning"],
-         rng: random.Random | None = None) -> int:
-    """0 con la bozza scritta, 1 senza corse salvate, 2 se il Check set potrebbe ripetere il Tuning set."""
+         set_files: dict | None = None, rng: random.Random | None = None) -> int:
+    """0 con la bozza (o le serie) scritta, 1 senza corse salvate, 2 se il Check set potrebbe ripetere
+    il Tuning set, 3 se una corsa etichettata non si ritrova: in questi casi nessun file cambia."""
     parser = argparse.ArgumentParser(prog="python -m app.labeled_rides", description=__doc__.splitlines()[0])
     parser.add_argument("--set", choices=("tuning", "check"), default="tuning", dest="chosen",
                         help="tuning (le corse su cui si regolano regola e modello) o check (corse nuove, per "
                              "dire se le etichette sono affidabili)")
-    chosen = parser.parse_args(argv).chosen
+    parser.add_argument("--add-series", action="store_true",
+                        help="aggiunge la serie compatta a ogni corsa dei due set già etichettati")
+    args = parser.parse_args(argv)
+    chosen = args.chosen
     out = out or DRAFT_FILES[chosen]
     conninfo = db.url() if store is None or athlete is None else ""
     sources = json.loads(sources_file.read_text(encoding="utf-8")) if sources_file.exists() else {}
+    # Mai un seme fisso: con il seme nel repository le cifre vere si ricaverebbero dalla bozza.
+    rng = rng or random.SystemRandom()
+    if args.add_series:
+        files = set_files or SET_FILES
+        sets = {name: json.loads(path.read_text(encoding="utf-8")) for name, path in files.items()}
+        try:
+            found = asyncio.run(with_series(store or ActivityStore(conninfo), sets, sources, rng))
+        except Missing as e:
+            print(f"✗ Nessuna serie aggiunta: {e}.", file=sys.stderr)
+            return 3
+        for name, path in files.items():
+            replace_file(path, dumped(found[name]))
+            print(f"Serie aggiunte alle {len(found[name]['rides'])} corse di {path.name}.")
+        return 0
     try:
-        # Mai un seme fisso: con il seme nel repository le cifre vere si ricaverebbero dalla bozza.
         found, ids = asyncio.run(draft(store or ActivityStore(conninfo), athlete or AthleteData(conninfo),
-                                       rng or random.SystemRandom(), chosen, sources, tuning_file))
+                                       rng, chosen, sources, tuning_file))
     except Overlap as e:
         print(f"✗ Non posso evitare che il Check set ripeta corse del Tuning set: {e}.", file=sys.stderr)
         return 2
@@ -174,7 +250,7 @@ def main(argv: list[str] | None = None, *, store: ActivityStore | None = None, a
               file=sys.stderr)
         return 1
     existed = out.exists()
-    replace_file(out, json.dumps(found, ensure_ascii=False, indent=2) + "\n")
+    replace_file(out, dumped(found))
     replace_file(sources_file, json.dumps({**sources, chosen: ids}, indent=2) + "\n")
     count = len(found["rides"])
     print(f"Scritte {count} corse in {out.name}" + (" (sovrascritta)" if existed else "")

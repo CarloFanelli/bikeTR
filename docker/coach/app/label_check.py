@@ -26,6 +26,7 @@ from app.chat import ModelError
 from app.errors import CoachError
 from app.graph import ask
 from app.live_check import file_stem, money, write_results
+from app.ride_shape import ride_shape
 from app.spending import SPENDING_FILE, Spending, charge
 
 LABELED_FILES = {"tuning": Path(__file__).resolve().parents[1] / "evaluation" / "labeled_rides.json",
@@ -51,6 +52,8 @@ def labeled_rides(path: Path) -> dict:
     for ride in data["rides"]:
         # Le corse etichettate prima del segno del misuratore: solo con un misuratore c'è la normalizzata.
         ride.setdefault("potenzaMisurata", ride.get("np") is not None)
+        # La forma dalla serie compatta, con FTP e soglia del set; senza serie si giudica dalle medie.
+        ride["forma"] = ride_shape(ride.get("serie"), ride["potenzaMisurata"], data.get("ftp"), data.get("lthr"))
         if ride.get("label") not in labels.LABELS:
             raise CoachError(400, "labeled_rides", f'{path.name}: la corsa {ride.get("id")} ha etichetta '
                                                    f'"{ride.get("label")}"; quelle ammesse sono {", ".join(labels.LABELS)}')

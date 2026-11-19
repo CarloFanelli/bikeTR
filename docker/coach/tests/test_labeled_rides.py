@@ -168,3 +168,74 @@ def test_without_the_tuning_set_file_the_check_set_does_not_start(activity_store
                     tuning_file=tmp_path / "missing.json")
     assert code == 2 and not out.exists()
     assert "manca missing.json" in capsys.readouterr().err
+
+
+def series(n: int = 8) -> dict:
+    return {"step": 15, "watts": [200.0] * n, "hr": [140.0] * (n - 1) + [None]}
+
+
+def save_series(store, ride_id: int, value: dict | None = None):
+    asyncio.run(store.save_details(store.generation, ride_id, {"np": 200, "watts_n": 120, "hr_mean": 140, "hr_n": 120},
+                                   value or series()))
+
+
+def test_draft_rides_carry_their_series_moved_like_the_other_figures(activity_store, test_database, tmp_path):
+    asyncio.run(activity_store.save_activities(activity_store.generation, [bike(1), bike(2, moving_time=9000)]))
+    save_series(activity_store, bike(1)["id"])
+    code, out = run(activity_store, test_database, tmp_path, [])
+    rides = sorted(json.loads(out.read_text())["rides"], key=lambda r: r["durataMin"])
+    serie = rides[0]["serie"]
+    assert code == 0 and serie["step"] == 15 and serie["hr"][-1] is None
+    assert len(set(serie["watts"])) == 1 and 194 <= serie["watts"][0] <= 206
+    assert rides[1]["serie"] is None
+    # Le serie stanno su una riga: il file resta leggibile.
+    assert '"watts": [' in out.read_text() and '"step": 15,' in out.read_text()
+
+
+def add_series(activity_store, tmp_path, sets: dict, record: dict):
+    (tmp_path / "sources.json").write_text(json.dumps(record))
+    files = {}
+    for name, rides in sets.items():
+        files[name] = tmp_path / f"{name}.json"
+        files[name].write_text(json.dumps({"ftp": 250, "lthr": 165, "rides": rides}))
+    code = labeled_rides.main(["--add-series"], store=activity_store, athlete=AthleteData(""), rng=random.Random(1),
+                              sources_file=tmp_path / "sources.json", set_files=files)
+    return code, {name: json.loads(path.read_text()) for name, path in files.items()}
+
+
+def copy(i: int, label: str = "fondo") -> dict:
+    a = bike(i)
+    return {"id": f"r{i}", "durataMin": round(a["moving_time"] / 60), "distanzaKm": a["distance"] / 1000,
+            "potenzaMisurata": True, "label": label}
+
+
+def test_add_series_fills_both_sets_by_position_without_ids_or_times(activity_store, tmp_path):
+    asyncio.run(activity_store.save_activities(activity_store.generation, [bike(i) for i in range(1, 5)]))
+    for i in range(1, 5):
+        save_series(activity_store, bike(i)["id"])
+    code, found = add_series(activity_store, tmp_path, {"tuning": [copy(1), copy(2, "")], "check": [copy(3), copy(4)]},
+                             {"tuning": [bike(1)["id"], bike(2)["id"]], "check": [bike(3)["id"], bike(4)["id"]]})
+    assert code == 0
+    for data in found.values():
+        assert all(len(r["serie"]["watts"]) == 8 for r in data["rides"])
+        assert list(data["rides"][0])[-1] == "label"
+        text = json.dumps(data)
+        assert not any(str(bike(i)["id"]) in text for i in range(1, 5)) and "2026-" not in text
+    # La corsa ancora senza etichetta resta senza: la mette una persona.
+    assert found["tuning"]["rides"][1]["label"] == ""
+
+
+def test_add_series_stops_naming_a_ride_no_longer_saved_or_without_series_and_writes_nothing(activity_store,
+                                                                                            tmp_path, capsys):
+    asyncio.run(activity_store.save_activities(activity_store.generation, [bike(1), bike(2)]))
+    save_series(activity_store, bike(1)["id"])
+    sets = {"tuning": [copy(1), copy(2)], "check": [copy(3)]}
+    code, found = add_series(activity_store, tmp_path, sets,
+                             {"tuning": [bike(1)["id"], bike(2)["id"]], "check": [bike(3)["id"]]})
+    assert code == 3 and all("serie" not in r for data in found.values() for r in data["rides"])
+    err = capsys.readouterr().err
+    assert "r2" in err and "serie" in err
+    save_series(activity_store, bike(2)["id"])
+    code, _ = add_series(activity_store, tmp_path, sets, {"tuning": [bike(1)["id"], bike(2)["id"]],
+                                                          "check": [bike(3)["id"]]})
+    assert code == 3 and "r3" in capsys.readouterr().err

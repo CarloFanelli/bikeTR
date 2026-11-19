@@ -160,3 +160,13 @@ def counts(right: int, of: int, **labels_) -> dict:
 ])
 def test_reliable_means_80_percent_and_half_of_each_label_present_both_inclusive(score, expected):
     assert label_check.reliable(score) is expected
+
+
+def test_each_labeled_ride_gets_its_ride_shape_from_its_series_with_the_set_ftp(tmp_path):
+    path = tmp_path / "labeled_rides.json"
+    serie = {"step": 15, "watts": [120] * 40 + [190] * 40 + [120] * 40, "hr": None}
+    path.write_text(json.dumps({"ftp": 200, "lthr": 165, "rides": [{**ride(1, "fondo", 150), "serie": serie},
+                                                                   ride(2, "fondo", 150)]}))
+    rides = label_check.labeled_rides(path)["rides"]
+    assert [(b["minuti"], b["zona"]) for b in rides[0]["forma"]["blocchi"]] == [(10, 4)]
+    assert rides[1]["forma"] is None

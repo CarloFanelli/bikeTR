@@ -97,7 +97,7 @@
       "maxWatts": 598,
       "maxHr": 177,
       "potenzaMisurata": true,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r7",
@@ -113,7 +113,7 @@
       "maxWatts": null,
       "maxHr": 137,
       "potenzaMisurata": false,
-      "label": "recupero"
+      "label": "fondo"
     },
     {
       "id": "r8",
@@ -129,7 +129,7 @@
       "maxWatts": null,
       "maxHr": 192,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r9",
@@ -193,7 +193,7 @@
       "maxWatts": null,
       "maxHr": 183,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r13",
@@ -257,7 +257,7 @@
       "maxWatts": null,
       "maxHr": 180,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r17",
@@ -305,7 +305,7 @@
       "maxWatts": null,
       "maxHr": 162,
       "potenzaMisurata": false,
-      "label": "recupero"
+      "label": "fondo"
     },
     {
       "id": "r20",
@@ -321,7 +321,7 @@
       "maxWatts": null,
       "maxHr": 181,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r21",
@@ -353,7 +353,7 @@
       "maxWatts": null,
       "maxHr": 179,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r23",
@@ -513,7 +513,7 @@
       "maxWatts": null,
       "maxHr": 169,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r33",
@@ -529,7 +529,7 @@
       "maxWatts": null,
       "maxHr": 181,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r34",
@@ -561,7 +561,7 @@
       "maxWatts": null,
       "maxHr": 182,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r36",
@@ -593,7 +593,7 @@
       "maxWatts": null,
       "maxHr": 165,
       "potenzaMisurata": false,
-      "label": "recupero"
+      "label": ""
     },
     {
       "id": "r38",
@@ -609,7 +609,7 @@
       "maxWatts": null,
       "maxHr": 180,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     },
     {
       "id": "r39",
@@ -641,7 +641,7 @@
       "maxWatts": null,
       "maxHr": 177,
       "potenzaMisurata": false,
-      "label": "fondo"
+      "label": "ripetute"
     }
   ]
 }
