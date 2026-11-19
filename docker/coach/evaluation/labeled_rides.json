@@ -580,22 +580,6 @@
       "label": "fondo"
     },
     {
-      "id": "r37",
-      "data": "2025-04-19",
-      "tipo": "Ride",
-      "durataMin": 6,
-      "distanzaKm": 2.3,
-      "avgWatts": 133,
-      "avgHr": 145,
-      "nome": "Uscita",
-      "gara": false,
-      "np": null,
-      "maxWatts": null,
-      "maxHr": 165,
-      "potenzaMisurata": false,
-      "label": ""
-    },
-    {
       "id": "r38",
       "data": "2025-04-22",
       "tipo": "Ride",
