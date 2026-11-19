@@ -66,6 +66,31 @@ def test_the_rule_labels_each_threshold(fields, expected):
     assert labels.rule_label(ride(**fields), FTP, LTHR) == expected
 
 
+def shaped(*blocks, minutes: int = 90, **fields) -> dict:
+    """Una corsa con la sua forma: blocchi (minuti, zona, minuti di recupero dopo)."""
+    forma = {"fonte": "potenza", "minutiPerZona": {},
+             "blocchi": [{"minuti": m, "zona": z, "recuperoMin": r} for m, z, r in blocks]}
+    return ride(durataMin=minutes, forma=forma, **fields)
+
+
+@pytest.mark.parametrize("r, expected", [
+    # 2x20 a soglia e 3x10 in Z3, ognuno seguito da un recupero: ripetute anche con medie da fondo.
+    (shaped((20, 4, 5), (20, 4, 10), avgWatts=0.7 * FTP, potenzaMisurata=True), "ripetute"),
+    (shaped((10, 3, 4), (10, 3, 4), (10, 3, 15), avgHr=0.85 * LTHR), "ripetute"),
+    # Un'attivazione in Z3 in un'uscita di Z2: fondo, anche con la FC media alta di un'ora.
+    (shaped((3, 3, 60), minutes=60, avgHr=0.96 * LTHR), "fondo"),
+    # Quattro ore con cinque salite di durata diversa: fondo.
+    (shaped((3, 3, 20), (8, 4, 30), (5, 3, 25), (12, 3, 40), (6, 4, 50), minutes=240), "fondo"),
+    # Due blocchi attaccati, senza recupero fra loro: non sono ripetute.
+    (shaped((10, 4, 0), (10, 4, 10)), "fondo"),
+    # La forma non toglie il recupero delle medie, né la gara.
+    (shaped(minutes=50, avgHr=0.75 * LTHR), "recupero"),
+    (shaped((20, 4, 5), (20, 4, 10), gara=True), "gara"),
+])
+def test_the_rule_reads_the_ride_shape_when_there_is_one(r, expected):
+    assert labels.rule_label(r, FTP, LTHR) == expected
+
+
 def test_power_without_a_power_meter_is_ignored_and_heart_rate_decides():
     estimated = ride(avgWatts=1.2 * FTP, np=1.2 * FTP, avgHr=0.70 * LTHR, durataMin=60)
     assert labels.rule_label(estimated, FTP, LTHR) == "recupero"
@@ -89,7 +114,7 @@ def test_without_ftp_and_lthr_only_the_race_flag_counts(gara, expected):
 def test_ride_facts_follow_the_recent_rides_one_by_one():
     acts = [{**a, "name": f"Uscita {i}", "workout_type": 11 if i == 0 else 10, "device_watts": i == 1, "max_watts": 900,
              "max_heartrate": 185} for i, a in enumerate(RIDES["activities"])]
-    facts = labels.ride_facts(acts, DETAILS, NOW_MS)
+    facts = labels.ride_facts(acts, DETAILS, {}, NOW_MS, FTP, LTHR)
     shown = recent_rides(acts, NOW_MS)
     assert len(facts) == len(shown) > 0
     assert [f["gara"] for f in facts] == [True] + [False] * (len(facts) - 1)
@@ -97,6 +122,8 @@ def test_ride_facts_follow_the_recent_rides_one_by_one():
     assert [f["potenzaMisurata"] for f in facts] == [False, True] + [False] * (len(facts) - 2)
     assert all(f["np"] == (round(DETAILS[f["id"]]["np"]) if (DETAILS.get(f["id"]) or {}).get("np") else None)
                for f in facts)
+    # Senza serie compatta nessuna forma: la regola guarda le medie.
+    assert {f["forma"] for f in facts} == {None}
 
 
 def labelled_run(value: str) -> tuple[list, FakeOllama]:

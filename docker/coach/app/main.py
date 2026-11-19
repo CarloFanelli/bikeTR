@@ -235,7 +235,8 @@ async def ride_labels(body: Annotated[Any, Body()]):
     acts = await store.summaries(ids)
     ids = [a["id"] for a in acts]
     saved = await store.ride_labels(ids, chat.label.model) if chat.label else {}
-    return {"labels": labels.badges(acts, await store.details(ids), saved, profile.ftp, profile.lthr)}
+    return {"labels": labels.badges(acts, await store.details(ids), await store.series(ids), saved, profile.ftp,
+                                    profile.lthr)}
 
 
 @app.get("/coach/details/progress")

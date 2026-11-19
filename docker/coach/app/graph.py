@@ -20,7 +20,7 @@ from app import labels, prompts, provider, tracing
 from app.chat import Accepted, ChatEnd, ModelError, ToolCall
 from app.check import MAX_DRAFTS, SPENDING_CAP, check_draft, read_draft, retry_message, retry_step
 from app.errors import CoachError
-from app.metrics import coach_context
+from app.metrics import coach_context, recent_bike_rides
 from app.spending import Spending, charge, cost
 from app.strava import RideData, StravaRides
 from app.workout import WorkoutRequest, decide, find_papers, read_index, search_papers, step
@@ -86,7 +86,11 @@ async def labels_node(state: State, runtime: Runtime[Request]) -> State:
         return {}
     rides = ctx["recentDays"]
     if "rides" in state:
-        facts = labels.ride_facts(state["rides"].activities, state["rides"].details, r.now_ms)
+        # La serie compatta si legge solo qui, con le etichette accese.
+        store = r.rides.store if isinstance(r.rides, StravaRides) else None
+        acts = state["rides"].activities
+        series = await store.series([a["id"] for a in recent_bike_rides(acts, r.now_ms)]) if store else {}
+        facts = labels.ride_facts(acts, state["rides"].details, series, r.now_ms, ctx["ftp"], ctx["lthr"])
         rides = [{**ride, **fact} for ride, fact in zip(rides, facts)]
     started, turn = time.monotonic(), None
     with tracing.step("labels"):

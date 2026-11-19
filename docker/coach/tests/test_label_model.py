@@ -87,6 +87,25 @@ def test_each_ride_line_carries_its_shares_of_ftp_and_threshold_heart_rate(ride,
     assert ("(misurata)" if ride["potenzaMisurata"] else "(stimata)") in user["content"]
 
 
+def test_each_ride_line_describes_its_ride_shape_or_says_there_is_none():
+    base = {"tipo": "Ride", "durataMin": 65, "distanzaKm": 30, "avgWatts": 190, "np": 200, "potenzaMisurata": True}
+    forma = {"fonte": "potenza", "minutiPerZona": {"Z1": 0, "Z2": 25, "Z3": 0, "Z4": 40, "Z5": 0, "Z6": 0},
+             "blocchi": [{"minuti": 20, "zona": 4, "recuperoMin": 5}, {"minuti": 20, "zona": 4, "recuperoMin": 10}]}
+    _, user = labels.model_messages([{**base, "forma": forma}, {**base, "forma": None}, base], 250, 160)
+    lines = user["content"].split("\n")[-3:]
+    assert lines[0].endswith("forma (da potenza): blocchi duri 20min Z4 poi 5min di recupero, 20min Z4 poi 10min "
+                             "di recupero; minuti per zona Z2 25, Z4 40")
+    assert lines[1].endswith("forma: — (senza dati secondo per secondo)")
+    assert lines[2].endswith("forma: — (senza dati secondo per secondo)")
+
+
+def test_a_shape_without_hard_blocks_says_so():
+    forma = {"fonte": "fc", "minutiPerZona": {"Z1": 10, "Z2": 50, "Z3": 0, "Z4": 0, "Z5": 0, "Z6": 0}, "blocchi": []}
+    ride = {"tipo": "Ride", "durataMin": 60, "distanzaKm": 30, "potenzaMisurata": False, "forma": forma}
+    _, user = labels.model_messages([ride], 250, 160)
+    assert user["content"].endswith("forma (da fc): nessun blocco duro; minuti per zona Z1 10, Z2 50")
+
+
 def test_without_ftp_the_share_of_ftp_is_a_dash():
     ride = {"tipo": "Ride", "durataMin": 60, "distanzaKm": 30, "avgWatts": 200, "np": 210, "potenzaMisurata": True,
             "avgHr": 150}
@@ -98,6 +117,7 @@ def test_the_label_prompt_asks_for_every_ride_and_names_the_rule_thresholds():
     assert "OGNI corsa" in labels.LABEL_SYSTEM
     assert f"da {labels.POWER_INTERVALS_FROM:.2f} in su" in labels.LABEL_SYSTEM
     assert f"sotto {labels.HR_RECOVERY_BELOW:.2f}" in labels.LABEL_SYSTEM
+    assert "blocco duro" in labels.LABEL_SYSTEM and f"{labels.SIMILAR_LENGTH:g} volte" in labels.LABEL_SYSTEM
 
 
 def test_no_recent_rides_means_no_label_call(monkeypatch):

@@ -94,6 +94,17 @@ def ride_labels(body) -> dict:
     return res.json()["labels"]
 
 
+def test_a_badge_reads_the_saved_series_of_the_ride(monkeypatch, badge_rides, activity_store):
+    monkeypatch.setenv("COACH_RIDE_LABELS", "rule")
+    # 120 bpm di media, ma due blocchi di 10 minuti a 150 su 160 di soglia, con recuperi: ripetute.
+    hr = [110.0] * 40 + [150.0] * 40 + [110.0] * 20 + [150.0] * 40 + [110.0] * 40
+    asyncio.run(activity_store.save_details(activity_store.generation, HEART["id"],
+                                            {"np": None, "watts_n": 0, "hr_mean": 120, "hr_n": 3600},
+                                            {"step": 15, "watts": None, "hr": hr}))
+    got = ride_labels({"profile": {"ftp": 220, "lthr": 160}, "ids": badge_rides})
+    assert got[str(HEART["id"])] == "ripetute"
+
+
 def test_with_labels_off_no_ride_gets_a_badge(badge_rides):
     assert ride_labels({"profile": {"ftp": 250, "lthr": 160}, "ids": badge_rides}) == {}
 

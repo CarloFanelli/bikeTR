@@ -1,6 +1,7 @@
 """Le etichette delle corse recenti nel prompt del Coach: recupero, fondo, ripetute o gara. Con
 COACH_RIDE_LABELS=rule le dà la regola qui sotto, che guarda solo il segno gara di Strava,
-l'intensità rispetto a FTP o soglia cardiaca e la durata: fa da confronto per il modello che
+la forma dell'uscita (i blocchi duri trovati nei dati secondo per secondo), l'intensità rispetto a FTP o
+soglia cardiaca e la durata: fa da confronto per il modello che
 etichetta, e da ripiego quando quel modello non risponde. Con COACH_RIDE_LABELS=model le chiede al
 modello che etichetta, con i messaggi e la lettura della risposta qui sotto.
 
@@ -12,6 +13,7 @@ set (evaluation/labeled_rides.json), mai sul Check set."""
 from app.check import parse_model_json
 from app.jscompat import js_str
 from app.metrics import is_bike, recent_bike_rides, ride_numbers
+from app.ride_shape import ride_shape
 
 LABELS = ("recupero", "fondo", "ripetute", "gara")
 # Strava segna una corsa in bici come gara con workout_type 11.
@@ -27,6 +29,12 @@ HR_INTERVALS_FROM = 0.95
 HR_INTERVALS_MAX_MINUTES = 90
 HR_RECOVERY_BELOW = 0.81
 RECOVERY_MAX_MINUTES = 75
+# Ripetute dalla forma: almeno due blocchi duri di durata simile (il più lungo al massimo SIMILAR_LENGTH
+# volte il più corto), ognuno seguito da un recupero di almeno RECOVERY_MIN_MINUTES (l'ultimo può
+# chiudere l'uscita). Un blocco solo, o blocchi irregolari come le salite di un'uscita lunga, sono fondo.
+MIN_REPEATS = 2
+SIMILAR_LENGTH = 2.0
+RECOVERY_MIN_MINUTES = 1
 # Le cifre di una corsa che il classificatore legge oltre a quelle che il prompt mostra già.
 FACT_KEYS = ("nome", "gara", "np", "maxWatts", "maxHr", "potenzaMisurata")
 
@@ -40,21 +48,26 @@ def facts(a: dict, details: dict) -> dict:
             "potenzaMisurata": bool(a.get("device_watts"))}
 
 
-def ride_facts(acts: list, details: dict, now_ms: float) -> list[dict]:
+def shaped_facts(a: dict, details: dict, series: dict, ftp: float | None, lthr: float | None) -> dict:
+    """Le cifre di facts() con la forma dell'uscita, dalla sua serie compatta con FTP e soglia di oggi
+    (None senza serie)."""
+    return {**facts(a, details),
+            "forma": ride_shape(series.get(a["id"]), bool(a.get("device_watts")), ftp, lthr)}
+
+
+def ride_facts(acts: list, details: dict, series: dict, now_ms: float, ftp: float | None,
+               lthr: float | None) -> list[dict]:
     """Per le stesse corse delle uscite recenti, nello stesso ordine, le cifre che il prompt non mostra."""
-    return [facts(a, details) for a in recent_bike_rides(acts, now_ms)]
+    return [shaped_facts(a, details, series, ftp, lthr) for a in recent_bike_rides(acts, now_ms)]
 
 
-def ride(a: dict, details: dict) -> dict:
-    """Un'uscita di Strava con tutto quello che la regola legge: le cifre del prompt e le altre."""
-    return {**ride_numbers(a), **facts(a, details)}
-
-
-def badges(acts: list, details: dict, saved: dict[int, str], ftp: float | None, lthr: float | None) -> dict[str, str]:
+def badges(acts: list, details: dict, series: dict, saved: dict[int, str], ftp: float | None,
+           lthr: float | None) -> dict[str, str]:
     """Il tipo di ogni uscita in bici con potenza misurata o frequenza cardiaca, per id: l'etichetta
     salvata del modello che etichetta quando c'è, altrimenti quella della regola, con FTP e soglia di oggi.
     Nessuna chiamata a un modello."""
-    return {str(a["id"]): saved.get(a["id"]) or rule_label(ride(a, details), ftp, lthr)
+    return {str(a["id"]): saved.get(a["id"])
+            or rule_label({**ride_numbers(a), **shaped_facts(a, details, series, ftp, lthr)}, ftp, lthr)
             for a in acts if is_bike(a) and (a.get("device_watts") or a.get("average_heartrate"))}
 
 
@@ -69,9 +82,31 @@ def hr_share(ride: dict, lthr: float | None) -> float | None:
     return ride["avgHr"] / lthr if lthr and ride.get("avgHr") else None
 
 
+def repeated_blocks(blocks: list[dict]) -> bool:
+    """Almeno MIN_REPEATS blocchi duri di durata simile, ognuno seguito da un recupero."""
+    if len(blocks) < MIN_REPEATS:
+        return False
+    lengths = [b["minuti"] for b in blocks]
+    return (max(lengths) <= SIMILAR_LENGTH * min(lengths)
+            and all(b["recuperoMin"] >= RECOVERY_MIN_MINUTES for b in blocks[:-1]))
+
+
 def rule_label(ride: dict, ftp: float | None, lthr: float | None) -> str:
+    """Gara dal segno di Strava; poi, con la forma dell'uscita, ripetute solo dai blocchi ripetuti;
+    recupero e fondo dalle medie. Senza forma tutto dalle medie."""
     if ride.get("gara"):
         return "gara"
+    shape = ride.get("forma")
+    if shape is not None:
+        if repeated_blocks(shape["blocchi"]):
+            return "ripetute"
+        by_averages = averages_label(ride, ftp, lthr)
+        return "fondo" if by_averages == "ripetute" else by_averages
+    return averages_label(ride, ftp, lthr)
+
+
+def averages_label(ride: dict, ftp: float | None, lthr: float | None) -> str:
+    """Il tipo di uscita dalle sole medie: potenza misurata su FTP, altrimenti FC media su soglia."""
     short = ride["durataMin"] <= RECOVERY_MAX_MINUTES
     power = power_share(ride, ftp)
     if power is not None:
@@ -92,7 +127,13 @@ LABEL_SYSTEM = f"""Etichetti uscite in bici di un atleta. Per ogni corsa scegli 
 - ripetute: lavoro a intervalli o a intensità alta (soglia, VO2max, sprint)
 - gara: una competizione
 
-Di ogni corsa hai l'intensità già calcolata: la quota di FTP, solo quando la potenza l'ha misurata un
+Di molte corse hai la forma, trovata nei dati secondo per secondo: i blocchi duri (almeno un minuto
+sopra Z2: Z3 o più), ognuno con i minuti di recupero che lo seguono, e i minuti passati in ogni zona.
+Quando c'è, conta più delle medie:
+- ripetute: {MIN_REPEATS} o più blocchi duri di durata simile (il più lungo al massimo {SIMILAR_LENGTH:g} volte il più corto), ognuno seguito da un recupero
+- fondo: un solo blocco duro (un'attivazione), o blocchi di durata molto diversa come le salite di un'uscita lunga
+
+Di ogni corsa hai anche l'intensità già calcolata: la quota di FTP, solo quando la potenza l'ha misurata un
 misuratore, e la quota di soglia cardiaca. La potenza media senza misuratore è una stima di Strava:
 non usarla. Come orientamento:
 - ripetute: quota di FTP da {POWER_INTERVALS_FROM:.2f} in su; senza quota di FTP, quota di soglia cardiaca da {HR_INTERVALS_FROM:.2f} in su in un'uscita fino a {HR_INTERVALS_MAX_MINUTES} minuti
@@ -113,15 +154,27 @@ def share(value: float | None) -> str:
     return "—" if value is None else f"{value:.2f}"
 
 
+def shape_text(shape: dict | None) -> str:
+    """La forma di un'uscita in una riga: blocchi duri con il recupero dopo, e i minuti per zona."""
+    if shape is None:
+        return "forma: — (senza dati secondo per secondo)"
+    blocks = ", ".join(f"{js_str(b['minuti'])}min Z{b['zona']} poi {js_str(b['recuperoMin'])}min di recupero"
+                       for b in shape["blocchi"])
+    zones = ", ".join(f"{name} {js_str(m)}" for name, m in shape["minutiPerZona"].items() if m)
+    return (f"forma (da {shape['fonte']}): " + (f"blocchi duri {blocks}" if blocks else "nessun blocco duro")
+            + f"; minuti per zona {zones or '—'}")
+
+
 def model_messages(rides: list[dict], ftp: float | None, lthr: float | None) -> list[dict]:
-    """Le corse con un id corto (c1, c2, …: mai l'id di Strava), il nome dato dall'atleta, le cifre e
-    l'intensità già calcolata, con le stesse quote che legge la regola."""
+    """Le corse con un id corto (c1, c2, …: mai l'id di Strava), il nome dato dall'atleta, le cifre,
+    l'intensità già calcolata, con le stesse quote che legge la regola, e la forma dell'uscita."""
     lines = [f"- c{i}: «{or_dash(r.get('nome'))}» ({r['tipo']}), {js_str(r['durataMin'])}min, "
              f"{js_str(r['distanzaKm'])}km, potenza media {or_dash(r.get('avgWatts'))}W "
              f"({'misurata' if r.get('potenzaMisurata') else 'stimata'}), normalizzata "
              f"{or_dash(r.get('np'))}W, massima {or_dash(r.get('maxWatts'))}W, FC media {or_dash(r.get('avgHr'))}, "
              f"FC massima {or_dash(r.get('maxHr'))}, quota di FTP {share(power_share(r, ftp))}, quota di soglia "
-             f"cardiaca {share(hr_share(r, lthr))}, segnata come gara su Strava: {'sì' if r.get('gara') else 'no'}"
+             f"cardiaca {share(hr_share(r, lthr))}, segnata come gara su Strava: {'sì' if r.get('gara') else 'no'}, "
+             f"{shape_text(r.get('forma'))}"
              for i, r in enumerate(rides, 1)]
     athlete = f"Atleta: FTP {or_dash(ftp)}W, soglia cardiaca {or_dash(lthr)} bpm."
     return [{"role": "system", "content": LABEL_SYSTEM},
