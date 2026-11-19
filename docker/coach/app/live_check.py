@@ -106,7 +106,11 @@ def record(base: dict, result: dict, charged: float | None) -> dict:
             "drafts": result["drafts"], "fallbackCause": result["fallbackCause"],
             "citationsDropped": result["citationsDropped"],
             # Con COACH_SEARCH_MODE=model, ogni ricerca del modello: bozza, testo e PMID trovati.
-            "modelSearches": result["modelSearches"]}
+            "modelSearches": result["modelSearches"],
+            # Con COACH_RIDE_LABELS acceso, il tipo di ogni corsa recente e da dove viene.
+            "rideLabels": result["rideLabels"],
+            # Con il modello che etichetta: nome, secondi, costo e addebito della sua chiamata.
+            "labelModel": result["labelModel"]}
 
 
 async def coach_answer(base: dict, chat: provider.ChatSettings, spending: Spending,
@@ -119,7 +123,7 @@ async def coach_answer(base: dict, chat: provider.ChatSettings, spending: Spendi
     result, failure = None, None
     try:
         with tracing.request(base["duration"], situation=base["situation"], repeat=base.get("repeat"),
-                             search_mode=chat.search_mode):
+                             search_mode=chat.search_mode, ride_labels=chat.ride_labels):
             if chat.prices:
                 counted.check(chat.prices.limit)
             async with provider.client(chat) as chat_client:
@@ -131,7 +135,7 @@ async def coach_answer(base: dict, chat: provider.ChatSettings, spending: Spendi
         # messaggio finisce nel file che va in git, quindi senza la chiave.
         text = str(e).replace(chat.key, "***") if chat.key else str(e)
         failure = {"error": "internal", "message": f"Errore interno {command} ({type(e).__name__}): {text}"}
-    charged = counted.charged if chat.prices else None
+    charged = counted.charged if provider.paid(chat) else None
     if failure:
         return {**base, **failure, "charged": charged}
     return record(base, result, charged)
@@ -231,9 +235,10 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
         # Le ultime tracce partono prima dell'uscita: con Phoenix spento, al massimo un secondo in più.
         traces.shutdown()
     # Quanto il controllo ha aggiunto al totale della spesa, stime alte comprese.
-    total = sum(r["charged"] for r in records) if chat.prices else None
+    total = sum(r["charged"] for r in records) if provider.paid(chat) else None
     run = {"startedAt": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "provider": chat.provider, "model": chat.model,
-           "searchModel": search.SEARCH_MODEL, "searchMode": chat.search_mode, "totalCost": total,
+           "searchModel": search.SEARCH_MODEL, "searchMode": chat.search_mode,
+           "labelsMode": chat.ride_labels, "totalCost": total,
            "situations": records}
     path = write_results(results_dir, file_stem(started, chat.model), run)
     print(f"Costo totale: {money(run['totalCost'])}")

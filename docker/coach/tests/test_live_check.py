@@ -25,7 +25,7 @@ ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
 CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "duration", "provider", "model", "protocolId", "fellBack", "truncated", "jsonReadable",
           "papersFound", "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds",
-          "modelRaw", "drafts", "fallbackCause", "citationsDropped", "modelSearches"}
+          "modelRaw", "drafts", "fallbackCause", "citationsDropped", "modelSearches", "rideLabels", "labelModel"}
 
 
 @pytest.fixture
@@ -230,7 +230,7 @@ def test_every_situation_leaves_its_trace_sent_before_the_command_ends(fakes, tm
         assert root.resource.attributes["openinference.project.name"] == "live-check"
         assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "live-check",
                                          "coach.minutes": duration, "coach.search_mode": "fixed",
-                                         "coach.prompt_version": prompts.prompt_version(),
+                                         "coach.ride_labels": "off", "coach.prompt_version": prompts.prompt_version(),
                                          "coach.situation": name}
         names = [s.name for s in steps]
         assert names[:3] == ["rides", "metrics", "papers"] and names[-1] == "deliver"

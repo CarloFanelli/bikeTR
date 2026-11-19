@@ -1,6 +1,6 @@
-"""I dati di Strava salvati dal servizio Coach nel database: le attività, i dettagli corsa,
-l'atleta con le statistiche e lo stato della sincronizzazione. Appartengono al collegamento:
-"Disconnetti da Strava" li cancella.
+"""I dati di Strava salvati dal servizio Coach nel database: le attività, i dettagli corsa, le
+etichette date dal modello che etichetta, l'atleta con le statistiche e lo stato della
+sincronizzazione. Appartengono al collegamento: "Disconnetti da Strava" li cancella.
 
 Ogni scrittura porta la `generation` letta quando il suo download è partito: se nel frattempo
 è arrivato un forget(), non salva nulla."""
@@ -83,6 +83,12 @@ class ActivityStore:
     async def details(self, ids: list[int]) -> dict:
         rows = await self._rows("SELECT * FROM ride_details WHERE activity_id = ANY(%s)", (list(ids),))
         return {r["activity_id"]: {k: r[k] for k in DETAIL_KEYS} for r in rows}
+
+    async def ride_labels(self, ids: list[int], model: str) -> dict[int, str]:
+        """Le etichette salvate fra `ids` date da `model`; quelle di un altro modello non valgono."""
+        rows = await self._rows("SELECT activity_id, label FROM ride_labels WHERE activity_id = ANY(%s) AND model = %s",
+                                (list(ids), model))
+        return {r["activity_id"]: r["label"] for r in rows}
 
     async def next_without_details(self, now: datetime) -> int | None:
         """L'attività più recente con potenza o FC e senza dettagli; quelle già fallite per ultime,
@@ -176,6 +182,18 @@ class ActivityStore:
                    SELECT id, %s, %s, %s, %s FROM strava_activities WHERE id = %s
                    ON CONFLICT (activity_id) DO NOTHING""",
                 (*(details[k] for k in DETAIL_KEYS), activity_id))
+        return await self._write(generation, change)
+
+    async def save_ride_labels(self, generation: int, model: str, found: dict[int, str]) -> bool:
+        """Le etichette di `model`, una per corsa: sostituiscono quelle di prima, anche di un altro modello."""
+        async def change(conn):
+            async with conn.cursor() as cur:
+                # Un'attività cancellata su Strava nel frattempo non riceve etichetta.
+                await cur.executemany(
+                    """INSERT INTO ride_labels (activity_id, label, model)
+                       SELECT id, %s, %s FROM strava_activities WHERE id = %s
+                       ON CONFLICT (activity_id) DO UPDATE SET label = EXCLUDED.label, model = EXCLUDED.model""",
+                    [(label, model, activity_id) for activity_id, label in found.items()])
         return await self._write(generation, change)
 
     async def forget(self):

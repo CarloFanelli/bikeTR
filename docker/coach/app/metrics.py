@@ -188,18 +188,27 @@ def intensity_split(acts: list, p: Profile, now_ms: float) -> dict:
     }
 
 
-def recent_rides(acts: list, now_ms: float) -> list:
+def recent_bike_rides(acts: list, now_ms: float) -> list:
     """Le uscite in bici degli ultimi 7 giorni, al massimo 10, dalla più recente."""
     cutoff = now_ms - 7 * 24 * 3600e3
-    rides = [a for a in acts if is_bike(a) and instant_ms(a["start_date_local"]) >= cutoff][:10]
-    return [{
+    return [a for a in acts if is_bike(a) and instant_ms(a["start_date_local"]) >= cutoff][:10]
+
+
+def ride_numbers(a: dict) -> dict:
+    """Un'uscita con le cifre che il prompt mostra."""
+    return {
         "data": a["start_date_local"][:10],
         "tipo": a["type"],
         "durataMin": js_round(a["moving_time"] / 60),
         "distanzaKm": js_round(a["distance"] / 100) / 10,
         "avgWatts": a.get("weighted_average_watts") or a.get("average_watts") or None,
         "avgHr": js_round(a["average_heartrate"]) if a.get("average_heartrate") else None,
-    } for a in rides]
+    }
+
+
+def recent_rides(acts: list, now_ms: float) -> list:
+    """Le uscite recenti con le cifre che il prompt mostra."""
+    return [ride_numbers(a) for a in recent_bike_rides(acts, now_ms)]
 
 
 def capacity_tier(weekly_hours: float | None, ctl: float) -> str:

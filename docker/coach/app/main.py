@@ -12,6 +12,9 @@ Rotte:
                          senza limit tutte, con i soli campi delle card di Attività
   POST /coach/metrics  → {profile, ids}: il carico di ogni attività salvata fra ids, con i
                          dettagli corsa salvati: {loads: {id: carico}}
+  POST /coach/labels   → {profile, ids}: il tipo di ogni uscita in bici salvata fra ids, per le
+                         icone di Attività, con la regola delle etichette (o l'etichetta salvata
+                         del modello): {labels: {id: etichetta}}, vuoto con COACH_RIDE_LABELS spento
   GET  /coach/details/progress → quante attività con potenza o FC hanno i dettagli corsa:
                          {done, total}
   GET  /coach/athlete-data → i dati dell'atleta salvati dall'app, {chiave: valore}
@@ -48,7 +51,7 @@ import psycopg
 from fastapi import Body, Depends, FastAPI, Header, Query, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from app import cloud, db, graph, library, metrics, ollama, papers, provider, search, tracing, workout
+from app import cloud, db, graph, labels, library, metrics, ollama, papers, provider, search, tracing, workout
 from app.activities import ActivityStore
 from app.athlete_data import AthleteData
 from app.details import DetailsDownloader
@@ -171,7 +174,7 @@ async def generate_workout(request: Request):
 
     async def produce():
         try:
-            with tracing.request(req.duration, search_mode=chat.search_mode):
+            with tracing.request(req.duration, search_mode=chat.search_mode, ride_labels=chat.ride_labels):
                 async with provider.client(chat) as chat_client:
                     await graph.run(req, events.put_nowait, rides=rides, chat=chat, chat_client=chat_client,
                                     embed=search.encode, load_index=load_index, now_ms=time.time() * 1000,
@@ -221,6 +224,18 @@ async def activity_loads(body: Annotated[Any, Body()]):
     acts = await store.summaries(ids)
     details = await store.details(ids)
     return {"loads": {str(a["id"]): metrics.activity_load(a, details.get(a["id"]), profile) for a in acts}}
+
+
+@app.post("/coach/labels")
+async def ride_labels(body: Annotated[Any, Body()]):
+    profile, ids = workout.parse_loads_request(body)
+    chat = provider.settings()
+    if chat.ride_labels == "off":
+        return {"labels": {}}
+    acts = await store.summaries(ids)
+    ids = [a["id"] for a in acts]
+    saved = await store.ride_labels(ids, chat.label.model) if chat.label else {}
+    return {"labels": labels.badges(acts, await store.details(ids), saved, profile.ftp, profile.lthr)}
 
 
 @app.get("/coach/details/progress")

@@ -130,16 +130,18 @@ def _span(name: str, attributes: dict):
 
 
 @contextmanager
-def request(minutes: int, situation: str | None = None, repeat: int | None = None, search_mode: str = "fixed"):
+def request(minutes: int, situation: str | None = None, repeat: int | None = None, search_mode: str = "fixed",
+            ride_labels: str = "off"):
     """La traccia di una richiesta del Coach: da dove viene (il progetto), i minuti chiesti, il modo di
-    ricerca dei paper, la versione del prompt di quel modo e, per le corse di prova, la situazione e la
+    ricerca dei paper, le etichette delle corse, la versione del prompt e, per le corse di prova, la situazione e la
     ripetizione. Il nome dice
     provenienza e situazione ("evaluation · recupero-mezz-ora #2"), così una risposta di un file dei
     risultati si ritrova in Phoenix. I passi aperti dentro il blocco le appartengono."""
     name = _project if situation is None else f"{_project} · {situation}" + (f" #{repeat}" if repeat else "")
     with _span(name, _known({KIND: OpenInferenceSpanKindValues.CHAIN.value, "coach.source": _project,
                              "coach.minutes": minutes, "coach.search_mode": search_mode,
-                             "coach.prompt_version": prompts.prompt_version(search_mode),
+                             "coach.ride_labels": ride_labels,
+                             "coach.prompt_version": prompts.prompt_version(search_mode, ride_labels),
                              "coach.situation": situation, "coach.repeat": repeat})):
         trace_id = trace.get_current_span().get_span_context().trace_id
         _running.add(trace_id)
@@ -151,7 +153,8 @@ def request(minutes: int, situation: str | None = None, repeat: int | None = Non
 
 @contextmanager
 def step(name: str):
-    """Un passo della richiesta, con la sua durata: rides, metrics, papers, draft (con dentro ogni turn
+    """Un passo della richiesta, con la sua durata: rides, metrics, labels (con dentro il turn del modello
+    che etichetta), papers, draft (con dentro ogni turn
     del modello e ogni search che ha chiesto), check o deliver."""
     with _span(name, {KIND: KINDS.get(name, OpenInferenceSpanKindValues.CHAIN).value}):
         yield
@@ -180,6 +183,17 @@ def note_metrics(ctx: dict) -> None:
 def note_made_up_rides() -> None:
     """Le corse sono quelle inventate del controllo dal vivo, non un download da Strava."""
     _note({"coach.rides.made_up": True})
+
+
+def note_labels(rides: list) -> None:
+    """Il tipo di ogni corsa recente, con la data e da dove viene (rule, model, saved)."""
+    _note({SpanAttributes.OUTPUT_VALUE: json.dumps([{"data": r["data"], "label": r["label"], "source": r["labelSource"]}
+                                       for r in rides], ensure_ascii=False), SpanAttributes.OUTPUT_MIME_TYPE: JSON})
+
+
+def note_label_skipped(reason: str) -> None:
+    """Perché il modello che etichetta non ha dato etichette: le dà la regola."""
+    _note({"coach.labels.model_skipped": reason})
 
 
 def note_papers(query: str, found: list) -> None:

@@ -17,6 +17,9 @@ PROVIDERS = ("ollama", "cloud")
 # Come arrivano i paper alla bozza: fixed, la ricerca del codice prima della bozza; model, le
 # ricerche che il modello chat chiede con lo strumento search_papers.
 SEARCH_MODES = ("fixed", "model")
+# Le etichette delle corse recenti nel prompt: off, nessuna; rule, quelle della regola di app/labels.py;
+# model, quelle del modello che etichetta.
+RIDE_LABELS = ("off", "rule", "model")
 CLOUD_SETTINGS = ("CLOUD_URL", "CLOUD_API_KEY", "CLOUD_MODEL", "CLOUD_PRICE_IN", "CLOUD_PRICE_OUT",
                   "CLOUD_SPENDING_LIMIT")
 
@@ -30,6 +33,9 @@ class ChatSettings:
     key: str = field(default="", repr=False)
     prices: Prices | None = None   # None con Ollama: non costa nulla
     search_mode: str = "fixed"
+    ride_labels: str = "off"
+    # Il modello che etichetta le corse: solo con ride_labels "model".
+    label: "ChatSettings | None" = None
 
 
 def invalid(message: str) -> CoachError:
@@ -47,15 +53,15 @@ def checked_model(name: str, setting: str) -> str:
     return name
 
 
-def checked_url(url: str) -> str:
+def checked_url(url: str, setting: str = "CLOUD_URL") -> str:
     """Senza http:// o https:// ogni richiesta fallirebbe con un errore di connessione che
-    non nomina CLOUD_URL."""
+    non nomina l'impostazione."""
     try:
         parsed = httpx.URL(url)
     except httpx.InvalidURL:
         parsed = None
     if parsed is None or parsed.scheme not in ("http", "https") or not parsed.host:
-        raise invalid(f'CLOUD_URL in .env vale "{url}": serve un indirizzo completo che inizia con https://, '
+        raise invalid(f'{setting} in .env vale "{url}": serve un indirizzo completo che inizia con https://, '
                       "per esempio https://api.anthropic.com/v1/")
     return url
 
@@ -80,23 +86,64 @@ def search_mode() -> str:
     return mode
 
 
+def ride_labels() -> str:
+    labels = env("COACH_RIDE_LABELS").lower() or "off"
+    if labels not in RIDE_LABELS:
+        raise invalid(f'COACH_RIDE_LABELS in .env vale "{env("COACH_RIDE_LABELS")}": i valori ammessi sono '
+                      f'{", ".join(RIDE_LABELS[:-1])} e {RIDE_LABELS[-1]}')
+    return labels
+
+
+def label_settings() -> ChatSettings:
+    """Il modello che etichetta le corse, con COACH_RIDE_LABELS=model: LABEL_PROVIDER (ollama se manca)
+    e LABEL_MODEL. In cloud indirizzo e chiave sono quelli del modello chat se mancano i suoi
+    (LABEL_CLOUD_URL, LABEL_CLOUD_API_KEY), i prezzi suoi, il tetto di spesa lo stesso."""
+    provider = env("LABEL_PROVIDER").lower() or "ollama"
+    if provider not in PROVIDERS:
+        raise invalid(f'LABEL_PROVIDER in .env vale "{env("LABEL_PROVIDER")}": i valori ammessi sono '
+                      f'{" e ".join(PROVIDERS)}')
+    if not env("LABEL_MODEL"):
+        raise invalid("Manca in .env: LABEL_MODEL, il modello che etichetta le corse")
+    model = checked_model(env("LABEL_MODEL"), "LABEL_MODEL")
+    if provider == "ollama":
+        return ChatSettings("ollama", model, ollama.OLLAMA_URL)
+    url, key = env("LABEL_CLOUD_URL") or env("CLOUD_URL"), env("LABEL_CLOUD_API_KEY") or env("CLOUD_API_KEY")
+    missing = [name for name, value in (("LABEL_CLOUD_URL", url), ("LABEL_CLOUD_API_KEY", key),
+                                        ("LABEL_PRICE_IN", env("LABEL_PRICE_IN")),
+                                        ("LABEL_PRICE_OUT", env("LABEL_PRICE_OUT")),
+                                        ("CLOUD_SPENDING_LIMIT", env("CLOUD_SPENDING_LIMIT"))) if not value]
+    if missing:
+        raise invalid(f"Con LABEL_PROVIDER=cloud manca in .env: {', '.join(missing)}")
+    prices = Prices(dollars("LABEL_PRICE_IN"), dollars("LABEL_PRICE_OUT"), dollars("CLOUD_SPENDING_LIMIT"))
+    return ChatSettings("cloud", model, checked_url(url, "LABEL_CLOUD_URL" if env("LABEL_CLOUD_URL") else "CLOUD_URL"),
+                        key, prices)
+
+
 def settings() -> ChatSettings:
-    """Il modello chat di .env, con il modo di ricerca dei paper (COACH_SEARCH_MODE, fixed se manca).
+    """Il modello chat di .env, con il modo di ricerca dei paper (COACH_SEARCH_MODE, fixed se manca) e
+    le etichette delle corse (COACH_RIDE_LABELS, off se manca).
     Senza COACH_PROVIDER: Ollama con OLLAMA_CHAT_MODEL, o qwen2.5:7b."""
-    mode = search_mode()
+    mode, labels = search_mode(), ride_labels()
+    label = label_settings() if labels == "model" else None
     provider = env("COACH_PROVIDER").lower() or "ollama"
     if provider not in PROVIDERS:
         raise invalid(f'COACH_PROVIDER in .env vale "{env("COACH_PROVIDER")}": i valori ammessi sono '
                       f'{" e ".join(PROVIDERS)}')
     if provider == "ollama":
         model = env("OLLAMA_CHAT_MODEL") or ollama.DEFAULT_CHAT_MODEL
-        return ChatSettings("ollama", checked_model(model, "OLLAMA_CHAT_MODEL"), ollama.OLLAMA_URL, search_mode=mode)
+        return ChatSettings("ollama", checked_model(model, "OLLAMA_CHAT_MODEL"), ollama.OLLAMA_URL, search_mode=mode,
+                            ride_labels=labels, label=label)
     missing = [name for name in CLOUD_SETTINGS if not env(name)]
     if missing:
         raise invalid(f"Con COACH_PROVIDER=cloud manca in .env: {', '.join(missing)}")
     prices = Prices(dollars("CLOUD_PRICE_IN"), dollars("CLOUD_PRICE_OUT"), dollars("CLOUD_SPENDING_LIMIT"))
     return ChatSettings("cloud", checked_model(env("CLOUD_MODEL"), "CLOUD_MODEL"), checked_url(env("CLOUD_URL")),
-                        env("CLOUD_API_KEY"), prices, mode)
+                        env("CLOUD_API_KEY"), prices, mode, labels, label)
+
+
+def paid(chat: ChatSettings) -> bool:
+    """Se una risposta può costare: il modello chat o quello che etichetta sono in cloud."""
+    return bool(chat.prices or (chat.label and chat.label.prices))
 
 
 def client(chat: ChatSettings) -> httpx.AsyncClient:

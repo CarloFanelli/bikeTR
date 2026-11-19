@@ -65,7 +65,7 @@ def test_a_coach_screen_request_leaves_one_trace_with_its_steps_in_order(service
     assert root.name == "coach-screen"
     assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "coach-screen",
                                      "coach.minutes": 60, "coach.search_mode": "fixed",
-                                     "coach.prompt_version": prompts.prompt_version()}
+                                     "coach.ride_labels": "off", "coach.prompt_version": prompts.prompt_version()}
     assert root.resource.attributes["openinference.project.name"] == "coach-screen"
 
 

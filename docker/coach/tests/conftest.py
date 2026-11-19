@@ -22,7 +22,8 @@ from fakes import FakePhoenix, quick_sleep
 
 @pytest.fixture(autouse=True)
 def default_chat_settings(monkeypatch):
-    for name in ("COACH_PROVIDER", "OLLAMA_CHAT_MODEL", "COACH_SEARCH_MODE", *provider.CLOUD_SETTINGS):
+    for name in ("COACH_PROVIDER", "OLLAMA_CHAT_MODEL", "COACH_SEARCH_MODE", "COACH_RIDE_LABELS", "LABEL_PROVIDER", "LABEL_MODEL",
+                 "LABEL_CLOUD_URL", "LABEL_CLOUD_API_KEY", "LABEL_PRICE_IN", "LABEL_PRICE_OUT", *provider.CLOUD_SETTINGS):
         monkeypatch.delenv(name, raising=False)
 
 
@@ -74,7 +75,7 @@ def test_database() -> str:
 @pytest.fixture(autouse=True)
 def activity_store(monkeypatch, tmp_path, test_database) -> ActivityStore:
     with psycopg.connect(test_database, autocommit=True) as conn:
-        conn.execute("TRUNCATE strava_activities, ride_details, detail_failures, strava_sync, detail_requests, "
+        conn.execute("TRUNCATE strava_activities, ride_details, ride_labels, detail_failures, strava_sync, detail_requests, "
                      "athlete_data")
     store = ActivityStore(test_database)
     monkeypatch.setattr(main, "store", store)

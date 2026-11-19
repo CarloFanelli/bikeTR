@@ -6,7 +6,7 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
-from app import main
+from app import main, provider
 from fixture_data import DETAILS, RIDES, load, scenario
 
 EXPECTED = load("metrics_expected.json")["Europe/Rome"]["scenarios"]
@@ -68,3 +68,61 @@ def test_a_wrong_request_is_refused(body):
     with TestClient(main.app) as client:
         res = client.post("/coach/metrics", json=body)
     assert res.status_code == 400
+
+
+def bike(i: int, **extra) -> dict:
+    return {"id": 7_000_000 + i, "type": "Ride", "name": f"Uscita {i}", "start_date": "2026-11-01T07:00:00Z",
+            "start_date_local": "2026-11-01T08:00:00", "moving_time": 3600, "distance": 30_000, **extra}
+
+
+POWER = bike(1, device_watts=True, average_watts=195, weighted_average_watts=200)
+HEART = bike(2, average_heartrate=120, has_heartrate=True)
+ESTIMATED_ONLY = bike(3, average_watts=260)
+RUN = {**bike(4, average_heartrate=150, has_heartrate=True), "type": "Run"}
+
+
+@pytest.fixture
+def badge_rides(activity_store):
+    asyncio.run(activity_store.save_activities(activity_store.generation, [POWER, HEART, ESTIMATED_ONLY, RUN]))
+    return [a["id"] for a in (POWER, HEART, ESTIMATED_ONLY, RUN)]
+
+
+def ride_labels(body) -> dict:
+    with TestClient(main.app) as client:
+        res = client.post("/coach/labels", json=body)
+    assert res.status_code == 200, res.text
+    return res.json()["labels"]
+
+
+def test_with_labels_off_no_ride_gets_a_badge(badge_rides):
+    assert ride_labels({"profile": {"ftp": 250, "lthr": 160}, "ids": badge_rides}) == {}
+
+
+def test_with_labels_on_each_bike_ride_with_power_or_heart_rate_gets_the_rule_label(monkeypatch, badge_rides):
+    monkeypatch.setenv("COACH_RIDE_LABELS", "rule")
+    got = ride_labels({"profile": {"ftp": 220, "lthr": 160}, "ids": [*badge_rides, 999999]})
+    # 200W misurati su 220 di FTP: ripetute; 120 bpm su 160 per un'ora: recupero. Senza dati né la corsa a piedi.
+    assert got == {str(POWER["id"]): "ripetute", str(HEART["id"]): "recupero"}
+
+
+def test_the_badge_uses_today_ftp(monkeypatch, badge_rides):
+    monkeypatch.setenv("COACH_RIDE_LABELS", "rule")
+    assert ride_labels({"profile": {"ftp": 300, "lthr": 160}, "ids": [POWER["id"]]}) == {str(POWER["id"]): "fondo"}
+
+
+def test_a_saved_label_model_label_wins_over_the_rule(monkeypatch, activity_store, badge_rides):
+    monkeypatch.setenv("COACH_RIDE_LABELS", "model")
+    monkeypatch.setenv("LABEL_MODEL", "qwen2.5:3b")
+    asyncio.run(activity_store.save_ride_labels(activity_store.generation, "qwen2.5:3b", {HEART["id"]: "fondo"}))
+    asyncio.run(activity_store.save_ride_labels(activity_store.generation, "altro", {POWER["id"]: "gara"}))
+    got = ride_labels({"profile": {"ftp": 220, "lthr": 160}, "ids": badge_rides})
+    assert got == {str(POWER["id"]): "ripetute", str(HEART["id"]): "fondo"}
+
+
+def test_opening_attivita_calls_no_model(monkeypatch, badge_rides):
+    monkeypatch.setenv("COACH_RIDE_LABELS", "model")
+    monkeypatch.setenv("LABEL_MODEL", "qwen2.5:3b")
+    def no_model(*args):
+        raise AssertionError("Attività non chiama il modello che etichetta")
+    monkeypatch.setattr(provider, "client", no_model)
+    assert ride_labels({"profile": {"ftp": 220, "lthr": 160}, "ids": badge_rides})

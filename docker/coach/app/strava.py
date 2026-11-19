@@ -24,10 +24,12 @@ SYNC_INTERVAL = timedelta(minutes=5)
 # cui il download in sottofondo si ferma fino al quarto d'ora dopo: il limite è 100.
 BUSY_USAGE = 80
 REREAD = timedelta(days=30)
-# Le cifre che il Coach legge: il resto dell'attività (nome, percorso) resta per le schermate.
+# Le cifre che il Coach legge: il resto dell'attività (percorso) resta per le schermate. Nome, segno
+# gara e massimi li legge solo l'etichetta delle corse.
 KEPT_FIELDS = ("id", "type", "start_date_local", "moving_time", "distance",
                "weighted_average_watts", "average_watts", "average_heartrate",
-               "has_heartrate", "total_elevation_gain", "suffer_score")
+               "has_heartrate", "total_elevation_gain", "suffer_score",
+               "name", "workout_type", "max_watts", "max_heartrate")
 
 AUTH_UNREACHABLE = "Server di autenticazione non raggiungibile. Controlla i log con: docker compose logs auth"
 NOT_CONNECTED = "Non connesso a Strava: ricarica la pagina e usa \"Collega Strava\"."

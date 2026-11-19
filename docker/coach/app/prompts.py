@@ -81,6 +81,9 @@ SEARCH_NOTHING = "Nessun paper trovato per questo testo."
 VERSION_SAMPLE = {"pmid": "1", "authors": "Autori", "year": "2000", "title": "Titolo.",
                   "passages": [{"label": "PMID:1 §1", "text": "Passaggio."}]}
 VERSION_CONTEXT, VERSION_MINUTES = {"tsb": 0, "polarizzazione": {"hardPct": None}}, 60
+# Una corsa d'esempio con etichetta: con le etichette accese anche la forma della riga entra nella versione.
+VERSION_RIDE = {"data": "2000-01-01", "tipo": "Ride", "durataMin": 60, "distanzaKm": 30, "avgWatts": 200,
+                "avgHr": 140, "label": "fondo"}
 
 
 def paper_entry(p: dict) -> str:
@@ -105,17 +108,20 @@ def system_prompt(papers: list, ctx: dict, duration: int, search_mode: str = "fi
             .replace("<PAPERS_BLOCK>", papers_block))
 
 
-def prompt_version(search_mode: str = "fixed") -> str:
+def prompt_version(search_mode: str = "fixed", ride_labels: str = "off") -> str:
     """Le prime 8 cifre dell'impronta SHA-256 del prompt di sistema d'esempio, di ogni regola di
     selezione e del nome di ogni protocollo: il prompt d'esempio ne mostra solo uno, ma ognuno può
     finire in un prompt. Lo stesso testo dà sempre la stessa versione, due testi diversi mai la stessa
     (salvo una coincidenza su quattro miliardi). Così i risultati di due prompt non si confondono.
-    Con il modo model entrano anche lo strumento e le sue risposte, e il prompt è un altro."""
+    Con il modo model entrano anche lo strumento e le sue risposte, e il prompt è un altro; con le
+    etichette delle corse accese, la riga di una corsa etichettata e le regole che leggono il tipo delle
+    uscite: con le etichette spente non valgono mai, e la versione resta quella di prima."""
     tool = [json.dumps(SEARCH_TOOL, ensure_ascii=False, sort_keys=True), SEARCH_LIMIT, SEARCH_EMPTY, SEARCH_BAD,
             SEARCH_UNKNOWN_TOOL, SEARCH_NOTHING] if search_mode == "model" else []
     text = "\n".join([system_prompt([VERSION_SAMPLE], VERSION_CONTEXT, VERSION_MINUTES, search_mode),
-                      *(rule.sentence() for rule in RULES), *(f"{pid}: {p.name}" for pid, p in PROTOCOLS.items()),
-                      *tool])
+                      *(rule.sentence() for rule in RULES if ride_labels != "off" or not rule.reads_labels),
+                      *(f"{pid}: {p.name}" for pid, p in PROTOCOLS.items()),
+                      *tool, *([ride_line(VERSION_RIDE)] if ride_labels != "off" else [])])
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:8]
 
 
@@ -130,9 +136,11 @@ def nullish_dash(value) -> str:
 
 
 def ride_line(d: dict) -> str:
+    """Una corsa recente; con le etichette accese, in fondo il tipo di uscita."""
     watts = f", {js_str(d['avgWatts'])}W" if d["avgWatts"] else ""
     hr = f", FC {js_str(d['avgHr'])}" if d["avgHr"] else ""
-    return f"- {d['data']} ({d['tipo']}): {js_str(d['durataMin'])}min, {js_str(d['distanzaKm'])}km{watts}{hr}"
+    label = f" · {d['label']}" if d.get("label") else ""
+    return f"- {d['data']} ({d['tipo']}): {js_str(d['durataMin'])}min, {js_str(d['distanzaKm'])}km{watts}{hr}{label}"
 
 
 def user_prompt(ctx: dict, duration: int) -> str:

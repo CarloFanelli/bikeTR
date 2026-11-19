@@ -14,7 +14,7 @@ The command prints one line per situation (protocol, fallback use, seconds, toke
 
 `{date}_{time}_{model}.json`, with the time in UTC. Characters such as `:` and `/` in the model name become `-`; the full name is inside the file. A second run in the same second gets `-2`, and no file is ever overwritten.
 
-Each file holds `startedAt`, `provider`, `model`, `searchModel`, `searchMode` (`fixed` or `model`, see the README's AI Coach section; files from before it are `fixed`), `totalCost` (the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama) and one entry per situation:
+Each file holds `startedAt`, `provider`, `model`, `searchModel`, `searchMode` (`fixed` or `model`, see the README's AI Coach section; files from before it are `fixed`), `labelsMode` (`off`, `rule` or `model`; files from before it are `off`), `totalCost` (the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama) and one entry per situation:
 
 | Field | Meaning |
 |---|---|
@@ -33,5 +33,7 @@ Each file holds `startedAt`, `provider`, `model`, `searchModel`, `searchMode` (`
 | `fallbackCause` | why the fallback rules chose, the last draft's first cause; `null` when they did not |
 | `citationsDropped` | the citations dropped from the card because the model was not given them, when the last draft was wrong only there |
 | `modelSearches` | with `searchMode` `model`, each search the model asked for: the `draft` it was in, the `text` it wrote and the PMIDs it found (`papersFound`); empty with `fixed` |
+| `rideLabels` | with `COACH_RIDE_LABELS` on, each recent ride's `data`, `label` (`recupero`, `fondo`, `ripetute` or `gara`) and `source` (`model` or `rule`; the made-up rides are never saved); empty with `off` |
+| `labelModel` | with `COACH_RIDE_LABELS=model`, the label model's call: `model`, `seconds`, `cost` and `charged` (`null` with Ollama); `charged` is included in the situation's `charged`. `null` otherwise |
 
 A failed situation has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next situation still runs. The command exits with code 1 when all 3 fail, and with code 2, writing no file, when `.env` is wrong. The cloud key is never written here.

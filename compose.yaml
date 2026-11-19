@@ -7,6 +7,13 @@ x-coach-env: &coach-env
   OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-}
   COACH_PROVIDER: ${COACH_PROVIDER:-}
   COACH_SEARCH_MODE: ${COACH_SEARCH_MODE:-}
+  COACH_RIDE_LABELS: ${COACH_RIDE_LABELS:-}
+  LABEL_PROVIDER: ${LABEL_PROVIDER:-}
+  LABEL_MODEL: ${LABEL_MODEL:-}
+  LABEL_CLOUD_URL: ${LABEL_CLOUD_URL:-}
+  LABEL_CLOUD_API_KEY: ${LABEL_CLOUD_API_KEY:-}
+  LABEL_PRICE_IN: ${LABEL_PRICE_IN:-}
+  LABEL_PRICE_OUT: ${LABEL_PRICE_OUT:-}
   CLOUD_URL: ${CLOUD_URL:-}
   CLOUD_API_KEY: ${CLOUD_API_KEY:-}
   CLOUD_MODEL: ${CLOUD_MODEL:-}
@@ -95,7 +102,9 @@ services:
   # Comandi che usano la cartella del progetto: la ricostruzione dell'indice dei paper, il
   # controllo dal vivo (python -m app.live_check, risultati in live-checks/), la corsa del set
   # di valutazione (python -m app.evaluation, risultati in eval-runs/) e il suo voto
-  # (python -m app.grading). Parte solo quando lo si nomina:
+  # (python -m app.grading), la bozza delle corse etichettate (python -m app.labeled_rides, in
+  # labeled-rides-draft.json, fuori da git) e la misura delle etichette (python -m app.label_check,
+  # risultati in label-runs/). Parte solo quando lo si nomina:
   # docker compose run --rm coach-tools <comando>.
   coach-tools:
     build: ./docker/coach
@@ -159,8 +168,9 @@ services:
       timeout: 5s
       retries: 24
 
-  # Scarica il modello chat se manca, poi termina. I paper si cercano con il modello di
-  # ricerca dentro il servizio Coach: a Ollama non serve un modello di embedding.
+  # Scarica il modello chat se manca, e il modello che etichetta le corse quando è su Ollama, poi
+  # termina. I paper si cercano con il modello di ricerca dentro il servizio Coach: a Ollama non serve
+  # un modello di embedding.
   ollama-pull:
     image: ollama/ollama:0.12.6
     scale: ${OLLAMA_CONTAINERS:-1}
@@ -170,9 +180,15 @@ services:
     environment:
       OLLAMA_HOST: ollama:11434
       CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen2.5:7b}
+      # Il modello che etichetta, da scaricare solo quando è su Ollama: con LABEL_PROVIDER=cloud resta vuoto.
+      LABEL_MODEL: ${LABEL_MODEL:-}
+      LABEL_PROVIDER: ${LABEL_PROVIDER:-}
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - ollama show "$$CHAT_MODEL" > /dev/null 2>&1 || ollama pull "$$CHAT_MODEL"
+      - >-
+        (ollama show "$$CHAT_MODEL" > /dev/null 2>&1 || ollama pull "$$CHAT_MODEL") &&
+        case "$$(echo "$$LABEL_PROVIDER" | tr -d " " | tr A-Z a-z)" in cloud) true ;;
+        *) [ -z "$$LABEL_MODEL" ] || ollama show "$$LABEL_MODEL" > /dev/null 2>&1 || ollama pull "$$LABEL_MODEL" ;; esac
 
   # Costruisce da PubMed l'indice dei paper se manca, poi termina: l'indice non è nel repository,
   # che è pubblico, perché gli abstract sono degli editori. Al primo avvio ci vuole qualche minuto;
