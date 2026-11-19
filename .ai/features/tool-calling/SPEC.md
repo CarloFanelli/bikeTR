@@ -2,7 +2,7 @@
 feature: tool-calling
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: cd7bc5abf4ede50eead2bef34d24bcde473b1959
 ---
 

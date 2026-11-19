@@ -1,14 +1,14 @@
 ---
 feature: tool-calling
-status: DRAFT
+status: APPROVED
 reviewed: 2026-11-14
-head: b79dd8658559606b9b04d2eb6c741d3b54ad8401
+head: c893e336c2cdfae5a2ba0a6c710e874d9cb79a3c
 ---
 
 # Review — tool-calling
 
-**Scope**: 5 files changed since the review of `548d6284` (re-verification; 1 workflow artifact under `.ai/` excluded)
-**Findings**: 0 must-fix · 1 should-fix · 0 nit
+**Scope**: 3 files changed since the review of `b79dd865` (re-verification; 1 workflow artifact under `.ai/` excluded)
+**Findings**: 0 must-fix · 0 should-fix · 0 nit
 
 ## Findings
 
