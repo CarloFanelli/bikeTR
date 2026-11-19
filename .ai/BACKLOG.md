@@ -15,9 +15,10 @@
 - **From**: docker-setup (interview, 2026-11-05)
 - **Picked up by**: tool-calling (2026-11-14)
 
-### B-4 · open
+### B-4 · picked-up
 - **What**: Classify rides as recovery, endurance, intervals or race with a small model, used as input to the graph.
 - **From**: docker-setup (interview, 2026-11-05)
+- **Picked up by**: ride-classifier (2026-11-19)
 
 ### B-5 · picked-up
 - **What**: Trace every run with Langfuse: prompt, tools called, latency, tokens and cost.
@@ -112,9 +113,10 @@
 - **What**: Remove or make reachable the "no ride history: start with pure aerobic work" advice. With no bike rides, the "Reactivation" advice always wins first, so this branch never runs.
 - **From**: vue-ts-restructure (dev task 05, 2026-11-06)
 
-### B-24 · open
+### B-24 · picked-up
 - **What**: The Coach can use two chat models at the same time, a small cheap one for simple jobs and a bigger one for writing the plan, which needs .env to name more than one model (model routing).
 - **From**: model-switch (interview, 2026-11-07)
+- **Picked up by**: ride-classifier (2026-11-19)
 
 ### B-25 · picked-up
 - **What**: A paper library screen in the app: see and open the papers the Coach searches, upload new ones and remove old ones. Each uploaded paper is indexed into the RAG search. The cost of adding a paper is shown before adding it (an estimate the user confirms) and after (the actual cost).
@@ -214,10 +216,30 @@
 - **What**: The automatic saves made at opening (mesocycle, today's FTP point) wait until the browser's old data has been moved to the server, or a server holding only those saves counts as empty, so a browser without old data opened first cannot cause the real data to be deleted.
 - **From**: data-backend (dev task 05, 2026-11-13)
 
-### B-47 · open
+### B-47 · picked-up
 - **What**: Add ride details and load history to the Evaluation set situations, so tools that read those data can be measured.
 - **From**: tool-calling (interview, 2026-11-14)
+- **Picked up by**: ride-classifier (2026-11-19)
 
 ### B-48 · open
 - **What**: Give the Chat model tools to open one ride's details (power and heart rate) and the load history, measured with the Evaluation set.
 - **From**: tool-calling (interview, 2026-11-14)
+
+### B-49 · picked-up
+- **What**: Ride labels change the Selection rules, for example no hard workout after two "ripetute" rides in 3 days; each rule needs a source and is measured with the Evaluation set.
+- **From**: ride-classifier (interview, 2026-11-19)
+- **Picked up by**: reliable-ride-labels (2026-11-19)
+
+### B-50 · picked-up
+- **What**: Show each ride's Ride label as a badge in Attività, once the classifier has proved reliable.
+- **From**: ride-classifier (interview, 2026-11-19)
+- **Picked up by**: reliable-ride-labels (2026-11-19)
+
+### B-51 · open
+- **What**: Add the last weeks' load history to the Evaluation set situations, so Chat model tools that read it (B-48) can be measured.
+- **From**: ride-classifier (interview, 2026-11-19)
+
+### B-52 · picked-up
+- **What**: Make Ride labels reliable before the Coach uses them: separate Label rule thresholds for heart rate and for rides with only Strava's estimated power, and a Label model prompt that labels every ride and tells endurance from recovery. The first measurement gave the rule 23% and qwen2.5:3b 33% on the 40 Labeled rides.
+- **From**: ride-classifier (label measurement, 2026-11-19)
+- **Picked up by**: reliable-ride-labels (2026-11-19)

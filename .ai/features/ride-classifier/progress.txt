@@ -1,0 +1,8 @@
+# Task Progress - ride-classifier
+
+01-rule-ride-labels: DONE
+02-label-model-call: DONE
+03-saved-ride-labels: DONE
+04-labeled-rides-draft: DONE
+05-label-accuracy-check: DONE
+06-cost-split-readme: DONE

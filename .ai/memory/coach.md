@@ -6,7 +6,7 @@ The AI Coach that proposes today's workout: where its work runs, what the browse
 
 ### Coach service
 The server-side Python service that prepares the Coach's workout: it downloads rides from Strava with a token from the **Auth server**, computes training load, searches the paper index and calls the model. The browser only sends the **athlete profile** and draws the result.
-_Avoid_: "backend" (generic: the Auth server runs on the server too), "agent" (it has no tools or graph yet).
+_Avoid_: "backend" (generic: the Auth server runs on the server too), "agent" (its only tool is the **Model search**, and only in model **Search mode**).
 
 ### Athlete profile
 The values the browser sends with each Coach request: FTP, threshold heart rate and max heart rate exactly as the app shows them (typed or estimated), plus weight and weekly hours and days. The estimates stay in the browser because they use starred-segment data only the browser downloads.
@@ -70,7 +70,7 @@ _Avoid_: "backup choice" (used once in an interview; the README says fallback).
 
 ### Coach graph
 The Coach's request as a LangGraph graph: rides, metrics, papers, **Draft**, **Check**, deliver, with the check sending a rejected draft back to the model, up to 3 drafts. The **Evaluation set** enters it at papers, with the athlete numbers already computed; the Coach screen and the **Live check** enter at rides.
-_Avoid_: "pipeline" (it has a loop back), "agent" (the model chooses no steps; that is the tool-calling step).
+_Avoid_: "pipeline" (it has a loop back), "agent" (the model chooses no steps; it can only ask for a **Model search** inside a **Draft**).
 
 ### Draft
 One answer of the **Chat model** within a Coach request; a request makes at most 3. In model **Search mode** it includes the **Model search**es the model asks for while writing it. The Coach screen calls it "tentativo".
@@ -92,6 +92,30 @@ _Avoid_: "validation" (used for request input), "guardrail" (vague).
 The record in Phoenix of one Coach request, from the Coach screen, the **Live check** or the **Evaluation set**: each step with its duration, the prompt, the papers found, the model's raw answer, tokens, cost and the decision. Disconnecting from Strava deletes the Coach screen's traces.
 _Avoid_: "log" (the service's log is lines of text, a trace has steps and durations), "span" outside code (OpenTelemetry's name for one step of a trace).
 
+### Ride label
+The kind of each recent ride written into the Coach's prompt: recupero, fondo, ripetute or gara. A `.env` setting turns Ride labels off, to the **Label rule** or to the **Label model**; off by default.
+_Avoid_: "classification" alone (the act, not the result), "ride type" (Strava's Ride/VirtualRide field).
+
+### Label model
+The small model, named in `.env` with its own provider, that gives **Ride labels**; the **Chat model** still writes the plan. Its labels are saved per ride with its name and reused until another Label model is set.
+_Avoid_: "small model" alone (says nothing about its job), "classifier" (also covers the **Label rule**).
+
+### Label rule
+The fixed intensity rule that gives **Ride labels** without a model: race flag, then intensity against FTP or LTHR, then duration. It labels rides when the **Label model** is missing or fails, and is the baseline it is measured against.
+_Avoid_: "fallback" alone (the **Fallback rules** pick a workout, not a label).
+
+### Labeled rides
+Anonymized copies of the athlete's rides, each with the correct **Ride label** confirmed by the user, kept in the repository to measure **Label rule** against **Label model**. They come in two parts, the **Tuning set** and the **Check set**. No Strava id, route, real date or real name.
+_Avoid_: "Evaluation set" (that grades whole Coach answers), "test rides" (the automated tests use fakes).
+
+### Tuning set
+The first 40 **Labeled rides**, the ones the **Label rule** thresholds and the **Label model** prompt may be adjusted on. A score on it shows progress, never reliability.
+_Avoid_: "training set" (nothing is trained, only tuned by hand).
+
+### Check set
+About 40 more **Labeled rides**, sharing no ride with the **Tuning set**, labelled by the user without proposals and never used to tune. Ride labels count as reliable only when they reach the bar on it: at least 80% right and at least half of each label present.
+_Avoid_: "test set" (the automated tests are something else).
+
 ## Decisions
 
 - **The browser sends the athlete profile instead of the service estimating it**: FTP and heart-rate values travel with each Coach request. Why: the estimates use segment data only the browser has, and the Coach must use the same numbers the app shows.
@@ -107,8 +131,15 @@ _Avoid_: "log" (the service's log is lines of text, a trace has steps and durati
 
 - **Papers enter by PMID only, and copy a full text only under an open license**: the paper library adds a paper from its PMID (no PDF upload), and its full text is used only under CC BY, CC BY-SA or CC0, otherwise its abstract (user decision of 2026-11-10, paper-library). Why: the user wants no legal risk, and passages leave the computer through the cloud **Chat model** and, later, an online deployment, not only through a commit.
 
+- **Proposed Ride labels for the Labeled rides come from Claude in the session, never from the code**: the draft command leaves every label empty, and the user corrects the proposals before the file enters the repository (user decision of 2026-11-19, ride-classifier). Why: a proposal made by the **Label rule** or the **Label model** would score its own answers as correct.
+- **The Labeled rides draft jitters numbers without a fixed seed**: `labeled_rides.py` uses a system random source; only tests pass a seeded generator. Why: a seed in the public repository would let anyone undo the jitter and recover the athlete's real numbers.
+
+- **Label rules never apply with Ride labels off**: the Selection rules that read ride types need each recent ride's label and days ago, which only the labels step adds, and they stay out of the prompt version with labels off. Why: turning labels off must give exactly today's Coach and keep old Evaluation set runs comparable.
+- **Heart-rate ripetute only up to 90 minutes**: the Label rule calls a ride ripetute by heart rate only when it lasts 90 minutes or less. Why: on long rides heart rate climbs at steady effort (cardiac drift), and long endurance rides of the Tuning set average above 0.95 of LTHR.
+
 ## Gotchas
 
+- **Each model call needs its own trace step**: noting a model answer on a step that holds several calls overwrites the earlier ones, so a model-mode **Draft** showed only its last turn's tokens and cost in Phoenix. Every call to the **Chat model** opens its own `turn` step (`graph.model_turn`); a new loop of model calls must do the same.
 - **Every deletion of Strava data includes the athlete data that came from Strava**: the starred-segment cache lives in `athlete_data`, not with the activities, so a path that deletes only the activity tables leaves the previous athlete's segments in the new athlete's FTP estimate. Disconnect and a switch to another athlete both delete `STRAVA_KEYS` (`docker/coach/app/athlete_data.py`); a new path that drops Strava data must too.
 - **Background retries need a cool-down**: the details downloader picks failed activities again, so without `RETRY_FAILED` one activity Strava never answers for (deleted more than 30 days ago) spent the whole 600-a-day budget every day. Anything that retries Strava requests in the background waits before retrying a failure.
 - **Clear a wake-up event before looking for work, not before sleeping**: the details downloader cleared `wake` just before sleeping, erasing a `poke()` from a sync that finished while it was looking for work, and then slept with no timeout. `DetailsDownloader.run` clears it at the start of each loop.
@@ -137,3 +168,8 @@ _Avoid_: "log" (the service's log is lines of text, a trace has steps and durati
 - **sqlite-vec does not keep insertion order between equal distances**: its KNN query returned 12 equal vectors in reverse rowid order, so papers with the same score would swap places. `papers.nearest_passages` sorts the hits again by score, then by position in the index; keep that sort whenever the query changes (`tests/test_papers.py` checks ties).
 - **Coach HTTP tests must pin the service clock**: today's **Selection rules** rule depends on the rides of the last days, counted from the real time in `main.py`, so a fixture made on a past date drifts to another rule and its answer gets sent back. Use `fixture_clock(monkeypatch)` from `docker/coach/tests/fakes.py`, which sets the time to the fixture's "now".
 - **A new field in the Coach result may be missing in the browser**: after an update Vite reloads the browser app at once, while the Coach service keeps its old code until `docker compose up -d --force-recreate`. Declare the field optional in `web/src/core/coach-types.ts` and give the screen a behavior when it is absent, as the fallback warning does (no warning).
+- **The README's privacy paragraphs list what leaves the computer**: "What a cloud provider receives" and "Rider data in traces" said activity names never leave, and became untrue when the **Label model** started reading them. A change that sends a new ride field to any model, or stores it in a **Trace**, updates both paragraphs.
+- **The spending total is shared, so a command's own cost is the sum of its own charges**: reading the total before and after a run counts any Coach request that spent at the same time. Sum each call's `charged`, as `label_check.model_labels` does, or count through a `Spending` subclass like `live_check.SituationSpending`.
+- **The Label rule's 0.85 cut-off does not suit heart rate or estimated power**: on the athlete's Labeled rides it called 26 of 30 endurance rides `ripetute`, because an endurance ride averages 0.85 to 0.95 of threshold heart rate and Strava's estimated power often exceeds FTP on long rides. Measure any new threshold with `python -m app.label_check` before trusting it.
+- **The Tuning set record can go stale**: `labeled-rides-sources.json` is rewritten by every Tuning set draft, even one never moved into place. Check its ids against the Tuning set file ride by ride before excluding them from the Check set.
+- **`docker/coach/evaluation/situations.json` keeps one ride per line**: rewriting it with `json.dumps(indent=2)` turns a small change into a diff of the whole file, and a script that opens it for writing before reading it empties it. Edit it line by line, read before write, and check the old situations are unchanged.
