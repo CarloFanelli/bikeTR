@@ -6,3 +6,8 @@ learning/
 .env
 # Indice dei paper: si costruisce da PubMed al primo avvio (gli abstract sono degli editori).
 /papers_index.json
+# Bozza delle corse etichettate: cifre di corse vere, da correggere prima di entrare nel repository.
+/labeled-rides-draft.json
+/labeled-rides-check-draft.json
+# Quali uscite di Strava sono finite nel Tuning set e nel Check set: ha gli id di Strava.
+/labeled-rides-sources.json
