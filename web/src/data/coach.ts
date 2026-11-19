@@ -53,6 +53,12 @@ export const savedActivities = (limit?: number) =>
 export const activityLoads = (profile: LoadProfile, ids: number[]) =>
   askCoach<{ loads: Record<string, number> }>('/coach/metrics', 'POST', { profile, ids });
 
+// Il tipo di ogni uscita in bici salvata fra `ids` (recupero, fondo, ripetute o gara), per le
+// icone di Attività, con FTP e soglia di adesso: {labels: {id: etichetta}}, vuoto con le etichette
+// delle corse spente. Il servizio non chiama nessun modello.
+export const rideLabels = (profile: LoadProfile, ids: number[]) =>
+  askCoach<{ labels: Record<string, string> }>('/coach/labels', 'POST', { profile, ids });
+
 // I dati dell'atleta salvati sul server (impostazioni, calendario, FTP, mesociclo, segmenti,
 // durata del Coach), {chiave: valore}; un salvataggio controllato campo per campo; e i dati di
 // un browser, mandati solo se il server non ne ha (altrimenti code not_empty).

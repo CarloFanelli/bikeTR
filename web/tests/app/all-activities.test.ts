@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  allActivities, ensureAllActivities, forgetAllActivities, loadAllActivities, refreshAllActivities,
+  activityLabels, allActivities, ensureAllActivities, forgetAllActivities, loadActivityLabels, loadAllActivities,
+  refreshAllActivities,
 } from '../../src/app/all-activities.ts';
 import type { Activity } from '../../src/core/strava-types.ts';
-import { savedActivities } from '../../src/data/coach.ts';
+import { rideLabels, savedActivities } from '../../src/data/coach.ts';
 
-vi.mock('../../src/data/coach.ts', () => ({ savedActivities: vi.fn() }));
+vi.mock('../../src/data/coach.ts', () => ({ rideLabels: vi.fn(), savedActivities: vi.fn() }));
 
 const acts = (...ids: number[]) => ids.map(id => ({ id }) as Activity);
 const answer = (...ids: number[]) => ({ ok: true as const, value: acts(...ids) });
@@ -62,5 +63,54 @@ describe('tutte le attività', () => {
     refreshAllActivities();
     expect(allActivities.list).toBeNull();
     expect(savedActivities).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('etichette delle attività', () => {
+  const profile = { ftp: 250, lthr: 160, hrMax: 190 };
+
+  it('le chiede al servizio con FTP e soglia di adesso e le tiene per id', async () => {
+    vi.mocked(rideLabels).mockResolvedValue({ ok: true, value: { labels: { 1: 'fondo', 2: 'ripetute' } } });
+    await loadActivityLabels(profile, [1, 2, 3]);
+    expect(rideLabels).toHaveBeenCalledWith(profile, [1, 2, 3]);
+    expect(activityLabels.byId).toEqual({ 1: 'fondo', 2: 'ripetute' });
+  });
+
+  it('con le etichette spente il servizio non ne dà e non c\'è nessuna icona', async () => {
+    vi.mocked(rideLabels).mockResolvedValue({ ok: true, value: { labels: {} } });
+    await loadActivityLabels(profile, [1]);
+    expect(activityLabels.byId).toEqual({});
+  });
+
+  it('con il servizio che non risponde le icone spariscono e le attività restano', async () => {
+    vi.mocked(savedActivities).mockResolvedValue(answer(1));
+    await loadAllActivities();
+    vi.mocked(rideLabels).mockResolvedValue({ ok: true, value: { labels: { 1: 'fondo' } } });
+    await loadActivityLabels(profile, [1]);
+    vi.mocked(rideLabels).mockResolvedValue({ ok: false, msg: 'Coach non raggiungibile' });
+    await loadActivityLabels(profile, [1]);
+    expect(activityLabels.byId).toEqual({});
+    expect(allActivities.list).toEqual(acts(1));
+  });
+
+  it('una richiesta più vecchia che finisce dopo non sovrascrive la più nuova', async () => {
+    let releaseOld = () => {};
+    vi.mocked(rideLabels)
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        releaseOld = () => resolve({ ok: true, value: { labels: { 1: 'gara' } } });
+      }))
+      .mockResolvedValueOnce({ ok: true, value: { labels: { 1: 'fondo' } } });
+    const old = loadActivityLabels(profile, [1]);
+    await loadActivityLabels(profile, [1]);
+    releaseOld();
+    await old;
+    expect(activityLabels.byId).toEqual({ 1: 'fondo' });
+  });
+
+  it('una nuova sessione dimentica le etichette', async () => {
+    vi.mocked(rideLabels).mockResolvedValue({ ok: true, value: { labels: { 1: 'fondo' } } });
+    await loadActivityLabels(profile, [1]);
+    forgetAllActivities();
+    expect(activityLabels.byId).toEqual({});
   });
 });

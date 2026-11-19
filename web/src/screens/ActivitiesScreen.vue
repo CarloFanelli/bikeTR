@@ -4,15 +4,18 @@
 // attività (a settimane intere), e altre 60 quando la fine dell'elenco entra nello schermo.
 // Ogni card ha la mappa delle strade, caricata quando la card entra nello schermo; ogni riga
 // della tabella la mini mappa, solo la linea del percorso. Card e righe aprono il dettaglio
-// dentro l'app.
+// dentro l'app. Con le etichette delle corse accese, ogni uscita in bici con potenza o frequenza
+// cardiaca mostra il suo tipo (recupero, fondo, ripetute o gara).
 import { mdiMagnify, mdiTable, mdiViewGridOutline } from '@mdi/js';
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import {
   VBtn, VBtnToggle, VCard, VCardText, VChip, VChipGroup, VLazy, VProgressCircular, VTable, VTextField,
 } from 'vuetify/components';
-import { allActivities, ensureAllActivities, loadAllActivities } from '../app/all-activities.ts';
-import { session } from '../app/session.ts';
+import {
+  activityLabels, allActivities, ensureAllActivities, loadActivityLabels, loadAllActivities,
+} from '../app/all-activities.ts';
+import { hrProfile, session } from '../app/session.ts';
 import ActivityMap from '../components/ActivityMap.vue';
 import ErrorNotice from '../components/ErrorNotice.vue';
 import LineIcon from '../components/LineIcon.vue';
@@ -27,6 +30,12 @@ const PAGE = 60;
 // Tutto lo storico; finché non arriva, le ultime 60 già in session.
 ensureAllActivities();
 const activities = computed(() => allActivities.list ?? session.activities);
+
+// Le etichette delle attività mostrate, con FTP e soglia di adesso, a ogni nuovo elenco.
+watch(activities, (list) => {
+  const hr = hrProfile();
+  void loadActivityLabels({ ftp: hr.ftp || null, lthr: hr.hrLthr || null, hrMax: hr.hrMax || null }, list.map(a => a.id));
+}, { immediate: true });
 
 const view = ref<ActivitiesView>(loadActivitiesView());
 function chooseView(value: unknown): void {
@@ -48,7 +57,10 @@ function points(route: string | null) {
 
 const row = (a: Parameters<typeof activityRow>[0]) => {
   const r = activityRow(a);
-  return { ...r, points: points(r.route), to: { name: 'attivita-dettaglio', params: { id: r.id } } };
+  return {
+    ...r, points: points(r.route), label: activityLabels.byId[r.id] ?? null,
+    to: { name: 'attivita-dettaglio', params: { id: r.id } },
+  };
 };
 
 // Filtro e ricerca non si salvano: aprendo Attività valgono Tutte e nessun testo.
@@ -161,6 +173,7 @@ const router = useRouter();
                   <div class="name font-weight-bold">{{ row.name }}</div>
                   <div class="text-body-2 text-medium-emphasis">{{ row.date }}</div>
                 </div>
+                <VChip v-if="row.label" size="small" variant="tonal" class="ride-label ml-auto">{{ row.label }}</VChip>
               </div>
               <div class="numbers mt-3">
                 <div><span class="text-caption text-medium-emphasis">Distanza</span><b>{{ row.distance }}</b></div>
@@ -200,6 +213,7 @@ const router = useRouter();
               <div class="d-flex align-center ga-2">
                 <LineIcon :name="row.icon" :size="18" />
                 <RouterLink :to="row.to" class="name font-weight-bold" @click.stop>{{ row.name }}</RouterLink>
+                <VChip v-if="row.label" size="x-small" variant="tonal" class="ride-label">{{ row.label }}</VChip>
               </div>
               <div class="text-body-2 text-medium-emphasis">{{ row.date }}</div>
             </td>
@@ -221,6 +235,10 @@ const router = useRouter();
 </template>
 
 <style scoped>
+.ride-label {
+  flex-shrink: 0;
+}
+
 .search {
   max-width: 420px;
 }
