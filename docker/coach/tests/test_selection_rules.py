@@ -23,9 +23,19 @@ HARD = [None, *range(0, 101)]
 MINUTES = range(30, 241)
 
 
-def select(tsb, hard, minutes):
-    rule, allowed = selection_rules.select({"tsb": tsb, "polarizzazione": {"hardPct": hard}}, minutes)
+def select(tsb, hard, minutes, rides=()):
+    ctx = {"tsb": tsb, "polarizzazione": {"hardPct": hard}, "recentDays": list(rides)}
+    rule, allowed = selection_rules.select(ctx, minutes)
     return rule.name, allowed
+
+
+def day(ago: int, label: str) -> dict:
+    return {"data": "2026-11-01", "label": label, "giorniFa": ago}
+
+
+RACE_YESTERDAY = [day(1, "gara")]
+TWO_HARD_DAYS = [day(1, "ripetute"), day(3, "gara")]
+QUIET_WEEK = [day(1, "fondo"), day(3, "recupero"), day(6, "fondo")]
 
 
 def test_every_situation_gets_protocols_that_fit_its_minutes_and_every_rule_is_used():
@@ -38,7 +48,8 @@ def test_every_situation_gets_protocols_that_fit_its_minutes_and_every_rule_is_u
         if not allowed or not all(builds[pid, minutes] for pid in allowed):
             problems.append((tsb, hard, minutes, name, allowed))
     assert problems[:5] == []
-    assert used == {r.name for r in RULES}
+    # Senza etichette le regole che leggono il tipo delle uscite non valgono mai.
+    assert used == {r.name for r in RULES if not r.reads_labels}
 
 
 def test_rules_name_only_catalog_protocols_and_have_distinct_names():
@@ -118,3 +129,53 @@ def test_each_protocol_fits_every_duration_from_its_minimum():
     for pid in PROTOCOLS:
         shortest = selection_rules.minimum_minutes(pid)
         assert all(selection_rules.fits(pid, m) for m in range(shortest, MINUTES.stop)), pid
+
+
+def test_the_label_rules_give_protocols_that_fit_every_minutes_and_are_all_used():
+    builds = {(pid, m): PROTOCOLS[pid].build(250, m) is not None for pid in PROTOCOLS for m in MINUTES}
+    used, problems = set(), []
+    for rides in (RACE_YESTERDAY, TWO_HARD_DAYS, QUIET_WEEK):
+        for tsb, hard, minutes in itertools.product(TSB, (None, 0, 20, 40), MINUTES):
+            name, allowed = select(tsb, hard, minutes, rides)
+            used.add(name)
+            if not allowed or not all(builds[pid, minutes] for pid in allowed):
+                problems.append((tsb, hard, minutes, name, allowed))
+    assert problems[:5] == []
+    assert {r.name for r in RULES if r.reads_labels} <= used
+
+
+@pytest.mark.parametrize("tsb, hard, minutes, rides, rule", [
+    (0, 20, 60, RACE_YESTERDAY, "dopo_gara"),
+    (0, 20, 150, RACE_YESTERDAY, "dopo_gara"),                   # dopo la gara vince sull'uscita lunga
+    (0, 20, 60, [day(2, "gara")], "base"),                         # gara due giorni fa: non vale
+    (-30, 20, 60, RACE_YESTERDAY, "riposo"),
+    (0, 20, 60, TWO_HARD_DAYS, "due_giorni_duri"),
+    (-30, 20, 60, TWO_HARD_DAYS, "riposo"),                        # il riposo vince, come oggi
+    (0, 20, 60, [day(0, "ripetute"), day(2, "ripetute")], "due_giorni_duri"),
+    (0, 20, 60, [day(1, "ripetute"), day(4, "ripetute")], "base"),  # la seconda è fuori dai 3 giorni
+    (0, 20, 60, [day(1, "ripetute")], "base"),
+    (5, 20, 60, QUIET_WEEK, "qualita_dopo_fondo"),
+    (4, 20, 60, QUIET_WEEK, "base"),                               # forma sotto +5
+    (5, 20, 60, QUIET_WEEK[:2], "base"),                           # meno di 3 uscite
+    (5, 20, 60, [*QUIET_WEEK, day(5, "ripetute")], "base"),
+    (5, 20, 40, QUIET_WEEK, "poco_tempo"),
+    (0, 20, 60, [{"data": "2026-11-01", "label": "gara"}], "base"),  # senza giorni passati: non vale
+])
+def test_the_label_rules_read_the_type_and_days_of_recent_rides(tsb, hard, minutes, rides, rule):
+    assert select(tsb, hard, minutes, rides)[0] == rule
+
+
+def test_without_labels_the_recent_rides_change_no_choice():
+    rides = [{"data": "2026-11-01", "tipo": "Ride", "durataMin": 60}] * 3
+    for tsb, hard, minutes in itertools.product(TSB, (None, 0, 20, 40), (40, 60, 150)):
+        assert select(tsb, hard, minutes, rides) == select(tsb, hard, minutes)
+
+
+def test_the_label_rule_sentences_name_their_conditions_and_source():
+    sentences = {r.name: r.sentence() for r in RULES}
+    assert sentences["dopo_gara"] == "Gara ieri: z1_recovery o rest [pratica]"
+    assert sentences["due_giorni_duri"] == ("Almeno 2 uscite di ripetute o gara negli ultimi 3 giorni: "
+                                            "z2_endurance, z2_cadence_drills o z2_progressive [pratica]")
+    assert sentences["qualita_dopo_fondo"].startswith(
+        "Almeno 3 uscite negli ultimi 7 giorni e nessuna di ripetute o gara e TSB da +5 in su: seiler_4x8")
+    assert sentences["qualita_dopo_fondo"].endswith("[PMID:24550842]")

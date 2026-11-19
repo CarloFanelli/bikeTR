@@ -37,20 +37,26 @@ from app.errors import CoachError
 from app.grading import SITUATIONS_FILE, grade, report, search_score, search_score_line
 from app.live_check import INDEX_FILE, coach_answer, file_stem, index_from, money, summary, write_results
 from app.project_files import replace_file
-from app.spending import SPENDING_FILE, Prices, Spending, charge
+from app.spending import SPENDING_FILE, Spending, charge
 
 RESULTS_DIR = Path("/project/eval-runs")
 
 
-def affordable(prices: Prices, answers: int, spending: Spending, search_mode: str = "fixed") -> bool:
+def affordable(chat: provider.ChatSettings, answers: int, spending: Spending) -> bool:
     """Stampa il costo massimo della corsa, ogni risposta con tutte le bozze alla stima alta (con il modo
-    model ogni bozza con tutti i suoi giri), e dice se sta in quanto resta sotto il tetto. Un totale della
-    spesa illeggibile ferma la corsa (CoachError)."""
-    turns = prompts.MAX_TURNS if search_mode == "model" else 1
-    worst = answers * MAX_DRAFTS * turns * charge(prices, None, None)
-    left = prices.limit - spending.total()
+    model ogni bozza con tutti i suoi giri) e, con un modello che etichetta in cloud, la sua chiamata
+    alla stima alta; dice se sta in quanto resta sotto il tetto. Un totale della spesa illeggibile ferma
+    la corsa (CoachError)."""
+    turns = prompts.MAX_TURNS if chat.search_mode == "model" else 1
+    label_prices = chat.label.prices if chat.label else None
+    worst = answers * MAX_DRAFTS * turns * charge(chat.prices, None, None) if chat.prices else 0.0
+    if label_prices:
+        worst += answers * charge(label_prices, None, None)
+    left = (chat.prices or label_prices).limit - spending.total()
     each = f" di al massimo {turns} giri del modello" if turns > 1 else ""
-    print(f"Costo massimo: {money(worst)} per {answers} risposte, fino a {MAX_DRAFTS} bozze ciascuna{each}; "
+    labelled = " e una chiamata del modello che etichetta" if label_prices else ""
+    drafts = f"fino a {MAX_DRAFTS} bozze ciascuna{each}" if chat.prices else "con il modello chat gratis"
+    print(f"Costo massimo: {money(worst)} per {answers} risposte, {drafts}{labelled}; "
           f"restano {money(max(left, 0))} sotto il tetto.")
     # Al miliardesimo di dollaro: un costo uguale a quanto resta deve bastare, anche quando la
     # virgola mobile lo sbaglia di poco.
@@ -71,7 +77,7 @@ async def run_answers(situations: list[dict], repeat: int, chat: provider.ChatSe
             async def ask(chat_client: httpx.AsyncClient, counted: Spending) -> dict:
                 return await graph.from_context(s["context"], s["minutes"], lambda event: None, chat=chat,
                                                   chat_client=chat_client, embed=search.encode,
-                                                  load_index=load_index, spending=counted)
+                                                  load_index=load_index, spending=counted, today=s.get("today"))
             base = {"situation": s["name"], "repeat": n, "duration": s["minutes"]}
             answers.append(await coach_answer(base, chat, spending, ask, "della valutazione"))
             save(answers)
@@ -145,7 +151,7 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
         chat = provider.settings()
         spending = spending or Spending(SPENDING_FILE)
         situations = json.loads(situations_file.read_text(encoding="utf-8"))
-        if chat.prices and not affordable(chat.prices, len(situations) * repeat, spending, chat.search_mode):
+        if provider.paid(chat) and not affordable(chat, len(situations) * repeat, spending):
             return 2
     except CoachError as e:
         print(f"✗ {e.message}", file=sys.stderr)
@@ -154,13 +160,13 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
     started = clock()
     run = {"kind": "evaluation", "startedAt": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "provider": chat.provider,
            "model": chat.model, "searchModel": search.SEARCH_MODEL, "searchMode": chat.search_mode,
-           "promptVersion": prompts.prompt_version(chat.search_mode),
-           "papers": searched, "repeat": repeat, "complete": False, "totalCost": 0.0 if chat.prices else None, "answers": []}
+           "labelsMode": chat.ride_labels, "promptVersion": prompts.prompt_version(chat.search_mode, chat.ride_labels),
+           "papers": searched, "repeat": repeat, "complete": False, "totalCost": 0.0 if provider.paid(chat) else None, "answers": []}
     path = write_results(results_dir, file_stem(started, chat.model), run)
 
     def save(answers: list[dict], complete: bool = False) -> None:
         # Quanto la corsa ha aggiunto al totale della spesa, stime alte comprese.
-        total = sum(a["charged"] for a in answers) if chat.prices else None
+        total = sum(a["charged"] for a in answers) if provider.paid(chat) else None
         run.update(answers=answers, totalCost=total, complete=complete)
         replace_file(path, json.dumps(run, ensure_ascii=False, indent=2) + "\n")
 

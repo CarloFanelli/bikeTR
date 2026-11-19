@@ -241,7 +241,7 @@ def test_scores_and_readme_rows_one_per_file_even_for_the_same_model_and_prompt(
     # File di prima delle bozze: la prima bozza è la risposta, e la causa del ripiego viene da lei (Over-Under
     # in 60 minuti: troppo lungo).
     assert out[:16] == [
-        "eval-runs/a.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · corsa completa",
+        "eval-runs/a.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette off · corsa completa",
         "  Risposte valutate: 2 · errori: 0",
         "  Regole seguite: 50% (1/2)",
         "  Regole seguite alla prima bozza: 50% (1/2)",
@@ -274,7 +274,7 @@ def test_an_incomplete_run_is_graded_but_its_row_says_it_is_not_for_the_readme(t
     name = write(tmp_path, "fermata.json", run([answer()], complete=False))
     assert grading.main([name], project_dir=tmp_path) == 0
     out = capsys.readouterr().out
-    assert "eval-runs/fermata.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · corsa incompleta" in out
+    assert "eval-runs/fermata.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette off · corsa incompleta" in out
     assert "[fermata.json](eval-runs/fermata.json) (incompleta) |" in out
     assert "Le corse incomplete non vanno nel README" in out
 
@@ -301,8 +301,51 @@ def test_a_model_search_run_names_its_mode_in_the_report_and_the_readme_row(tmp_
     old = write(tmp_path, "o.json", run([answer()]))
     assert grading.main([model, old], project_dir=tmp_path) == 0
     out = capsys.readouterr().out.splitlines()
-    assert "eval-runs/m.json — qwen2.5:7b · prompt abcd1234 · ricerca del modello · corsa completa" in out
+    assert "eval-runs/m.json — qwen2.5:7b · prompt abcd1234 · ricerca del modello · etichette off · corsa completa" in out
     # Un file di prima della ricerca del modello non dice il modo: è della ricerca fissa.
-    assert "eval-runs/o.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · corsa completa" in out
+    assert "eval-runs/o.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette off · corsa completa" in out
     rows = [line for line in out if line.startswith("| qwen2.5:7b")]
     assert [r.split(" | ")[0] for r in rows] == ["| qwen2.5:7b · model search", "| qwen2.5:7b"]
+
+
+def label_call(seconds: float, charged: float | None) -> dict:
+    return {"model": "haiku", "seconds": seconds, "cost": charged, "charged": charged}
+
+
+def test_cost_and_seconds_are_split_between_label_model_and_chat_model(tmp_path, capsys):
+    # L'addebito della risposta comprende la chiamata del modello che etichetta.
+    answers = [answer(seconds=10.0, charged=0.010, labelModel=label_call(1.0, 0.001)),
+               answer(seconds=20.0, charged=0.020, labelModel=label_call(3.0, 0.003))]
+    scores = grading.grade(run(answers, provider="cloud", labelsMode="model"), SITUATIONS)
+    assert (scores.label_seconds, scores.chat_seconds) == (2.0, 15.0)
+    assert scores.label_cost == pytest.approx(0.002) and scores.chat_cost == pytest.approx(0.013)
+    name = write(tmp_path, "l.json", run(answers, provider="cloud", labelsMode="model"))
+    assert grading.main([name], project_dir=tmp_path) == 0
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == "eval-runs/l.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette model · corsa completa"
+    assert "  Modello che etichetta, per risposta: 2.0 s (media) · $0.0020" in out
+    assert "  Modello chat, per risposta: 15.0 s (media) · $0.0130" in out
+    assert next(line for line in out if line.startswith("| qwen2.5:7b")).startswith("| qwen2.5:7b · labels model |")
+
+
+def test_ollama_chat_and_label_models_split_the_seconds_with_unknown_costs():
+    scores = grade([answer(seconds=12.0, labelModel=label_call(2.0, None))])
+    assert (scores.label_seconds, scores.chat_seconds, scores.label_cost, scores.chat_cost) == (2.0, 12.0, None, None)
+
+
+def test_a_run_from_before_the_labels_reads_as_off_with_no_split(tmp_path, capsys):
+    scores = grade([answer(charged=0.01)])
+    assert (scores.label_seconds, scores.label_cost, scores.chat_seconds, scores.chat_cost) == (None,) * 4
+    name = write(tmp_path, "o.json", run([answer()]))
+    grading.main([name], project_dir=tmp_path)
+    out = capsys.readouterr().out
+    assert "etichette off" in out and "Modello che etichetta" not in out
+    assert "| qwen2.5:7b | abcd1234 |" in out
+
+
+def test_a_situation_with_labels_is_graded_on_the_allowed_list_of_the_runs_setting():
+    situation = {"name": "gara-ieri", "allowed": ["sweet_spot_3x15"],
+                 "withLabels": {"rule": "dopo_gara", "allowed": ["z1_recovery", "rest"]}}
+    assert grading.allowed_for(situation, "off") == ["sweet_spot_3x15"]
+    assert grading.allowed_for(situation, "rule") == grading.allowed_for(situation, "model") == ["z1_recovery", "rest"]
+    assert grading.allowed_for({"name": "x", "allowed": ["rest"]}, "rule") == ["rest"]

@@ -29,7 +29,7 @@ ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
 CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "repeat", "duration", "protocolId", "fellBack", "truncated", "jsonReadable", "papersFound",
           "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds", "modelRaw",
-          "drafts", "fallbackCause", "citationsDropped", "modelSearches"}
+          "drafts", "fallbackCause", "citationsDropped", "modelSearches", "rideLabels", "labelModel"}
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ def test_every_situation_of_the_set_runs_like_a_coach_request_and_the_file_is_co
     assert lines[0].startswith(f"[1/{len(SITUATIONS)}] {first['name']} ({first['minutes']} min): ")
     # Poi i punteggi della corsa, il costo totale e il nome del file.
     assert lines[len(SITUATIONS)] == (f"eval-runs/{file.name} — qwen2.5:7b · prompt {run['promptVersion']} · "
-                                      "ricerca fissa · corsa completa")
+                                      "ricerca fissa · etichette off · corsa completa")
     assert f"  Risposte valutate: {len(SITUATIONS)} · errori: 0" in lines and "  Costo per risposta: —" in lines
     assert lines[-2:] == ["Costo totale: —", f"Risultati in eval-runs/{file.name}"]
 
@@ -136,7 +136,7 @@ def test_every_answer_leaves_its_trace_with_situation_and_repeat_and_no_rides_st
         assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "evaluation",
                                          "coach.minutes": s["minutes"], "coach.situation": s["name"],
                                          "coach.repeat": k, "coach.search_mode": "fixed",
-                                         "coach.prompt_version": prompts.prompt_version()}
+                                         "coach.ride_labels": "off", "coach.prompt_version": prompts.prompt_version()}
         assert_steps_from_the_papers(steps)
 
 
@@ -392,7 +392,7 @@ def test_search_only_counts_every_situation_of_the_set_with_an_expected_paper(fa
     code, files = evaluate(tmp_path, cloud_spending, args=["--search-only"])
     # 20 delle 27 situazioni ammettono un protocollo con un paper di supporto; l'indice dei test non ne ha.
     assert (code, files) == (0, [])
-    assert "  Punteggio della ricerca, paper atteso trovato: 0% (0/20)" in capsys.readouterr().out.splitlines()
+    assert "  Punteggio della ricerca, paper atteso trovato: 0% (0/26)" in capsys.readouterr().out.splitlines()
 
 
 def test_search_only_with_a_refused_index_prints_the_coach_message_and_fails(fakes, tmp_path, cloud_spending, capsys):

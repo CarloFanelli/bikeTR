@@ -1,16 +1,19 @@
-"""Il set di valutazione: 25–30 situazioni inventate, ognuna con i numeri che il prompt mostra,
+"""Il set di valutazione: 25–35 situazioni inventate, ognuna con i numeri che il prompt mostra,
 i minuti, la regola che prova e i protocolli ammessi scritti a mano. I test confrontano questi
 con le regole di selezione, così un errore nelle liste o nelle regole fa fallire un test che nomina
-la situazione; ogni regola ha almeno due situazioni e ogni soglia una situazione esattamente sopra."""
+la situazione; ogni regola ha almeno due situazioni e ogni soglia una situazione esattamente sopra.
+Le situazioni delle regole che leggono il tipo delle uscite hanno la data di oggi e, in withLabels,
+la regola e i protocolli con le etichette accese; regola e protocolli di sempre valgono a etichette spente."""
 
 import json
 from collections import Counter
+from datetime import date
 from dataclasses import fields
 from zoneinfo import ZoneInfo
 
 import pytest
 
-from app import grading, selection_rules
+from app import grading, labels, selection_rules
 from app.metrics import capacity_tier, coach_context
 from app.prompts import retrieval_query, user_prompt
 from app.protocols import PROTOCOLS
@@ -27,8 +30,17 @@ def hard(situation):
     return situation["context"]["polarizzazione"]["hardPct"]
 
 
-def test_the_set_has_25_to_30_situations_with_distinct_names():
-    assert 25 <= len(SITUATIONS) <= 30
+def labelled_context(situation: dict) -> dict:
+    """Il contesto come lo vedono le regole con le etichette accese: ogni uscita con l'etichetta della
+    regola e i giorni passati dalla data della situazione."""
+    ctx, today = situation["context"], date.fromisoformat(situation["today"])
+    return {**ctx, "recentDays": [{**r, "label": labels.rule_label(r, ctx["ftp"], ctx["lthr"]),
+                                   "giorniFa": (today - date.fromisoformat(r["data"])).days}
+                                  for r in ctx["recentDays"]]}
+
+
+def test_the_set_has_25_to_35_situations_with_distinct_names():
+    assert 25 <= len(SITUATIONS) <= 35
     assert [n for n, k in Counter(s["name"] for s in SITUATIONS).items() if k > 1] == []
 
 
@@ -43,7 +55,8 @@ def test_situation_has_the_keys_of_the_coach_context(situation):
     ctx = situation["context"]
     assert ctx.keys() == REAL_CONTEXT.keys()
     assert ctx["polarizzazione"].keys() == REAL_CONTEXT["polarizzazione"].keys()
-    assert all(ride.keys() == REAL_CONTEXT["recentDays"][0].keys() for ride in ctx["recentDays"])
+    # Più le cifre che legge l'etichetta delle corse.
+    assert all(ride.keys() == REAL_CONTEXT["recentDays"][0].keys() | set(labels.FACT_KEYS) for ride in ctx["recentDays"])
 
 
 @EACH_SITUATION
@@ -87,11 +100,26 @@ def test_allowed_lists_match_the_selection_rules():
         if (s["rule"], s["allowed"]) != (rule.name, allowed):
             differences.append(f"{s['name']}: scritto {s['rule']} {s['allowed']}, "
                                f"le regole danno {rule.name} {allowed}")
+        if "withLabels" in s:
+            rule, allowed = selection_rules.select(labelled_context(s), s["minutes"])
+            written = s["withLabels"]
+            if (written["rule"], written["allowed"]) != (rule.name, allowed):
+                differences.append(f"{s['name']} con le etichette: scritto {written['rule']} {written['allowed']}, "
+                                   f"le regole danno {rule.name} {allowed}")
     assert differences == []
 
 
+@EACH_SITUATION
+def test_a_situation_with_labels_has_its_date_matching_its_weekday(situation):
+    if "withLabels" not in situation:
+        return
+    weekdays = ("lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica")
+    assert weekdays[date.fromisoformat(situation["today"]).weekday()] == situation["context"]["oggi"]
+    assert all(r["data"] < situation["today"] for r in situation["context"]["recentDays"])
+
+
 def test_every_rule_is_tested_by_at_least_two_situations():
-    count = Counter(s["rule"] for s in SITUATIONS)
+    count = Counter([s["rule"] for s in SITUATIONS] + [s["withLabels"]["rule"] for s in SITUATIONS if "withLabels" in s])
     assert [r.name for r in RULES if count[r.name] < 2] == []
 
 

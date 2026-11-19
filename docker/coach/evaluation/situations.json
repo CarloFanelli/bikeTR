@@ -17,11 +17,11 @@
       "weeklyHours": 10,
       "weeklyDays": 5,
       "recentDays": [
-        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 150, "distanzaKm": 68.4, "avgWatts": 205, "avgHr": 142},
-        {"data": "2026-10-29", "tipo": "VirtualRide", "durataMin": 75, "distanzaKm": 38.2, "avgWatts": 245, "avgHr": 158},
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 180, "distanzaKm": 82.0, "avgWatts": 198, "avgHr": 139},
-        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.5, "avgWatts": 238, "avgHr": 155},
-        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 120, "distanzaKm": 55.3, "avgWatts": 210, "avgHr": 145}
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 150, "distanzaKm": 68.4, "avgWatts": 205, "avgHr": 142, "nome": "Giro lungo", "gara": false, "np": 211, "maxWatts": 305, "maxHr": 156, "potenzaMisurata": true},
+        {"data": "2026-10-29", "tipo": "VirtualRide", "durataMin": 75, "distanzaKm": 38.2, "avgWatts": 245, "avgHr": 158, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 255, "maxWatts": 411, "maxHr": 174, "potenzaMisurata": true},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 180, "distanzaKm": 82.0, "avgWatts": 198, "avgHr": 139, "nome": "Giro lungo", "gara": false, "np": 204, "maxWatts": 305, "maxHr": 153, "potenzaMisurata": true},
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.5, "avgWatts": 238, "avgHr": 155, "nome": "Ripetute 5x5' VO2", "gara": false, "np": 248, "maxWatts": 411, "maxHr": 171, "potenzaMisurata": true},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 120, "distanzaKm": 55.3, "avgWatts": 210, "avgHr": 145, "nome": "Uscita con salite", "gara": false, "np": 225, "maxWatts": 358, "maxHr": 165, "potenzaMisurata": true}
       ],
       "oggi": "sabato"
     }
@@ -44,11 +44,11 @@
       "weeklyHours": 12,
       "weeklyDays": 6,
       "recentDays": [
-        {"data": "2026-10-31", "tipo": "Ride", "durataMin": 240, "distanzaKm": 112.6, "avgWatts": 215, "avgHr": 148},
-        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 210, "distanzaKm": 98.1, "avgWatts": 225, "avgHr": 152},
-        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 180, "distanzaKm": 85.0, "avgWatts": 230, "avgHr": 155},
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 150, "distanzaKm": 70.2, "avgWatts": 240, "avgHr": 158},
-        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 90, "distanzaKm": 46.8, "avgWatts": 260, "avgHr": 165}
+        {"data": "2026-10-31", "tipo": "Ride", "durataMin": 240, "distanzaKm": 112.6, "avgWatts": 215, "avgHr": 148, "nome": "Giro lungo", "gara": false, "np": 221, "maxWatts": 334, "maxHr": 162, "potenzaMisurata": true},
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 210, "distanzaKm": 98.1, "avgWatts": 225, "avgHr": 152, "nome": "Giro lungo", "gara": false, "np": 232, "maxWatts": 334, "maxHr": 166, "potenzaMisurata": true},
+        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 180, "distanzaKm": 85.0, "avgWatts": 230, "avgHr": 155, "nome": "Uscita con salite", "gara": false, "np": 246, "maxWatts": 392, "maxHr": 175, "potenzaMisurata": true},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 150, "distanzaKm": 70.2, "avgWatts": 240, "avgHr": 158, "nome": "Uscita con salite", "gara": false, "np": 257, "maxWatts": 392, "maxHr": 178, "potenzaMisurata": true},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 90, "distanzaKm": 46.8, "avgWatts": 260, "avgHr": 165, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 270, "maxWatts": 450, "maxHr": 181, "potenzaMisurata": true}
       ],
       "oggi": "domenica"
     }
@@ -71,10 +71,10 @@
       "weeklyHours": 8,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.4, "avgWatts": 195, "avgHr": 140},
-        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 150, "distanzaKm": 64.0, "avgWatts": 190, "avgHr": 138},
-        {"data": "2026-10-22", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.5, "avgWatts": 235, "avgHr": 152},
-        {"data": "2026-10-20", "tipo": "Ride", "durataMin": 90, "distanzaKm": 41.2, "avgWatts": 200, "avgHr": 143}
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.4, "avgWatts": 195, "avgHr": 140, "nome": "Uscita con salite", "gara": false, "np": 209, "maxWatts": 324, "maxHr": 160, "potenzaMisurata": true},
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 150, "distanzaKm": 64.0, "avgWatts": 190, "avgHr": 138, "nome": "Uscita con salite", "gara": false, "np": 203, "maxWatts": 324, "maxHr": 158, "potenzaMisurata": true},
+        {"data": "2026-10-22", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.5, "avgWatts": 235, "avgHr": 152, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 244, "maxWatts": 372, "maxHr": 168, "potenzaMisurata": true},
+        {"data": "2026-10-20", "tipo": "Ride", "durataMin": 90, "distanzaKm": 41.2, "avgWatts": 200, "avgHr": 143, "nome": "Uscita con salite", "gara": false, "np": 214, "maxWatts": 324, "maxHr": 163, "potenzaMisurata": true}
       ],
       "oggi": "lunedì"
     }
@@ -97,10 +97,10 @@
       "weeklyHours": 9,
       "weeklyDays": 5,
       "recentDays": [
-        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 180, "distanzaKm": 80.5, "avgWatts": 200, "avgHr": 142},
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 120, "distanzaKm": 55.0, "avgWatts": 215, "avgHr": 148},
-        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 31.0, "avgWatts": 250, "avgHr": 160},
-        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 205, "avgHr": 144}
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 180, "distanzaKm": 80.5, "avgWatts": 200, "avgHr": 142, "nome": "Uscita con salite", "gara": false, "np": 214, "maxWatts": 344, "maxHr": 162, "potenzaMisurata": true},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 120, "distanzaKm": 55.0, "avgWatts": 215, "avgHr": 148, "nome": "Uscita con salite", "gara": false, "np": 230, "maxWatts": 344, "maxHr": 168, "potenzaMisurata": true},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 31.0, "avgWatts": 250, "avgHr": 160, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 260, "maxWatts": 395, "maxHr": 176, "potenzaMisurata": true},
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 205, "avgHr": 144, "nome": "Uscita con salite", "gara": false, "np": 219, "maxWatts": 344, "maxHr": 164, "potenzaMisurata": true}
       ],
       "oggi": "sabato"
     }
@@ -123,10 +123,10 @@
       "weeklyHours": 6,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 50.2, "avgWatts": 175, "avgHr": 135},
-        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.5, "avgWatts": 180, "avgHr": 137},
-        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 150, "distanzaKm": 61.0, "avgWatts": 170, "avgHr": 133},
-        {"data": "2026-10-23", "tipo": "Ride", "durataMin": 60, "distanzaKm": 26.0, "avgWatts": 185, "avgHr": 139}
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 50.2, "avgWatts": 175, "avgHr": 135, "nome": "Uscita con salite", "gara": false, "np": 187, "maxWatts": 297, "maxHr": 155, "potenzaMisurata": true},
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.5, "avgWatts": 180, "avgHr": 137, "nome": "Uscita con salite", "gara": false, "np": 193, "maxWatts": 297, "maxHr": 157, "potenzaMisurata": true},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 150, "distanzaKm": 61.0, "avgWatts": 170, "avgHr": 133, "nome": "Giro lungo", "gara": false, "np": 175, "maxWatts": 253, "maxHr": 147, "potenzaMisurata": true},
+        {"data": "2026-10-23", "tipo": "Ride", "durataMin": 60, "distanzaKm": 26.0, "avgWatts": 185, "avgHr": 139, "nome": "Uscita con salite", "gara": false, "np": 198, "maxWatts": 297, "maxHr": 159, "potenzaMisurata": true}
       ],
       "oggi": "mercoledì"
     }
@@ -149,9 +149,9 @@
       "weeklyHours": 7,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 90, "distanzaKm": 41.0, "avgWatts": 205, "avgHr": 146},
-        {"data": "2026-10-28", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.2, "avgWatts": 240, "avgHr": 158},
-        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 120, "distanzaKm": 54.5, "avgWatts": 200, "avgHr": 144}
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 90, "distanzaKm": 41.0, "avgWatts": 205, "avgHr": 146, "nome": "Uscita con salite", "gara": false, "np": 219, "maxWatts": 331, "maxHr": 166, "potenzaMisurata": true},
+        {"data": "2026-10-28", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.2, "avgWatts": 240, "avgHr": 158, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 250, "maxWatts": 380, "maxHr": 174, "potenzaMisurata": true},
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 120, "distanzaKm": 54.5, "avgWatts": 200, "avgHr": 144, "nome": "Uscita con salite", "gara": false, "np": 214, "maxWatts": 331, "maxHr": 164, "potenzaMisurata": true}
       ],
       "oggi": "domenica"
     }
@@ -174,9 +174,9 @@
       "weeklyHours": 11,
       "weeklyDays": 5,
       "recentDays": [
-        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 90, "distanzaKm": 45.0, "avgWatts": 255, "avgHr": 160},
-        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 32.0, "avgWatts": 280, "avgHr": 166},
-        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 150, "distanzaKm": 72.0, "avgWatts": 240, "avgHr": 152}
+        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 90, "distanzaKm": 45.0, "avgWatts": 255, "avgHr": 160, "nome": "Uscita con salite", "gara": false, "np": 273, "maxWatts": 405, "maxHr": 180, "potenzaMisurata": true},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 32.0, "avgWatts": 280, "avgHr": 166, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 291, "maxWatts": 465, "maxHr": 182, "potenzaMisurata": true},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 150, "distanzaKm": 72.0, "avgWatts": 240, "avgHr": 152, "nome": "Uscita con salite", "gara": false, "np": 257, "maxWatts": 405, "maxHr": 172, "potenzaMisurata": true}
       ],
       "oggi": "sabato"
     }
@@ -199,9 +199,9 @@
       "weeklyHours": 6,
       "weeklyDays": 3,
       "recentDays": [
-        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.0, "avgWatts": 170, "avgHr": 134},
-        {"data": "2026-10-23", "tipo": "Ride", "durataMin": 120, "distanzaKm": 50.5, "avgWatts": 165, "avgHr": 132},
-        {"data": "2026-10-21", "tipo": "Ride", "durataMin": 60, "distanzaKm": 25.5, "avgWatts": 175, "avgHr": 136}
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.0, "avgWatts": 170, "avgHr": 134, "nome": "Fondo Z2", "gara": false, "np": 175, "maxWatts": 264, "maxHr": 148, "potenzaMisurata": true},
+        {"data": "2026-10-23", "tipo": "Ride", "durataMin": 120, "distanzaKm": 50.5, "avgWatts": 165, "avgHr": 132, "nome": "Fondo Z2", "gara": false, "np": 170, "maxWatts": 264, "maxHr": 146, "potenzaMisurata": true},
+        {"data": "2026-10-21", "tipo": "Ride", "durataMin": 60, "distanzaKm": 25.5, "avgWatts": 175, "avgHr": 136, "nome": "Fondo Z2", "gara": false, "np": 180, "maxWatts": 264, "maxHr": 150, "potenzaMisurata": true}
       ],
       "oggi": "martedì"
     }
@@ -224,8 +224,8 @@
       "weeklyHours": 8,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 215, "avgHr": 147},
-        {"data": "2026-10-25", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 31.5, "avgWatts": 250, "avgHr": 159}
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 215, "avgHr": 147, "nome": "Uscita con salite", "gara": false, "np": 230, "maxWatts": 351, "maxHr": 167, "potenzaMisurata": true},
+        {"data": "2026-10-25", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 31.5, "avgWatts": 250, "avgHr": 159, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 260, "maxWatts": 403, "maxHr": 175, "potenzaMisurata": true}
       ],
       "oggi": "venerdì"
     }
@@ -248,9 +248,9 @@
       "weeklyHours": 7,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.0, "avgWatts": 200, "avgHr": 145},
-        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.0, "avgWatts": 235, "avgHr": 156},
-        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.0, "avgWatts": 195, "avgHr": 141}
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.0, "avgWatts": 200, "avgHr": 145, "nome": "Uscita con salite", "gara": false, "np": 214, "maxWatts": 317, "maxHr": 165, "potenzaMisurata": true},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.0, "avgWatts": 235, "avgHr": 156, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 244, "maxWatts": 364, "maxHr": 172, "potenzaMisurata": true},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.0, "avgWatts": 195, "avgHr": 141, "nome": "Uscita con salite", "gara": false, "np": 209, "maxWatts": 317, "maxHr": 161, "potenzaMisurata": true}
       ],
       "oggi": "giovedì"
     }
@@ -273,9 +273,9 @@
       "weeklyHours": 6,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.0, "avgWatts": 170, "avgHr": 135},
-        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 120, "distanzaKm": 49.0, "avgWatts": 165, "avgHr": 133},
-        {"data": "2026-10-20", "tipo": "Ride", "durataMin": 75, "distanzaKm": 32.0, "avgWatts": 175, "avgHr": 137}
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.0, "avgWatts": 170, "avgHr": 135, "nome": "Fondo Z2", "gara": false, "np": 175, "maxWatts": 259, "maxHr": 149, "potenzaMisurata": true},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 120, "distanzaKm": 49.0, "avgWatts": 165, "avgHr": 133, "nome": "Fondo Z2", "gara": false, "np": 170, "maxWatts": 259, "maxHr": 147, "potenzaMisurata": true},
+        {"data": "2026-10-20", "tipo": "Ride", "durataMin": 75, "distanzaKm": 32.0, "avgWatts": 175, "avgHr": 137, "nome": "Fondo Z2", "gara": false, "np": 180, "maxWatts": 259, "maxHr": 151, "potenzaMisurata": true}
       ],
       "oggi": "lunedì"
     }
@@ -298,9 +298,9 @@
       "weeklyHours": 8,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.0, "avgWatts": 190, "avgHr": 140},
-        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.0, "avgWatts": 195, "avgHr": 142},
-        {"data": "2026-10-20", "tipo": "Ride", "durataMin": 90, "distanzaKm": 39.5, "avgWatts": 185, "avgHr": 139}
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.0, "avgWatts": 190, "avgHr": 140, "nome": "Fondo Z2", "gara": false, "np": 196, "maxWatts": 288, "maxHr": 154, "potenzaMisurata": true},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.0, "avgWatts": 195, "avgHr": 142, "nome": "Uscita con salite", "gara": false, "np": 209, "maxWatts": 338, "maxHr": 162, "potenzaMisurata": true},
+        {"data": "2026-10-20", "tipo": "Ride", "durataMin": 90, "distanzaKm": 39.5, "avgWatts": 185, "avgHr": 139, "nome": "Fondo Z2", "gara": false, "np": 191, "maxWatts": 288, "maxHr": 153, "potenzaMisurata": true}
       ],
       "oggi": "lunedì"
     }
@@ -365,9 +365,9 @@
       "weeklyHours": 8,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-25", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 32.0, "avgWatts": 270, "avgHr": 165},
-        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 90, "distanzaKm": 43.0, "avgWatts": 235, "avgHr": 156},
-        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 75, "distanzaKm": 36.0, "avgWatts": 255, "avgHr": 161}
+        {"data": "2026-10-25", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 32.0, "avgWatts": 270, "avgHr": 165, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 281, "maxWatts": 418, "maxHr": 181, "potenzaMisurata": true},
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 90, "distanzaKm": 43.0, "avgWatts": 235, "avgHr": 156, "nome": "Uscita con salite", "gara": false, "np": 251, "maxWatts": 364, "maxHr": 176, "potenzaMisurata": true},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 75, "distanzaKm": 36.0, "avgWatts": 255, "avgHr": 161, "nome": "Criterium del sabato", "gara": true, "np": 265, "maxWatts": 513, "maxHr": 177, "potenzaMisurata": true}
       ],
       "oggi": "martedì"
     }
@@ -390,8 +390,8 @@
       "weeklyHours": 9,
       "weeklyDays": 5,
       "recentDays": [
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 75, "distanzaKm": 37.0, "avgWatts": 265, "avgHr": 165},
-        {"data": "2026-10-26", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 33.0, "avgWatts": 285, "avgHr": 168}
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 75, "distanzaKm": 37.0, "avgWatts": 265, "avgHr": 165, "nome": "Ripetute 5x5' VO2", "gara": false, "np": 276, "maxWatts": 434, "maxHr": 181, "potenzaMisurata": true},
+        {"data": "2026-10-26", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 33.0, "avgWatts": 285, "avgHr": 168, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 296, "maxWatts": 434, "maxHr": 184, "potenzaMisurata": true}
       ],
       "oggi": "sabato"
     }
@@ -414,9 +414,9 @@
       "weeklyHours": 8,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 120, "distanzaKm": 53.0, "avgWatts": 205, "avgHr": 146},
-        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.5, "avgWatts": 215, "avgHr": 149},
-        {"data": "2026-10-25", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.5, "avgWatts": 245, "avgHr": 158}
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 120, "distanzaKm": 53.0, "avgWatts": 205, "avgHr": 146, "nome": "Uscita con salite", "gara": false, "np": 219, "maxWatts": 338, "maxHr": 166, "potenzaMisurata": true},
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.5, "avgWatts": 215, "avgHr": 149, "nome": "Uscita con salite", "gara": false, "np": 230, "maxWatts": 338, "maxHr": 169, "potenzaMisurata": true},
+        {"data": "2026-10-25", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.5, "avgWatts": 245, "avgHr": 158, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 255, "maxWatts": 388, "maxHr": 174, "potenzaMisurata": true}
       ],
       "oggi": "giovedì"
     }
@@ -439,10 +439,10 @@
       "weeklyHours": 7,
       "weeklyDays": 5,
       "recentDays": [
-        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 100, "distanzaKm": 43.0, "avgWatts": 180, "avgHr": 138},
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 39.0, "avgWatts": 175, "avgHr": 136},
-        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 51.0, "avgWatts": 170, "avgHr": 134},
-        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 60, "distanzaKm": 26.0, "avgWatts": 185, "avgHr": 140}
+        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 100, "distanzaKm": 43.0, "avgWatts": 180, "avgHr": 138, "nome": "Uscita con salite", "gara": false, "np": 193, "maxWatts": 310, "maxHr": 158, "potenzaMisurata": true},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 39.0, "avgWatts": 175, "avgHr": 136, "nome": "Fondo Z2", "gara": false, "np": 180, "maxWatts": 264, "maxHr": 150, "potenzaMisurata": true},
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 51.0, "avgWatts": 170, "avgHr": 134, "nome": "Fondo Z2", "gara": false, "np": 175, "maxWatts": 264, "maxHr": 148, "potenzaMisurata": true},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 60, "distanzaKm": 26.0, "avgWatts": 185, "avgHr": 140, "nome": "Uscita con salite", "gara": false, "np": 198, "maxWatts": 310, "maxHr": 160, "potenzaMisurata": true}
       ],
       "oggi": "venerdì"
     }
@@ -465,9 +465,9 @@
       "weeklyHours": 8,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 90, "distanzaKm": 41.0, "avgWatts": 210, "avgHr": 147},
-        {"data": "2026-10-28", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.5, "avgWatts": 245, "avgHr": 158},
-        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.0, "avgWatts": 200, "avgHr": 143}
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 90, "distanzaKm": 41.0, "avgWatts": 210, "avgHr": 147, "nome": "Uscita con salite", "gara": false, "np": 225, "maxWatts": 331, "maxHr": 167, "potenzaMisurata": true},
+        {"data": "2026-10-28", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.5, "avgWatts": 245, "avgHr": 158, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 255, "maxWatts": 380, "maxHr": 174, "potenzaMisurata": true},
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 52.0, "avgWatts": 200, "avgHr": 143, "nome": "Uscita con salite", "gara": false, "np": 214, "maxWatts": 331, "maxHr": 163, "potenzaMisurata": true}
       ],
       "oggi": "sabato"
     }
@@ -490,9 +490,9 @@
       "weeklyHours": 7,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 120, "distanzaKm": 51.0, "avgWatts": 185, "avgHr": 140},
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 39.5, "avgWatts": 190, "avgHr": 142},
-        {"data": "2026-10-26", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.0, "avgWatts": 230, "avgHr": 156}
+        {"data": "2026-10-30", "tipo": "Ride", "durataMin": 120, "distanzaKm": 51.0, "avgWatts": 185, "avgHr": 140, "nome": "Uscita con salite", "gara": false, "np": 198, "maxWatts": 317, "maxHr": 160, "potenzaMisurata": true},
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 39.5, "avgWatts": 190, "avgHr": 142, "nome": "Uscita con salite", "gara": false, "np": 203, "maxWatts": 317, "maxHr": 162, "potenzaMisurata": true},
+        {"data": "2026-10-26", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.0, "avgWatts": 230, "avgHr": 156, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 239, "maxWatts": 364, "maxHr": 172, "potenzaMisurata": true}
       ],
       "oggi": "domenica"
     }
@@ -515,9 +515,9 @@
       "weeklyHours": 8,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 215, "avgHr": 148},
-        {"data": "2026-10-24", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 31.0, "avgWatts": 250, "avgHr": 160},
-        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 120, "distanzaKm": 54.0, "avgWatts": 205, "avgHr": 145}
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 215, "avgHr": 148, "nome": "Uscita con salite", "gara": false, "np": 230, "maxWatts": 344, "maxHr": 168, "potenzaMisurata": true},
+        {"data": "2026-10-24", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 31.0, "avgWatts": 250, "avgHr": 160, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 260, "maxWatts": 395, "maxHr": 176, "potenzaMisurata": true},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 120, "distanzaKm": 54.0, "avgWatts": 205, "avgHr": 145, "nome": "Uscita con salite", "gara": false, "np": 219, "maxWatts": 344, "maxHr": 165, "potenzaMisurata": true}
       ],
       "oggi": "mercoledì"
     }
@@ -540,9 +540,9 @@
       "weeklyHours": 7,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 75, "distanzaKm": 34.0, "avgWatts": 205, "avgHr": 147},
-        {"data": "2026-10-24", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.0, "avgWatts": 240, "avgHr": 158},
-        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 110, "distanzaKm": 48.0, "avgWatts": 195, "avgHr": 141}
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 75, "distanzaKm": 34.0, "avgWatts": 205, "avgHr": 147, "nome": "Uscita con salite", "gara": false, "np": 219, "maxWatts": 324, "maxHr": 167, "potenzaMisurata": true},
+        {"data": "2026-10-24", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 30.0, "avgWatts": 240, "avgHr": 158, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 250, "maxWatts": 372, "maxHr": 174, "potenzaMisurata": true},
+        {"data": "2026-10-22", "tipo": "Ride", "durataMin": 110, "distanzaKm": 48.0, "avgWatts": 195, "avgHr": 141, "nome": "Uscita con salite", "gara": false, "np": 209, "maxWatts": 324, "maxHr": 161, "potenzaMisurata": true}
       ],
       "oggi": "martedì"
     }
@@ -565,9 +565,9 @@
       "weeklyHours": 7,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 50.0, "avgWatts": 175, "avgHr": 136},
-        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.5, "avgWatts": 180, "avgHr": 138},
-        {"data": "2026-10-23", "tipo": "Ride", "durataMin": 60, "distanzaKm": 26.0, "avgWatts": 170, "avgHr": 134}
+        {"data": "2026-10-27", "tipo": "Ride", "durataMin": 120, "distanzaKm": 50.0, "avgWatts": 175, "avgHr": 136, "nome": "Fondo Z2", "gara": false, "np": 180, "maxWatts": 270, "maxHr": 150, "potenzaMisurata": true},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.5, "avgWatts": 180, "avgHr": 138, "nome": "Fondo Z2", "gara": false, "np": 185, "maxWatts": 270, "maxHr": 152, "potenzaMisurata": true},
+        {"data": "2026-10-23", "tipo": "Ride", "durataMin": 60, "distanzaKm": 26.0, "avgWatts": 170, "avgHr": 134, "nome": "Fondo Z2", "gara": false, "np": 175, "maxWatts": 270, "maxHr": 148, "potenzaMisurata": true}
       ],
       "oggi": "giovedì"
     }
@@ -590,8 +590,8 @@
       "weeklyHours": 6,
       "weeklyDays": 3,
       "recentDays": [
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.0, "avgWatts": 185, "avgHr": 152},
-        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 75, "distanzaKm": 32.0, "avgWatts": 190, "avgHr": 155}
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 38.0, "avgWatts": 185, "avgHr": 152, "nome": "Uscita con salite", "gara": false, "np": 198, "maxWatts": 297, "maxHr": 172, "potenzaMisurata": true},
+        {"data": "2026-10-25", "tipo": "Ride", "durataMin": 75, "distanzaKm": 32.0, "avgWatts": 190, "avgHr": 155, "nome": "Uscita con salite", "gara": false, "np": 203, "maxWatts": 297, "maxHr": 175, "potenzaMisurata": true}
       ],
       "oggi": "sabato"
     }
@@ -614,9 +614,9 @@
       "weeklyHours": 9,
       "weeklyDays": 5,
       "recentDays": [
-        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 44.0, "avgWatts": 230, "avgHr": 152},
-        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 32.0, "avgWatts": 270, "avgHr": 164},
-        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 150, "distanzaKm": 70.0, "avgWatts": 220, "avgHr": 148}
+        {"data": "2026-10-28", "tipo": "Ride", "durataMin": 90, "distanzaKm": 44.0, "avgWatts": 230, "avgHr": 152, "nome": "Uscita con salite", "gara": false, "np": 246, "maxWatts": 371, "maxHr": 172, "potenzaMisurata": true},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 32.0, "avgWatts": 270, "avgHr": 164, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 281, "maxWatts": 426, "maxHr": 180, "potenzaMisurata": true},
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 150, "distanzaKm": 70.0, "avgWatts": 220, "avgHr": 148, "nome": "Uscita con salite", "gara": false, "np": 235, "maxWatts": 371, "maxHr": 168, "potenzaMisurata": true}
       ],
       "oggi": "venerdì"
     }
@@ -639,8 +639,8 @@
       "weeklyHours": 10,
       "weeklyDays": 5,
       "recentDays": [
-        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 120, "distanzaKm": 58.0, "avgWatts": 245, "avgHr": 155},
-        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 33.0, "avgWatts": 290, "avgHr": 168}
+        {"data": "2026-10-29", "tipo": "Ride", "durataMin": 120, "distanzaKm": 58.0, "avgWatts": 245, "avgHr": 155, "nome": "Uscita con salite", "gara": false, "np": 262, "maxWatts": 398, "maxHr": 175, "potenzaMisurata": true},
+        {"data": "2026-10-27", "tipo": "VirtualRide", "durataMin": 60, "distanzaKm": 33.0, "avgWatts": 290, "avgHr": 168, "nome": "Zwift - 4x8' soglia", "gara": false, "np": 302, "maxWatts": 457, "maxHr": 184, "potenzaMisurata": true}
       ],
       "oggi": "domenica"
     }
@@ -663,10 +663,170 @@
       "weeklyHours": 8,
       "weeklyDays": 4,
       "recentDays": [
-        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 220, "avgHr": 150},
-        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 75, "distanzaKm": 35.0, "avgWatts": 230, "avgHr": 153}
+        {"data": "2026-10-26", "tipo": "Ride", "durataMin": 90, "distanzaKm": 42.0, "avgWatts": 220, "avgHr": 150, "nome": "Uscita con salite", "gara": false, "np": 235, "maxWatts": 351, "maxHr": 170, "potenzaMisurata": true},
+        {"data": "2026-10-24", "tipo": "Ride", "durataMin": 75, "distanzaKm": 35.0, "avgWatts": 230, "avgHr": 153, "nome": "Ripetute 5x5' VO2", "gara": false, "np": 239, "maxWatts": 403, "maxHr": 169, "potenzaMisurata": true}
       ],
       "oggi": "giovedì"
+    }
+  },
+  {
+    "name": "gara-ieri",
+    "description": "Ieri una gara, la forma è neutra: con le etichette oggi solo recupero.",
+    "rule": "base",
+    "allowed": ["sweet_spot_3x15", "threshold_3x10", "tempo_2x20", "z2_cadence_drills"],
+    "withLabels": {"rule": "dopo_gara", "allowed": ["z1_recovery", "rest"]},
+    "today": "2026-11-07",
+    "minutes": 60,
+    "context": {
+      "ftp": 250,
+      "lthr": 165,
+      "weight": 70,
+      "ctl": 60,
+      "atl": 60,
+      "tsb": 0,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 80, "hardPct": 20, "totalMin": 900},
+      "weeklyHours": 8,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-11-06", "tipo": "Ride", "durataMin": 95, "distanzaKm": 42.8, "avgWatts": 234, "avgHr": 166, "nome": "Criterium", "gara": true, "np": 240, "maxWatts": 475, "maxHr": 181, "potenzaMisurata": true},
+        {"data": "2026-11-04", "tipo": "Ride", "durataMin": 120, "distanzaKm": 54.0, "avgWatts": 166, "avgHr": 140, "nome": "Fondo Z2", "gara": false, "np": 172, "maxWatts": 288, "maxHr": 155, "potenzaMisurata": true}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "gara-ieri-con-tre-ore",
+    "description": "Ieri una gara e oggi tre ore libere: con le etichette il recupero vince sull'uscita lunga.",
+    "rule": "uscita_lunga",
+    "allowed": ["z2_long_intervals"],
+    "withLabels": {"rule": "dopo_gara", "allowed": ["z1_recovery", "rest"]},
+    "today": "2026-11-07",
+    "minutes": 180,
+    "context": {
+      "ftp": 250,
+      "lthr": 165,
+      "weight": 70,
+      "ctl": 60,
+      "atl": 58,
+      "tsb": 2,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 78, "hardPct": 22, "totalMin": 900},
+      "weeklyHours": 8,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-11-06", "tipo": "Ride", "durataMin": 110, "distanzaKm": 49.5, "avgWatts": 234, "avgHr": 166, "nome": "Granfondo", "gara": true, "np": 240, "maxWatts": 475, "maxHr": 181, "potenzaMisurata": true},
+        {"data": "2026-11-03", "tipo": "Ride", "durataMin": 60, "distanzaKm": 27.0, "avgWatts": 212, "avgHr": 158, "nome": "5x5' VO2", "gara": false, "np": 218, "maxWatts": 375, "maxHr": 173, "potenzaMisurata": true}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "due-giorni-di-ripetute",
+    "description": "Ripetute ieri e l'altro ieri: con le etichette oggi un giorno Z2.",
+    "rule": "base",
+    "allowed": ["sweet_spot_3x15", "threshold_3x10", "tempo_2x20", "z2_cadence_drills"],
+    "withLabels": {"rule": "due_giorni_duri", "allowed": ["z2_endurance", "z2_cadence_drills", "z2_progressive"]},
+    "today": "2026-11-07",
+    "minutes": 75,
+    "context": {
+      "ftp": 250,
+      "lthr": 165,
+      "weight": 70,
+      "ctl": 60,
+      "atl": 58,
+      "tsb": 2,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 75, "hardPct": 25, "totalMin": 900},
+      "weeklyHours": 8,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-11-06", "tipo": "Ride", "durataMin": 65, "distanzaKm": 29.2, "avgWatts": 212, "avgHr": 158, "nome": "4x8' soglia", "gara": false, "np": 218, "maxWatts": 375, "maxHr": 173, "potenzaMisurata": true},
+        {"data": "2026-11-05", "tipo": "Ride", "durataMin": 60, "distanzaKm": 27.0, "avgWatts": 212, "avgHr": 158, "nome": "5x5' VO2", "gara": false, "np": 218, "maxWatts": 375, "maxHr": 173, "potenzaMisurata": true},
+        {"data": "2026-11-03", "tipo": "Ride", "durataMin": 120, "distanzaKm": 54.0, "avgWatts": 166, "avgHr": 140, "nome": "Fondo Z2", "gara": false, "np": 172, "maxWatts": 288, "maxHr": 155, "potenzaMisurata": true}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "ripetute-e-gara-in-tre-giorni",
+    "description": "Ripetute ieri e una gara tre giorni fa: con le etichette contano come due giorni duri.",
+    "rule": "base",
+    "allowed": ["sweet_spot_3x15", "threshold_3x10", "tempo_2x20", "z2_cadence_drills"],
+    "withLabels": {"rule": "due_giorni_duri", "allowed": ["z2_endurance", "z2_cadence_drills", "z2_progressive"]},
+    "today": "2026-11-07",
+    "minutes": 90,
+    "context": {
+      "ftp": 250,
+      "lthr": 165,
+      "weight": 70,
+      "ctl": 60,
+      "atl": 52,
+      "tsb": 8,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 78, "hardPct": 22, "totalMin": 900},
+      "weeklyHours": 8,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-11-06", "tipo": "Ride", "durataMin": 60, "distanzaKm": 27.0, "avgWatts": 212, "avgHr": 158, "nome": "3x10' soglia", "gara": false, "np": 218, "maxWatts": 375, "maxHr": 173, "potenzaMisurata": true},
+        {"data": "2026-11-04", "tipo": "Ride", "durataMin": 100, "distanzaKm": 45.0, "avgWatts": 234, "avgHr": 166, "nome": "Criterium", "gara": true, "np": 240, "maxWatts": 475, "maxHr": 181, "potenzaMisurata": true}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "settimana-tranquilla",
+    "description": "Tre uscite di fondo in settimana e forma +5: con le etichette una seduta di qualità.",
+    "rule": "base",
+    "allowed": ["sweet_spot_3x15", "threshold_3x10", "tempo_2x20", "z2_cadence_drills"],
+    "withLabels": {"rule": "qualita_dopo_fondo", "allowed": ["seiler_4x8", "sweet_spot_3x15", "threshold_3x10", "tempo_2x20"]},
+    "today": "2026-11-07",
+    "minutes": 75,
+    "context": {
+      "ftp": 250,
+      "lthr": 165,
+      "weight": 70,
+      "ctl": 60,
+      "atl": 55,
+      "tsb": 5,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 80, "hardPct": 20, "totalMin": 900},
+      "weeklyHours": 8,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-11-06", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.5, "avgWatts": 166, "avgHr": 140, "nome": "Fondo Z2", "gara": false, "np": 172, "maxWatts": 288, "maxHr": 155, "potenzaMisurata": true},
+        {"data": "2026-11-04", "tipo": "Ride", "durataMin": 120, "distanzaKm": 54.0, "avgWatts": 166, "avgHr": 140, "nome": "Giro lungo", "gara": false, "np": 172, "maxWatts": 288, "maxHr": 155, "potenzaMisurata": true},
+        {"data": "2026-11-02", "tipo": "Ride", "durataMin": 75, "distanzaKm": 33.8, "avgWatts": 166, "avgHr": 140, "nome": "Fondo Z2", "gara": false, "np": 172, "maxWatts": 288, "maxHr": 155, "potenzaMisurata": true}
+      ],
+      "oggi": "sabato"
+    }
+  },
+  {
+    "name": "settimana-tranquilla-fresca",
+    "description": "Fondo e recupero tutta la settimana, forma +12: con le etichette qualità invece delle sedute dure del fresco.",
+    "rule": "fresco",
+    "allowed": ["seiler_4x8", "seiler_4x4", "ronnestad_30_15", "over_under"],
+    "withLabels": {"rule": "qualita_dopo_fondo", "allowed": ["seiler_4x8", "sweet_spot_3x15", "threshold_3x10", "tempo_2x20"]},
+    "today": "2026-11-07",
+    "minutes": 90,
+    "context": {
+      "ftp": 250,
+      "lthr": 165,
+      "weight": 70,
+      "ctl": 60,
+      "atl": 48,
+      "tsb": 12,
+      "tier": "High volume",
+      "polarizzazione": {"easyPct": 82, "hardPct": 18, "totalMin": 985},
+      "weeklyHours": 8,
+      "weeklyDays": 5,
+      "recentDays": [
+        {"data": "2026-11-06", "tipo": "Ride", "durataMin": 100, "distanzaKm": 45.0, "avgWatts": 166, "avgHr": 140, "nome": "Fondo Z2", "gara": false, "np": 172, "maxWatts": 288, "maxHr": 155, "potenzaMisurata": true},
+        {"data": "2026-11-05", "tipo": "Ride", "durataMin": 45, "distanzaKm": 20.2, "avgWatts": 129, "avgHr": 120, "nome": "Scarico", "gara": false, "np": 135, "maxWatts": 288, "maxHr": 135, "potenzaMisurata": true},
+        {"data": "2026-11-03", "tipo": "Ride", "durataMin": 150, "distanzaKm": 67.5, "avgWatts": 166, "avgHr": 140, "nome": "Giro lungo", "gara": false, "np": 172, "maxWatts": 288, "maxHr": 155, "potenzaMisurata": true},
+        {"data": "2026-11-01", "tipo": "Ride", "durataMin": 90, "distanzaKm": 40.5, "avgWatts": 166, "avgHr": 140, "nome": "Fondo Z2", "gara": false, "np": 172, "maxWatts": 288, "maxHr": 155, "potenzaMisurata": true}
+      ],
+      "oggi": "sabato"
     }
   }
 ]

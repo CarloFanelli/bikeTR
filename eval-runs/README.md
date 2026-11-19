@@ -40,7 +40,7 @@ It prints each run's scores, then one row per file for the README table. Every a
 
 | Score | Counts |
 |---|---|
-| Rules followed | answers whose protocol, as the model wrote it in its last draft, is in the situation's allowed list |
+| Rules followed | answers whose protocol, as the model wrote it in its last draft, is in the situation's allowed list; with `COACH_RIDE_LABELS` on, a situation that has `withLabels` uses that allowed list |
 | Rules at first draft | the same on the first draft: what the narrowed prompt achieves alone, before the check sends an answer back |
 | Readable JSON | answers the Coach could read as a JSON object, not cut at the token limit |
 | Invented citations | answers citing, in `passaggiUsati` or anywhere in the text, a passage label that was not among the passages given, or a paper's PMID alone that was neither among the papers given nor the source of a selection rule, which the prompt shows beside the rule. Files from before passages record no passages given: their answers are judged on PMIDs alone, `paperUsati` included |
@@ -52,6 +52,7 @@ It prints each run's scores, then one row per file for the README table. Every a
 | Fallback causes | the fallback answers per cause of the last draft: `truncated`, `unreadable`, `not_in_catalog`, `too_long`, `not_allowed`. Files from before the drafts record no cause: it comes from the answer, which then went to the fallback only when unusable |
 | Average drafts | drafts per answer, 1 to 3 |
 | Median seconds, cost per answer | cost is what each answer added to the spending total, failed ones included; `—` with Ollama |
+| Label model, chat model | only in the printed report of a run with `COACH_RIDE_LABELS=model`: average seconds and cost per answer of the label model's call, and of the chat model (the cost per answer minus the label model's). Costs are `—` with Ollama; files from before ride labels print neither line |
 
 An answer for a situation no longer in the set is skipped and listed; a situation without an answer is listed as not run. A row for an incomplete run says `(incompleta)`: incomplete runs do not go in the README.
 
@@ -67,12 +68,13 @@ The file is rewritten after every answer, so a run stopped halfway (Ctrl+C, the 
 | `startedAt`, `provider`, `model`, `searchModel` | when the run started and which models it used |
 | `promptVersion` | 8 characters that change whenever the Coach's system prompt text changes |
 | `searchMode` | `fixed`, the Coach's own search before the draft, or `model`, the chat model searching itself (see the README's AI Coach section). Files from before this field are `fixed`; the grading names the mode, and a `model` row says so next to the model name |
+| `labelsMode` | the ride labels setting, `off`, `rule` or `model` (see the README's AI Coach section). Files from before this field are `off`; the grading names the setting, and a row with labels says so next to the model name |
 | `papers` | which papers the run searched: `source` is `base` (the default) or `library` (`--library`), and `pmids` lists them. Files from before this field searched the base papers |
 | `repeat` | how many times each situation was asked |
 | `complete` | `true` only when every answer arrived without an error; a run stopped halfway, or with a failed answer, stays `false` and is not used for a table row |
 | `totalCost` | the dollars the run added to the spending total, the sum of every `charged`; `null` with Ollama. A run stopped with Ctrl+C during an answer leaves that answer out of the file, but the spending total still counts it, so `totalCost` is a little lower than what the run spent |
 | `answers` | one entry per answer, in the order they ran |
 
-Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `passagesFound` (the passages the model was given, by label and score), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds`, `modelRaw` (the whole last draft), `drafts`, `fallbackCause`, `citationsDropped` and `modelSearches` (each search the model asked for, with `searchMode` `model`).
+Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `passagesFound` (the passages the model was given, by label and score), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds`, `modelRaw` (the whole last draft), `drafts`, `fallbackCause`, `citationsDropped`, `modelSearches` (each search the model asked for, with `searchMode` `model`), `rideLabels` (each recent ride's date, label and source, with labels on) and `labelModel` (with `labelsMode` `model`: the label model's name, seconds, `cost` and `charged`; `charged` is part of the answer's `charged`, while `seconds` and `cost` are apart from the answer's).
 
 A failed answer has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next answer still runs. The command exits with code 1 when every answer fails, with code 2, writing no file, when `.env` or `--repeat` is wrong, the paper index or the saved library is refused, or the worst case exceeds the cap, and with code 130 after Ctrl+C. The cloud key is never written here.

@@ -67,6 +67,12 @@ class Scores:
     average_drafts: float | None
     median_seconds: float | None
     cost_per_answer: float | None
+    # Con il modello che etichetta, per risposta in media: i suoi secondi e il suo addebito, e quelli
+    # del modello chat. None senza modello che etichetta (anche nei file di prima); i costi con Ollama.
+    label_seconds: float | None
+    label_cost: float | None
+    chat_seconds: float | None
+    chat_cost: float | None
     skipped: list[str]
     not_run: list[str]
 
@@ -117,8 +123,16 @@ def search_score_line(score: tuple[int, int]) -> str:
     return f"  Punteggio della ricerca, paper atteso trovato: {ratio(score)}"
 
 
+def allowed_for(situation: dict, mode: str) -> list[str]:
+    """I protocolli ammessi della situazione: con le etichette accese, quelli delle regole che leggono il
+    tipo delle uscite, quando la situazione ne ha (withLabels)."""
+    if mode != "off" and "withLabels" in situation:
+        return situation["withLabels"]["allowed"]
+    return situation["allowed"]
+
+
 def grade(run: dict, situations: list[dict]) -> Scores:
-    allowed = {s["name"]: s["allowed"] for s in situations}
+    allowed = {s["name"]: allowed_for(s, labels_mode(run)) for s in situations}
     in_set = [a for a in run["answers"] if a["situation"] in allowed]
     answered = [a for a in in_set if "error" not in a]
     n = len(answered)
@@ -150,6 +164,11 @@ def grade(run: dict, situations: list[dict]) -> Scores:
     for a in in_set:
         found.setdefault(a["situation"], set())
     charges = [a["charged"] for a in in_set]
+    cost_per_answer = sum(charges) / len(charges) if charges and None not in charges else None
+    # L'addebito della risposta comprende la chiamata del modello che etichetta: la si toglie per il chat.
+    labeled = [a for a in answered if a.get("labelModel")]
+    label_charges = [(a.get("labelModel") or {}).get("charged", 0.0) for a in in_set]
+    label_cost = sum(label_charges) / len(label_charges) if labeled and None not in label_charges else None
     ran = {a["situation"] for a in run["answers"]}
     return Scores(answered=n, failed=len(in_set) - n,
                   rules_followed=(count["followed"], n), rules_first=(count["first"], n),
@@ -162,7 +181,12 @@ def grade(run: dict, situations: list[dict]) -> Scores:
                   average_drafts=statistics.mean(len(drafts_of(a)) for a in answered) if answered else None,
                   median_seconds=statistics.median(a["seconds"] for a in answered) if answered else None,
                   # Quanto ha aggiunto al totale della spesa ogni risposta, anche quelle fallite; con Ollama niente.
-                  cost_per_answer=sum(charges) / len(charges) if charges and None not in charges else None,
+                  cost_per_answer=cost_per_answer,
+                  label_seconds=statistics.mean(a["labelModel"]["seconds"] for a in labeled) if labeled else None,
+                  label_cost=label_cost,
+                  chat_seconds=statistics.mean(a["seconds"] for a in labeled) if labeled else None,
+                  chat_cost=cost_per_answer - label_cost if labeled and cost_per_answer is not None
+                  and label_cost is not None else (cost_per_answer if labeled else None),
                   skipped=sorted(ran - allowed.keys()), not_run=[name for name in allowed if name not in ran])
 
 
@@ -184,10 +208,15 @@ def model_search(run: dict) -> bool:
     return run.get("searchMode") == "model"
 
 
+def labels_mode(run: dict) -> str:
+    """Le etichette delle corse della corsa; un file di prima non le dice: spente."""
+    return run.get("labelsMode", "off")
+
+
 def report(run: dict, scores: Scores, shown: str) -> list[str]:
     """I punteggi di una corsa, una riga ciascuno, sotto il nome del file."""
     search = "ricerca del modello" if model_search(run) else "ricerca fissa"
-    lines = [f"{shown} — {run['model']} · prompt {run['promptVersion']} · {search} · "
+    lines = [f"{shown} — {run['model']} · prompt {run['promptVersion']} · {search} · etichette {labels_mode(run)} · "
              f"corsa {'completa' if run['complete'] else 'incompleta'}",
              f"  Risposte valutate: {scores.answered} · errori: {scores.failed}",
              f"  Regole seguite: {ratio(scores.rules_followed)}",
@@ -203,6 +232,10 @@ def report(run: dict, scores: Scores, shown: str) -> list[str]:
              f"  Bozze per risposta (media): {one_decimal(scores.average_drafts)}",
              f"  Secondi (mediana): {one_decimal(scores.median_seconds)}",
              f"  Costo per risposta: {money(scores.cost_per_answer)}"]
+    if scores.label_seconds is not None:
+        lines += [f"  Modello che etichetta, per risposta: {one_decimal(scores.label_seconds)} s (media) · "
+                  f"{money(scores.label_cost)}",
+                  f"  Modello chat, per risposta: {one_decimal(scores.chat_seconds)} s (media) · {money(scores.chat_cost)}"]
     if scores.skipped:
         lines.append("  Saltate, non più nel set: " + ", ".join(scores.skipped))
     if scores.not_run:
@@ -214,6 +247,8 @@ def table_row(run: dict, scores: Scores, link: str) -> str:
     """La riga della tabella del README, con il link al file; una corsa incompleta lo dice."""
     file = f"[{Path(link).name}]({link})" + ("" if run["complete"] else " (incompleta)")
     model = f"{run['model']} · model search" if model_search(run) else run["model"]
+    if labels_mode(run) != "off":
+        model += f" · labels {labels_mode(run)}"
     cells = [model, run["promptVersion"], ratio(scores.rules_followed), ratio(scores.rules_first),
              ratio(scores.readable), ratio(scores.invented), ratio(scores.citations_dropped),
              ratio(scores.support_cited), ratio(scores.support_found), ratio(scores.expected_found),
