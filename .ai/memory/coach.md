@@ -53,7 +53,7 @@ The dollar limit in `.env` on cloud **Chat model** spending: the **Coach service
 _Avoid_: "budget" (confused with the token limit per answer), "quota" (the provider's own rate limits).
 
 ### Evaluation set
-The fixed list of 25–30 made-up athlete situations, each with the protocols the **Selection rules** allow, used to grade a **Chat model** answer by answer. A run saves every answer, and a grading step that calls no model scores it.
+The fixed list of 25–40 made-up athlete situations, each with the protocols the **Selection rules** allow and a made-up ride history for the **Ride tool**s, used to grade a **Chat model** answer by answer. A run saves every answer, and a grading step that calls no model scores it.
 _Avoid_: "exam" (only a teaching comparison), "test set" (the automated tests use fake models), "live check" (the quick 3-situation run, **Live check**).
 
 ### Selection rules
@@ -124,8 +124,18 @@ _Avoid_: "interval" alone (a block is found in the data, an interval is planned)
 A ride's **Hard blocks** (duration, zone), the recoveries between them, its minutes per zone and its load per hour on heart rate, computed from the compact series of its **Ride details** with today's FTP and LTHR. The **Label rule** reads the load per hour (ripetute from 87.5 up); the **Label model** reads it all beside the averages.
 _Avoid_: "pattern" alone (says nothing about what is measured), "streams" (Strava's API name).
 
+### Ride tool
+One of two tools the **Chat model** can call during a **Draft** when the ride tools setting is on: the **Load history**, or the **Ride shape** of one bike ride from the last 14 days, named by a ride code valid only within the request. At most 4 calls per Draft, apart from **Model search**es.
+_Avoid_: "tool call" in user-facing text (too technical), "Strava id" for the ride code (the model never sees it).
+
+### Load history
+What the **Chat model** gets from the first **Ride tool**: one line per each of the last 8 Monday–Sunday weeks (hours, training load, rides, CTL at week end) and one per each of the last 14 days, with each bike ride's ride code.
+_Avoid_: "PMC" (the chart, not this text), "training log" (vague).
+
 ## Decisions
 
+- **Ride tools are graded on a hand-written best choice, not on the allowed list**: four Evaluation set situations carry `withTools` with their best protocols inside the allowed list. Why: the Check already rejects any protocol outside the rule's list, so "Rules followed" cannot move when the tools help.
+- **A Chat model that cannot call tools stops the request with a clear error naming COACH_RIDE_TOOLS=off**: no silent retry without tools. Why: agreed at the plan gate, the same as model Search mode.
 - **The Label rule calls a ride ripetute from its load per hour on heart rate, not from repeated Hard blocks**: from 87.5 up, tuned on the Tuning set only; a long Z2 ride with a couple of hard blocks inside stays fondo. Why: the user's ripetute are mostly long stretches in Z4, so the repeated-block pattern scored 59% on the Tuning set, and the user labels a mixed long ride fondo; even so the Check set gave 70%, below the reliability bar.
 - **The browser sends the athlete profile instead of the service estimating it**: FTP and heart-rate values travel with each Coach request. Why: the estimates use segment data only the browser has, and the Coach must use the same numbers the app shows.
 - **Disconnecting from Strava deletes the rides the Coach service saved**: Why: data belongs to a connection, and Strava's terms ask apps to delete data when access is withdrawn.
@@ -148,6 +158,7 @@ _Avoid_: "pattern" alone (says nothing about what is measured), "streams" (Strav
 
 ## Gotchas
 
+- **qwen2.5:7b ignores the Ride tools**: with COACH_RIDE_TOOLS=on it made 0 calls in 37 answers (eval run of 2026-11-20), and the best choice stayed 1 of 4. Measure a model's tool use before turning the tools on by default (backlog B-55).
 - **Each model call needs its own trace step**: noting a model answer on a step that holds several calls overwrites the earlier ones, so a model-mode **Draft** showed only its last turn's tokens and cost in Phoenix. Every call to the **Chat model** opens its own `turn` step (`graph.model_turn`); a new loop of model calls must do the same.
 - **Every deletion of Strava data includes the athlete data that came from Strava**: the starred-segment cache lives in `athlete_data`, not with the activities, so a path that deletes only the activity tables leaves the previous athlete's segments in the new athlete's FTP estimate. Disconnect and a switch to another athlete both delete `STRAVA_KEYS` (`docker/coach/app/athlete_data.py`); a new path that drops Strava data must too.
 - **Background retries need a cool-down**: the details downloader picks failed activities again, so without `RETRY_FAILED` one activity Strava never answers for (deleted more than 30 days ago) spent the whole 600-a-day budget every day. Anything that retries Strava requests in the background waits before retrying a failure.

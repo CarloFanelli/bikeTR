@@ -221,9 +221,10 @@
 - **From**: tool-calling (interview, 2026-11-14)
 - **Picked up by**: ride-classifier (2026-11-19)
 
-### B-48 · open
+### B-48 · picked-up
 - **What**: Give the Chat model tools to open one ride's details (power and heart rate) and the load history, measured with the Evaluation set.
 - **From**: tool-calling (interview, 2026-11-14)
+- **Picked up by**: ride-tools (2026-11-20)
 
 ### B-49 · picked-up
 - **What**: Ride labels change the Selection rules, for example no hard workout after two "ripetute" rides in 3 days; each rule needs a source and is measured with the Evaluation set.
@@ -235,9 +236,10 @@
 - **From**: ride-classifier (interview, 2026-11-19)
 - **Picked up by**: reliable-ride-labels (2026-11-19)
 
-### B-51 · open
+### B-51 · picked-up
 - **What**: Add the last weeks' load history to the Evaluation set situations, so Chat model tools that read it (B-48) can be measured.
 - **From**: ride-classifier (interview, 2026-11-19)
+- **Picked up by**: ride-tools (2026-11-20)
 
 ### B-52 · picked-up
 - **What**: Make Ride labels reliable before the Coach uses them: separate Label rule thresholds for heart rate and for rides with only Strava's estimated power, and a Label model prompt that labels every ride and tells endurance from recovery. The first measurement gave the rule 23% and qwen2.5:3b 33% on the 40 Labeled rides.
@@ -251,3 +253,7 @@
 ### B-54 · open
 - **What**: Turn Ride labels on by default in the Coach, once they pass the Check set and the Evaluation set shows better answers with them.
 - **From**: ride-shape-labels (interview, 2026-11-19)
+
+### B-55 · open
+- **What**: Turn the Ride tools on by default in the Coach, once the Evaluation set shows better answers with them on.
+- **From**: ride-tools (interview, 2026-11-20)

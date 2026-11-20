@@ -1,0 +1,6 @@
+# Task Progress - ride-tools
+
+01-load-history-tool: DONE
+02-ride-shape-tool: DONE
+03-situation-histories: DONE
+04-tool-situations: DONE
