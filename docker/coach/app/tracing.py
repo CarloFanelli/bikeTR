@@ -38,6 +38,7 @@ SEND_TIMEOUT = 1
 KIND = SpanAttributes.OPENINFERENCE_SPAN_KIND
 # Il tipo di passo per Phoenix: la ricerca dei paper e la chiamata al modello hanno una vista loro.
 KINDS = {"papers": OpenInferenceSpanKindValues.RETRIEVER, "search": OpenInferenceSpanKindValues.RETRIEVER,
+         "rideTool": OpenInferenceSpanKindValues.TOOL,
          "turn": OpenInferenceSpanKindValues.LLM}
 JSON = OpenInferenceMimeTypeValues.JSON.value
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
@@ -131,7 +132,7 @@ def _span(name: str, attributes: dict):
 
 @contextmanager
 def request(minutes: int, situation: str | None = None, repeat: int | None = None, search_mode: str = "fixed",
-            ride_labels: str = "off"):
+            ride_labels: str = "off", ride_tools: str = "off"):
     """La traccia di una richiesta del Coach: da dove viene (il progetto), i minuti chiesti, il modo di
     ricerca dei paper, le etichette delle corse, la versione del prompt e, per le corse di prova, la situazione e la
     ripetizione. Il nome dice
@@ -140,8 +141,8 @@ def request(minutes: int, situation: str | None = None, repeat: int | None = Non
     name = _project if situation is None else f"{_project} · {situation}" + (f" #{repeat}" if repeat else "")
     with _span(name, _known({KIND: OpenInferenceSpanKindValues.CHAIN.value, "coach.source": _project,
                              "coach.minutes": minutes, "coach.search_mode": search_mode,
-                             "coach.ride_labels": ride_labels,
-                             "coach.prompt_version": prompts.prompt_version(search_mode, ride_labels),
+                             "coach.ride_labels": ride_labels, "coach.ride_tools": ride_tools,
+                             "coach.prompt_version": prompts.prompt_version(search_mode, ride_labels, ride_tools),
                              "coach.situation": situation, "coach.repeat": repeat})):
         trace_id = trace.get_current_span().get_span_context().trace_id
         _running.add(trace_id)
@@ -155,7 +156,7 @@ def request(minutes: int, situation: str | None = None, repeat: int | None = Non
 def step(name: str):
     """Un passo della richiesta, con la sua durata: rides, metrics, labels (con dentro il turn del modello
     che etichetta), papers, draft (con dentro ogni turn
-    del modello e ogni search che ha chiesto), check o deliver."""
+    del modello e ogni search o rideTool che ha chiesto), check o deliver."""
     with _span(name, {KIND: KINDS.get(name, OpenInferenceSpanKindValues.CHAIN).value}):
         yield
 
@@ -213,6 +214,14 @@ def note_search(draft: int, query: str, found: list) -> None:
     come il passo papers."""
     _note({"coach.draft": draft})
     note_papers(query, found)
+
+
+def note_ride_tool(draft: int, name: str, arguments, answer: str) -> None:
+    """Uno strumento sulle uscite chiesto dal modello: la bozza, lo strumento con gli argomenti come li ha
+    scritti e la risposta data."""
+    asked = arguments if isinstance(arguments, str) else json.dumps(arguments, ensure_ascii=False)
+    _note({"coach.draft": draft, SpanAttributes.TOOL_NAME: name, SpanAttributes.INPUT_VALUE: asked,
+           SpanAttributes.OUTPUT_VALUE: answer})
 
 
 def _messages(prefix: str, messages: list) -> dict:

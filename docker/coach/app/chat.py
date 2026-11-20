@@ -49,6 +49,7 @@ class ToolCall:
 
 
 def no_tools(model: str) -> str:
-    """Il messaggio per un modello che non sa chiedere strumenti, con COACH_SEARCH_MODE=model."""
-    return (f"Il modello {model} non sa usare gli strumenti, quindi non può cercare da solo i paper: "
-            "scegli un altro modello chat in .env, o metti COACH_SEARCH_MODE=fixed.")
+    """Il messaggio per un modello che non sa chiedere strumenti, con COACH_SEARCH_MODE=model o
+    COACH_RIDE_TOOLS=on."""
+    return (f"Il modello {model} non sa usare gli strumenti, quindi non può cercare da solo i paper né guardare "
+            "le uscite: scegli un altro modello chat in .env, o metti COACH_SEARCH_MODE=fixed e COACH_RIDE_TOOLS=off.")

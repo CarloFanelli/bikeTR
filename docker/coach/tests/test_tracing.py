@@ -65,7 +65,8 @@ def test_a_coach_screen_request_leaves_one_trace_with_its_steps_in_order(service
     assert root.name == "coach-screen"
     assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "coach-screen",
                                      "coach.minutes": 60, "coach.search_mode": "fixed",
-                                     "coach.ride_labels": "off", "coach.prompt_version": prompts.prompt_version()}
+                                     "coach.ride_labels": "off", "coach.ride_tools": "off",
+                                     "coach.prompt_version": prompts.prompt_version()}
     assert root.resource.attributes["openinference.project.name"] == "coach-screen"
 
 
@@ -396,6 +397,21 @@ def test_each_turn_of_a_draft_is_its_own_model_step_and_their_tokens_add_up_to_t
     assert first["llm.token_count.completion"] + second["llm.token_count.completion"] == draft["outputTokens"]
     assert first["llm.cost.total"] + second["llm.cost.total"] == pytest.approx(draft["cost"])
     assert first["coach.charged"] + second["coach.charged"] == pytest.approx(draft["cost"])
+
+
+def test_each_ride_tool_call_is_a_step_of_its_draft_with_the_tool_asked_and_the_answer(phoenix):
+    case = CASE["allowed-answer"]
+    fake = FakeOllama([asks(name="load_history", arguments={}), case["answer"]])
+    fake.chat = dataclasses.replace(fake.chat, ride_tools="on")
+    run_traced(case, fake)
+    spans = sorted(phoenix.spans(), key=lambda s: s.start_time)
+    (draft,) = [s for s in spans if s.name == "draft"]
+    (tool,) = [s for s in spans if s.name == "rideTool"]
+    assert tool.parent.span_id == draft.context.span_id
+    step = tool.attributes
+    assert (step["openinference.span.kind"], step["coach.draft"], step["tool.name"], step["input.value"]) == (
+        "TOOL", 1, "load_history", "{}")
+    assert step["output.value"].startswith("STORICO DEL CARICO")
 
 
 def test_the_request_trace_names_its_search_mode_and_that_mode_s_prompt_version(phoenix):

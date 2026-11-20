@@ -20,6 +20,8 @@ SEARCH_MODES = ("fixed", "model")
 # Le etichette delle corse recenti nel prompt: off, nessuna; rule, quelle della regola di app/labels.py;
 # model, quelle del modello che etichetta.
 RIDE_LABELS = ("off", "rule", "model")
+# Gli strumenti sulle uscite (app/ride_tools.py) offerti al modello chat: off, nessuno; on, in ogni bozza.
+RIDE_TOOLS = ("off", "on")
 CLOUD_SETTINGS = ("CLOUD_URL", "CLOUD_API_KEY", "CLOUD_MODEL", "CLOUD_PRICE_IN", "CLOUD_PRICE_OUT",
                   "CLOUD_SPENDING_LIMIT")
 
@@ -36,6 +38,7 @@ class ChatSettings:
     ride_labels: str = "off"
     # Il modello che etichetta le corse: solo con ride_labels "model".
     label: "ChatSettings | None" = None
+    ride_tools: str = "off"
 
 
 def invalid(message: str) -> CoachError:
@@ -94,6 +97,14 @@ def ride_labels() -> str:
     return labels
 
 
+def ride_tools() -> str:
+    tools = env("COACH_RIDE_TOOLS").lower() or "off"
+    if tools not in RIDE_TOOLS:
+        raise invalid(f'COACH_RIDE_TOOLS in .env vale "{env("COACH_RIDE_TOOLS")}": i valori ammessi sono '
+                      f'{" e ".join(RIDE_TOOLS)}')
+    return tools
+
+
 def label_settings() -> ChatSettings:
     """Il modello che etichetta le corse, con COACH_RIDE_LABELS=model: LABEL_PROVIDER (ollama se manca)
     e LABEL_MODEL. In cloud indirizzo e chiave sono quelli del modello chat se mancano i suoi
@@ -120,10 +131,11 @@ def label_settings() -> ChatSettings:
 
 
 def settings() -> ChatSettings:
-    """Il modello chat di .env, con il modo di ricerca dei paper (COACH_SEARCH_MODE, fixed se manca) e
-    le etichette delle corse (COACH_RIDE_LABELS, off se manca).
+    """Il modello chat di .env, con il modo di ricerca dei paper (COACH_SEARCH_MODE, fixed se manca), le
+    etichette delle corse (COACH_RIDE_LABELS, off se manca) e gli strumenti sulle uscite (COACH_RIDE_TOOLS,
+    off se manca).
     Senza COACH_PROVIDER: Ollama con OLLAMA_CHAT_MODEL, o qwen2.5:7b."""
-    mode, labels = search_mode(), ride_labels()
+    mode, labels, tools = search_mode(), ride_labels(), ride_tools()
     label = label_settings() if labels == "model" else None
     provider = env("COACH_PROVIDER").lower() or "ollama"
     if provider not in PROVIDERS:
@@ -132,13 +144,13 @@ def settings() -> ChatSettings:
     if provider == "ollama":
         model = env("OLLAMA_CHAT_MODEL") or ollama.DEFAULT_CHAT_MODEL
         return ChatSettings("ollama", checked_model(model, "OLLAMA_CHAT_MODEL"), ollama.OLLAMA_URL, search_mode=mode,
-                            ride_labels=labels, label=label)
+                            ride_labels=labels, label=label, ride_tools=tools)
     missing = [name for name in CLOUD_SETTINGS if not env(name)]
     if missing:
         raise invalid(f"Con COACH_PROVIDER=cloud manca in .env: {', '.join(missing)}")
     prices = Prices(dollars("CLOUD_PRICE_IN"), dollars("CLOUD_PRICE_OUT"), dollars("CLOUD_SPENDING_LIMIT"))
     return ChatSettings("cloud", checked_model(env("CLOUD_MODEL"), "CLOUD_MODEL"), checked_url(env("CLOUD_URL")),
-                        env("CLOUD_API_KEY"), prices, mode, labels, label)
+                        env("CLOUD_API_KEY"), prices, mode, labels, label, tools)
 
 
 def paid(chat: ChatSettings) -> bool:

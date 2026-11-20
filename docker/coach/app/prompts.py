@@ -75,6 +75,45 @@ SEARCH_BAD = "Ricerca non valida: lo strumento vuole un solo campo, text, con il
 SEARCH_UNKNOWN_TOOL = "Strumento sconosciuto: l'unico strumento è search_papers."
 SEARCH_NOTHING = "Nessun paper trovato per questo testo."
 
+# Con COACH_RIDE_TOOLS=on il modello può chiedere anche gli strumenti sulle uscite (app/ride_tools.py), fino a
+# MAX_RIDE_CALLS richieste per bozza, contate a parte dalle ricerche dei paper.
+MAX_RIDE_CALLS = 4
+LOAD_HISTORY_TOOL = {"type": "function", "function": {
+    "name": "load_history",
+    "description": "Lo storico del carico dell'atleta: per ognuna delle ultime 8 settimane ore, carico, uscite in "
+                   "bici e CTL a fine settimana; per ognuno degli ultimi 14 giorni le attività, con il codice di "
+                   "ogni uscita in bici.",
+    "parameters": {"type": "object", "properties": {}}}}
+RIDE_SHAPE_TOOL = {"type": "function", "function": {
+    "name": "ride_shape",
+    "description": "La forma di un'uscita in bici degli ultimi 14 giorni: blocchi duri con durata e zona, recupero "
+                   "dopo ognuno, minuti per zona e carico per ora dal battito.",
+    "parameters": {"type": "object", "required": ["code"], "properties": {
+        "code": {"type": "string", "description": "Il codice dell'uscita dato da load_history: r1, r2…"}}}}}
+RIDE_TOOLS = (LOAD_HISTORY_TOOL, RIDE_SHAPE_TOOL)
+# Il blocco del prompt di sistema che presenta gli strumenti, prima delle istruzioni sull'output.
+RIDE_TOOLS_BLOCK = ("\n\nSTRUMENTI SULLE USCITE: i numeri qui sopra sono medie. Se ti serve capire la tendenza del "
+                    "carico nelle ultime settimane o cosa è successo nei giorni scorsi, usa lo strumento "
+                    "load_history; "
+                    "per vedere com'era fatta un'uscita in bici (blocchi duri, minuti per zona) usa ride_shape con il "
+                    f"suo codice. Puoi fare fino a {MAX_RIDE_CALLS} richieste sulle uscite. Poi rispondi come sotto.")
+RIDE_LIMIT = f"Limite raggiunto: hai già fatto {MAX_RIDE_CALLS} richieste sulle uscite, rispondi ora con il solo JSON."
+RIDE_NO_HISTORY = "Storico non disponibile per questa richiesta."
+RIDE_BAD_CODE = ("Codice non valido: ride_shape apre solo le uscite in bici degli ultimi 14 giorni, con il codice "
+                 "r1, r2… che dà load_history.")
+
+
+def unknown_tool(tools: list) -> str:
+    """La risposta a uno strumento che non c'è, con gli strumenti accesi sulle uscite: quelli offerti."""
+    return f"Strumento sconosciuto: gli strumenti sono {', '.join(t['function']['name'] for t in tools)}."
+
+
+def offered_tools(search_mode: str, ride_tools: str) -> list | None:
+    """Gli strumenti offerti al modello in una bozza: la ricerca dei paper con il modo model, gli
+    strumenti sulle uscite se accesi; None quando non ce n'è nessuno."""
+    tools = ([SEARCH_TOOL] if search_mode == "model" else []) + (list(RIDE_TOOLS) if ride_tools == "on" else [])
+    return tools or None
+
 
 # Un paper, una situazione e una durata d'esempio fissi: con loro anche la forma della sezione dei paper
 # entra nella versione del prompt. Quota dura sconosciuta: la regola della ripresa, con i tre giorni Z2.
@@ -92,10 +131,10 @@ def paper_entry(p: dict) -> str:
     return f"[PMID:{p['pmid']}] {js_str(p['authors'])} {js_str(p['year'])}. {js_str(p['title'])}\n{passages}"
 
 
-def system_prompt(papers: list, ctx: dict, duration: int, search_mode: str = "fixed") -> str:
+def system_prompt(papers: list, ctx: dict, duration: int, search_mode: str = "fixed", ride_tools: str = "off") -> str:
     """Il prompt di sistema per la situazione di oggi: solo i protocolli che la regola di selezione
     ammette nei minuti, la regola con la sua fonte, le differenze tra i Z2 ammessi, e i paper; con il
-    modo model, al posto dei paper, come cercarli."""
+    modo model, al posto dei paper, come cercarli; con gli strumenti sulle uscite accesi, come usarli."""
     rule, allowed = select(ctx, duration)
     protocol_list = "\n".join(f"- {pid}: {PROTOCOLS[pid].name}" for pid in allowed)
     z2 = [f"- {pid}: {Z2_DIFFERENCES[pid]}" for pid in allowed if pid in Z2_DIFFERENCES]
@@ -103,22 +142,31 @@ def system_prompt(papers: list, ctx: dict, duration: int, search_mode: str = "fi
     papers_block = "\n\n".join(paper_entry(p) for p in papers)
     # I paper vanno inseriti per ultimi: un passaggio potrebbe contenere "<PROTOCOL_LIST>".
     template = MODEL_SEARCH_TEMPLATE if search_mode == "model" else SYSTEM_TEMPLATE
+    if ride_tools == "on":
+        template = template.replace("\n\nOUTPUT —", RIDE_TOOLS_BLOCK + "\n\nOUTPUT —", 1)
     return (template.replace("<PROTOCOL_LIST>", protocol_list)
             .replace("<SELECTION_RULES>", rule.sentence(allowed)).replace("<Z2_DIFFERENCES>", z2_block)
             .replace("<PAPERS_BLOCK>", papers_block))
 
 
-def prompt_version(search_mode: str = "fixed", ride_labels: str = "off") -> str:
+def prompt_version(search_mode: str = "fixed", ride_labels: str = "off", ride_tools: str = "off") -> str:
     """Le prime 8 cifre dell'impronta SHA-256 del prompt di sistema d'esempio, di ogni regola di
     selezione e del nome di ogni protocollo: il prompt d'esempio ne mostra solo uno, ma ognuno può
     finire in un prompt. Lo stesso testo dà sempre la stessa versione, due testi diversi mai la stessa
     (salvo una coincidenza su quattro miliardi). Così i risultati di due prompt non si confondono.
     Con il modo model entrano anche lo strumento e le sue risposte, e il prompt è un altro; con le
     etichette delle corse accese, la riga di una corsa etichettata e le regole che leggono il tipo delle
-    uscite: con le etichette spente non valgono mai, e la versione resta quella di prima."""
+    uscite: con le etichette spente non valgono mai, e la versione resta quella di prima. Con gli
+    strumenti sulle uscite accesi entrano le loro definizioni, le loro risposte fisse e la forma di uno
+    storico d'esempio; spenti, la versione resta quella di prima."""
     tool = [json.dumps(SEARCH_TOOL, ensure_ascii=False, sort_keys=True), SEARCH_LIMIT, SEARCH_EMPTY, SEARCH_BAD,
             SEARCH_UNKNOWN_TOOL, SEARCH_NOTHING] if search_mode == "model" else []
-    text = "\n".join([system_prompt([VERSION_SAMPLE], VERSION_CONTEXT, VERSION_MINUTES, search_mode),
+    if ride_tools == "on":
+        from app import ride_tools as rides   # qui: ride_tools legge le risposte fisse da questo modulo
+        tool += [*(json.dumps(t, ensure_ascii=False, sort_keys=True) for t in RIDE_TOOLS), RIDE_LIMIT,
+                 RIDE_NO_HISTORY, RIDE_BAD_CODE, unknown_tool(offered_tools(search_mode, ride_tools)),
+                 rides.version_sample()]
+    text = "\n".join([system_prompt([VERSION_SAMPLE], VERSION_CONTEXT, VERSION_MINUTES, search_mode, ride_tools),
                       *(rule.sentence() for rule in RULES if ride_labels != "off" or not rule.reads_labels),
                       *(f"{pid}: {p.name}" for pid, p in PROTOCOLS.items()),
                       *tool, *([ride_line(VERSION_RIDE)] if ride_labels != "off" else [])])

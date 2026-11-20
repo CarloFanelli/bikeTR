@@ -33,6 +33,7 @@ Each file holds `startedAt`, `provider`, `model`, `searchModel`, `searchMode` (`
 | `fallbackCause` | why the fallback rules chose, the last draft's first cause; `null` when they did not |
 | `citationsDropped` | the citations dropped from the card because the model was not given them, when the last draft was wrong only there |
 | `modelSearches` | with `searchMode` `model`, each search the model asked for: the `draft` it was in, the `text` it wrote and the PMIDs it found (`papersFound`); empty with `fixed` |
+| `rideCalls` | with `COACH_RIDE_TOOLS=on`, how many ride tool calls the model made in all its drafts, refused ones included; `0` otherwise. The made-up rides of the live check have no saved series, so `ride_shape` gives their averages |
 | `rideLabels` | with `COACH_RIDE_LABELS` on, each recent ride's `data`, `label` (`recupero`, `fondo`, `ripetute` or `gara`) and `source` (`model` or `rule`; the made-up rides are never saved); empty with `off` |
 | `labelModel` | with `COACH_RIDE_LABELS=model`, the label model's call: `model`, `seconds`, `cost` and `charged` (`null` with Ollama); `charged` is included in the situation's `charged`. `null` otherwise |
 

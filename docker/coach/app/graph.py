@@ -16,11 +16,12 @@ import httpx
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
-from app import labels, prompts, provider, tracing
+from app import labels, prompts, provider, ride_tools, tracing
 from app.chat import Accepted, ChatEnd, ModelError, ToolCall
 from app.check import MAX_DRAFTS, SPENDING_CAP, check_draft, read_draft, retry_message, retry_step
 from app.errors import CoachError
-from app.metrics import coach_context, recent_bike_rides
+from app.jscompat import instant_ms
+from app.metrics import coach_context, is_bike, recent_bike_rides
 from app.spending import Spending, charge, cost
 from app.strava import RideData, StravaRides
 from app.workout import WorkoutRequest, decide, find_papers, read_index, search_papers, step
@@ -52,6 +53,8 @@ class State(TypedDict, total=False):
     retrieved: list
     # Una voce per bozza: risposta grezza, token, costo, addebito, se si è interrotta e il verdetto.
     drafts: list[dict]
+    # Lo storico inventato di una situazione del set di valutazione, per gli strumenti sulle uscite.
+    history: dict
     # Con il modello che etichetta: il suo nome, i secondi del passo labels, il costo e l'addebito.
     labelCall: dict
     result: dict
@@ -166,11 +169,11 @@ async def papers_node(state: State, runtime: Runtime[Request]) -> State:
     return {"started": started, "index": index, "retrieved": retrieved, "drafts": []}
 
 
-def messages_for(state: State, search_mode: str) -> list[dict]:
+def messages_for(state: State, search_mode: str, tools: str = "off") -> list[dict]:
     """Il prompt di sistema e i numeri dell'atleta; da una bozza rimandata in poi anche l'ultima
     risposta del modello e i motivi del controllo. Con il modo model ogni bozza precedente, con le
     sue ricerche: i passaggi trovati restano davanti al modello, che può citarli."""
-    system = prompts.system_prompt(state["retrieved"], state["ctx"], state["duration"], search_mode)
+    system = prompts.system_prompt(state["retrieved"], state["ctx"], state["duration"], search_mode, tools)
     messages = [{"role": "system", "content": system},
                 {"role": "user", "content": prompts.user_prompt(state["ctx"], state["duration"])}]
     earlier = state["drafts"] if search_mode == "model" else state["drafts"][-1:]
@@ -218,6 +221,33 @@ async def model_search(r: Request, call: ToolCall, index: dict, draft: int,
         found = await search_papers(index, text, r.embed)
         tracing.note_search(draft, text, found)
     return "\n\n".join(prompts.paper_entry(p) for p in found) or prompts.SEARCH_NOTHING, found, text
+
+
+async def ride_history(state: State, r: Request) -> ride_tools.RideHistory | None:
+    """Lo storico per gli strumenti sulle uscite, dalle corse della richiesta con le serie compatte salvate
+    delle uscite in bici dei 14 giorni; per una situazione del set di valutazione, dal suo storico inventato."""
+    if "rides" not in state or r.req is None:
+        return ride_tools.from_situation(state["history"], state["ctx"]) if "history" in state else None
+    data = state["rides"]
+    store = r.rides.store if isinstance(r.rides, StravaRides) else None
+    cutoff = r.now_ms - ride_tools.HISTORY_DAYS * 24 * 3600e3
+    ids = [a["id"] for a in data.activities if is_bike(a) and instant_ms(a["start_date_local"]) >= cutoff]
+    series = await store.series(ids) if store and ids else {}
+    return ride_tools.ride_history(data.activities, data.details, series, r.req.profile, r.now_ms, r.req.tz)
+
+
+async def ride_tool(r: Request, call: ToolCall, history: ride_tools.RideHistory | None, tools: list,
+                    draft: int, number: int) -> str:
+    """Uno strumento sulle uscite chiesto dal modello, il `number`-esimo della bozza `draft`: un passo
+    sulla schermata Coach e nella traccia, con la risposta data al modello."""
+    r.emit(step("rideTool", f"Il modello guarda le uscite: {call.name} (richiesta {number} di "
+                            f"{prompts.MAX_RIDE_CALLS})", call=number, of=prompts.MAX_RIDE_CALLS))
+    with tracing.step("rideTool"):
+        answer = ride_tools.answer(call, history)
+        if answer is None:
+            answer = prompts.unknown_tool(tools)
+        tracing.note_ride_tool(draft, call.name, call.arguments, answer)
+    return answer
 
 
 @dataclass
@@ -272,18 +302,21 @@ async def ask(chat: provider.ChatSettings, chat_client: httpx.AsyncClient, spend
 
 
 async def draft_node(state: State, runtime: Runtime[Request]) -> State:
-    """Una bozza: un giro del modello; con il modo model, finché il modello chiede ricerche, il Coach
-    risponde e il modello fa un altro giro. Dopo MAX_SEARCHES ricerche le richieste si rifiutano, e
-    dopo altrettanti rifiuti la bozza finisce senza risposta."""
+    """Una bozza: un giro del modello; finché il modello chiede strumenti (ricerche dei paper con il modo
+    model, strumenti sulle uscite se accesi), il Coach risponde e il modello fa un altro giro. Ricerche e
+    richieste sulle uscite si contano a parte: oltre il loro limite si rifiutano, e dopo altrettanti
+    rifiuti di uno dei due la bozza finisce senza risposta."""
     r, chat = runtime.context, runtime.context.chat
     if not state["drafts"]:
         r.emit(step("model", "Il modello sta scegliendo il protocollo…"))
     else:
         attempt = len(state["drafts"]) + 1
         r.emit(step("draft", retry_step(state["drafts"][-1]["verdict"], attempt), attempt=attempt, of=MAX_DRAFTS))
-    messages = messages_for(state, chat.search_mode)
-    tools = [prompts.SEARCH_TOOL] if chat.search_mode == "model" else None
+    messages = messages_for(state, chat.search_mode, chat.ride_tools)
+    tools = prompts.offered_tools(chat.search_mode, chat.ride_tools)
     turns, done, retrieved, searches, refused, capped = [], [], state["retrieved"], 0, 0, False
+    ride_calls = ride_refused = 0
+    history = None   # lo storico per gli strumenti sulle uscite, letto alla prima richiesta della bozza
     searched = []   # le ricerche vere della bozza: testo e PMID trovati
     # La bozza che finisce senza risposta: dopo troppi rifiuti, o con il tetto di spesa raggiunto.
     unanswered = Turn("", [], ChatEnd(None, None, False), None, None)
@@ -295,6 +328,17 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
                 break
             answers = []
             for call in turn.calls:
+                is_search = chat.search_mode == "model" and call.name == prompts.SEARCH_TOOL["function"]["name"]
+                if chat.ride_tools == "on" and not is_search:
+                    if ride_calls >= prompts.MAX_RIDE_CALLS:
+                        ride_refused += 1
+                        answers.append(prompts.RIDE_LIMIT)
+                        continue
+                    if ride_calls == 0:
+                        history = await ride_history(state, r)
+                    ride_calls += 1
+                    answers.append(await ride_tool(r, call, history, tools, len(state["drafts"]) + 1, ride_calls))
+                    continue
                 if searches >= prompts.MAX_SEARCHES:
                     refused += 1
                     answers.append(prompts.SEARCH_LIMIT)
@@ -306,7 +350,7 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
                     searched.append({"text": text, "papersFound": [p["pmid"] for p in found]})
                 answers.append(answer)
             turns += provider.tool_turn(chat, turn.text, turn.calls, answers)
-            if refused >= prompts.MAX_SEARCHES:
+            if refused >= prompts.MAX_SEARCHES or ride_refused >= prompts.MAX_RIDE_CALLS:
                 turn = unanswered
                 break
             # Con un modello cloud, nessun altro giro a tetto di spesa raggiunto: decide il ripiego.
@@ -314,7 +358,7 @@ async def draft_node(state: State, runtime: Runtime[Request]) -> State:
                 turn, capped = unanswered, True
                 break
     draft = {"modelRaw": turn.text, "truncated": turn.end.truncated, "turns": turns, "capped": capped,
-             "searches": searched,
+             "searches": searched, "rideCalls": ride_calls + ride_refused,
              "inputTokens": summed(t.end.input_tokens for t in done),
              "outputTokens": summed(t.end.output_tokens for t in done),
              "cost": summed(t.cost for t in done), "charged": summed(t.charged for t in done)}
@@ -371,6 +415,8 @@ async def deliver_node(state: State, runtime: Runtime[Request]) -> State:
         "truncated": last["truncated"], "cost": total(drafts, "cost"), "modelRaw": last["modelRaw"],
         # Le ricerche chieste dal modello, con la bozza in cui le ha chieste: nessuna con la ricerca fissa.
         "modelSearches": [{"draft": n, **s} for n, d in enumerate(drafts, 1) for s in d["searches"]],
+        # Le richieste sulle uscite di tutte le bozze, rifiutate comprese: zero con gli strumenti spenti.
+        "rideCalls": sum(d["rideCalls"] for d in drafts),
         # Il tipo di ogni corsa recente e da dove viene: nessuno con le etichette spente.
         "rideLabels": [{"data": d["data"], "label": d["label"], "source": d["labelSource"]}
                        for d in state["ctx"]["recentDays"] if "label" in d],
@@ -425,9 +471,11 @@ async def run(req: WorkoutRequest, emit: Callable[[dict], None], *, rides: Strav
 async def from_context(ctx: dict, duration: int, emit: Callable[[dict], None], *, chat: provider.ChatSettings,
                        chat_client: httpx.AsyncClient, embed: Callable[[str], Awaitable[list]],
                        load_index: Callable[[], Awaitable[dict]], spending: Spending,
-                       today: str | None = None) -> dict:
+                       today: str | None = None, history: dict | None = None) -> dict:
     """Dai numeri dell'atleta già pronti al workout: il set di valutazione entra qui, con la data di
-    oggi della situazione quando una sua regola legge i giorni passati dalle uscite."""
-    state = await COACH.ainvoke({"ctx": ctx, "duration": duration, **({"today": today} if today else {})},
+    oggi della situazione quando una sua regola legge i giorni passati dalle uscite, e con il suo storico
+    inventato per gli strumenti sulle uscite."""
+    state = await COACH.ainvoke({"ctx": ctx, "duration": duration, **({"today": today} if today else {}),
+                                 **({"history": history} if history else {})},
                                 context=Request(emit, chat, chat_client, embed, load_index, spending))
     return state["result"]

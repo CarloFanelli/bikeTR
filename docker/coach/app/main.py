@@ -174,7 +174,8 @@ async def generate_workout(request: Request):
 
     async def produce():
         try:
-            with tracing.request(req.duration, search_mode=chat.search_mode, ride_labels=chat.ride_labels):
+            with tracing.request(req.duration, search_mode=chat.search_mode, ride_labels=chat.ride_labels,
+                                 ride_tools=chat.ride_tools):
                 async with provider.client(chat) as chat_client:
                     await graph.run(req, events.put_nowait, rides=rides, chat=chat, chat_client=chat_client,
                                     embed=search.encode, load_index=load_index, now_ms=time.time() * 1000,

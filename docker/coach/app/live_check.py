@@ -107,6 +107,8 @@ def record(base: dict, result: dict, charged: float | None) -> dict:
             "citationsDropped": result["citationsDropped"],
             # Con COACH_SEARCH_MODE=model, ogni ricerca del modello: bozza, testo e PMID trovati.
             "modelSearches": result["modelSearches"],
+            # Con COACH_RIDE_TOOLS=on, le richieste sulle uscite di tutte le bozze, rifiutate comprese.
+            "rideCalls": result["rideCalls"],
             # Con COACH_RIDE_LABELS acceso, il tipo di ogni corsa recente e da dove viene.
             "rideLabels": result["rideLabels"],
             # Con il modello che etichetta: nome, secondi, costo e addebito della sua chiamata.
@@ -123,7 +125,8 @@ async def coach_answer(base: dict, chat: provider.ChatSettings, spending: Spendi
     result, failure = None, None
     try:
         with tracing.request(base["duration"], situation=base["situation"], repeat=base.get("repeat"),
-                             search_mode=chat.search_mode, ride_labels=chat.ride_labels):
+                             search_mode=chat.search_mode, ride_labels=chat.ride_labels,
+                             ride_tools=chat.ride_tools):
             if chat.prices:
                 counted.check(chat.prices.limit)
             async with provider.client(chat) as chat_client:
