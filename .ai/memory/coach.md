@@ -117,15 +117,16 @@ About 40 more **Labeled rides**, sharing no ride with the **Tuning set**, labell
 _Avoid_: "test set" (the automated tests are something else).
 
 ### Hard block
-A stretch of at least 1 minute above Z2 in a ride: heart rate from 85% of LTHR, or measured power from 76% of FTP. Two or more of similar length, each followed by a recovery, make a ride ripetute; one block, or irregular climbs on a long ride, leave it fondo.
+A stretch of at least 1 minute above Z2 in a ride: heart rate from 85% of LTHR, or measured power from 76% of FTP. The **Label model** sees them; the **Label rule** does not count them, because the user's ripetute are mostly long stretches in Z4 rather than repeated blocks.
 _Avoid_: "interval" alone (a block is found in the data, an interval is planned), "effort" (vague).
 
 ### Ride shape
-A ride's **Hard blocks** (duration, zone), the recoveries between them and its minutes per zone, computed from the compact series of its **Ride details** with today's FTP and LTHR. The **Label rule** and the **Label model** read it beside the averages.
+A ride's **Hard blocks** (duration, zone), the recoveries between them, its minutes per zone and its load per hour on heart rate, computed from the compact series of its **Ride details** with today's FTP and LTHR. The **Label rule** reads the load per hour (ripetute from 87.5 up); the **Label model** reads it all beside the averages.
 _Avoid_: "pattern" alone (says nothing about what is measured), "streams" (Strava's API name).
 
 ## Decisions
 
+- **The Label rule calls a ride ripetute from its load per hour on heart rate, not from repeated Hard blocks**: from 87.5 up, tuned on the Tuning set only; a long Z2 ride with a couple of hard blocks inside stays fondo. Why: the user's ripetute are mostly long stretches in Z4, so the repeated-block pattern scored 59% on the Tuning set, and the user labels a mixed long ride fondo; even so the Check set gave 70%, below the reliability bar.
 - **The browser sends the athlete profile instead of the service estimating it**: FTP and heart-rate values travel with each Coach request. Why: the estimates use segment data only the browser has, and the Coach must use the same numbers the app shows.
 - **Disconnecting from Strava deletes the rides the Coach service saved**: Why: data belongs to a connection, and Strava's terms ask apps to delete data when access is withdrawn.
 - **The Coach request lives in `web/src/app/coach-run.ts`, not in the screen**: the screen only reads its state and calls `generateWorkout` / `stopWorkout`. Why: switching section unmounts the screen, and the answer must keep arriving and be there on return.

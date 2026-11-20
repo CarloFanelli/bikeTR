@@ -2,7 +2,7 @@
 feature: ride-shape-labels
 version: 1.0
 status: approved
-completed: false
+completed: true
 base: a4cadabc17e5970236377a0bf422bcd8c3562401
 ---
 

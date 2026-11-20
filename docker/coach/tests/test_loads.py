@@ -96,8 +96,9 @@ def ride_labels(body) -> dict:
 
 def test_a_badge_reads_the_saved_series_of_the_ride(monkeypatch, badge_rides, activity_store):
     monkeypatch.setenv("COACH_RIDE_LABELS", "rule")
-    # 120 bpm di media, ma due blocchi di 10 minuti a 150 su 160 di soglia, con recuperi: ripetute.
-    hr = [110.0] * 40 + [150.0] * 40 + [110.0] * 20 + [150.0] * 40 + [110.0] * 40
+    # Il riepilogo dice 120 bpm di media (recupero), ma la serie dice mezz'ora a 158 su 160 di soglia
+    # fra due tratti a 130: quasi 90 di carico per ora, ripetute.
+    hr = [130.0] * 20 + [158.0] * 120 + [130.0] * 20
     asyncio.run(activity_store.save_details(activity_store.generation, HEART["id"],
                                             {"np": None, "watts_n": 0, "hr_mean": 120, "hr_n": 3600},
                                             {"step": 15, "watts": None, "hr": hr}))

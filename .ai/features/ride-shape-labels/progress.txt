@@ -3,4 +3,4 @@
 01-keep-ride-series: DONE
 02-ride-shape: DONE
 03-labeled-rides-series: DONE
-04-shape-aware-labels: IN_PROGRESS
+04-shape-aware-labels: DONE

@@ -84,6 +84,9 @@ def picked(activities: list) -> list:
 def matches(ride: dict, a: dict) -> bool:
     """La corsa etichettata è la copia di questa uscita: durata e distanza entro lo spostamento."""
     def near(copy, original):
+        # Uno zero (rulli senza distanza) diventa None nella copia, come ogni cifra assente.
+        if not original:
+            return copy is None
         return copy is not None and abs(copy - original) <= original * JITTER + 1
     return near(ride.get("durataMin"), a["moving_time"] / 60) and near(ride.get("distanzaKm"), a["distance"] / 1000)
 

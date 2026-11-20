@@ -72,3 +72,12 @@ def test_a_new_ftp_changes_the_shape_of_the_same_series():
     watts = minutes(10, 150) + minutes(10, 200) + minutes(10, 150)
     assert ride_shape(series(watts=watts), True, 250, LTHR)["blocchi"] != []
     assert ride_shape(series(watts=watts), True, 300, LTHR)["blocchi"] == []
+
+
+def test_the_load_per_hour_comes_from_known_heart_rate_even_with_a_power_meter():
+    # 30 minuti a soglia e 30 al 70%: (1 + 0.49) / 2 * 100 punti l'ora; i buchi non contano.
+    hr = minutes(30, LTHR) + minutes(5, None) + minutes(30, 0.7 * LTHR)
+    shape = ride_shape(series(watts=minutes(65, 150), hr=hr), True, FTP, LTHR)
+    assert shape["caricoOra"] == 74.5
+    assert ride_shape(series(watts=minutes(12, 150)), True, FTP, LTHR)["caricoOra"] is None
+    assert ride_shape(series(watts=minutes(12, 150), hr=hr), True, FTP, None)["caricoOra"] is None

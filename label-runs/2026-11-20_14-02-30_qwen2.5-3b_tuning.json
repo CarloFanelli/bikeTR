@@ -1,0 +1,290 @@
+{
+  "kind": "label-check",
+  "set": "tuning",
+  "startedAt": "2026-11-20T14:02:30Z",
+  "provider": "ollama",
+  "model": "qwen2.5:3b",
+  "batch": 10,
+  "seconds": 30.1,
+  "totalCost": null,
+  "ruleScore": {
+    "all": {
+      "right": 23,
+      "of": 39
+    },
+    "recupero": {
+      "right": 0,
+      "of": 0
+    },
+    "fondo": {
+      "right": 20,
+      "of": 21
+    },
+    "ripetute": {
+      "right": 3,
+      "of": 18
+    },
+    "gara": {
+      "right": 0,
+      "of": 0
+    }
+  },
+  "modelScore": {
+    "all": {
+      "right": 13,
+      "of": 39
+    },
+    "recupero": {
+      "right": 0,
+      "of": 0
+    },
+    "fondo": {
+      "right": 8,
+      "of": 21
+    },
+    "ripetute": {
+      "right": 5,
+      "of": 18
+    },
+    "gara": {
+      "right": 0,
+      "of": 0
+    }
+  },
+  "rides": [
+    {
+      "id": "r1",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r2",
+      "label": "ripetute",
+      "rule": "ripetute",
+      "model": "ripetute"
+    },
+    {
+      "id": "r3",
+      "label": "ripetute",
+      "rule": "ripetute",
+      "model": "fondo"
+    },
+    {
+      "id": "r4",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r5",
+      "label": "ripetute",
+      "rule": "ripetute",
+      "model": "ripetute"
+    },
+    {
+      "id": "r6",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r7",
+      "label": "fondo",
+      "rule": "recupero",
+      "model": "recupero"
+    },
+    {
+      "id": "r8",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r9",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r10",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "ripetute"
+    },
+    {
+      "id": "r11",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r12",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "ripetute"
+    },
+    {
+      "id": "r13",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r14",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "recupero"
+    },
+    {
+      "id": "r15",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r16",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r17",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r18",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r19",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r20",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r21",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r22",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "ripetute"
+    },
+    {
+      "id": "r23",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "recupero"
+    },
+    {
+      "id": "r24",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r25",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r26",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r27",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "recupero"
+    },
+    {
+      "id": "r28",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "recupero"
+    },
+    {
+      "id": "r29",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "recupero"
+    },
+    {
+      "id": "r30",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r31",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r32",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r33",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "ripetute"
+    },
+    {
+      "id": "r34",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r35",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "recupero"
+    },
+    {
+      "id": "r36",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r38",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "fondo"
+    },
+    {
+      "id": "r39",
+      "label": "fondo",
+      "rule": "fondo",
+      "model": "gara"
+    },
+    {
+      "id": "r40",
+      "label": "ripetute",
+      "rule": "fondo",
+      "model": "gara"
+    }
+  ]
+}

@@ -239,3 +239,9 @@ def test_add_series_stops_naming_a_ride_no_longer_saved_or_without_series_and_wr
     code, _ = add_series(activity_store, tmp_path, sets, {"tuning": [bike(1)["id"], bike(2)["id"]],
                                                           "check": [bike(3)["id"]]})
     assert code == 3 and "r3" in capsys.readouterr().err
+
+
+def test_a_ride_without_distance_is_found_again_by_its_copy():
+    indoor = {**bike(1), "distance": 0}
+    assert labeled_rides.matches({"durataMin": round(indoor["moving_time"] / 60), "distanzaKm": None}, indoor)
+    assert not labeled_rides.matches({"durataMin": round(indoor["moving_time"] / 60), "distanzaKm": 12}, indoor)

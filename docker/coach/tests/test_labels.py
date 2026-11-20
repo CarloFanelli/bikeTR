@@ -66,28 +66,26 @@ def test_the_rule_labels_each_threshold(fields, expected):
     assert labels.rule_label(ride(**fields), FTP, LTHR) == expected
 
 
-def shaped(*blocks, minutes: int = 90, **fields) -> dict:
-    """Una corsa con la sua forma: blocchi (minuti, zona, minuti di recupero dopo)."""
-    forma = {"fonte": "potenza", "minutiPerZona": {},
-             "blocchi": [{"minuti": m, "zona": z, "recuperoMin": r} for m, z, r in blocks]}
+def shaped(load: float | None, minutes: int = 90, **fields) -> dict:
+    """Una corsa con la sua forma: conta il carico per ora dal battito."""
+    forma = {"fonte": "fc", "minutiPerZona": {}, "blocchi": [], "caricoOra": load}
     return ride(durataMin=minutes, forma=forma, **fields)
 
 
 @pytest.mark.parametrize("r, expected", [
-    # 2x20 a soglia e 3x10 in Z3, ognuno seguito da un recupero: ripetute anche con medie da fondo.
-    (shaped((20, 4, 5), (20, 4, 10), avgWatts=0.7 * FTP, potenzaMisurata=True), "ripetute"),
-    (shaped((10, 3, 4), (10, 3, 4), (10, 3, 15), avgHr=0.85 * LTHR), "ripetute"),
-    # Un'attivazione in Z3 in un'uscita di Z2: fondo, anche con la FC media alta di un'ora.
-    (shaped((3, 3, 60), minutes=60, avgHr=0.96 * LTHR), "fondo"),
-    # Quattro ore con cinque salite di durata diversa: fondo.
-    (shaped((3, 3, 20), (8, 4, 30), (5, 3, 25), (12, 3, 40), (6, 4, 50), minutes=240), "fondo"),
-    # Due blocchi attaccati, senza recupero fra loro: non sono ripetute.
-    (shaped((10, 4, 0), (10, 4, 10)), "fondo"),
+    # Carico per ora dal battito alla soglia o oltre: ripetute, anche con le medie da fondo.
+    (shaped(labels.HR_LOAD_PER_HOUR_FROM, avgWatts=0.7 * FTP, potenzaMisurata=True), "ripetute"),
+    (shaped(95, minutes=200, avgHr=0.90 * LTHR), "ripetute"),
+    # Sotto, fondo: anche un'ora che le medie direbbero ripetute, o tre ore con due blocchi duri dentro.
+    (shaped(labels.HR_LOAD_PER_HOUR_FROM - 0.1, minutes=60, avgHr=0.96 * LTHR), "fondo"),
+    (shaped(80, minutes=180, avgWatts=0.85 * FTP, potenzaMisurata=True), "fondo"),
+    # Senza battito nella serie decidono le medie, come prima.
+    (shaped(None, avgWatts=0.85 * FTP, potenzaMisurata=True), "ripetute"),
     # La forma non toglie il recupero delle medie, né la gara.
-    (shaped(minutes=50, avgHr=0.75 * LTHR), "recupero"),
-    (shaped((20, 4, 5), (20, 4, 10), gara=True), "gara"),
+    (shaped(55, minutes=50, avgHr=0.75 * LTHR), "recupero"),
+    (shaped(99, gara=True), "gara"),
 ])
-def test_the_rule_reads_the_ride_shape_when_there_is_one(r, expected):
+def test_the_rule_reads_the_load_per_hour_when_there_is_a_shape(r, expected):
     assert labels.rule_label(r, FTP, LTHR) == expected
 
 

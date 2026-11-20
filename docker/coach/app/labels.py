@@ -1,8 +1,8 @@
 """Le etichette delle corse recenti nel prompt del Coach: recupero, fondo, ripetute o gara. Con
-COACH_RIDE_LABELS=rule le dà la regola qui sotto, che guarda solo il segno gara di Strava,
-la forma dell'uscita (i blocchi duri trovati nei dati secondo per secondo), l'intensità rispetto a FTP o
-soglia cardiaca e la durata: fa da confronto per il modello che
-etichetta, e da ripiego quando quel modello non risponde. Con COACH_RIDE_LABELS=model le chiede al
+COACH_RIDE_LABELS=rule le dà la regola qui sotto, che guarda solo il segno gara di Strava, il carico
+per ora dell'uscita (dal battito di ogni momento, nei dati secondo per secondo), l'intensità rispetto
+a FTP o soglia cardiaca e la durata: fa da confronto per il modello che etichetta, e da ripiego
+quando quel modello non risponde. Con COACH_RIDE_LABELS=model le chiede al
 modello che etichetta, con i messaggi e la lettura della risposta qui sotto.
 
 La potenza conta solo quando l'ha misurata un misuratore: quella che Strava stima senza misuratore
@@ -29,12 +29,10 @@ HR_INTERVALS_FROM = 0.95
 HR_INTERVALS_MAX_MINUTES = 90
 HR_RECOVERY_BELOW = 0.81
 RECOVERY_MAX_MINUTES = 75
-# Ripetute dalla forma: almeno due blocchi duri di durata simile (il più lungo al massimo SIMILAR_LENGTH
-# volte il più corto), ognuno seguito da un recupero di almeno RECOVERY_MIN_MINUTES (l'ultimo può
-# chiudere l'uscita). Un blocco solo, o blocchi irregolari come le salite di un'uscita lunga, sono fondo.
-MIN_REPEATS = 2
-SIMILAR_LENGTH = 2.0
-RECOVERY_MIN_MINUTES = 1
+# Ripetute dalla forma: carico per ora dal battito (hrTSS l'ora, 100 per un'ora alla soglia) da questo
+# valore in su, trovato sul Tuning set. Conta l'uscita intera: tre ore di Z2 con due blocchi duri
+# dentro restano fondo, come le etichetta l'atleta.
+HR_LOAD_PER_HOUR_FROM = 87.5
 # Le cifre di una corsa che il classificatore legge oltre a quelle che il prompt mostra già.
 FACT_KEYS = ("nome", "gara", "np", "maxWatts", "maxHr", "potenzaMisurata")
 
@@ -82,23 +80,14 @@ def hr_share(ride: dict, lthr: float | None) -> float | None:
     return ride["avgHr"] / lthr if lthr and ride.get("avgHr") else None
 
 
-def repeated_blocks(blocks: list[dict]) -> bool:
-    """Almeno MIN_REPEATS blocchi duri di durata simile, ognuno seguito da un recupero."""
-    if len(blocks) < MIN_REPEATS:
-        return False
-    lengths = [b["minuti"] for b in blocks]
-    return (max(lengths) <= SIMILAR_LENGTH * min(lengths)
-            and all(b["recuperoMin"] >= RECOVERY_MIN_MINUTES for b in blocks[:-1]))
-
-
 def rule_label(ride: dict, ftp: float | None, lthr: float | None) -> str:
-    """Gara dal segno di Strava; poi, con la forma dell'uscita, ripetute solo dai blocchi ripetuti;
-    recupero e fondo dalle medie. Senza forma tutto dalle medie."""
+    """Gara dal segno di Strava; poi, con il carico per ora dal battito, ripetute solo da quello;
+    recupero e fondo dalle medie. Senza carico per ora tutto dalle medie."""
     if ride.get("gara"):
         return "gara"
-    shape = ride.get("forma")
-    if shape is not None:
-        if repeated_blocks(shape["blocchi"]):
+    load = (ride.get("forma") or {}).get("caricoOra")
+    if load is not None:
+        if load >= HR_LOAD_PER_HOUR_FROM:
             return "ripetute"
         by_averages = averages_label(ride, ftp, lthr)
         return "fondo" if by_averages == "ripetute" else by_averages
@@ -128,10 +117,10 @@ LABEL_SYSTEM = f"""Etichetti uscite in bici di un atleta. Per ogni corsa scegli 
 - gara: una competizione
 
 Di molte corse hai la forma, trovata nei dati secondo per secondo: i blocchi duri (almeno un minuto
-sopra Z2: Z3 o più), ognuno con i minuti di recupero che lo seguono, e i minuti passati in ogni zona.
-Quando c'è, conta più delle medie:
-- ripetute: {MIN_REPEATS} o più blocchi duri di durata simile (il più lungo al massimo {SIMILAR_LENGTH:g} volte il più corto), ognuno seguito da un recupero
-- fondo: un solo blocco duro (un'attivazione), o blocchi di durata molto diversa come le salite di un'uscita lunga
+sopra Z2: Z3 o più), ognuno con i minuti di recupero che lo seguono, i minuti passati in ogni zona e il
+carico per ora dal battito (100 vale un'ora intera alla soglia). Quando c'è, conta più delle medie:
+- ripetute: carico per ora da {HR_LOAD_PER_HOUR_FROM:g} in su, cioè un'uscita dura per la sua durata
+- fondo: carico per ora sotto, anche con blocchi duri dentro un'uscita lunga
 
 Di ogni corsa hai anche l'intensità già calcolata: la quota di FTP, solo quando la potenza l'ha misurata un
 misuratore, e la quota di soglia cardiaca. La potenza media senza misuratore è una stima di Strava:
@@ -162,7 +151,7 @@ def shape_text(shape: dict | None) -> str:
                        for b in shape["blocchi"])
     zones = ", ".join(f"{name} {js_str(m)}" for name, m in shape["minutiPerZona"].items() if m)
     return (f"forma (da {shape['fonte']}): " + (f"blocchi duri {blocks}" if blocks else "nessun blocco duro")
-            + f"; minuti per zona {zones or '—'}")
+            + f"; minuti per zona {zones or '—'}; carico per ora {or_dash(shape.get('caricoOra'))}")
 
 
 def model_messages(rides: list[dict], ftp: float | None, lthr: float | None) -> list[dict]:

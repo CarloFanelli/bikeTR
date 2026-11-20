@@ -1,6 +1,7 @@
-"""La forma di un'uscita: i suoi blocchi duri, il recupero dopo ognuno e i minuti per zona,
-dalla serie compatta salvata con i dettagli corsa e con FTP e soglia cardiaca di oggi. Non si
-salva: un nuovo FTP cambia la forma senza scaricare nulla.
+"""La forma di un'uscita: i suoi blocchi duri, il recupero dopo ognuno, i minuti per zona e il
+carico per ora dal battito (quello che legge la regola delle etichette), dalla serie compatta
+salvata con i dettagli corsa e con FTP e soglia cardiaca di oggi. Non si salva: un nuovo FTP cambia
+la forma senza scaricare nulla.
 
 Ogni passo della serie prende la zona dalla potenza, quando l'ha misurata un misuratore e c'è un
 FTP; altrimenti dalla frequenza cardiaca, quando c'è una soglia. Un passo senza né l'una né l'altra
@@ -65,10 +66,20 @@ def known_minutes(zones: list, start: int, end: int, step: int) -> float:
     return sum(z is not None for z in zones[start:end]) * step / 60
 
 
+def load_per_hour(series: dict, lthr: float | None) -> float | None:
+    """Il carico per ora dal battito (hrTSS l'ora): la media di (FC / soglia)² per 100 sui passi con
+    il battito, quindi 100 per un'ora intera alla soglia. Pesa di più i tratti duri della sola media.
+    None senza battito o senza soglia."""
+    hr = [h for h in (series.get("hr") or []) if h is not None]
+    if not hr or not lthr:
+        return None
+    return round(sum((h / lthr) ** 2 for h in hr) / len(hr) * 100, 1)
+
+
 def ride_shape(series: dict | None, power_measured: bool, ftp: float | None, lthr: float | None) -> dict | None:
     """Blocchi duri (minuti, zona più alta raggiunta, minuti di recupero fino al blocco dopo o alla
-    fine), minuti per zona e segnali usati. None se nessun passo ha una zona: la corsa si giudica
-    allora dalle medie."""
+    fine), minuti per zona, carico per ora dal battito e segnali usati. None se nessun passo ha una
+    zona: la corsa si giudica allora dalle medie."""
     if not series:
         return None
     step = series["step"]
@@ -84,4 +95,5 @@ def ride_shape(series: dict | None, power_measured: bool, ftp: float | None, lth
                       "zona": max(z for z in zones[s:e + 1] if z is not None),
                       "recuperoMin": known_minutes(zones, e + 1, until, step)})
     per_zone = {name: sum(z == k for z in zones) * step / 60 for k, name in enumerate(ZONE_NAMES, 1)}
-    return {"fonte": " e ".join(sorted(used, reverse=True)), "blocchi": found, "minutiPerZona": per_zone}
+    return {"fonte": " e ".join(sorted(used, reverse=True)), "blocchi": found, "minutiPerZona": per_zone,
+            "caricoOra": load_per_hour(series, lthr)}
