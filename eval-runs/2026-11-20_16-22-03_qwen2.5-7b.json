@@ -1,0 +1,3689 @@
+{
+  "kind": "evaluation",
+  "startedAt": "2026-11-20T16:22:03Z",
+  "provider": "ollama",
+  "model": "qwen2.5:7b",
+  "searchModel": "BAAI/bge-small-en-v1.5",
+  "searchMode": "fixed",
+  "labelsMode": "off",
+  "rideTools": "on",
+  "promptVersion": "9106dacd",
+  "papers": {
+    "source": "base",
+    "pmids": [
+      "16430681",
+      "20861519",
+      "24550842",
+      "40010355",
+      "35239466",
+      "21812820",
+      "31977120",
+      "33735833",
+      "22646668",
+      "27175601",
+      "23197584",
+      "28292885",
+      "29848161",
+      "11772161",
+      "23539308",
+      "23832851",
+      "10331896"
+    ]
+  },
+  "repeat": 1,
+  "complete": true,
+  "totalCost": null,
+  "answers": [
+    {
+      "situation": "riposo-dopo-blocco",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "rest",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8458086550235748
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8116061389446259
+        },
+        {
+          "pmid": "28292885",
+          "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+          "score": 0.8066648691892624
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.7983378171920776
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8458086550235748
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.8141380995512009
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8116061389446259
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7309435606002808
+        },
+        {
+          "label": "PMID:28292885 §76",
+          "score": 0.788348838686943
+        },
+        {
+          "label": "PMID:28292885 §88",
+          "score": 0.8066648691892624
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.7983378171920776
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.774636372923851
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 5124,
+      "outputTokens": 137,
+      "cost": null,
+      "charged": null,
+      "seconds": 18.1,
+      "modelRaw": "{\"protocolId\":\"rest\",\"razionale\":\"Il TSB è -32, inferiore a -25, che consiglia il riposo come protocollo idoneo.\", \"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "rest",
+          "modelRaw": "{\"protocolId\":\"rest\",\"razionale\":\"Il TSB è -32, inferiore a -25, che consiglia il riposo come protocollo idoneo. Inoltre, l'atleta ha già svolto un volume elevato di allenamento e non presenta una polarizzazione favorevole al training intensivo.\", \"passaggiUsati\":[\"TSB sotto -25: rest [pratica]\"]}",
+          "truncated": false,
+          "inputTokens": 2480,
+          "outputTokens": 92,
+          "cost": null,
+          "check": {
+            "ok": false,
+            "causes": [
+              "invented"
+            ],
+            "reasons": [
+              "Hai citato PMID:25, che non sono tra i passaggi forniti: cita solo le etichette dei passaggi forniti, o lascia passaggiUsati vuoto."
+            ]
+          }
+        },
+        {
+          "protocolId": "rest",
+          "modelRaw": "{\"protocolId\":\"rest\",\"razionale\":\"Il TSB è -32, inferiore a -25, che consiglia il riposo come protocollo idoneo.\", \"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2644,
+          "outputTokens": 45,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "riposo-anche-con-tre-ore",
+      "repeat": 1,
+      "duration": 180,
+      "protocolId": "rest",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8255157470703125
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.811682865023613
+        },
+        {
+          "pmid": "28292885",
+          "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+          "score": 0.8112957030534744
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7995053231716156
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8255157470703125
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7820602208375931
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.811682865023613
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7267287075519562
+        },
+        {
+          "label": "PMID:28292885 §76",
+          "score": 0.7931041866540909
+        },
+        {
+          "label": "PMID:28292885 §88",
+          "score": 0.8112957030534744
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7839901596307755
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7995053231716156
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 5283,
+      "outputTokens": 170,
+      "cost": null,
+      "charged": null,
+      "seconds": 13.5,
+      "modelRaw": "{\"protocolId\":\"rest\",\"razionale\":\"Il TSB è -28, inferiore a -25, che indica una forte stanchezza. In questo caso è consigliabile riposo per permettere alla fisiologia dell'atleta di riprendersi e ridurre ulteriormente il rischio di overaddestramento.\",\"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "rest",
+          "modelRaw": "{\"protocolId\":\"rest\",\"razionale\":\"Il TSB è -28, inferiore a -25, che indica una forte stanchezza. In questo caso è consigliabile riposo per permettere alla fisiologia dell'atleta di riprendersi e ridurre ulteriormente il rischio di overaddestramento.\",\"passaggiUsati\":[\"TSB sotto -25: rest [pratica]\"]}",
+          "truncated": false,
+          "inputTokens": 2560,
+          "outputTokens": 91,
+          "cost": null,
+          "check": {
+            "ok": false,
+            "causes": [
+              "invented"
+            ],
+            "reasons": [
+              "Hai citato PMID:25, che non sono tra i passaggi forniti: cita solo le etichette dei passaggi forniti, o lascia passaggiUsati vuoto."
+            ]
+          }
+        },
+        {
+          "protocolId": "rest",
+          "modelRaw": "{\"protocolId\":\"rest\",\"razionale\":\"Il TSB è -28, inferiore a -25, che indica una forte stanchezza. In questo caso è consigliabile riposo per permettere alla fisiologia dell'atleta di riprendersi e ridurre ulteriormente il rischio di overaddestramento.\",\"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2723,
+          "outputTokens": 79,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "forma-esattamente-meno-25",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "z1_recovery",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.85296431183815
+        },
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.8111640959978104
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8088904172182083
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8009241074323654
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.85296431183815
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.8103832304477692
+        },
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.8111640959978104
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.7446584701538086
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8088904172182083
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7368002831935883
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7914748638868332
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.8009241074323654
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 5228,
+      "outputTokens": 188,
+      "cost": null,
+      "charged": null,
+      "seconds": 19.3,
+      "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"Il TSB è -25, che indica una condizione di stanchezza superiore a -15, quindi si preconizza un recupero attivo Z1 come protocollo.\", \"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "z1_recovery",
+          "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"Il TSB è -25, che indica una condizione di stanchezza superiore a -15, quindi si preconizza un recupero attivo Z1 come protocollo. Inoltre, la polarizzazione dell'atleta (80% easy / 20% hard) suggerisce che l'addestramento sia già intenso e richieda un periodo di riposo o recupero per evitare una maggiore stanchezza.\", \"passaggiUsati\":[\"TSB sotto -15\"]}",
+          "truncated": false,
+          "inputTokens": 2514,
+          "outputTokens": 128,
+          "cost": null,
+          "check": {
+            "ok": false,
+            "causes": [
+              "invented"
+            ],
+            "reasons": [
+              "Hai citato PMID:15, che non sono tra i passaggi forniti: cita solo le etichette dei passaggi forniti, o lascia passaggiUsati vuoto."
+            ]
+          }
+        },
+        {
+          "protocolId": "z1_recovery",
+          "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"Il TSB è -25, che indica una condizione di stanchezza superiore a -15, quindi si preconizza un recupero attivo Z1 come protocollo.\", \"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2714,
+          "outputTokens": 60,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "recupero-con-due-ore-e-mezza",
+      "repeat": 1,
+      "duration": 150,
+      "protocolId": "z1_recovery",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8396395444869995
+        },
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.812225267291069
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8096679896116257
+        },
+        {
+          "pmid": "28292885",
+          "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+          "score": 0.8018123656511307
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8396395444869995
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7866529375314713
+        },
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.812225267291069
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.741115927696228
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8096679896116257
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7290579378604889
+        },
+        {
+          "label": "PMID:28292885 §60",
+          "score": 0.7836583852767944
+        },
+        {
+          "label": "PMID:28292885 §88",
+          "score": 0.8018123656511307
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §3"
+      ],
+      "inputTokens": 2449,
+      "outputTokens": 148,
+      "cost": null,
+      "charged": null,
+      "seconds": 11.6,
+      "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"Il TSB è -18, inferiore a -15, quindi si preconizza un recupero attivo Z1 o riposo. In base al paper [PMID:22646668 §3], il block periodization di alta intensità (Z1) ha mostrato superiori adattazioni rispetto alla tradizionale organizzazione durante una breve durata di 4 settimane, anche se con volume e intensità simili. Pertanto, è preferibile optare per un protocollo Z1.\", \"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "z1_recovery",
+          "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"Il TSB è -18, inferiore a -15, quindi si preconizza un recupero attivo Z1 o riposo. In base al paper [PMID:22646668 §3], il block periodization di alta intensità (Z1) ha mostrato superiori adattazioni rispetto alla tradizionale organizzazione durante una breve durata di 4 settimane, anche se con volume e intensità simili. Pertanto, è preferibile optare per un protocollo Z1.\", \"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2449,
+          "outputTokens": 148,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "recupero-mezz-ora",
+      "repeat": 1,
+      "duration": 30,
+      "protocolId": "z1_recovery",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.8279775977134705
+        },
+        {
+          "pmid": "28292885",
+          "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+          "score": 0.8070550262928009
+        },
+        {
+          "pmid": "31977120",
+          "title": "Superior performance improvements in elite cyclists following short-interval vs effort-matched long-interval training.",
+          "score": 0.803729698061943
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8029519319534302
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.8279775977134705
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.761614665389061
+        },
+        {
+          "label": "PMID:28292885 §60",
+          "score": 0.7973524481058121
+        },
+        {
+          "label": "PMID:28292885 §88",
+          "score": 0.8070550262928009
+        },
+        {
+          "label": "PMID:31977120 §1",
+          "score": 0.803729698061943
+        },
+        {
+          "label": "PMID:31977120 §3",
+          "score": 0.7787201702594757
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8029519319534302
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7773303687572479
+        }
+      ],
+      "papersCited": [
+        "PMID:33735833 §2"
+      ],
+      "inputTokens": 2518,
+      "outputTokens": 136,
+      "cost": null,
+      "charged": null,
+      "seconds": 15.9,
+      "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"Il TSB è -20, inferiore a -15, che suggerisce la necessità di un recupero attivo Z1 per favorire una rapida riduzione del stress biologico. Il paper [PMID:33735833] evidenzia come il protocollo Z1 possa portare a miglioramenti significativi nell'adattamento fisico rispetto ai protocolli di interval training, specialmente in condizioni di recupero.\", \"passaggiUsati\":[\"PMID:33735833 §2\"]}",
+      "drafts": [
+        {
+          "protocolId": "z1_recovery",
+          "modelRaw": "{\"protocolId\":\"z1_recovery\",\"razionale\":\"Il TSB è -20, inferiore a -15, che suggerisce la necessità di un recupero attivo Z1 per favorire una rapida riduzione del stress biologico. Il paper [PMID:33735833] evidenzia come il protocollo Z1 possa portare a miglioramenti significativi nell'adattamento fisico rispetto ai protocolli di interval training, specialmente in condizioni di recupero.\", \"passaggiUsati\":[\"PMID:33735833 §2\"]}",
+          "truncated": false,
+          "inputTokens": 2518,
+          "outputTokens": 136,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "due-ore-esatte",
+      "repeat": 1,
+      "duration": 120,
+      "protocolId": "z2_long_intervals",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8280889838933945
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8087939918041229
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.788335457444191
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7870984524488449
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8280889838933945
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7595005035400391
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8087939918041229
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7260104715824127
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.788335457444191
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7445235252380371
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7870984524488449
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7643842101097107
+        }
+      ],
+      "papersCited": [
+        "PMID:20861519 §3"
+      ],
+      "inputTokens": 2368,
+      "outputTokens": 178,
+      "cost": null,
+      "charged": null,
+      "seconds": 17.7,
+      "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il protocollo scelto, z2_long_intervals, è adatto alla durata disponibile di 120 minuti in su, come indicato dalla regola di selezione [pratica]. Inoltre, esso consente una polarizzazione del 28 giorni con un'alta percentuale di easy training (80%), che rispecchia il profilo dell'atleta. Il paper [PMID:20861519 §3] suggerisce che la predominanza della formazione a bassa intensità può essere complementare per ottimizzare le segnalazioni adaptive e il dominio tecnico con un livello accettabile di stress.\",\"passaggiUsati\":[\"PMID:20861519 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "z2_long_intervals",
+          "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il protocollo scelto, z2_long_intervals, è adatto alla durata disponibile di 120 minuti in su, come indicato dalla regola di selezione [pratica]. Inoltre, esso consente una polarizzazione del 28 giorni con un'alta percentuale di easy training (80%), che rispecchia il profilo dell'atleta. Il paper [PMID:20861519 §3] suggerisce che la predominanza della formazione a bassa intensità può essere complementare per ottimizzare le segnalazioni adaptive e il dominio tecnico con un livello accettabile di stress.\",\"passaggiUsati\":[\"PMID:20861519 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2368,
+          "outputTokens": 178,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "quattro-ore-da-fresco",
+      "repeat": 1,
+      "duration": 240,
+      "protocolId": "z2_long_intervals",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8135963678359985
+        },
+        {
+          "pmid": "28292885",
+          "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+          "score": 0.8024816066026688
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7948567718267441
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7938124984502792
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8135963678359985
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7564795613288879
+        },
+        {
+          "label": "PMID:28292885 §60",
+          "score": 0.7826656550168991
+        },
+        {
+          "label": "PMID:28292885 §88",
+          "score": 0.8024816066026688
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7948567718267441
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7698972821235657
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7938124984502792
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7480798959732056
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §1",
+        "PMID:22646668 §3"
+      ],
+      "inputTokens": 2380,
+      "outputTokens": 214,
+      "cost": null,
+      "charged": null,
+      "seconds": 17.2,
+      "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il protocollo scelto è z2_long_intervals in quanto la durata disponibile (240 minuti) supera i 120 minuti richiesti dal paper [PMID:22646668]. Inoltre, il TSB di 15 suggerisce che l'atleta sia pronto per un allenamento più intenso e la polarizzazione del 28gg con 40% hard indica una buona preparazione per questo tipo di allenamento. Il paper [PMID:22646668] evidenzia come il block periodization fornisse superiori adattamenti rispetto a un'organizzazione tradizionale durante un periodo di 4 settimane, anche se con volume e intensità simili.\",\"passaggiUsati\":[\"PMID:22646668 §1\",\"PMID:22646668 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "z2_long_intervals",
+          "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il protocollo scelto è z2_long_intervals in quanto la durata disponibile (240 minuti) supera i 120 minuti richiesti dal paper [PMID:22646668]. Inoltre, il TSB di 15 suggerisce che l'atleta sia pronto per un allenamento più intenso e la polarizzazione del 28gg con 40% hard indica una buona preparazione per questo tipo di allenamento. Il paper [PMID:22646668] evidenzia come il block periodization fornisse superiori adattamenti rispetto a un'organizzazione tradizionale durante un periodo di 4 settimane, anche se con volume e intensità simili.\",\"passaggiUsati\":[\"PMID:22646668 §1\",\"PMID:22646668 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2380,
+          "outputTokens": 214,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "poco-tempo-poche-uscite-dure",
+      "repeat": 1,
+      "duration": 40,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8217856138944626
+        },
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.8137281984090805
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.8079465478658676
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8069008737802505
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8217856138944626
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7871698290109634
+        },
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.8137281984090805
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.7626980245113373
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.8079465478658676
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.767547070980072
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.8069008737802505
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7941059172153473
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 2602,
+      "outputTokens": 114,
+      "cost": null,
+      "charged": null,
+      "seconds": 16.1,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto la durata disponibile (40 minuti) non permette l'adeguato build-up necessario al protocollo Z2 progressivo, che richiede una maggiore durata. Inoltre, il TSB attuale di 0 suggerisce un livello idoneo per un giorno di recupero con un carico moderato.\", \"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto la durata disponibile (40 minuti) non permette l'adeguato build-up necessario al protocollo Z2 progressivo, che richiede una maggiore durata. Inoltre, il TSB attuale di 0 suggerisce un livello idoneo per un giorno di recupero con un carico moderato.\", \"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2602,
+          "outputTokens": 114,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "mezz-ora-da-fresco",
+      "repeat": 1,
+      "duration": 30,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8482575118541718
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8208633065223694
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.8183703124523163
+        },
+        {
+          "pmid": "28292885",
+          "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+          "score": 0.8129809200763702
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8482575118541718
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7831499725580215
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8208633065223694
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.768636554479599
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.8183703124523163
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7668497711420059
+        },
+        {
+          "label": "PMID:28292885 §76",
+          "score": 0.7862674295902252
+        },
+        {
+          "label": "PMID:28292885 §88",
+          "score": 0.8129809200763702
+        }
+      ],
+      "papersCited": [
+        "PMID:20861519 §3"
+      ],
+      "inputTokens": 2457,
+      "outputTokens": 141,
+      "cost": null,
+      "charged": null,
+      "seconds": 15.4,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto l'atleta ha un volume di allenamento elevato (1680 minuti) e una polarizzazione con 80% di esercizi a intensità bassa. Inoltre, la durata disponibile per l'allenamento oggi è inferiore ai 50 minuti, rendendo il protocollo Z2 Aerobico più adatto. [PMID:20861519 §3]\",\"passaggiUsati\":[\"PMID:20861519 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto l'atleta ha un volume di allenamento elevato (1680 minuti) e una polarizzazione con 80% di esercizi a intensità bassa. Inoltre, la durata disponibile per l'allenamento oggi è inferiore ai 50 minuti, rendendo il protocollo Z2 Aerobico più adatto. [PMID:20861519 §3]\",\"passaggiUsati\":[\"PMID:20861519 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2457,
+          "outputTokens": 141,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "poco-tempo-un-po-stanco",
+      "repeat": 1,
+      "duration": 45,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8554049432277679
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8347618728876114
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8078734278678894
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.8061896562576294
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8554049432277679
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7873183935880661
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8347618728876114
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7543034553527832
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.8040095418691635
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.8078734278678894
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.8061896562576294
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7458726763725281
+        }
+      ],
+      "papersCited": [
+        "PMID:20861519 §3"
+      ],
+      "inputTokens": 2487,
+      "outputTokens": 151,
+      "cost": null,
+      "charged": null,
+      "seconds": 12.8,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto l'atleta ha un volume di allenamento elevato (1560 minuti) e una polarizzazione con 75% di esercizi facili, che suggerisce una base già ben sviluppata. Inoltre, la durata disponibile per l'allenamento oggi è inferiore ai 50 minuti, rendendo il protocollo Z2 Aerobico più adatto. [PMID:20861519 §3]\",\"passaggiUsati\":[\"PMID:20861519 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto l'atleta ha un volume di allenamento elevato (1560 minuti) e una polarizzazione con 75% di esercizi facili, che suggerisce una base già ben sviluppata. Inoltre, la durata disponibile per l'allenamento oggi è inferiore ai 50 minuti, rendendo il protocollo Z2 Aerobico più adatto. [PMID:20861519 §3]\",\"passaggiUsati\":[\"PMID:20861519 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2487,
+          "outputTokens": 151,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "cinquanta-minuti-esatti",
+      "repeat": 1,
+      "duration": 50,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "24550842",
+          "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training.",
+          "score": 0.8133951872587204
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8029640167951584
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.795584961771965
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7894201427698135
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:24550842 §8",
+          "score": 0.8133951872587204
+        },
+        {
+          "label": "PMID:24550842 §30",
+          "score": 0.775068610906601
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8029640167951584
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7796203792095184
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.795584961771965
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7570793181657791
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7894201427698135
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7794492542743683
+        }
+      ],
+      "papersCited": [
+        "PMID:24550842 §30",
+        "PMID:21812820 §2"
+      ],
+      "inputTokens": 2593,
+      "outputTokens": 134,
+      "cost": null,
+      "charged": null,
+      "seconds": 16.9,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un alto contenuto di allenamento facile (90%) e pochi giorni di volume. Questo protocollo si adatta bene al suo profilo, fornendo una dose moderata di carico intensivo senza superare la sua capacità di recupero.\", \"passaggiUsati\":[\"PMID:24550842 §30\", \"PMID:21812820 §2\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un alto contenuto di allenamento facile (90%) e pochi giorni di volume. Questo protocollo si adatta bene al suo profilo, fornendo una dose moderata di carico intensivo senza superare la sua capacità di recupero.\", \"passaggiUsati\":[\"PMID:24550842 §30\", \"PMID:21812820 §2\"]}",
+          "truncated": false,
+          "inputTokens": 2593,
+          "outputTokens": 134,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "poche-uscite-dure-forma-piu-4",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8111736327409744
+        },
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.810432642698288
+        },
+        {
+          "pmid": "24550842",
+          "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training.",
+          "score": 0.7915119677782059
+        },
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.7865066677331924
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8111736327409744
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.762529656291008
+        },
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.810432642698288
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7308820188045502
+        },
+        {
+          "label": "PMID:24550842 §8",
+          "score": 0.7915119677782059
+        },
+        {
+          "label": "PMID:24550842 §16",
+          "score": 0.7451955378055573
+        },
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.7865066677331924
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.7441601753234863
+        }
+      ],
+      "papersCited": [
+        "PMID:24550842 §16"
+      ],
+      "inputTokens": 2552,
+      "outputTokens": 164,
+      "cost": null,
+      "charged": null,
+      "seconds": 17.8,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è scelto in quanto l'atleta ha un alto volume di allenamento e una polarizzazione con un'elevata percentuale di fasi facili. Questo protocollo permette di mantenere un carico moderato durante i blocchi duri, evitando sovraccarichi che potrebbero compromettere la recupero e l'adeguata ripartizione tra le fasi facili e difficili dell'allenamento polarizzato. [PMID:24550842 §16]\",\"passaggiUsati\":[\"PMID:24550842 §16\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è scelto in quanto l'atleta ha un alto volume di allenamento e una polarizzazione con un'elevata percentuale di fasi facili. Questo protocollo permette di mantenere un carico moderato durante i blocchi duri, evitando sovraccarichi che potrebbero compromettere la recupero e l'adeguata ripartizione tra le fasi facili e difficili dell'allenamento polarizzato. [PMID:24550842 §16]\",\"passaggiUsati\":[\"PMID:24550842 §16\"]}",
+          "truncated": false,
+          "inputTokens": 2552,
+          "outputTokens": 164,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "ripresa-dopo-una-pausa",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.8064386397600174
+        },
+        {
+          "pmid": "28292885",
+          "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+          "score": 0.8049507439136505
+        },
+        {
+          "pmid": "23197584",
+          "title": "Cyclists' improvement of pedaling efficacy and performance after heavy strength training.",
+          "score": 0.800219252705574
+        },
+        {
+          "pmid": "11772161",
+          "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+          "score": 0.7882903814315796
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.8064386397600174
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7759002149105072
+        },
+        {
+          "label": "PMID:28292885 §87",
+          "score": 0.7795451432466507
+        },
+        {
+          "label": "PMID:28292885 §88",
+          "score": 0.8049507439136505
+        },
+        {
+          "label": "PMID:23197584 §2",
+          "score": 0.800219252705574
+        },
+        {
+          "label": "PMID:23197584 §3",
+          "score": 0.7332424223423004
+        },
+        {
+          "label": "PMID:11772161 §4",
+          "score": 0.7679352015256882
+        },
+        {
+          "label": "PMID:11772161 §5",
+          "score": 0.7882903814315796
+        }
+      ],
+      "papersCited": [
+        "PMID:11772161 §5"
+      ],
+      "inputTokens": 2232,
+      "outputTokens": 164,
+      "cost": null,
+      "charged": null,
+      "seconds": 16.4,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il atleta ha un TSB di 22, indicando una buona condizione fisica, ma nessuna uscita negli ultimi 28 giorni. In questo caso, è opportuno scegliere un protocollo Z2 per mantenere la base aerobica e non rischiare di ridurre il TSB. Il paper [PMID:11772161 §5] suggerisce che programmi di allenamento a intensità elevata potrebbero essere efficaci anche senza intervallo, ma in assenza di uscite recenti è preferibile mantenere la base.\", \"passaggiUsati\":[\"PMID:11772161 §5\"]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il atleta ha un TSB di 22, indicando una buona condizione fisica, ma nessuna uscita negli ultimi 28 giorni. In questo caso, è opportuno scegliere un protocollo Z2 per mantenere la base aerobica e non rischiare di ridurre il TSB. Il paper [PMID:11772161 §5] suggerisce che programmi di allenamento a intensità elevata potrebbero essere efficaci anche senza intervallo, ma in assenza di uscite recenti è preferibile mantenere la base.\", \"passaggiUsati\":[\"PMID:11772161 §5\"]}",
+          "truncated": false,
+          "inputTokens": 2232,
+          "outputTokens": 164,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "ripresa-dopo-la-corsa",
+      "repeat": 1,
+      "duration": 75,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7938405573368073
+        },
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.7863786518573761
+        },
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.7843141704797745
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7814940214157104
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7938405573368073
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7737385332584381
+        },
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.7863786518573761
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7186271250247955
+        },
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.7843141704797745
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.742039680480957
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7787067145109177
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7814940214157104
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 4848,
+      "outputTokens": 219,
+      "cost": null,
+      "charged": null,
+      "seconds": 17.0,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto l'atleta ha una polarizzazione recente completamente dedicata all'easy, senza alcuna uscita negli ultimi 28 giorni. Questo protocollo permette di mantenere il livello aerobico basale con un carico moderato e adatto alla recupero dopo una pausa.\",\"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto l'atleta ha una polarizzazione recente completamente dedicata all'easy, senza alcuna uscita negli ultimi 28 giorni. Questo protocollo permette di mantenere il livello aerobico basale con un carico moderato e adatto alla recupero dopo una pausa.\", \"passaggiUsati\":[\"—%: nessuna uscita negli ultimi 28 giorni\"]}",
+          "truncated": false,
+          "inputTokens": 2329,
+          "outputTokens": 118,
+          "cost": null,
+          "check": {
+            "ok": false,
+            "causes": [
+              "invented"
+            ],
+            "reasons": [
+              "Hai citato PMID:28, che non sono tra i passaggi forniti: cita solo le etichette dei passaggi forniti, o lascia passaggiUsati vuoto."
+            ]
+          }
+        },
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto l'atleta ha una polarizzazione recente completamente dedicata all'easy, senza alcuna uscita negli ultimi 28 giorni. Questo protocollo permette di mantenere il livello aerobico basale con un carico moderato e adatto alla recupero dopo una pausa.\",\"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2519,
+          "outputTokens": 101,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "quota-dura-esattamente-30",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.845963791012764
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8181310296058655
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.8115062713623047
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.796369880437851
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.845963791012764
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7615804374217987
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8181310296058655
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7384569346904755
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.8115062713623047
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7852516919374466
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.796369880437851
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7330184876918793
+        }
+      ],
+      "papersCited": [
+        "PMID:20861519"
+      ],
+      "inputTokens": 2513,
+      "outputTokens": 142,
+      "cost": null,
+      "charged": null,
+      "seconds": 16.2,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in base alla polarizzazione dell'atleta (30% hard) che si allinea con la regola di selezione specificata [PMID:20861519]. Inoltre, l'ATL e il TSB attuali indicano un livello di fatiche moderato, rendendo opportuno un giorno di recupero a intensità bassa per mantenere la polarizzazione e prevenire lo stress eccessivo.\",\"passaggiUsati\":[\"PMID:20861519\"]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in base alla polarizzazione dell'atleta (30% hard) che si allinea con la regola di selezione specificata [PMID:20861519]. Inoltre, l'ATL e il TSB attuali indicano un livello di fatiche moderato, rendendo opportuno un giorno di recupero a intensità bassa per mantenere la polarizzazione e prevenire lo stress eccessivo.\",\"passaggiUsati\":[\"PMID:20861519\"]}",
+          "truncated": false,
+          "inputTokens": 2513,
+          "outputTokens": 142,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "fresco-ma-tanto-lavoro-duro",
+      "repeat": 1,
+      "duration": 90,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8329414874315262
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.818869411945343
+        },
+        {
+          "pmid": "28292885",
+          "title": "Heavy strength training improves running and cycling performance following prolonged submaximal work in well-trained female athletes.",
+          "score": 0.8044439256191254
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8019253611564636
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8329414874315262
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7633468806743622
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.818869411945343
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7884719520807266
+        },
+        {
+          "label": "PMID:28292885 §87",
+          "score": 0.7789633274078369
+        },
+        {
+          "label": "PMID:28292885 §88",
+          "score": 0.8044439256191254
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8019253611564636
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7557360231876373
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 5216,
+      "outputTokens": 279,
+      "cost": null,
+      "charged": null,
+      "seconds": 20.4,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Endurance è scelto in base alla polarizzazione dell'atleta, che ha un alto percentuale di sessioni hard (45%), e al volume di addestramento recente (1920 minuti). Inoltre, l'ATL (48) non è elevato, il che suggerisce una buona base fisica. Il protocollo Z2 Endurance permette un allenamento a intensità costante, favorendo la polarizzazione attuale dell'atleta.\", \"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Endurance è scelto in base alla polarizzazione dell'atleta, che ha un alto percentuale di sessioni hard (45%), e al volume di addestramento recente (1920 minuti). Inoltre, l'ATL (48) non è elevato, il che suggerisce una buona base fisica. Il protocollo Z2 Endurance permette un allenamento a intensità costante, favorendo la polarizzazione attuale dell'atleta.\", \"passaggiUsati\":[\"PMID:20861519 §1\"]}",
+          "truncated": false,
+          "inputTokens": 2495,
+          "outputTokens": 146,
+          "cost": null,
+          "check": {
+            "ok": false,
+            "causes": [
+              "invented"
+            ],
+            "reasons": [
+              "Hai citato PMID:20861519 §1, che non sono tra i passaggi forniti: cita solo le etichette dei passaggi forniti, o lascia passaggiUsati vuoto."
+            ]
+          }
+        },
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Endurance è scelto in base alla polarizzazione dell'atleta, che ha un alto percentuale di sessioni hard (45%), e al volume di addestramento recente (1920 minuti). Inoltre, l'ATL (48) non è elevato, il che suggerisce una buona base fisica. Il protocollo Z2 Endurance permette un allenamento a intensità costante, favorendo la polarizzazione attuale dell'atleta.\", \"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2721,
+          "outputTokens": 133,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "forma-esattamente-meno-15",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8494870364665985
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8214610368013382
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.8099922090768814
+        },
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.8007561266422272
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8494870364665985
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7731972187757492
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8214610368013382
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7431796789169312
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.8099922090768814
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7916969358921051
+        },
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.8007561266422272
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.743674248456955
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 5344,
+      "outputTokens": 237,
+      "cost": null,
+      "charged": null,
+      "seconds": 21.1,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il TSB è -15, che indica una forte polarizzazione recente con poche sessioni dure. Inoltre, la polarizzazione di 28 giorni suggerisce un'alta percentuale di esercizi a intensità bassa (80%). Il protocollo Z2 Endurance è adatto per ripristinare l'equilibrio tra le zone e migliorare la resistenza aerobica senza aumentare il carico.\",\"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il TSB è -15, che indica una forte polarizzazione recente con poche sessioni dure. Inoltre, la polarizzazione di 28 giorni suggerisce un'alta percentuale di esercizi a intensità bassa (80%). Il protocollo Z2 Endurance è adatto per ripristinare l'equilibrio tra le zone e migliorare la resistenza aerobica senza aumentare il carico.\", \"passaggiUsati\":[\"TSB sotto -10\"]}",
+          "truncated": false,
+          "inputTokens": 2575,
+          "outputTokens": 122,
+          "cost": null,
+          "check": {
+            "ok": false,
+            "causes": [
+              "invented"
+            ],
+            "reasons": [
+              "Hai citato PMID:10, che non sono tra i passaggi forniti: cita solo le etichette dei passaggi forniti, o lascia passaggiUsati vuoto."
+            ]
+          }
+        },
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il TSB è -15, che indica una forte polarizzazione recente con poche sessioni dure. Inoltre, la polarizzazione di 28 giorni suggerisce un'alta percentuale di esercizi a intensità bassa (80%). Il protocollo Z2 Endurance è adatto per ripristinare l'equilibrio tra le zone e migliorare la resistenza aerobica senza aumentare il carico.\",\"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2769,
+          "outputTokens": 115,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "un-po-stanco-poche-uscite-dure",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.84476338326931
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8324306905269623
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.8264204412698746
+        },
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.818991631269455
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.84476338326931
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.758532926440239
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8324306905269623
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7725806087255478
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.8264204412698746
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7926503717899323
+        },
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.818991631269455
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.7575133442878723
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 2608,
+      "outputTokens": 108,
+      "cost": null,
+      "charged": null,
+      "seconds": 6.0,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il TSB è -12, che si trova nella gamma consentita per i tre protocolli. In considerazione della polarizzazione dell'atleta (90% easy / 10% hard) e del volume di allenamento recente (1500 minuti), il protocollo Z2 Aerobico è adatto per un giorno facile, mantenendo una base pura con un carico costante.\",\"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il TSB è -12, che si trova nella gamma consentita per i tre protocolli. In considerazione della polarizzazione dell'atleta (90% easy / 10% hard) e del volume di allenamento recente (1500 minuti), il protocollo Z2 Aerobico è adatto per un giorno facile, mantenendo una base pura con un carico costante.\",\"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2608,
+          "outputTokens": 108,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "forma-esattamente-meno-10",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8190147131681442
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8024152219295502
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7841055393218994
+        },
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.7818771302700043
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8190147131681442
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7438177168369293
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8024152219295502
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7279331088066101
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7722964137792587
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7841055393218994
+        },
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.7818771302700043
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.7354243397712708
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §3"
+      ],
+      "inputTokens": 2594,
+      "outputTokens": 172,
+      "cost": null,
+      "charged": null,
+      "seconds": 18.3,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un 80% di volume dedicato a esercizi di intensità facile. Questo protocollo permette di lavorare all'intensità del sweet spot (circa 90-100% della LTHR), stimolando l'aerobismo senza sovraccaricare l'atleta, che ha un TSB negativo e una polarizzazione con un alto percentuale di esercizi a intensità facile. [PMID:22646668 §3]\",\"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un 80% di volume dedicato a esercizi di intensità facile. Questo protocollo permette di lavorare all'intensità del sweet spot (circa 90-100% della LTHR), stimolando l'aerobismo senza sovraccaricare l'atleta, che ha un TSB negativo e una polarizzazione con un alto percentuale di esercizi a intensità facile. [PMID:22646668 §3]\",\"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2594,
+          "outputTokens": 172,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "quota-dura-esattamente-15",
+      "repeat": 1,
+      "duration": 75,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8108452558517456
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7972671240568161
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7828324884176254
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7745094448328018
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8108452558517456
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7342690825462341
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7972671240568161
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7236368656158447
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7828324884176254
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7576881051063538
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7614443451166153
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7745094448328018
+        }
+      ],
+      "papersCited": [
+        "PMID:27175601 §3"
+      ],
+      "inputTokens": 2564,
+      "outputTokens": 162,
+      "cost": null,
+      "charged": null,
+      "seconds": 13.5,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in quanto promuove l'adattamento a carichi di intensità che si trovano tra la LTHR e la FTP, stimolando sia la polarizzazione che lo sviluppo della potenza. Inoltre, il TSB zero suggerisce un addestramento appena terminato o una ripresa, rendendo questo protocollo idoneo per l'addestramento di intensità moderata a lungo termine [PMID:27175601 §3].\",\"passaggiUsati\":[\"PMID:27175601 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in quanto promuove l'adattamento a carichi di intensità che si trovano tra la LTHR e la FTP, stimolando sia la polarizzazione che lo sviluppo della potenza. Inoltre, il TSB zero suggerisce un addestramento appena terminato o una ripresa, rendendo questo protocollo idoneo per l'addestramento di intensità moderata a lungo termine [PMID:27175601 §3].\",\"passaggiUsati\":[\"PMID:27175601 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2564,
+          "outputTokens": 162,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "forma-piu-8",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8108452558517456
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7972671240568161
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7828324884176254
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7745094448328018
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8108452558517456
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7342690825462341
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7972671240568161
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7236368656158447
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7828324884176254
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7576881051063538
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7614443451166153
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7745094448328018
+        }
+      ],
+      "papersCited": [
+        "PMID:27175601 §3"
+      ],
+      "inputTokens": 2563,
+      "outputTokens": 133,
+      "cost": null,
+      "charged": null,
+      "seconds": 6.9,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in quanto, secondo [PMID:27175601], può migliorare la performance degli atleti senza aumentare il carico e mantenendo un equilibrio tra intensità e recupero. Inoltre, essendo un protocollo di volume medio con blocchi duri di 15', è adatto al Tier High volume dell'atleta.\", \"passaggiUsati\":[\"PMID:27175601 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in quanto, secondo [PMID:27175601], può migliorare la performance degli atleti senza aumentare il carico e mantenendo un equilibrio tra intensità e recupero. Inoltre, essendo un protocollo di volume medio con blocchi duri di 15', è adatto al Tier High volume dell'atleta.\", \"passaggiUsati\":[\"PMID:27175601 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2563,
+          "outputTokens": 133,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "base-con-55-minuti",
+      "repeat": 1,
+      "duration": 55,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8090053498744965
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7972938567399979
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7861766368150711
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7745898216962814
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8090053498744965
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7313832342624664
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7972938567399979
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7195475399494171
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7861766368150711
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7593334019184113
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7592871636152267
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7745898216962814
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §3"
+      ],
+      "inputTokens": 2540,
+      "outputTokens": 155,
+      "cost": null,
+      "charged": null,
+      "seconds": 17.3,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un'alta percentuale di sessioni facili (78%) e poche sessioni dure (22%). Inoltre, il TSB negativo suggerisce la necessità di una sessione di intensità moderata per migliorare la forma. Il Sweet Spot si adatta bene a questa situazione, fornendo un carico che non è troppo intenso ma sufficientemente stimolante per l'adattamento.\", \"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un'alta percentuale di sessioni facili (78%) e poche sessioni dure (22%). Inoltre, il TSB negativo suggerisce la necessità di una sessione di intensità moderata per migliorare la forma. Il Sweet Spot si adatta bene a questa situazione, fornendo un carico che non è troppo intenso ma sufficientemente stimolante per l'adattamento.\", \"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2540,
+          "outputTokens": 155,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "forma-esattamente-piu-5",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "seiler_4x8",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8025396168231964
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.800222173333168
+        },
+        {
+          "pmid": "24550842",
+          "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training.",
+          "score": 0.7948568612337112
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7839495092630386
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8025396168231964
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7202445566654205
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.800222173333168
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7678109854459763
+        },
+        {
+          "label": "PMID:24550842 §8",
+          "score": 0.7948568612337112
+        },
+        {
+          "label": "PMID:24550842 §30",
+          "score": 0.7504957914352417
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7839495092630386
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7458478510379791
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 5401,
+      "outputTokens": 263,
+      "cost": null,
+      "charged": null,
+      "seconds": 22.6,
+      "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Il TSB è +5, quindi si preconizza un protocollo di interval training per migliorare la polarizzazione. Il Seiler 4×8' (FTP/VO2) [PMID:21812820] ha dimostrato di essere efficace per aumentare le prestazioni in ciclisti ad alto volume, con un carico di lavoro più elevato rispetto ai protocolli di 4×4' o 4×16'.\",\"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "seiler_4x8",
+          "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Il TSB è +5, quindi si preconizza un protocollo di interval training per migliorare la polarizzazione. Il Seiler 4×8' (FTP/VO2) [PMID:21812820 §3] ha dimostrato di essere efficace per aumentare le prestazioni in ciclisti ad alto volume, con un carico di lavoro più elevato rispetto ai protocolli di 4×4' o 4×16'.\",\"passaggiUsati\":[\"PMID:21812820 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2591,
+          "outputTokens": 139,
+          "cost": null,
+          "check": {
+            "ok": false,
+            "causes": [
+              "invented"
+            ],
+            "reasons": [
+              "Hai citato PMID:21812820 §3, che non sono tra i passaggi forniti: cita solo le etichette dei passaggi forniti, o lascia passaggiUsati vuoto."
+            ]
+          }
+        },
+        {
+          "protocolId": "seiler_4x8",
+          "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Il TSB è +5, quindi si preconizza un protocollo di interval training per migliorare la polarizzazione. Il Seiler 4×8' (FTP/VO2) [PMID:21812820] ha dimostrato di essere efficace per aumentare le prestazioni in ciclisti ad alto volume, con un carico di lavoro più elevato rispetto ai protocolli di 4×4' o 4×16'.\",\"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2810,
+          "outputTokens": 124,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "senza-soglia-cardiaca-ne-peso",
+      "repeat": 1,
+      "duration": 90,
+      "protocolId": "seiler_4x8",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "24550842",
+          "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training.",
+          "score": 0.7883026897907257
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.780141681432724
+        },
+        {
+          "pmid": "11772161",
+          "title": "The scientific basis for high-intensity interval training: optimising training programmes and maximising performance in highly trained endurance athletes.",
+          "score": 0.7795687913894653
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7765437364578247
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:24550842 §8",
+          "score": 0.7883026897907257
+        },
+        {
+          "label": "PMID:24550842 §30",
+          "score": 0.786163941025734
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.780141681432724
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7395608425140381
+        },
+        {
+          "label": "PMID:11772161 §4",
+          "score": 0.7716230154037476
+        },
+        {
+          "label": "PMID:11772161 §5",
+          "score": 0.7795687913894653
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7521391212940216
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7765437364578247
+        }
+      ],
+      "papersCited": [
+        "PMID:24550842 §30"
+      ],
+      "inputTokens": 2582,
+      "outputTokens": 173,
+      "cost": null,
+      "charged": null,
+      "seconds": 17.3,
+      "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Scelto il protocollo Seiler 4×8' in quanto l'atleta ha un TSB da +18, indicando una buona recupero e prontezza di risposta ai programmi di allenamento intensi. Inoltre, la polarizzazione attuale è basata su esercizi facilissimi (easy 100%), quindi un protocollo che include sessioni a intensità elevata come il Seiler 4×8' potrebbe essere benefico per aumentare l'adattamento e migliorare le prestazioni. [PMID:24550842 §30]\",\"passaggiUsati\":[\"PMID:24550842 §30\"]}",
+      "drafts": [
+        {
+          "protocolId": "seiler_4x8",
+          "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Scelto il protocollo Seiler 4×8' in quanto l'atleta ha un TSB da +18, indicando una buona recupero e prontezza di risposta ai programmi di allenamento intensi. Inoltre, la polarizzazione attuale è basata su esercizi facilissimi (easy 100%), quindi un protocollo che include sessioni a intensità elevata come il Seiler 4×8' potrebbe essere benefico per aumentare l'adattamento e migliorare le prestazioni. [PMID:24550842 §30]\",\"passaggiUsati\":[\"PMID:24550842 §30\"]}",
+          "truncated": false,
+          "inputTokens": 2582,
+          "outputTokens": 173,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "forma-esattamente-piu-10",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "ronnestad_30_15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8342376500368118
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8086201548576355
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.7926513254642487
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.791023313999176
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8342376500368118
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7703580558300018
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8086201548576355
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7608263194561005
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.7926513254642487
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7125832140445709
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.791023313999176
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7594233900308609
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §3"
+      ],
+      "inputTokens": 2429,
+      "outputTokens": 119,
+      "cost": null,
+      "charged": null,
+      "seconds": 15.2,
+      "modelRaw": "{\"protocolId\":\"ronnestad_30_15\",\"razionale\":\"Il TSB è +10, quindi si prevede una buona preparazione fisica. Il protocollo Rønnestad 30/15 è stato dimostrato come efficace per le adattazioni superiori in ciclisti allenati durante un periodo di 4 settimane [PMID:22646668 §3].\",\"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "ronnestad_30_15",
+          "modelRaw": "{\"protocolId\":\"ronnestad_30_15\",\"razionale\":\"Il TSB è +10, quindi si prevede una buona preparazione fisica. Il protocollo Rønnestad 30/15 è stato dimostrato come efficace per le adattazioni superiori in ciclisti allenati durante un periodo di 4 settimane [PMID:22646668 §3].\",\"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2429,
+          "outputTokens": 119,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "fresco-con-100-minuti",
+      "repeat": 1,
+      "duration": 100,
+      "protocolId": "seiler_4x8",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8256209343671799
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.800315260887146
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7976532876491547
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7951090037822723
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8256209343671799
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7693251818418503
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.800315260887146
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7253176867961884
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7976532876491547
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7653385698795319
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7951090037822723
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.767468273639679
+        }
+      ],
+      "papersCited": [
+        "PMID:21812820 §2"
+      ],
+      "inputTokens": 2405,
+      "outputTokens": 219,
+      "cost": null,
+      "charged": null,
+      "seconds": 19.0,
+      "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Scelto Seiler 4×8' in quanto l'atleta ha un TSB di 16, indicativo di una buona forma fisica, e la polarizzazione attuale con 25% di sessioni hard suggerisce che possa gestire il carico di intensità richiesto dal protocollo. Inoltre, [PMID:21812820 §2] evidenzia come l'interval training a lunghezza dura (4 × 16 min) porti a maggiore miglioramento delle prestazioni rispetto ai protocolli di interval training a breve durata (4 × 4 min e 4 × 8 min), anche se l'intensità è simile. Il volume target settimanale di 10 ore su 5 giorni si adatta bene al protocollo selezionato.\",\"passaggiUsati\":[\"PMID:21812820 §2\"]}",
+      "drafts": [
+        {
+          "protocolId": "seiler_4x8",
+          "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Scelto Seiler 4×8' in quanto l'atleta ha un TSB di 16, indicativo di una buona forma fisica, e la polarizzazione attuale con 25% di sessioni hard suggerisce che possa gestire il carico di intensità richiesto dal protocollo. Inoltre, [PMID:21812820 §2] evidenzia come l'interval training a lunghezza dura (4 × 16 min) porti a maggiore miglioramento delle prestazioni rispetto ai protocolli di interval training a breve durata (4 × 4 min e 4 × 8 min), anche se l'intensità è simile. Il volume target settimanale di 10 ore su 5 giorni si adatta bene al protocollo selezionato.\",\"passaggiUsati\":[\"PMID:21812820 §2\"]}",
+          "truncated": false,
+          "inputTokens": 2405,
+          "outputTokens": 219,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "fresco-senza-peso",
+      "repeat": 1,
+      "duration": 70,
+      "protocolId": "seiler_4x8",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8256209343671799
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.800315260887146
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7976532876491547
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7951090037822723
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8256209343671799
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7693251818418503
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.800315260887146
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7253176867961884
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7976532876491547
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7653385698795319
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7951090037822723
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.767468273639679
+        }
+      ],
+      "papersCited": [
+        "PMID:21812820 §2"
+      ],
+      "inputTokens": 2399,
+      "outputTokens": 132,
+      "cost": null,
+      "charged": null,
+      "seconds": 6.6,
+      "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Il TSB è di +12, indicando un livello elevato di adattamento che richiede una variazione nel carico. Il protocollo Seiler 4×8' (FTP/VO2) è stato dimostrato efficace per migliorare l'FTP e la VO2max in atleti già ben allenati, come indicato dal passaggio [PMID:21812820 §2].\",\"passaggiUsati\":[\"PMID:21812820 §2\"]}",
+      "drafts": [
+        {
+          "protocolId": "seiler_4x8",
+          "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Il TSB è di +12, indicando un livello elevato di adattamento che richiede una variazione nel carico. Il protocollo Seiler 4×8' (FTP/VO2) è stato dimostrato efficace per migliorare l'FTP e la VO2max in atleti già ben allenati, come indicato dal passaggio [PMID:21812820 §2].\",\"passaggiUsati\":[\"PMID:21812820 §2\"]}",
+          "truncated": false,
+          "inputTokens": 2399,
+          "outputTokens": 132,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "gara-ieri",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8108452558517456
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7972671240568161
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7828324884176254
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7745094448328018
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8108452558517456
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7342690825462341
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7972671240568161
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7236368656158447
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7828324884176254
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7576881051063538
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7614443451166153
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7745094448328018
+        }
+      ],
+      "papersCited": [
+        "PMID:27175601 §3"
+      ],
+      "inputTokens": 2523,
+      "outputTokens": 183,
+      "cost": null,
+      "charged": null,
+      "seconds": 18.5,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta (80% easy, 20% hard) e al suo Tier High volume, che richiede un mix di allenamento ad alta intensità per migliorare la performance. Il paper [PMID:27175601] suggerisce che l'intensità della cadenza può essere influenzata positivamente da allenamenti a cadenza elevata, ma in questo caso è stato preferito un protocollo di intensità media-alta per il suo effetto sulla performance globale. [PMID:27175601 §3]\",\"passaggiUsati\":[\"PMID:27175601 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta (80% easy, 20% hard) e al suo Tier High volume, che richiede un mix di allenamento ad alta intensità per migliorare la performance. Il paper [PMID:27175601] suggerisce che l'intensità della cadenza può essere influenzata positivamente da allenamenti a cadenza elevata, ma in questo caso è stato preferito un protocollo di intensità media-alta per il suo effetto sulla performance globale. [PMID:27175601 §3]\",\"passaggiUsati\":[\"PMID:27175601 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2523,
+          "outputTokens": 183,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "gara-ieri-con-tre-ore",
+      "repeat": 1,
+      "duration": 180,
+      "protocolId": "z2_long_intervals",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8280889838933945
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8087939918041229
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.788335457444191
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7870984524488449
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8280889838933945
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7595005035400391
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8087939918041229
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7260104715824127
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.788335457444191
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7445235252380371
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7870984524488449
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7643842101097107
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §1",
+        "PMID:22646668 §3"
+      ],
+      "inputTokens": 2325,
+      "outputTokens": 233,
+      "cost": null,
+      "charged": null,
+      "seconds": 19.7,
+      "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il protocollo scelto è z2_long_intervals in quanto la durata disponibile (180 minuti) supera i 120 minuti richiesti dal paper [PMID:22646668 §1]. Inoltre, il TSB di 2 suggerisce un'opportunità per una ride-at-the-end, e la polarizzazione con 78% di easy training è compatibile con l'utilizzo di Z2 intensità durante la ride-at-the-end. Il paper [PMID:22646668 §3] evidenzia che il block periodization può portare a superiori adattamenti, anche se in questo caso non si tratta di un periodo di 4 settimane, ma l'uso di Z2 durante la ride-at-the-end potrebbe contribuire al miglioramento delle prestazioni.\", \"passaggiUsati\":[\"PMID:22646668 §1\",\"PMID:22646668 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "z2_long_intervals",
+          "modelRaw": "{\"protocolId\":\"z2_long_intervals\",\"razionale\":\"Il protocollo scelto è z2_long_intervals in quanto la durata disponibile (180 minuti) supera i 120 minuti richiesti dal paper [PMID:22646668 §1]. Inoltre, il TSB di 2 suggerisce un'opportunità per una ride-at-the-end, e la polarizzazione con 78% di easy training è compatibile con l'utilizzo di Z2 intensità durante la ride-at-the-end. Il paper [PMID:22646668 §3] evidenzia che il block periodization può portare a superiori adattamenti, anche se in questo caso non si tratta di un periodo di 4 settimane, ma l'uso di Z2 durante la ride-at-the-end potrebbe contribuire al miglioramento delle prestazioni.\", \"passaggiUsati\":[\"PMID:22646668 §1\",\"PMID:22646668 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2325,
+          "outputTokens": 233,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "due-giorni-di-ripetute",
+      "repeat": 1,
+      "duration": 75,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8108452558517456
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7972671240568161
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7828324884176254
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7745094448328018
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8108452558517456
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7342690825462341
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7972671240568161
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7236368656158447
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7828324884176254
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7576881051063538
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7614443451166153
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7745094448328018
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §3",
+        "[pratica]"
+      ],
+      "inputTokens": 2561,
+      "outputTokens": 168,
+      "cost": null,
+      "charged": null,
+      "seconds": 18.0,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un 25% di sessioni hard su 28 giorni, e al suo Tier High volume. Questo protocollo permette una buona polarizzazione tra intensità moderata e alta, stimolando sia la resistenza aerobica che l'endotoleranza senza sovraccaricare l'atleta. Inoltre, il TSB di 2 suggerisce un livello di recupero sufficiente per affrontare questo protocollo.\", \"passaggiUsati\":[\"PMID:22646668 §3\", \"[pratica]\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un 25% di sessioni hard su 28 giorni, e al suo Tier High volume. Questo protocollo permette una buona polarizzazione tra intensità moderata e alta, stimolando sia la resistenza aerobica che l'endotoleranza senza sovraccaricare l'atleta. Inoltre, il TSB di 2 suggerisce un livello di recupero sufficiente per affrontare questo protocollo.\", \"passaggiUsati\":[\"PMID:22646668 §3\", \"[pratica]\"]}",
+          "truncated": false,
+          "inputTokens": 2561,
+          "outputTokens": 168,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "ripetute-e-gara-in-tre-giorni",
+      "repeat": 1,
+      "duration": 90,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8108452558517456
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7972671240568161
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7828324884176254
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7745094448328018
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8108452558517456
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7342690825462341
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7972671240568161
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7236368656158447
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7828324884176254
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7576881051063538
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7614443451166153
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7745094448328018
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §3"
+      ],
+      "inputTokens": 2521,
+      "outputTokens": 153,
+      "cost": null,
+      "charged": null,
+      "seconds": 7.3,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il TSB è positivo a 8, quindi l'atleta può gestire un carico più intenso. Il paper [PMID:22646668 §3] suggerisce che la periodizzazione in blocco di allenamenti intensi (HIT) fornisce superiori adattazioni rispetto a una distribuzione tradizionale durante un periodo di 4 settimane, anche se con volume e intensità simili. Il protocollo Sweet Spot 3×15' è appropriato per questo atleta.\", \"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il TSB è positivo a 8, quindi l'atleta può gestire un carico più intenso. Il paper [PMID:22646668 §3] suggerisce che la periodizzazione in blocco di allenamenti intensi (HIT) fornisce superiori adattazioni rispetto a una distribuzione tradizionale durante un periodo di 4 settimane, anche se con volume e intensità simili. Il protocollo Sweet Spot 3×15' è appropriato per questo atleta.\", \"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2521,
+          "outputTokens": 153,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "settimana-tranquilla",
+      "repeat": 1,
+      "duration": 75,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8108452558517456
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7972671240568161
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7828324884176254
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7745094448328018
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8108452558517456
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7342690825462341
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7972671240568161
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7236368656158447
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7828324884176254
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7576881051063538
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7614443451166153
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7745094448328018
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §3"
+      ],
+      "inputTokens": 2563,
+      "outputTokens": 129,
+      "cost": null,
+      "charged": null,
+      "seconds": 6.5,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta (80% easy / 20% hard) e al suo alto TSB, che suggerisce un livello di adattamento elevato. Questo protocollo mira a mantenere il carico nel sweet spot per stimolare l'ottimizzazione delle prestazioni senza superare i limiti del TSB.\",\"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta (80% easy / 20% hard) e al suo alto TSB, che suggerisce un livello di adattamento elevato. Questo protocollo mira a mantenere il carico nel sweet spot per stimolare l'ottimizzazione delle prestazioni senza superare i limiti del TSB.\",\"passaggiUsati\":[\"PMID:22646668 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2563,
+          "outputTokens": 129,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "settimana-tranquilla-fresca",
+      "repeat": 1,
+      "duration": 90,
+      "protocolId": "seiler_4x8",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8256209343671799
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.800315260887146
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7976532876491547
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7951090037822723
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8256209343671799
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7693251818418503
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.800315260887146
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7253176867961884
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7976532876491547
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7653385698795319
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7951090037822723
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.767468273639679
+        }
+      ],
+      "papersCited": [
+        "PMID:21812820 §2"
+      ],
+      "inputTokens": 2483,
+      "outputTokens": 164,
+      "cost": null,
+      "charged": null,
+      "seconds": 17.6,
+      "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Il TSB è di +12, che supera la soglia di +10, quindi si prevede una risposta positiva ai protocolli basati su intervallo. Inoltre, il paper [PMID:21812820 §2] suggerisce che l'interval training a 4×8 minuti possa produrre maggiore guadagno in VO2 peak e potenza a VO2 peak rispetto ai protocolli di intervallo più lunghi, consentendo un carico adeguato anche con una durata limitata come quella disponibile oggi.\",\"passaggiUsati\":[\"PMID:21812820 §2\"]}",
+      "drafts": [
+        {
+          "protocolId": "seiler_4x8",
+          "modelRaw": "{\"protocolId\":\"seiler_4x8\",\"razionale\":\"Il TSB è di +12, che supera la soglia di +10, quindi si prevede una risposta positiva ai protocolli basati su intervallo. Inoltre, il paper [PMID:21812820 §2] suggerisce che l'interval training a 4×8 minuti possa produrre maggiore guadagno in VO2 peak e potenza a VO2 peak rispetto ai protocolli di intervallo più lunghi, consentendo un carico adeguato anche con una durata limitata come quella disponibile oggi.\",\"passaggiUsati\":[\"PMID:21812820 §2\"]}",
+          "truncated": false,
+          "inputTokens": 2483,
+          "outputTokens": 164,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "ieri-soglia-nascosta",
+      "repeat": 1,
+      "duration": 75,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8108452558517456
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7972671240568161
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7828324884176254
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7745094448328018
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8108452558517456
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7342690825462341
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7972671240568161
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7236368656158447
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7828324884176254
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7576881051063538
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7614443451166153
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7745094448328018
+        }
+      ],
+      "papersCited": [
+        "PMID:22646668 §3",
+        "PMID:10331896 §2"
+      ],
+      "inputTokens": 2526,
+      "outputTokens": 223,
+      "cost": null,
+      "charged": null,
+      "seconds": 20.2,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in quanto la polarizzazione dell'atleta (82% easy / 18% hard) suggerisce che l'allenamento sia concentrato principalmente sui blocchi di intensità moderata, con un picco di durezza. Il paper [PMID:22646668 §3] evidenzia come la periodizzazione a blocchi possa portare ad effetti superiori rispetto alla tradizionale organizzazione durante una breve durata di 4 settimane, anche se l'atleta ha un volume elevato. Il Sweet Spot è stato dimostrato efficace per migliorare le prestazioni in ciclisti esperti [PMID:10331896 §2].\",\"passaggiUsati\":[\"PMID:22646668 §3\",\"PMID:10331896 §2\"]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in quanto la polarizzazione dell'atleta (82% easy / 18% hard) suggerisce che l'allenamento sia concentrato principalmente sui blocchi di intensità moderata, con un picco di durezza. Il paper [PMID:22646668 §3] evidenzia come la periodizzazione a blocchi possa portare ad effetti superiori rispetto alla tradizionale organizzazione durante una breve durata di 4 settimane, anche se l'atleta ha un volume elevato. Il Sweet Spot è stato dimostrato efficace per migliorare le prestazioni in ciclisti esperti [PMID:10331896 §2].\",\"passaggiUsati\":[\"PMID:22646668 §3\",\"PMID:10331896 §2\"]}",
+          "truncated": false,
+          "inputTokens": 2526,
+          "outputTokens": 223,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "poco-tempo-ieri-vo2-nascosto",
+      "repeat": 1,
+      "duration": 40,
+      "protocolId": "z2_endurance",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.853745773434639
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8316843956708908
+        },
+        {
+          "pmid": "20861519",
+          "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+          "score": 0.8069093525409698
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.8048777878284454
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.853745773434639
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7776141911745071
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8316843956708908
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7504186183214188
+        },
+        {
+          "label": "PMID:20861519 §2",
+          "score": 0.8069093525409698
+        },
+        {
+          "label": "PMID:20861519 §3",
+          "score": 0.7442792654037476
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7989174872636795
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.8048777878284454
+        }
+      ],
+      "papersCited": [
+        "PMID:20861519 §3"
+      ],
+      "inputTokens": 2449,
+      "outputTokens": 162,
+      "cost": null,
+      "charged": null,
+      "seconds": 17.3,
+      "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto l'atleta ha una polarizzazione elevata con un 19% di sessioni hard nelle ultime 28 giornate, e la sua TSB è positiva (6). Inoltre, data la brevità della sessione disponibile (40 minuti), il protocollo Z2 Aerobico offre una sessione piatta e costante che si adatta bene a questa durata. Ciò contribuirà a mantenere un'adeguata polarizzazione senza sovraccaricare l'atleta.\", \"passaggiUsati\":[\"PMID:20861519 §3\"]}",
+      "drafts": [
+        {
+          "protocolId": "z2_endurance",
+          "modelRaw": "{\"protocolId\":\"z2_endurance\",\"razionale\":\"Il protocollo Z2 Aerobico è stato scelto in quanto l'atleta ha una polarizzazione elevata con un 19% di sessioni hard nelle ultime 28 giornate, e la sua TSB è positiva (6). Inoltre, data la brevità della sessione disponibile (40 minuti), il protocollo Z2 Aerobico offre una sessione piatta e costante che si adatta bene a questa durata. Ciò contribuirà a mantenere un'adeguata polarizzazione senza sovraccaricare l'atleta.\", \"passaggiUsati\":[\"PMID:20861519 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2449,
+          "outputTokens": 162,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "carico-salito-in-fretta",
+      "repeat": 1,
+      "duration": 60,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8108452558517456
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.7972671240568161
+        },
+        {
+          "pmid": "27175601",
+          "title": "The effect of low- vs high-cadence interval training on the freely chosen cadence and performance in endurance-trained cyclists.",
+          "score": 0.7828324884176254
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7745094448328018
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8108452558517456
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7342690825462341
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.7972671240568161
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7236368656158447
+        },
+        {
+          "label": "PMID:27175601 §1",
+          "score": 0.7828324884176254
+        },
+        {
+          "label": "PMID:27175601 §3",
+          "score": 0.7576881051063538
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7614443451166153
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7745094448328018
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 5275,
+      "outputTokens": 246,
+      "cost": null,
+      "charged": null,
+      "seconds": 21.7,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un alto percentuale di addestramento a intensità modeste (77% easy). Il Sweet Spot si adatta bene a questo profilo, fornendo una carica di lavoro significativa senza superare il limite della LTHR.\", \"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un alto percentuale di addestramento a intensità modeste (77% easy). Il Sweet Spot si adatta bene a questo profilo, fornendo una carica di lavoro significativa senza superare il limite della LTHR. Inoltre, la durata del protocollo (60 minuti) è compatibile con la disponibilità temporale dell'atleta.\", \"passaggiUsati\":[\"PMID:21812820 §3\"]}",
+          "truncated": false,
+          "inputTokens": 2525,
+          "outputTokens": 145,
+          "cost": null,
+          "check": {
+            "ok": false,
+            "causes": [
+              "invented"
+            ],
+            "reasons": [
+              "Hai citato PMID:21812820 §3, che non sono tra i passaggi forniti: cita solo le etichette dei passaggi forniti, o lascia passaggiUsati vuoto."
+            ]
+          }
+        },
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in base alla polarizzazione dell'atleta, che ha un alto percentuale di addestramento a intensità modeste (77% easy). Il Sweet Spot si adatta bene a questo profilo, fornendo una carica di lavoro significativa senza superare il limite della LTHR.\", \"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2750,
+          "outputTokens": 101,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    },
+    {
+      "situation": "quota-dura-nascosta-nei-fondi",
+      "repeat": 1,
+      "duration": 75,
+      "protocolId": "sweet_spot_3x15",
+      "fellBack": false,
+      "truncated": false,
+      "jsonReadable": true,
+      "papersFound": [
+        {
+          "pmid": "22646668",
+          "title": "Block periodization of high-intensity aerobic intervals provides superior training effects in trained cyclists.",
+          "score": 0.8188338428735733
+        },
+        {
+          "pmid": "21812820",
+          "title": "Adaptations to aerobic interval training: interactive effects of exercise intensity and total work duration.",
+          "score": 0.8124457597732544
+        },
+        {
+          "pmid": "33735833",
+          "title": "Superior Physiological Adaptations After a Microcycle of Short Intervals Versus Long Intervals in Cyclists.",
+          "score": 0.8025006055831909
+        },
+        {
+          "pmid": "10331896",
+          "title": "Effects of different interval-training programs on cycling time-trial performance.",
+          "score": 0.7944141924381256
+        }
+      ],
+      "passagesFound": [
+        {
+          "label": "PMID:22646668 §1",
+          "score": 0.8188338428735733
+        },
+        {
+          "label": "PMID:22646668 §3",
+          "score": 0.7416996657848358
+        },
+        {
+          "label": "PMID:21812820 §1",
+          "score": 0.8124457597732544
+        },
+        {
+          "label": "PMID:21812820 §2",
+          "score": 0.7637922465801239
+        },
+        {
+          "label": "PMID:33735833 §1",
+          "score": 0.8025006055831909
+        },
+        {
+          "label": "PMID:33735833 §2",
+          "score": 0.7504352182149887
+        },
+        {
+          "label": "PMID:10331896 §1",
+          "score": 0.7944141924381256
+        },
+        {
+          "label": "PMID:10331896 §2",
+          "score": 0.7905391752719879
+        }
+      ],
+      "papersCited": [],
+      "inputTokens": 5269,
+      "outputTokens": 261,
+      "cost": null,
+      "charged": null,
+      "seconds": 22.1,
+      "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in quanto l'atleta ha una polarizzazione elevata verso gli allenamenti di intensità facile e non ha eseguito alcun lavoro dura nelle ultime settimane. Questo protocollo permette di introdurre un carico di alta intensità senza superare il limite del 15% suggerito dalla regola, promuovendo l'adattamento nel Sweet Spot.\", \"passaggiUsati\":[]}",
+      "drafts": [
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in quanto l'atleta ha una polarizzazione elevata verso gli allenamenti di intensità facile e non ha eseguito alcun lavoro dura nelle ultime settimane. Questo protocollo permette di introdurre un carico di alta intensità senza superare il limite del 15% suggerito dalla regola, promuovendo l'adattamento nel Sweet Spot.\", \"passaggiUsati\":[\"PMID:24550842 §1\"]}",
+          "truncated": false,
+          "inputTokens": 2526,
+          "outputTokens": 137,
+          "cost": null,
+          "check": {
+            "ok": false,
+            "causes": [
+              "invented"
+            ],
+            "reasons": [
+              "Hai citato PMID:24550842 §1, che non sono tra i passaggi forniti: cita solo le etichette dei passaggi forniti, o lascia passaggiUsati vuoto."
+            ]
+          }
+        },
+        {
+          "protocolId": "sweet_spot_3x15",
+          "modelRaw": "{\"protocolId\":\"sweet_spot_3x15\",\"razionale\":\"Il protocollo Sweet Spot 3×15' è stato scelto in quanto l'atleta ha una polarizzazione elevata verso gli allenamenti di intensità facile e non ha eseguito alcun lavoro dura nelle ultime settimane. Questo protocollo permette di introdurre un carico di alta intensità senza superare il limite del 15% suggerito dalla regola, promuovendo l'adattamento nel Sweet Spot.\", \"passaggiUsati\":[]}",
+          "truncated": false,
+          "inputTokens": 2743,
+          "outputTokens": 124,
+          "cost": null,
+          "check": {
+            "ok": true,
+            "causes": [],
+            "reasons": []
+          }
+        }
+      ],
+      "fallbackCause": null,
+      "citationsDropped": [],
+      "modelSearches": [],
+      "rideCalls": 0,
+      "rideLabels": [],
+      "labelModel": null
+    }
+  ]
+}

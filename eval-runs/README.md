@@ -42,6 +42,8 @@ It prints each run's scores, then one row per file for the README table. Every a
 |---|---|
 | Rules followed | answers whose protocol, as the model wrote it in its last draft, is in the situation's allowed list; with `COACH_RIDE_LABELS` on, a situation that has `withLabels` uses that allowed list |
 | Rules at first draft | the same on the first draft: what the narrowed prompt achieves alone, before the check sends an answer back |
+| Best choice | only in the printed report: among answers to the situations that have `withTools`, those whose protocol is one of the best ones written there by hand, the ones only the ride tools show (`load_history`, `ride_shape`). The selection rules allow them all, so "Rules followed" cannot tell them apart; the other situations do not count. `—` when no such situation was run |
+| Ride calls per answer | only in the printed report of a run with `COACH_RIDE_TOOLS=on`: the ride tool calls per answer, on average, refused ones included |
 | Readable JSON | answers the Coach could read as a JSON object, not cut at the token limit |
 | Invented citations | answers citing, in `passaggiUsati` or anywhere in the text, a passage label that was not among the passages given, or a paper's PMID alone that was neither among the papers given nor the source of a selection rule, which the prompt shows beside the rule. Files from before passages record no passages given: their answers are judged on PMIDs alone, `paperUsati` included |
 | Support cited | among answers given the supporting paper of the protocol they chose, those citing it |
@@ -69,6 +71,7 @@ The file is rewritten after every answer, so a run stopped halfway (Ctrl+C, the 
 | `promptVersion` | 8 characters that change whenever the Coach's system prompt text changes |
 | `searchMode` | `fixed`, the Coach's own search before the draft, or `model`, the chat model searching itself (see the README's AI Coach section). Files from before this field are `fixed`; the grading names the mode, and a `model` row says so next to the model name |
 | `labelsMode` | the ride labels setting, `off`, `rule` or `model` (see the README's AI Coach section). Files from before this field are `off`; the grading names the setting, and a row with labels says so next to the model name |
+| `rideTools` | the ride tools setting, `off` or `on` (see the README's AI Coach section). Files from before this field are `off`; the grading names the setting, and a row with the tools says "ride tools" next to the model name. A run with `on` stops before any call, writing no file, when a situation has no `history` |
 | `papers` | which papers the run searched: `source` is `base` (the default) or `library` (`--library`), and `pmids` lists them. Files from before this field searched the base papers |
 | `repeat` | how many times each situation was asked |
 | `complete` | `true` only when every answer arrived without an error; a run stopped halfway, or with a failed answer, stays `false` and is not used for a table row |
@@ -78,3 +81,15 @@ The file is rewritten after every answer, so a run stopped halfway (Ctrl+C, the 
 Each answer has the same fields as a live check situation (see `live-checks/README.md`), plus `repeat`, the repeat it belongs to: `situation`, `duration`, `protocolId`, `fellBack`, `truncated`, `jsonReadable`, `papersFound` (the papers the model was given), `passagesFound` (the passages the model was given, by label and score), `papersCited`, `inputTokens`, `outputTokens`, `cost`, `charged`, `seconds`, `modelRaw` (the whole last draft), `drafts`, `fallbackCause`, `citationsDropped`, `modelSearches` (each search the model asked for, with `searchMode` `model`), `rideLabels` (each recent ride's date, label and source, with labels on) and `labelModel` (with `labelsMode` `model`: the label model's name, seconds, `cost` and `charged`; `charged` is part of the answer's `charged`, while `seconds` and `cost` are apart from the answer's).
 
 A failed answer has `error`, `message` and `charged` instead (`internal` for an unexpected error), and the next answer still runs. The command exits with code 1 when every answer fails, with code 2, writing no file, when `.env` or `--repeat` is wrong, the paper index or the saved library is refused, or the worst case exceeds the cap, and with code 130 after Ctrl+C. The cloud key is never written here.
+
+## Ride tools: off and on
+
+One answer per situation, all 37, qwen2.5:7b with Ollama on a Mac, fixed search, labels off. The second run has `COACH_RIDE_TOOLS=on`. The best choice, printed in each report, is 1 of 4 in both runs.
+
+| Model | Prompt | Rules followed | Rules at first draft | Readable JSON | Invented citations | Citations dropped | Support cited | Support found | Expected paper found | Fallback | Fallback causes | Average drafts | Median seconds | Cost per answer | Results file |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| qwen2.5:7b | 40a79def | 100% (37/37) | 95% (35/37) | 100% (37/37) | 0% (0/37) | 0% (0/37) | 50% (3/6) | 32% (6/19) | 72% (21/29) | 0% (0/37) | — | 1.1 | 14.4 | — | [2026-11-20_16-13-24_qwen2.5-7b.json](2026-11-20_16-13-24_qwen2.5-7b.json) |
+| qwen2.5:7b · ride tools | 9106dacd | 100% (37/37) | 100% (37/37) | 100% (37/37) | 0% (0/37) | 0% (0/37) | 80% (4/5) | 26% (5/19) | 72% (21/29) | 0% (0/37) | — | 1.2 | 17.3 | — | [2026-11-20_16-22-03_qwen2.5-7b.json](2026-11-20_16-22-03_qwen2.5-7b.json) |
+
+- **qwen2.5:7b never called the tools**: 0 ride tool calls in 37 answers. In the four tool situations it chose sweet spot three times, as with the tools off; only the short-time situation got the endurance ride, in both runs. The tools' definitions add about 380 tokens to every prompt, and the median answer took 17.3 seconds instead of 14.4.
+- **The setting stays off.** Turning it on by default waits for a model that uses the tools and chooses better in these situations (backlog B-55).
