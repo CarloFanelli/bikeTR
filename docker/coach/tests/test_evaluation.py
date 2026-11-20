@@ -13,7 +13,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from app import cloud, evaluation, grading, ollama, papers, prompts, search, tracing
+from app import cloud, evaluation, grading, ollama, papers, prompts, ride_tools, search, tracing
 from fakes import (CLOUD_ENV, CLOUD_KEY, CLOUD_MODEL, INDEX, DownPhoenix, FakeCloud, FakeOllama, FakeSearch, asks,
                    drafts_per_answer)
 from fixture_data import FIXTURES, load
@@ -29,7 +29,7 @@ ANSWER_COST = (900 * 3 + 42 * 15) / 1_000_000
 CEILING_COST = (8000 * 3 + 4000 * 15) / 1_000_000
 FIELDS = {"situation", "repeat", "duration", "protocolId", "fellBack", "truncated", "jsonReadable", "papersFound",
           "passagesFound", "papersCited", "inputTokens", "outputTokens", "cost", "charged", "seconds", "modelRaw",
-          "drafts", "fallbackCause", "citationsDropped", "modelSearches", "rideLabels", "labelModel"}
+          "drafts", "fallbackCause", "citationsDropped", "modelSearches", "rideCalls", "rideLabels", "labelModel"}
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ def test_every_situation_of_the_set_runs_like_a_coach_request_and_the_file_is_co
     assert lines[0].startswith(f"[1/{len(SITUATIONS)}] {first['name']} ({first['minutes']} min): ")
     # Poi i punteggi della corsa, il costo totale e il nome del file.
     assert lines[len(SITUATIONS)] == (f"eval-runs/{file.name} — qwen2.5:7b · prompt {run['promptVersion']} · "
-                                      "ricerca fissa · etichette off · corsa completa")
+                                      "ricerca fissa · etichette off · strumenti sulle uscite off · corsa completa")
     assert f"  Risposte valutate: {len(SITUATIONS)} · errori: 0" in lines and "  Costo per risposta: —" in lines
     assert lines[-2:] == ["Costo totale: —", f"Risultati in eval-runs/{file.name}"]
 
@@ -136,7 +136,8 @@ def test_every_answer_leaves_its_trace_with_situation_and_repeat_and_no_rides_st
         assert dict(root.attributes) == {"openinference.span.kind": "CHAIN", "coach.source": "evaluation",
                                          "coach.minutes": s["minutes"], "coach.situation": s["name"],
                                          "coach.repeat": k, "coach.search_mode": "fixed",
-                                         "coach.ride_labels": "off", "coach.prompt_version": prompts.prompt_version()}
+                                         "coach.ride_labels": "off", "coach.ride_tools": "off",
+                                         "coach.prompt_version": prompts.prompt_version()}
         assert_steps_from_the_papers(steps)
 
 
@@ -392,7 +393,7 @@ def test_search_only_counts_every_situation_of_the_set_with_an_expected_paper(fa
     code, files = evaluate(tmp_path, cloud_spending, args=["--search-only"])
     # 20 delle 27 situazioni ammettono un protocollo con un paper di supporto; l'indice dei test non ne ha.
     assert (code, files) == (0, [])
-    assert "  Punteggio della ricerca, paper atteso trovato: 0% (0/26)" in capsys.readouterr().out.splitlines()
+    assert "  Punteggio della ricerca, paper atteso trovato: 0% (0/29)" in capsys.readouterr().out.splitlines()
 
 
 def test_search_only_with_a_refused_index_prints_the_coach_message_and_fails(fakes, tmp_path, cloud_spending, capsys):
@@ -491,6 +492,45 @@ def test_a_fixed_run_records_the_fixed_mode_and_no_model_searches(fakes, tmp_pat
     _, [file] = evaluate(tmp_path, cloud_spending, two_situations)
     run = read(file)
     assert run["searchMode"] == "fixed" and [a["modelSearches"] for a in run["answers"]] == [[], []]
+
+
+def test_a_ride_tools_run_records_the_setting_and_each_answer_s_ride_calls(fakes, tmp_path, cloud_spending,
+                                                                          two_situations, monkeypatch):
+    monkeypatch.setenv("COACH_RIDE_TOOLS", "on")
+    fakes["ollama"].queue = [asks(name="load_history", arguments={})]
+    code, [file] = evaluate(tmp_path, cloud_spending, two_situations)
+    run = read(file)
+    assert code == 0 and (run["rideTools"], run["promptVersion"]) == ("on", prompts.prompt_version(ride_tools="on"))
+    assert [a["rideCalls"] for a in run["answers"]] == [1, 0]
+    # La risposta allo strumento viene dallo storico inventato della situazione.
+    given = [m["content"] for _, body in fakes["ollama"].requests for m in body["messages"] if m["role"] == "tool"]
+    assert given[0] == ride_tools.history_text(ride_tools.from_situation(SITUATIONS[0]["history"],
+                                                                         SITUATIONS[0]["context"]))
+
+
+def test_a_run_with_the_tools_off_records_off_and_no_ride_calls(fakes, tmp_path, cloud_spending, two_situations):
+    _, [file] = evaluate(tmp_path, cloud_spending, two_situations)
+    run = read(file)
+    assert run["rideTools"] == "off" and [a["rideCalls"] for a in run["answers"]] == [0, 0]
+
+
+def test_a_ride_tools_run_refuses_situations_without_history(fakes, tmp_path, cloud_spending, monkeypatch, capsys):
+    monkeypatch.setenv("COACH_RIDE_TOOLS", "on")
+    path = tmp_path / "situations.json"
+    path.write_text(json.dumps([SITUATIONS[0], {k: v for k, v in SITUATIONS[1].items() if k != "history"}]),
+                    encoding="utf-8")
+    code, files = evaluate(tmp_path, cloud_spending, path)
+    assert (code, files, fakes["ollama"].requests) == (2, [], [])
+    assert SITUATIONS[1]["name"] in capsys.readouterr().err
+
+
+def test_cloud_run_with_ride_tools_counts_every_turn_a_draft_can_make(fakes, tmp_path, cloud_spending, cloud_env,
+                                                                     two_situations, capsys, monkeypatch):
+    monkeypatch.setenv("COACH_RIDE_TOOLS", "on")
+    code, files = evaluate(tmp_path, cloud_spending, two_situations)
+    # Ogni bozza fino a 8 giri: 4 richieste sulle uscite e 4 rifiutate.
+    assert (code, files) == (2, [])
+    assert "fino a 3 bozze ciascuna di al massimo 8 giri del modello" in capsys.readouterr().out
 
 
 def test_search_only_in_model_mode_says_it_measures_the_fixed_search(fakes, tmp_path, cloud_spending,

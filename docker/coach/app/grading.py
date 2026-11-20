@@ -64,6 +64,11 @@ class Scores:
     # Risposte per causa del ripiego, solo le cause presenti, nell'ordine di CAUSE_NAMES.
     fallback_causes: dict[str, int]
     citations_dropped: tuple[int, int]
+    # Nelle situazioni che hanno withTools: risposte con uno dei protocolli migliori scritti a mano,
+    # quelli che solo gli strumenti sulle uscite fanno vedere.
+    best_choice: tuple[int, int]
+    # Richieste sulle uscite per risposta, in media; None in una corsa con gli strumenti spenti.
+    ride_calls: float | None
     average_drafts: float | None
     median_seconds: float | None
     cost_per_answer: float | None
@@ -133,6 +138,7 @@ def allowed_for(situation: dict, mode: str) -> list[str]:
 
 def grade(run: dict, situations: list[dict]) -> Scores:
     allowed = {s["name"]: allowed_for(s, labels_mode(run)) for s in situations}
+    best = {s["name"]: s["withTools"]["best"] for s in situations if "withTools" in s}
     in_set = [a for a in run["answers"] if a["situation"] in allowed]
     answered = [a for a in in_set if "error" not in a]
     n = len(answered)
@@ -142,6 +148,9 @@ def grade(run: dict, situations: list[dict]) -> Scores:
         given = {p["pmid"] for p in a["papersFound"]}
         citations = cited(parsed, a["modelRaw"])
         count["followed"] += choice in allowed[a["situation"]]
+        if a["situation"] in best:
+            count["best_asked"] += 1
+            count["best"] += choice in best[a["situation"]]
         first = drafts_of(a)[0]
         count["first"] += read_draft(first["modelRaw"], first["truncated"])[1] in allowed[a["situation"]]
         count["dropped"] += bool(a.get("citationsDropped"))
@@ -178,6 +187,9 @@ def grade(run: dict, situations: list[dict]) -> Scores:
                   expected_found=search_score(situations, found), fallback=(count["fallback"], n),
                   fallback_causes={c: causes[c] for c in CAUSE_NAMES if causes[c]},
                   citations_dropped=(count["dropped"], n),
+                  best_choice=(count["best"], count["best_asked"]),
+                  ride_calls=statistics.mean(a.get("rideCalls", 0) for a in answered)
+                  if answered and ride_tools(run) == "on" else None,
                   average_drafts=statistics.mean(len(drafts_of(a)) for a in answered) if answered else None,
                   median_seconds=statistics.median(a["seconds"] for a in answered) if answered else None,
                   # Quanto ha aggiunto al totale della spesa ogni risposta, anche quelle fallite; con Ollama niente.
@@ -208,6 +220,11 @@ def model_search(run: dict) -> bool:
     return run.get("searchMode") == "model"
 
 
+def ride_tools(run: dict) -> str:
+    """Gli strumenti sulle uscite della corsa; un file di prima non li dice: spenti."""
+    return run.get("rideTools", "off")
+
+
 def labels_mode(run: dict) -> str:
     """Le etichette delle corse della corsa; un file di prima non le dice: spente."""
     return run.get("labelsMode", "off")
@@ -217,10 +234,12 @@ def report(run: dict, scores: Scores, shown: str) -> list[str]:
     """I punteggi di una corsa, una riga ciascuno, sotto il nome del file."""
     search = "ricerca del modello" if model_search(run) else "ricerca fissa"
     lines = [f"{shown} — {run['model']} · prompt {run['promptVersion']} · {search} · etichette {labels_mode(run)} · "
-             f"corsa {'completa' if run['complete'] else 'incompleta'}",
+             f"strumenti sulle uscite {ride_tools(run)} · corsa {'completa' if run['complete'] else 'incompleta'}",
              f"  Risposte valutate: {scores.answered} · errori: {scores.failed}",
              f"  Regole seguite: {ratio(scores.rules_followed)}",
              f"  Regole seguite alla prima bozza: {ratio(scores.rules_first)}",
+             f"  Scelta migliore (situazioni degli strumenti): {ratio(scores.best_choice)}",
+             f"  Richieste sulle uscite per risposta (media): {one_decimal(scores.ride_calls)}",
              f"  JSON leggibile: {ratio(scores.readable)}",
              f"  Citazioni inventate: {ratio(scores.invented)}",
              f"  Citazioni tolte dalla scheda: {ratio(scores.citations_dropped)}",
@@ -249,6 +268,8 @@ def table_row(run: dict, scores: Scores, link: str) -> str:
     model = f"{run['model']} · model search" if model_search(run) else run["model"]
     if labels_mode(run) != "off":
         model += f" · labels {labels_mode(run)}"
+    if ride_tools(run) == "on":
+        model += " · ride tools"
     cells = [model, run["promptVersion"], ratio(scores.rules_followed), ratio(scores.rules_first),
              ratio(scores.readable), ratio(scores.invented), ratio(scores.citations_dropped),
              ratio(scores.support_cited), ratio(scores.support_found), ratio(scores.expected_found),

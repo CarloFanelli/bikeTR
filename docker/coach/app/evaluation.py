@@ -44,10 +44,11 @@ RESULTS_DIR = Path("/project/eval-runs")
 
 def affordable(chat: provider.ChatSettings, answers: int, spending: Spending) -> bool:
     """Stampa il costo massimo della corsa, ogni risposta con tutte le bozze alla stima alta (con il modo
-    model ogni bozza con tutti i suoi giri) e, con un modello che etichetta in cloud, la sua chiamata
-    alla stima alta; dice se sta in quanto resta sotto il tetto. Un totale della spesa illeggibile ferma
-    la corsa (CoachError)."""
-    turns = prompts.MAX_TURNS if chat.search_mode == "model" else 1
+    model o gli strumenti sulle uscite accesi, ogni bozza con tutti i suoi giri) e, con un modello che
+    etichetta in cloud, la sua chiamata alla stima alta; dice se sta in quanto resta sotto il tetto. Un
+    totale della spesa illeggibile ferma la corsa (CoachError)."""
+    turns = max(1, (prompts.MAX_TURNS if chat.search_mode == "model" else 0)
+                + (2 * prompts.MAX_RIDE_CALLS if chat.ride_tools == "on" else 0))
     label_prices = chat.label.prices if chat.label else None
     worst = answers * MAX_DRAFTS * turns * charge(chat.prices, None, None) if chat.prices else 0.0
     if label_prices:
@@ -77,7 +78,8 @@ async def run_answers(situations: list[dict], repeat: int, chat: provider.ChatSe
             async def ask(chat_client: httpx.AsyncClient, counted: Spending) -> dict:
                 return await graph.from_context(s["context"], s["minutes"], lambda event: None, chat=chat,
                                                   chat_client=chat_client, embed=search.encode,
-                                                  load_index=load_index, spending=counted, today=s.get("today"))
+                                                  load_index=load_index, spending=counted, today=s.get("today"),
+                                                  history=s.get("history") if chat.ride_tools == "on" else None)
             base = {"situation": s["name"], "repeat": n, "duration": s["minutes"]}
             answers.append(await coach_answer(base, chat, spending, ask, "della valutazione"))
             save(answers)
@@ -151,6 +153,11 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
         chat = provider.settings()
         spending = spending or Spending(SPENDING_FILE)
         situations = json.loads(situations_file.read_text(encoding="utf-8"))
+        without = [s["name"] for s in situations if "history" not in s]
+        if chat.ride_tools == "on" and without:
+            print(f"✗ Con COACH_RIDE_TOOLS=on ogni situazione ha bisogno del suo storico inventato (history): "
+                  f"manca in {', '.join(without)}. La corsa non parte.", file=sys.stderr)
+            return 2
         if provider.paid(chat) and not affordable(chat, len(situations) * repeat, spending):
             return 2
     except CoachError as e:
@@ -160,7 +167,8 @@ def main(argv: list[str] | None = None, *, results_dir: Path = RESULTS_DIR, inde
     started = clock()
     run = {"kind": "evaluation", "startedAt": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "provider": chat.provider,
            "model": chat.model, "searchModel": search.SEARCH_MODEL, "searchMode": chat.search_mode,
-           "labelsMode": chat.ride_labels, "promptVersion": prompts.prompt_version(chat.search_mode, chat.ride_labels),
+           "labelsMode": chat.ride_labels, "rideTools": chat.ride_tools,
+           "promptVersion": prompts.prompt_version(chat.search_mode, chat.ride_labels, chat.ride_tools),
            "papers": searched, "repeat": repeat, "complete": False, "totalCost": 0.0 if provider.paid(chat) else None, "answers": []}
     path = write_results(results_dir, file_stem(started, chat.model), run)
 

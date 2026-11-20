@@ -1,9 +1,11 @@
-"""Il set di valutazione: 25–35 situazioni inventate, ognuna con i numeri che il prompt mostra,
+"""Il set di valutazione: 25–40 situazioni inventate, ognuna con i numeri che il prompt mostra,
 i minuti, la regola che prova e i protocolli ammessi scritti a mano. I test confrontano questi
 con le regole di selezione, così un errore nelle liste o nelle regole fa fallire un test che nomina
 la situazione; ogni regola ha almeno due situazioni e ogni soglia una situazione esattamente sopra.
 Le situazioni delle regole che leggono il tipo delle uscite hanno la data di oggi e, in withLabels,
-la regola e i protocolli con le etichette accese; regola e protocolli di sempre valgono a etichette spente."""
+la regola e i protocolli con le etichette accese; regola e protocolli di sempre valgono a etichette spente.
+Ogni situazione ha anche uno storico inventato (history) per gli strumenti sulle uscite, con le sue uscite
+recenti e il suo CTL."""
 
 import json
 from collections import Counter
@@ -13,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from app import grading, labels, selection_rules
+from app import grading, labels, ride_tools, selection_rules
 from app.metrics import capacity_tier, coach_context
 from app.prompts import retrieval_query, user_prompt
 from app.protocols import PROTOCOLS
@@ -39,8 +41,8 @@ def labelled_context(situation: dict) -> dict:
                                   for r in ctx["recentDays"]]}
 
 
-def test_the_set_has_25_to_35_situations_with_distinct_names():
-    assert 25 <= len(SITUATIONS) <= 35
+def test_the_set_has_25_to_40_situations_with_distinct_names():
+    assert 25 <= len(SITUATIONS) <= 40
     assert [n for n, k in Counter(s["name"] for s in SITUATIONS).items() if k > 1] == []
 
 
@@ -144,3 +146,32 @@ def test_some_situations_lack_threshold_heart_rate_weight_or_hard_share_and_show
     assert "LTHR: — bpm" in user_prompt(no_lthr[0]["context"], no_lthr[0]["minutes"])
     assert "Peso: — kg" in user_prompt(no_weight[0]["context"], no_weight[0]["minutes"])
     assert "hard —%" in user_prompt(no_hard[0]["context"], no_hard[0]["minutes"])
+
+
+# ---- Lo storico inventato, per gli strumenti sulle uscite ----
+
+@EACH_SITUATION
+def test_a_situation_history_holds_its_recent_rides_as_the_prompt_shows_them(situation):
+    history = situation["history"]
+    rides = {(r["date"], r["type"], r["minutes"], r["watts"], r["hr"]) for r in history["rides"]}
+    for d in situation["context"]["recentDays"]:
+        assert (d["data"], d["tipo"], d["durataMin"], d.get("avgWatts"), d.get("avgHr")) in rides
+    assert all(r["date"] < history["today"] for r in history["rides"])
+    if "today" in situation:
+        assert history["today"] == situation["today"]
+
+
+@EACH_SITUATION
+def test_a_situation_history_gives_its_ctl_and_a_shape_for_every_ride_of_the_14_days(situation):
+    found = ride_tools.from_situation(situation["history"], situation["context"])
+    assert abs(found.weeks[-1]["ctl"] - situation["context"]["ctl"]) <= 2
+    assert all("Forma non ancora disponibile" not in line for line in found.rides.values())
+
+
+def test_the_tool_situations_have_their_best_choice_inside_the_allowed_list_and_say_why():
+    tools = [s for s in SITUATIONS if "withTools" in s]
+    assert len(tools) >= 4
+    for s in tools:
+        best = s["withTools"]["best"]
+        assert best and set(best) < set(s["allowed"]), s["name"]
+        assert s["withTools"]["because"].split(":")[0].split()[0] in ("load_history", "ride_shape"), s["name"]

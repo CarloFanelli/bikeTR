@@ -240,11 +240,14 @@ def test_scores_and_readme_rows_one_per_file_even_for_the_same_model_and_prompt(
     out = capsys.readouterr().out.splitlines()
     # File di prima delle bozze: la prima bozza è la risposta, e la causa del ripiego viene da lei (Over-Under
     # in 60 minuti: troppo lungo).
-    assert out[:16] == [
-        "eval-runs/a.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette off · corsa completa",
+    assert out[:18] == [
+        "eval-runs/a.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette off · strumenti sulle uscite off · "
+        "corsa completa",
         "  Risposte valutate: 2 · errori: 0",
         "  Regole seguite: 50% (1/2)",
         "  Regole seguite alla prima bozza: 50% (1/2)",
+        "  Scelta migliore (situazioni degli strumenti): —",
+        "  Richieste sulle uscite per risposta (media): —",
         "  JSON leggibile: 100% (2/2)",
         "  Citazioni inventate: 0% (0/2)",
         "  Citazioni tolte dalla scheda: 0% (0/2)",
@@ -274,7 +277,8 @@ def test_an_incomplete_run_is_graded_but_its_row_says_it_is_not_for_the_readme(t
     name = write(tmp_path, "fermata.json", run([answer()], complete=False))
     assert grading.main([name], project_dir=tmp_path) == 0
     out = capsys.readouterr().out
-    assert "eval-runs/fermata.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette off · corsa incompleta" in out
+    assert ("eval-runs/fermata.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette off · "
+            "strumenti sulle uscite off · corsa incompleta") in out
     assert "[fermata.json](eval-runs/fermata.json) (incompleta) |" in out
     assert "Le corse incomplete non vanno nel README" in out
 
@@ -301,9 +305,10 @@ def test_a_model_search_run_names_its_mode_in_the_report_and_the_readme_row(tmp_
     old = write(tmp_path, "o.json", run([answer()]))
     assert grading.main([model, old], project_dir=tmp_path) == 0
     out = capsys.readouterr().out.splitlines()
-    assert "eval-runs/m.json — qwen2.5:7b · prompt abcd1234 · ricerca del modello · etichette off · corsa completa" in out
+    assert ("eval-runs/m.json — qwen2.5:7b · prompt abcd1234 · ricerca del modello · etichette off · "
+            "strumenti sulle uscite off · corsa completa") in out
     # Un file di prima della ricerca del modello non dice il modo: è della ricerca fissa.
-    assert "eval-runs/o.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette off · corsa completa" in out
+    assert "eval-runs/o.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette off · strumenti sulle uscite off · corsa completa" in out
     rows = [line for line in out if line.startswith("| qwen2.5:7b")]
     assert [r.split(" | ")[0] for r in rows] == ["| qwen2.5:7b · model search", "| qwen2.5:7b"]
 
@@ -322,7 +327,8 @@ def test_cost_and_seconds_are_split_between_label_model_and_chat_model(tmp_path,
     name = write(tmp_path, "l.json", run(answers, provider="cloud", labelsMode="model"))
     assert grading.main([name], project_dir=tmp_path) == 0
     out = capsys.readouterr().out.splitlines()
-    assert out[0] == "eval-runs/l.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette model · corsa completa"
+    assert out[0] == ("eval-runs/l.json — qwen2.5:7b · prompt abcd1234 · ricerca fissa · etichette model · "
+                      "strumenti sulle uscite off · corsa completa")
     assert "  Modello che etichetta, per risposta: 2.0 s (media) · $0.0020" in out
     assert "  Modello chat, per risposta: 15.0 s (media) · $0.0130" in out
     assert next(line for line in out if line.startswith("| qwen2.5:7b")).startswith("| qwen2.5:7b · labels model |")
@@ -349,3 +355,22 @@ def test_a_situation_with_labels_is_graded_on_the_allowed_list_of_the_runs_setti
     assert grading.allowed_for(situation, "off") == ["sweet_spot_3x15"]
     assert grading.allowed_for(situation, "rule") == grading.allowed_for(situation, "model") == ["z1_recovery", "rest"]
     assert grading.allowed_for({"name": "x", "allowed": ["rest"]}, "rule") == ["rest"]
+
+
+def test_the_best_choice_counts_only_the_situations_the_ride_tools_decide_and_the_ride_calls_average():
+    ride = "ieri-soglia-nascosta"
+    answers = [answer("z2_cadence_drills", situation=ride, rideCalls=2), answer("threshold_3x10", situation=ride,
+                                                                                 rideCalls=0),
+               answer(rideCalls=1)]
+    scores = grading.grade(run(answers, rideTools="on"), SITUATIONS)
+    assert scores.best_choice == (1, 2)
+    # Le regole ammettono anche la soglia: seguite tutte e tre, la scelta migliore una su due.
+    assert scores.rules_followed == (3, 3) and scores.ride_calls == 1
+    off = grading.grade(run([answer("z2_cadence_drills", situation=ride)]), SITUATIONS)
+    assert off.best_choice == (1, 1) and off.ride_calls is None
+
+
+def test_a_ride_tools_row_says_so_next_to_the_model():
+    scores = grading.grade(run([answer()]), SITUATIONS)
+    row = grading.table_row(run([answer()], rideTools="on"), scores, "eval-runs/x.json")
+    assert row.startswith("| qwen2.5:7b · ride tools | abcd1234 |")
